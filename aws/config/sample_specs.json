@@ -1,0 +1,41 @@
+{
+  "rdzv": {
+    "instance_type" : "t2.small",
+    "accelerator" : "none",
+    "instance_role" : "<YOUR EC2 INSTANCE ROLE>",
+    "key_pair" : "<YOUR KEY PAIR NAME>",
+    "subnets" : [
+      "<YOUR SUBNET #1>",
+      "<YOUR SUBNET ...>",
+      "<YOUR SUBNET #N>"
+    ],
+    "security_groups" : [
+      "<YOUR SECURITY GOUP #1>",
+      "<YOUR SECURITY GOUP ...>",
+      "<YOUR SECURITY GOUP #N>"
+    ],
+    "user_data_template": "config/user_data_rdzv"
+  },
+  "worker": {
+    "instance_type": "p3.2xlarge",
+    "accelerator" : "gpu",
+    "instance_role" : "<YOUR EC2 INSTANCE ROLE>",
+    "key_pair" : "<YOUR KEY PAIR NAME>",
+    "efs_file_system_id" : "<YOUR EFS VOLUME ID>",
+    "subnets" : [
+      "<YOUR SUBNET #1>",
+      "<YOUR SUBNET ...>",
+      "<YOUR SUBNET #N>"
+    ],
+    "security_groups" : [
+      "<YOUR SECURITY GOUP #1>",
+      "<YOUR SECURITY GOUP ...>",
+      "<YOUR SECURITY GOUP #N>"
+    ],
+
+    "user_data_template" : "config/user_data_worker",
+    "docker_image" : "torchelastic/aws:0.1.0-rc",
+    "s3_bucket" : "<YOUR S3 BUCKET NAME>",
+    "s3_prefix" : "<YOUR S3 PREFIX>"
+  }
+}
