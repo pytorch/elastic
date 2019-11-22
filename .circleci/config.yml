@@ -72,11 +72,11 @@ install_etcd: &install_etcd
         # pulls etcd server binary for spinning up a standalong etcd server for unittests
         # see test/p2p/etcd_server_fixture.py
         # needs to run AFTER checkout since it uses the install_etcd script in the repo
-        INSTALL_DIR=$CIRCLE_WORKING_DIRECTORY/test/p2p/bin
-        echo "etcd install directory is: $INSTALL_DIR"
-        examples/bin/install_etcd -d $INSTALL_DIR
-        ${INSTALL_DIR}/etcd --version
-        ${INSTALL_DIR}/etcdctl version
+        echo "current directory is $(pwd)"
+        echo "etcd install directory is: $ETCD_INSTALL_DIR"
+        examples/bin/install_etcd -d $ETCD_INSTALL_DIR
+        $ETCD_INSTALL_DIR/etcd --version
+        $ETCD_INSTALL_DIR/etcdctl version
 
 run_tests: &run_tests
   - run:
@@ -90,6 +90,10 @@ run_tests: &run_tests
 jobs:
   cpu_tests:
     <<: *cpu
+
+    environment:
+        ETCD_INSTALL_DIR: /tmp/etcd
+        TORCHELASTIC_ETCD_BINARY_PATH: /tmp/etcd/etcd
 
     working_directory: ~/torchelastic
 
