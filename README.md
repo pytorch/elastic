@@ -1,4 +1,4 @@
-[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)[![CircleCI](https://circleci.com/gh/pytorch/elastic/tree/master.svg?style=svg)](https://circleci.com/gh/pytorch/elastic/tree/master)
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)[![CircleCI](https://circleci.com/gh/pytorch/elastic.svg?style=svg&circle-token=0d85d09f8ae1836d73779484b9ab86d83563c402)](https://circleci.com/gh/pytorch/elastic)
 
 # PyTorch Elastic
 PyTorch Elastic (torchelastic) is a framework that enables distributed training jobs to be executed
