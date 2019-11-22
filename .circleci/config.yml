@@ -68,21 +68,13 @@ install_cuda: &install_cuda
 install_etcd: &install_etcd
   - run:
       name: Install etcd
-      working_directory: ~/
       command: |
-        ETCD_VER=v3.4.3
-        DOWNLOAD_URL=https://storage.googleapis.com/etcd
-        INSTALL_DIR=./etcd
-        TMP_DIR=./tmp
-
-        mkdir -p ${TMP_DIR}
-        rm -f ${TMP_DIR}/etcd-${ETCD_VER}-linux-amd64.tar.gz
-        rm -rf ${INSTALL_DIR} && mkdir -p ${INSTALL_DIR}
-
-        curl -L ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o ${TMP_DIR}/etcd-${ETCD_VER}-linux-amd64.tar.gz
-        tar xzvf ${TMP_DIR}/etcd-${ETCD_VER}-linux-amd64.tar.gz -C ${INSTALL_DIR} --strip-components=1
-        rm -f ${TMP_DIR}/etcd-${ETCD_VER}-linux-amd64.tar.gz
-
+        # pulls etcd server binary for spinning up a standalong etcd server for unittests
+        # see test/p2p/etcd_server_fixture.py
+        # needs to run AFTER checkout since it uses the install_etcd script in the repo
+        INSTALL_DIR=$CIRCLE_WORKING_DIRECTORY/test/p2p/bin
+        echo "etcd install directory is: $INSTALL_DIR"
+        examples/bin/install_etcd -d $INSTALL_DIR
         ${INSTALL_DIR}/etcd --version
         ${INSTALL_DIR}/etcdctl version
 
@@ -101,12 +93,10 @@ jobs:
 
     working_directory: ~/torchelastic
 
-    environment:
-      # see install_etcd command above
-      TORCHELASTIC_ETCD_BINARY_PATH: ~/etcd/etcd
-
     steps:
       - checkout
+
+      - <<: *install_etcd
 
       - <<: *install_python
 
@@ -125,8 +115,6 @@ jobs:
           paths:
             - ~/venv
           key: v2-cpu-dependencies-{{ checksum "requirements.txt" }}
-
-      - <<: *install_etcd
 
       - <<: *run_tests
 

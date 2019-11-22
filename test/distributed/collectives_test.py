@@ -23,16 +23,19 @@ def compute_checksum(data: np.ndarray) -> bytes:
 
 def init_process(rank, world_size, fn, input, q, backend="gloo"):
     """ Initialize the distributed environment. """
-    os.environ["MASTER_ADDR"] = "127.0.0.1"
-    os.environ["MASTER_PORT"] = "29502"
-    dist.init_process_group(backend, rank=rank, world_size=world_size)
-    r = fn(rank, world_size, input)
-    q.put(r)
+    try:
+        os.environ["MASTER_ADDR"] = "127.0.0.1"
+        os.environ["MASTER_PORT"] = "29502"
+        dist.init_process_group(backend, rank=rank, world_size=world_size)
+        r = fn(rank, world_size, input)
+        q.put(r)
+    finally:
+        if dist.is_initialized():
+            dist.destroy_process_group()
 
 
 def run_in_process_group(world_size, fn, input):
-    if dist.is_initialized():
-        dist.destroy_process_group()
+    assert not dist.is_initialized()
     processes = []
     q = Queue()
     for rank in range(world_size - 1):
