@@ -24,10 +24,13 @@ if __name__ == "__main__":
     with open("requirements.txt") as f:
         reqs = f.read()
 
+    with open("VERSION") as f:
+        version = f.read()
+
     setup(
         # Metadata
         name="torchelastic",
-        version="0.1.0",
+        version=version,
         author="PyTorch Elastic Devs",
         author_email="torchelastic@fb.com",
         description="PyTorch Elastic Training",
