@@ -8,71 +8,45 @@
 
 import abc
 
+import torch
+
 
 class State(abc.ABC):
     """
-    Simple class that maintains the state of a trainer / tester.
+    Represents the state of a trainer / tester. Each worker has an instance
+    of the state object which is periodically synchronized to ensure that
+    all workers have a consistent view of the world.
 
-    Initializer simply assigns provided stateful objects to the
-    associated member functions. There are a few helper functions for
-    dealing with the member objects.
+    The constructor of the state class should yield a state object
+    representing the initial state, S_0. Hence, the constructor arguments
+    should be those that are globally available to the workers without
+    requiring a bootstrap communication.
+
+    ``State`` is restorable, meaning that it can be captured at a point in time
+    then restored to its original state. There are two sets of methods that enable
+    this functionality: ``snapshot``/``apply`` and ``save``/``load``. Both
+    ``snapshot`` and ``save`` captures enough data to restore the state
+    from S_0. Typically only mutable fields of the state are captured in the
+    snapshot and save.
+
+    For example
+    >>> class MyState(torchelastic.State):
+    ...     def __init__(self, batch_size):
+    ...         self.batch_size = batch_size
+    ...         self.weights = [0] * 128
+    ...
+    >>> state = MyState(batch_size = 32)
+    >>> do_work(state)
+
+    the ``snapshot`` and ``save`` methods for ``MyState`` need only capture
+    ``weights`` since the ``batch_size`` is passed as a constructor argument
+    and hence it is assumed to be globally available. Typically the constructor
+    arguments are direct or derived parameters to the training job.
     """
 
     @abc.abstractmethod
     def __init__(self):
         pass
-
-    @abc.abstractmethod
-    def should_save_checkpoint(self, rank):
-        """
-        - Application need decide when to save checkpoint.
-        eg: take checkpoint every x samples trained or every x seconds.
-
-        - Every trainer need to return the same result.
-        In DDP, backward pass call all_reduce to collect all gradient,
-        this reqiures all trainers to anticipate. It might timeout if a trainer
-        is stop and doing checkpoint while other worker complete the gradient
-        computing. To prevent this, we put a barrier at the managed training loop
-        while doing checkpoint, to make all trainers stop and waiting checkpoint
-        complete.
-        """
-        pass
-
-    @abc.abstractmethod
-    def deep_copy(self):
-        """
-        Duplicate the State object
-
-        TODO(T47593024): rename/rethink deep_copy/rollback methods as we want
-        to get the minimal state snapshot to be able to recreate it. One
-        extreme example is to use serialize/deserialize to do snapshot/rollback
-        as well.
-        """
-
-        pass
-
-    def supports_rollback(self):
-        """
-        Whether the PET training loop should deep copy state on each iteration
-        in case an error occurs.
-        Default is True, which leads to more correct behavior, but
-        copying state can be very expensive for some models and dataloaders.
-        If False, then `state` is assumed to be valid even if an error occurs
-        during a train step.
-        """
-
-        return True
-
-    def rollback(self, state):
-        """
-        rollback to the input copy of the state, returns the new state object
-        that is rewound to the input state.
-
-        TODO: implementation needs to re-evaluated based on where we want to
-        take deep_copy (and potentially serialize/deserialize methods).
-        """
-
-        return state
 
     @abc.abstractmethod
     def sync(self, world_size, rank):
@@ -84,23 +58,94 @@ class State(abc.ABC):
               trained from on each worker. After state.sync(), it will know all the
               samples trained alreadys in the whole process group.
 
-        Returns the latest state
         """
-
         pass
 
-    @abc.abstractmethod
-    def serialize(self, stream):
+    def snapshot(self):
         """
-        Serialize the state object to a stream
+        Returns a user-defined object that can be used to restore this state
+        to the point in time when this method was called. This method
+        should be light weight when using the ``train_loop`` with ``rollback_enabled``
+        since this method will be called before each ``train_step`` to be able
+        to rollback from faults in the train_step.
+
+        IMPORTANT: If the returned object is NOT ``torch.save`` compatible,
+        then the ``save``  and ``load`` methods MUST be overridden
+        for checkpointing to work correctly.
+
+        Possible usage:
+         >>> snapshot = state.snapshot()
+         ... try:
+         ...    do_something_that_modifies_state(state)
+         ... except Exception:
+         ...    # restore state (rollback + sync required)
+         ...    state = state.rollback(snapshot)
+         ...    state.sync()
         """
 
-        pass
+        return None
 
-    @abc.abstractmethod
-    def deserialize(self, stream):
+    def apply(self, snapshot) -> None:
         """
-        From a stream generated by state.serialize(), reconstruct a State Object
+        Takes object returned by ``self.snapshot()`` and together with
+        ``self.sync()``, restores the state to the point in time when
+        the snapshot was taken. If rollback is enabled, then
+        the train_loop calls this method followed by ``state.sync()``
+        to first apply the snapshot to this object then re-initialize
+        the runtime stack (e.g. data loaders)
+
+        If the ``snapshot`` is ``None`` then it is interpreted as not
+        supporting rollback and this method is a no-op.
         """
 
-        pass
+        if snapshot is not None:
+            raise NotImplementedError(
+                "Non-null snapshot provided. Must implement both snapshot and apply methods together"
+            )
+
+    def save(self, stream) -> None:
+        """
+        Writes the current state to the provided stream. If the ``snapshot``
+        method does not yield a ``torch.save`` compatible object, then this
+        method MUST be overridden to provide the correct save semantics
+        for checkpointing to work correctly.
+
+        Possible checkpoint implementation:
+         >>> def save_checkpoint(state, filename):
+         ...    with open(filename, "w") as f:
+         ...        state.save(f)
+         ...
+         >>> def load_checkpoint(state, filename):
+         ...    with open(filename, "r") as f:
+         ...        state.load(f)
+         ...
+        """
+
+        snapshot = self.snapshot()
+        torch.save(snapshot, stream)
+
+    def load(self, stream) -> None:
+        """
+        Reads the captured state from the stream and applies it to this object.
+        The `sync` method is expected to be called after load for full restoration.
+        """
+
+        snapshot = torch.load(stream)
+        self.apply(snapshot)
+
+    def should_save_checkpoint(self, rank):
+        """
+        NOTE: this method is subject to review and may be moved out of state.
+
+        - Application need decide when to save checkpoint.
+        eg: take checkpoint every x samples trained or every x seconds.
+
+        - Every trainer need to return the same result.
+        In DDP, backward pass call all_reduce to collect all gradient,
+        this requires all trainers to anticipate. It might timeout if a trainer
+        is stop and doing checkpoint while other worker complete the gradient
+        computing. To prevent this, we put a barrier at the managed training loop
+        while doing checkpoint, to make all trainers stop and waiting checkpoint
+        complete.
+        """
+        return False

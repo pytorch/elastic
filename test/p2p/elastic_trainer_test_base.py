@@ -58,7 +58,6 @@ def _train_step(state, hooks):
     assert state.dataset.rank == state.get_worker_rank()
 
     sample = next(state.get_data_iterator())
-    state.nums.append(sample)
 
     # Perform all-reduce as a proxy for synchronous sgd
     tensor = torch.tensor([sample])
@@ -69,6 +68,7 @@ def _train_step(state, hooks):
         f"sample {sample}, start_index {state.dataset.start_index}, "
         f"train step sum: {int(tensor[0])}, total sum: {state.total_sum}"
     )
+    state.nums.append(sample)
 
     # Only run hooks after the Nth iteration.
     # Failing here means that we roll back 1 iteration and thus
@@ -403,8 +403,9 @@ class ElasticTrainerTestBase(TestCommon, abc.ABC):
         sums = []
         for i in range(0, nprocs):
             state = _get_or_raise(qouts[i], qerrs[i])
-            # All 4 trainers should train 5 samples
-            self.assertEqual(5, len(state.nums))
+            # All trainers see the expected 20/4=5 samples plus an additional
+            # one due to the (retryable excepiton + rollback)
+            self.assertEqual(6, len(state.nums))
             sums.append(state.total_sum)
 
         # We recover from retryable exception - final results same as normal.
@@ -493,9 +494,11 @@ class ElasticTrainerTestBase(TestCommon, abc.ABC):
                 state = _get_or_raise(qouts[i], qerrs[i])
                 sums.append(state.total_sum)
                 # Initially, 4 trainers consume 2 samples each, then the
-                # surviving 2 trainers divide the remaining 20-8=12 samples,
-                # so the surviving trainers see 2+6=8 samples (each).
-                self.assertEqual(8, len(state.nums))
+                # surviving 2 trainers divide the remaining 20-8=12 samples, so
+                # the surviving trainers each successfully process 2+6=8 samples.
+                # nums keeps track of the samples "seen" so the surviving trainers
+                # see an extra 5 samples (one for each retryable exception)
+                self.assertEqual(8 + 5, len(state.nums))
             else:
                 with self.assertRaisesRegex(
                     RuntimeError, "Exceeded max number of recoverable failures: 5"
@@ -677,9 +680,8 @@ class ElasticTrainerTestBase(TestCommon, abc.ABC):
     def test_rollback_not_supported(self):
         """
         Test 4 trainers, 2 of which throw a retryable exception during
-        training and recover. Since state rollback is disabled, deep_copy()
-        shouldn't be called on the state object (it will throw if called and
-        cause the test to fail).
+        training and recover. Since the stat's snapshot() method returns None,
+        rollback is essentially disabled.
         """
         run_id = self._generate_run_id()
 
@@ -708,6 +710,10 @@ class ElasticTrainerTestBase(TestCommon, abc.ABC):
             qerrs.append(qerr)
 
         # Gather all "trained" values from all trainers
+        # half of the trainers throw an exception on the 3rd train_step
+        # with no rollback, effectively making the 3rd example on those workers
+        # "unsuccessful". Hence ``nums`` on those workers is one less than
+        # ``nums`` on the always successful workers.
         sums = []
         for i in range(0, nprocs):
             state = _get_or_raise(qouts[i], qerrs[i])

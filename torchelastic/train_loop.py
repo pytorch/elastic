@@ -9,12 +9,13 @@
 import logging
 import time
 
+import torchelastic
 from torchelastic.checkpoint import CheckpointUtil
 from torchelastic.coordinator import NonRetryableException, StopException
 from torchelastic.metrics import get_elapsed_time_ms, publish_metric
 
 
-log = logging.getLogger("TorchElasticTrainLoop")
+log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 MAX_FAILURES = 100
@@ -30,21 +31,13 @@ def train(elastic_coordinator, train_step, state):
         thrown.
     """
 
+    assert isinstance(state, torchelastic.State)
+
     failure_count = 0
     rank = 0
     world_size = 1
 
-    # TODO T55386785: load_checkpoint should be pulled out of CheckpointUtil
     checkpoint_util = CheckpointUtil(elastic_coordinator)
-
-    # (TODO): Currently some clients, e.g., Classy Vision State (POC: aadock) is not
-    #         a subclass of Elastic state class as not to interfers with their open
-    #         source plan. In the future, when all the client states become subclasses,
-    #         we should turn on this assersion check.
-    # assert isinstance(state, State)
-
-    supports_rollback = state.supports_rollback()
-    log.info("rollback {0} supported".format("is" if supports_rollback else "isn't"))
 
     while not elastic_coordinator.should_stop_training():
         if failure_count >= MAX_FAILURES:
@@ -54,16 +47,15 @@ def train(elastic_coordinator, train_step, state):
             )
             elastic_coordinator.on_error(e)
             raise e
+
+        start_time = time.time()
+        snapshot = state.snapshot()
+
         try:
-            start_time = time.time()
-            if supports_rollback:
-                original_state = state.deep_copy()
             store, rank, world_size = elastic_coordinator.rendezvous_barrier()
             elastic_coordinator.init_process_group()
 
             # load checkpoint if necessary
-            # TODO: Refactor: checkpoint_util.set_checkpoint_loaded() after
-            # checkpoint_util.load_checkpoint(state, rank) seems not elegant
             state = checkpoint_util.load_checkpoint(state, rank)
 
             state_sync_start_time = time.time()
@@ -82,8 +74,7 @@ def train(elastic_coordinator, train_step, state):
             # TODO(T43254350): We may want to be more discriminating than
             # `RuntimeError` here
             elastic_coordinator.on_error(e)
-            if supports_rollback:
-                state = state.rollback(original_state)
+            state.apply(snapshot)
             failure_count += 1
             continue
         except (NonRetryableException, Exception) as e:
@@ -99,11 +90,10 @@ def train(elastic_coordinator, train_step, state):
         # Note that the loop might not even start if the rendezvous was closed
         # due to one of the trainer processes completing earlier.
         while not elastic_coordinator.should_stop_training():
-            try:
-                start_time = time.time()
-                if supports_rollback:
-                    original_state = state.deep_copy()
+            start_time = time.time()
+            snapshot = state.snapshot()
 
+            try:
                 train_step_start_time = time.time()
                 state, worker_stats = train_step(state)
                 publish_metric(
@@ -134,8 +124,7 @@ def train(elastic_coordinator, train_step, state):
                 # TODO(T43254350): We may want to be more discriminating than
                 # `RuntimeError` here
                 elastic_coordinator.on_error(e)
-                if supports_rollback:
-                    state = state.rollback(original_state)
+                state.apply(snapshot)
                 failure_count += 1
                 break
             except Exception as e:

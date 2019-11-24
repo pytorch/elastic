@@ -64,7 +64,7 @@ class CheckpointUtil:
         TODO: Add retry?
         TODO: better logic to handle load checkpoint failure
         """
-        loaded_state = None
+
         try:
             log.info("Finding latest available checkpoint...")
             checkpoint = self.checkpoint_manager.get_latest_checkpoint()
@@ -75,9 +75,9 @@ class CheckpointUtil:
                 log.info("Loading checkpoint...")
                 with checkpoint.open_input_stream(_DEFAULT_CHECKPOINT_KEY) as stream:
                     # Start from simple with _DEFAULT_CHECKPOINT_KEY
-                    loaded_state = state.deserialize(stream)
+                    state.load(stream)
                     log.info("Load checkpoint successfully.")
-                    return loaded_state
+                    return state
         except Exception as e:
             log.error("Load checkpoint fail: {}".format(e))
             raise e
@@ -125,7 +125,7 @@ class CheckpointUtil:
             log.info("Saving checkpoint...")
             with checkpoint.open_output_stream(_DEFAULT_CHECKPOINT_KEY) as stream:
                 # Start from simple with _DEFAULT_CHECKPOINT_KEY
-                state.serialize(stream)
+                state.save(stream)
                 log.info("Save Checkpoint successfully.")
                 checkpoint.commit()
         except Exception as e:

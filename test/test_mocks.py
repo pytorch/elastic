@@ -84,30 +84,21 @@ class TestState(State):
     def get_worker_rank(self):
         return self._worker_rank
 
-    def deep_copy(self):
-        return copy.deepcopy(self)
-
-    def should_save_checkpoint(self):
+    def should_save_checkpoint(self, rank):
         return True
 
-    def serialize(self, stream):
-        # Dataset state we care about (i.e. need for resuming):
-        dist_skip_index = self.dataset.dist_skip_index
+    def snapshot(self):
+        snapshot = {}
+        snapshot["total_sum"] = self.total_sum
+        snapshot["dataset.dist_skip_index"] = self.dataset.dist_skip_index
+        return snapshot
 
-        torch.save([dist_skip_index, self.total_sum], stream)
-
-    def deserialize(self, stream):
-        dist_skip_index, total_sum = torch.load(stream)
-
+    def apply(self, snapshot):
+        self.total_sum = snapshot["total_sum"]
+        dist_skip_index = snapshot["dataset.dist_skip_index"]
         world_size = dist.get_world_size()
         rank = dist.get_rank()
-
-        state = TestState()
-        state.dataset.reinit(world_size, rank, start_index=dist_skip_index + 1)
-        state.total_sum = total_sum
-        state.set_worker_rank(rank)
-
-        return state
+        self.dataset.reinit(world_size, rank, start_index=dist_skip_index + 1)
 
     def get_data_iterator(self):
         return iter(self.dataset)
@@ -134,13 +125,17 @@ class TestStateFailOnSync(TestState):
         self.exception_msg = exception_msg
         super().__init__()
 
-    def deep_copy(self):
+    def snapshot(self):
         # Need to increment `sync_counter` here otherwise the last increment
         # to `sync_counter` in `sync()` will be lost due to the rollback
-        # in train_loop, and we'll just keep re-raising the excpetion.
-        new_state = super().deep_copy()
-        new_state.sync_counter += 1
-        return new_state
+        # in train_loop, and we'll just keep re-raising the exception.
+        snapshot = super().snapshot()
+        snapshot["sync_counter"] = self.sync_counter + 1
+        return snapshot
+
+    def apply(self, snapshot):
+        super().apply(snapshot)
+        self.sync_counter = snapshot["sync_counter"]
 
     def sync(self, world_size, rank):
         self.sync_counter += 1
@@ -155,21 +150,20 @@ class TestStateFailOnSync(TestState):
 
 class TestStateWithRollbackDisabled(TestState):
     """
-    A special sub-class of TestState that disables rollback
+    A special sub-class of TestState that disables rollback.
+    Rollback is implicitly disabled if snapshot returns None
+    and apply is a no-op.
+
     """
 
     def __init__(self):
         super().__init__()
 
-    def deep_copy(self):
-        # since deep_copy isn't supported, test will fail if it is called
-        raise RuntimeError("deep_copy not supported")
+    def snapshot(self):
+        return None
 
-    def rollback(self, state):
-        raise RuntimeError("rollback not supported")
-
-    def supports_rollback(self):
-        return False
+    def apply(self, snapshot):
+        pass
 
 
 class TestWorkerStats(WorkerStats):

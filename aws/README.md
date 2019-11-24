@@ -146,7 +146,7 @@ To run the script we'll use `petctl`,
 
 ``` bash
 SPECS_FILE=~/torchelastic_workspace/specs.json
-python3 petctl.py run_job --size 2 --specs_file ${SPECS_FILE} --name ${user}-job examples/imagenet/main.py -- model-arch resnet101
+python3 petctl.py run_job --size 2 --specs_file ${SPECS_FILE} --name $(user)-job examples/imagenet/main.py -- model-arch resnet101
 ```
 
 In the example above, the named arguments, such as, `--size` and `--specs_file` are 
@@ -155,7 +155,7 @@ self explanatory and are arguments supplied to `petctl`. The positional argument
 ```
 [local script] -- [script args ...]
   -- or -- 
-[local directory] [script] -- [script args...]
+[local directory] -- [script] [script args...]
 ```
 
 If the first positional argument is a path to a script file, then the script
@@ -164,18 +164,18 @@ are passed through to the script.
 
 If the first positional argument is a directory, then a tarball of the directory
 is created and uploaded to S3 and is extracted on the worker-side. In this case
-the second positional argument is the path to the script **relative** to the
-specified directory and, as before, the arguments that follow `--` are passed
-through to the script.
+the first argument after the `--` delimiter is the path to the script **relative** to the
+specified directory and the rest of the arguments after the delimiter is passed 
+to the script.
 
 In our example we specified
 ```
-petctl.py run_job [...] examples/imagenet main.py -- --model_arch resenet 101
+petctl.py run_job [...] examples/imagenet/main.py -- --model_arch resenet 101
 ```
 
-As long as `main.py` is self contained, we could run this as
+We could have decided to specify the directory instead
 ```
-petctl.py run_job [...] examples/imagenet/main.py -- --model_arch resenet 101
+petctl.py run_job [...] examples/imagenet -- main.py --model_arch resenet 101
 ```
 
 (TIP) Besides a local script or directory you can run with scripts or `tar` files
@@ -183,10 +183,10 @@ that have already been uploaded to S3 or directly point it to a file or director
 on the container.
 ``` bash
 python3 petctl.py run_job [...] s3://my-bucket/my_script.py
-python3 petctl.py run_job [...] s3://my-bucket/my_dir.tar.gz my_script.py
+python3 petctl.py run_job [...] s3://my-bucket/my_dir.tar.gz -- my_script.py
 
 # or
-python3 petctl.py run_job [...] --no_upload /path/in/container/dir my_script.py
+python3 petctl.py run_job [...] --no_upload /path/in/container/dir -- my_script.py
 python3 petctl.py run_job [...] --no_upload /path/in/container/dir/my_script.py
 ```
 
@@ -213,7 +213,7 @@ that is monitoring the job!). In practice consider using EKS, Batch, or SageMake
 To stop the job and tear down the resources, use the `kill_job` command:
 
 ``` bash
-python3 petctl.py kill_job --name ${user}-job
+python3 petctl.py kill_job --name $(user)-job
 ```
 
 You'll notice that the two ASGs created with the `run_job` command are deleted.

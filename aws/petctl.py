@@ -10,6 +10,7 @@ import argparse
 import json
 import logging
 import os
+import shutil
 import sys
 import tarfile as tar
 import tempfile
@@ -92,7 +93,7 @@ def parse_arguments(args=sys.argv):
     )
     parser_run_job.add_argument(
         dest="script_path",
-        help="torchelastic script path (e.g. $HOME/workspace/my_script.py)",
+        help="script or script dir path (e.g. $HOME/workspace/my_script.py)",
     )
     parser_run_job.set_defaults(func=run_job)
 
@@ -107,8 +108,8 @@ def parse_arguments(args=sys.argv):
 
     parser_kill_job.set_defaults(func=kill_job)
 
-    args, script_args = split_args(args[1:])
-    parsed = parser.parse_args(args)
+    petctl_args, script_args = split_args(args[1:])
+    parsed = parser.parse_args(petctl_args)
     parsed.script_args = script_args
     return parsed
 
@@ -135,21 +136,26 @@ def s3_cp(session, target_path, bucket, key):
     target_basename = os.path.basename(target_path)
 
     if os.path.isdir(target_path):
-        with tempfile.mkdtemp(prefix="petctl_") as tmpdir:
-            tar_basename = os.path.join(target_basename, "tar.gz")
-            tar_file = os.path.join(tmpdir, tar_basename)
-            log.info(f"Compressing {target_path} into {tar_basename}")
-            with tar.open(tar_file, "x:gz") as f:
-                f.add(target_path, arcname="", recursive=True)
+        tmpdir = tempfile.mkdtemp(prefix="petctl_")
+        tar_basename = f"{target_basename}.tar.gz"
+        tar_file = os.path.join(tmpdir, tar_basename)
+        log.info(f"Compressing {target_path} into {tar_basename}")
+        with tar.open(tar_file, "x:gz") as f:
+            f.add(target_path, arcname="", recursive=True)
 
-            dest_key = f"{key}/{tar_basename}"
-            target_file = tar_file
+        dest_key = f"{key}/{tar_basename}"
+        target_file = tar_file
     else:
+        tmpdir = None
         dest_key = f"{key}/{target_basename}"
         target_file = target_path
 
     log.info(f"Uploading {target_file} to s3://{bucket}/{dest_key}")
     session.client("s3").upload_file(target_file, bucket, dest_key)
+
+    if tmpdir:
+        log.info(f"Deleting tmp dir: {tmpdir}")
+        shutil.rmtree(tmpdir)
     return f"s3://{bucket}/{dest_key}"
 
 
@@ -184,7 +190,6 @@ def run_job(session, args):
         worker_specs["instance_type"] = args.instance_type
     worker_specs["rdzv_endpoint"] = rdzv_endpoint
     worker_specs["job_name"] = job_name
-    worker_specs["size"] = args.size
     worker_specs["script"] = script
     worker_specs["args"] = " ".join(script_args)
 

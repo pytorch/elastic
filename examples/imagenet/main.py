@@ -8,11 +8,13 @@
 
 import argparse
 import copy
+import io
 import logging
 import os
 import time
 import typing
 
+import numpy
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
@@ -22,6 +24,7 @@ import torch.optim
 import torch.utils.data
 import torch.utils.data.distributed
 import torchelastic
+import torchelastic.distributed as edist
 import torchvision.datasets as datasets
 import torchvision.models as models
 import torchvision.transforms as transforms
@@ -33,6 +36,9 @@ from torchvision.models.resnet import BasicBlock, Bottleneck
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
+logging.basicConfig(
+    level=logging.INFO, format="[%(levelname)s] %(asctime)s %(module)s: %(message)s"
+)
 
 
 class TrainParams(typing.NamedTuple):
@@ -87,21 +93,6 @@ class ImagenetState(torchelastic.State):
         self.data_start_index = 0
         self.model_state = {}
 
-    def deep_copy(self):
-        new_state = ImagenetState(
-            model=self.model,
-            params=copy.deepcopy(self.params),
-            dataset=self.dataset,
-            num_epochs=self.num_epochs,
-            epoch=self.epoch,
-        )
-
-        new_state.iteration = self.iteration
-        new_state.data_start_index = self.data_start_index
-        new_state.model_state = copy.deepcopy(self.model_state)
-
-        return new_state
-
     def sync(self, world_size, rank):
         self._sync_state(world_size, rank)
 
@@ -113,43 +104,46 @@ class ImagenetState(torchelastic.State):
 
         return self
 
-    def serialize(self, stream):
-        torch.save(self.epoch, stream)
-        torch.save(self.num_epochs, stream)
-        torch.save(self.iteration, stream)
-        torch.save(self.data_start_index, stream)
-        torch.save(self.model_state, stream)
+    def snapshot(self):
+        # need only capture mutable fields
+        snapshot = {}
+        snapshot["epoch"] = self.epoch
+        snapshot["iteration"] = self.iteration
+        snapshot["data_start_index"] = self.data_start_index
+        snapshot["model_state"] = copy.deepcopy(self.model_state)
+        return snapshot
 
-    def deserialize(self, stream):
-        self.epoch = torch.load(stream)
-        self.num_epochs = torch.load(stream)
-        self.iteration = torch.load(stream)
-        self.data_start_index = torch.load(stream)
-        self.model_state = torch.load(stream)
-        return self
+    def apply(self, snapshot):
+        self.epoch = snapshot["epoch"]
+        self.iteration = snapshot["iteration"]
+        self.data_start_index = snapshot["data_start_index"]
+        self.model_state = snapshot["model_state"]
 
     def _sync_state(self, world_size, rank):
-        # Compute what is the starting index to load data from dataset
-        data_start_index_gathered = [torch.LongTensor([0]) for _ in range(world_size)]
-        data_start_index_tensor = torch.LongTensor([self.data_start_index])
-        dist.all_gather(
-            data_start_index_gathered, torch.LongTensor([data_start_index_tensor])
-        )
-        # The lowest rank with the highest start index value will be
-        # the root for model state broadcast.
-        max_rank, _ = max(enumerate(data_start_index_gathered), key=lambda x: x[1][0])
+        # broadcast from the max rank with the biggest start index
+        max_rank, _ = edist.all_gather_return_max_long(self.data_start_index)
 
         # Broadcast the state from max_rank
-        state = self.serialize()
-        state_size = torch.LongTensor([state.size()])
+        buffer = io.BytesIO()
+        self.save(buffer)
+        state_tensor = torch.ByteTensor(list(buffer.getvalue()))
+        state_size = torch.LongTensor([state_tensor.size()])
         dist.broadcast(state_size, src=max_rank)
+
         if rank != max_rank:
-            state = torch.ByteTensor([0 for _ in range(state_size[0])])
-        dist.broadcast(state, src=max_rank)
-        self.deserialize(state)
+            state_tensor = torch.ByteTensor([0] * state_size[0])
+
+        dist.broadcast(state_tensor, src=max_rank)
+
+        buffer = io.BytesIO(state_tensor.numpy().tobytes())
+        self.load(buffer)
 
         log.info(
-            "Rank {0}: Model state will be synced from rank: {1}".format(rank, max_rank)
+            f"Rank {rank}: Model state synced from rank: {max_rank}\n"
+            f"\tbatch_size={self.batch_size}"
+            f"\tdata_start_index={self.data_start_index}"
+            f"\titeration={self.iteration}"
+            f"\tepoch={self.epoch}/{self.num_epochs}"
         )
 
     def _init_model(self):
@@ -193,7 +187,7 @@ class ImagenetState(torchelastic.State):
             sampler=sampler,
         )
 
-        self.data_iter = iter(self.data_loader)
+        return iter(self.data_loader)
 
     def _init_data_loader(self):
         self.data_iter = CyclingIterator(
@@ -260,7 +254,7 @@ def single_trainer(
 
     torch.cuda.set_device(local_rank)
     device = torch.cuda.current_device()
-    print(f"Rank [{local_rank}] running on GPU [{device}]")
+    log.info(f"Rank [{local_rank}] running on GPU [{device}]")
     model.cuda()
 
     coordinator = CoordinatorP2P(
@@ -399,7 +393,7 @@ def main():
     )
 
     if args.local_world_size == 1:
-        local_rank = 1
+        local_rank = 0
         single_trainer(
             local_rank,
             world_size,

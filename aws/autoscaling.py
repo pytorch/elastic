@@ -185,6 +185,9 @@ class AutoScalingGroup:
 
         assert min_size <= size <= max_size
 
+        kwargs["size"] = size
+        kwargs["min_size"] = min_size
+        kwargs["max_size"] = max_size
         self.create_launch_config(name, **kwargs)
 
         log.info(f"Creating autoscaling group: {name}")
