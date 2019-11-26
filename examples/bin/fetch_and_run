@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+
+# Copyright (c) Facebook, Inc. and its affiliates.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
+import os
+import sys
+import tarfile as tar
+import tempfile
+from urllib.parse import urlparse
+
+
+"""
+Fetch a script or tar.gz from s3 and runs it.
+
+Usage:
+
+fetch_and_run $HOME/my_script [<script args>]
+  - or -
+
+fetch_and_run s3://my_bucket/my_script [<script args>]
+  - or -
+
+fetch_and_run s3://my_bucket/my_workspace.tar.gz my_script [<script args>]
+
+"""
+
+
+def fetch_and_run_local(script, args):
+    executable = os.path.abspath(script)
+    exit_code = os.system(f"chmod u+x {executable}")
+    if exit_code:
+        sys.exit(f"Failed to chmod {executable}")
+
+    os.execvp(executable, [os.path.basename(script), *args])
+
+
+def fetch_and_run_s3(bucket, key, args):
+    # key may be tar or a file
+    # download into tmp dir
+    tmp_dir = tempfile.mkdtemp(prefix="fetch_and_run_")
+    s3_path = f"s3://{bucket}/{key}"
+
+    # if the file is a tar we extract in tmp_dir
+    # to avoid clobbering, download into a tmp file
+    # then delete the file after extracting
+    _, tmp_file = tempfile.mkstemp(prefix="s3_file_", dir=tmp_dir)
+
+    # using aws cli in favor of boto3 to not have to take extra dependencies
+    exit_code = os.system(f"aws s3 cp {s3_path} {tmp_file}")
+    if exit_code:
+        sys.exit(f"Error downloading {s3_path} to {tmp_file}. Exit code: {exit_code}")
+
+    if tar.is_tarfile(tmp_file):
+        if not args:
+            sys.exit("Must specify a script when running fetch_and_run with a tarball")
+
+        with tar.open(tmp_file) as t:
+            t.extractall(path=tmp_dir)
+        os.remove(tmp_file)
+        fetch_and_run_local(os.path.join(tmp_dir, args[0]), args[1:])
+    else:
+        # since we downloaded into a tmp file, rename to original file name
+        file = os.path.join(tmp_dir, os.path.basename(key))
+        os.rename(tmp_file, file)
+        fetch_and_run_local(file, args)
+
+
+# target may be a local script or a script or tarball in s3
+target = sys.argv[1]
+parsed = urlparse(target)
+scheme = parsed.scheme
+
+if scheme == "":
+    fetch_and_run_local(target, sys.argv[2:])
+elif scheme == "s3":
+    fetch_and_run_s3(
+        bucket=parsed.netloc, key=parsed.path.strip("/"), args=sys.argv[2:]
+    )
+else:
+    sys.exit(f"Unsupported scheme: {scheme} in script url: {target}")
