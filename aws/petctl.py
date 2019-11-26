@@ -15,8 +15,8 @@ import sys
 import tarfile as tar
 import tempfile
 
-from . import auth
-from .autoscaling import AutoScalingGroup
+import auth
+from autoscaling import AutoScalingGroup
 
 
 log = logging.getLogger(__name__)

@@ -32,7 +32,6 @@
       "<YOUR SECURITY GOUP ...>",
       "<YOUR SECURITY GOUP #N>"
     ],
-
     "user_data_template" : "config/user_data_worker",
     "docker_image" : "torchelastic/aws:0.1.0-rc",
     "s3_bucket" : "<YOUR S3 BUCKET NAME>",
