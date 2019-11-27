@@ -3,11 +3,12 @@
 The examples in this directory can be run on AWS using `petctl` (see 
 [usage](../aws/README.md)).
 
+> The sections below assume that you have run `petctl.py configure`.
 ## Classy Vision
 
 [Classy Vision](https://classyvision.ai) is a PyTorch framework for image and video classification. It
 can be run on torchelastic to make the runs fault tolerant. To invoke a classy
-run on a single host, run:
+run on the local host (GPU required), run:
 
 ```
 cd $torchelastic_git_repo_root
@@ -22,10 +23,8 @@ To run on a larger training job on multiple instances on AWS use:
 cd $torchelastic_git_repo_root
 export JOB_SIZE=4
 export JOB_NAME=my_job
-export SPECS=~/your_specs_file.json
 
 python3 aws/petctl.py run_job \
-   --specs_file=$SPECS \
    --size $JOB_SIZE \
    --name $JOB_NAME \
    examples/classy_vision/main.py \
@@ -45,7 +44,6 @@ export JOB_NAME=my_job
 export SPECS=~/your_specs_file.json
 
 python3 aws/petctl.py run_job \
-   --specs_file=$SPECS \
    --size $JOB_SIZE \
    --name $JOB_NAME \
    examples/imagenet/main.py \

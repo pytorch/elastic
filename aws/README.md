@@ -129,6 +129,23 @@ You may store your input dataset, store model checkpoints, or job outputs here.
 
 > The specified EFS volume is mounted on `/mnt/efs1`. On the host and container.
 
+### Configure `petctl`
+After creating a specs file, configure `petctl`
+
+```
+python3 petctl.py configure
+```
+
+This will prompt for the **absolute** path of your specs file and the AWS region.
+You can run the `configure` sub-command as many times as you wish in case you made
+a mistake or you need to reconfigure `petctl`. 
+
+You'll notice that after configuration is done, there is a config file generated
+under `$HOME/.petctl`.
+
+> This is similar to how the aws cli is configured. If you decide to skip
+configuration, then you **must** pass `--specs_file` and `--region` arguments
+to `petctl` each time (e.g. `petctl --sepcs_file /home/$USER/specs.json --region us-west-2`).
 
 ### Write a script
 If you already have a script that uses torchelastic to run distributed training,
@@ -145,8 +162,7 @@ We will assume that you are working with the imagenet example.
 To run the script we'll use `petctl`,
 
 ``` bash
-SPECS_FILE=~/torchelastic_workspace/specs.json
-python3 petctl.py run_job --size 2 --specs_file ${SPECS_FILE} --name ${USER}-job examples/imagenet/main.py -- model-arch resnet101
+python3 petctl.py run_job --size 2 --name ${USER}-job examples/imagenet/main.py -- model-arch resnet101
 ```
 
 In the example above, the named arguments, such as, `--size` and `--specs_file` are 

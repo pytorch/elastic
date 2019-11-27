@@ -7,19 +7,21 @@
 # LICENSE file in the root directory of this source tree.
 
 import argparse
+import getpass
 import json
 import logging
 import os
-import shutil
 import sys
-import tarfile as tar
-import tempfile
+from os.path import expanduser
+from urllib.parse import urlparse
 
-from . import auth
-from .autoscaling import AutoScalingGroup
+import auth
+from autoscaling import AutoScalingGroup
+from s3 import S3
 
 
 log = logging.getLogger(__name__)
+PETCTL_CONFIG = os.path.join(expanduser("~"), ".petctl/config")
 
 
 def split_args(args, delimiter="--"):
@@ -33,21 +35,15 @@ def split_args(args, delimiter="--"):
         return args, []
 
 
-def parse_arguments(args=sys.argv):
+def parse_arguments(args, **default_args):
     parser = argparse.ArgumentParser()
+    parser.add_argument("--region", help="the aws region to operate on")
     parser.add_argument(
-        "--region",
-        dest="region",
-        required=False,
-        default="us-west-2",
-        help="the aws region to operate on",
+        "--specs_file",
+        help="see https://github.com/pytorch/elastic/blob/master/aws/README.md#create-specs-file",  # noqa B950
     )
-    parser.add_argument(
-        "--verbose",
-        dest="verbose",
-        action="store_true",
-        help="Enables DEBUG level logging",
-    )
+    parser.set_defaults(**default_args)
+
     subparser = parser.add_subparsers(
         title="actions", description="run_job | kill_job", dest="command"
     )
@@ -81,19 +77,8 @@ def parse_arguments(args=sys.argv):
         "--instance_type", required=False, help="Instance type to run the job on"
     )
     parser_run_job.add_argument(
-        "--specs_file",
-        type=argparse.FileType("r"),
-        required=True,
-        help="json file containing static configuration parameters (see config/)",
-    )
-    parser_run_job.add_argument(
-        "--no_upload",
-        action="store_true",
-        help="does not upload the script (uses script in docker or already in s3)",
-    )
-    parser_run_job.add_argument(
         dest="script_path",
-        help="script or script dir path (e.g. $HOME/workspace/my_script.py)",
+        help="script or script dir path (e.g. ~/script.py, s3://..., docker://)",
     )
     parser_run_job.set_defaults(func=run_job)
 
@@ -108,6 +93,25 @@ def parse_arguments(args=sys.argv):
 
     parser_kill_job.set_defaults(func=kill_job)
 
+    # -----------------------------------------
+    # Upload script
+    # -----------------------------------------
+    parser_upload = subparser.add_parser("upload", help="uploads the file/dir to s3")
+    parser_upload.add_argument(
+        dest="script_path",
+        help="script or script dir path (e.g. ~/script.py, s3://..., docker://)",
+    )
+    parser_upload.add_argument(
+        dest="s3_dest",
+        help="s3 destination (default: s3://{s3_bucket}/{s3_prefix}/{USER}/scripts)",
+    )
+    parser_upload.set_defaults(func=upload_script)
+
+    # -----------------------------------------
+    # Configure
+    # -----------------------------------------
+    subparser.add_parser("configure", help="configures petctl")
+
     petctl_args, script_args = split_args(args[1:])
     parsed = parser.parse_args(petctl_args)
     parsed.script_args = script_args
@@ -120,62 +124,26 @@ def load_specs_json(file):
         return json.load(f)
 
 
-def s3_cp(session, target_path, bucket, key):
-    """
-    Uploads target_path to s3://bucket/key. If the target_path is a file
-    then uploads to s3://bucket/key/file_name, if the target_path is a
-    directory, then a tarball is created with the contents of target_path
-    and uploaded to s3://bucket/key/dir_name.tar.gz. The tar is created as
-    if created by running the command:
-
-    cd target_path && tar xzf /tmp/$(basename target_path).tar.gz *
-
-    Returns the destination s3 url
-    """
-
-    target_basename = os.path.basename(target_path)
-
-    if os.path.isdir(target_path):
-        tmpdir = tempfile.mkdtemp(prefix="petctl_")
-        tar_basename = f"{target_basename}.tar.gz"
-        tar_file = os.path.join(tmpdir, tar_basename)
-        log.info(f"Compressing {target_path} into {tar_basename}")
-        with tar.open(tar_file, "x:gz") as f:
-            f.add(target_path, arcname="", recursive=True)
-
-        dest_key = f"{key}/{tar_basename}"
-        target_file = tar_file
-    else:
-        tmpdir = None
-        dest_key = f"{key}/{target_basename}"
-        target_file = target_path
-
-    log.info(f"Uploading {target_file} to s3://{bucket}/{dest_key}")
-    session.client("s3").upload_file(target_file, bucket, dest_key)
-
-    if tmpdir:
-        log.info(f"Deleting tmp dir: {tmpdir}")
-        shutil.rmtree(tmpdir)
-    return f"s3://{bucket}/{dest_key}"
-
-
-def run_job(session, args):
+def run_job(session, specs_json, args):
     job_name = args.name
     script_args = args.script_args
 
-    # TODO make specs into a proper config object?
-    specs_json = json.load(args.specs_file)
     rdzv_specs = specs_json["rdzv"]
     worker_specs = specs_json["worker"]
 
-    if args.no_upload:
-        # script_path is just passed through, useful for running docker-local
-        # scripts or scripts that already have been uploaded to s3
+    script_url = urlparse(args.script_path)
+    scheme = script_url.scheme
+    if scheme == "docker":
+        # docker://tmp/script.py -> tmp/script.py (relative to working dir in docker)
+        # docker:///tmp/script.py -> /tmp/script.py (absolute path in docker)
+        script = script_url.netloc + script_url.path
+    elif scheme == "s3":
+        # fetch_and_run supports s3:// so just pass through
         script = args.script_path
     else:
         s3_bucket = worker_specs["s3_bucket"]
         s3_prefix = worker_specs["s3_prefix"]
-        script = s3_cp(session, args.script_path, s3_bucket, f"{s3_prefix}/{job_name}")
+        script = S3(session).cp(args.script_path, s3_bucket, f"{s3_prefix}/{job_name}")
 
     asg = AutoScalingGroup(session)
     rdzv_asg_name = f"{job_name}_rdzv"
@@ -208,12 +176,12 @@ def run_job(session, args):
         f"------------------------------------------------------------------\n"
     )
 
-    AutoScalingGroup(session).create_asg(
+    asg.create_asg(
         worker_asg_name, args.size, args.min_size, args.max_size, **worker_specs
     )
 
 
-def kill_job(session, args):
+def kill_job(session, specs_json, args):
     job_name = args.job_name
     log.info(f"Killing job {job_name}")
     asg = AutoScalingGroup(session)
@@ -221,16 +189,55 @@ def kill_job(session, args):
     asg.delete_asg(f"{job_name}_worker")
 
 
+def upload_script(session, specs_json, args):
+    script_path = args.script_path
+    s3_dest = args.s3_dest
+
+    if not s3_dest:
+        s3_bucket = specs_json["s3_bucket"]
+        s3_prefix = os.path.join(specs_json["s3_prefix"], getpass.getuser())
+    else:
+        s3_bucket = urlparse(s3_dest).netloc
+        s3_prefix = urlparse(s3_dest).path
+
+    log.info(f"Uploading: {script_path} to s3://{s3_bucket}/{s3_prefix}")
+    s3 = S3(session)
+    url = s3.cp(script_path, s3_bucket, s3_prefix)
+    log.info(f"Finished uploading to: {url}")
+
+
+def configure():
+    specs_file = input("Absolute path to specs file (e.g. /home/${USER}/specs.json): ")
+    region = input("Default aws region to use (e.g. us-west-2): ")
+
+    petctl_config = {"specs_file": specs_file, "region": region}
+    os.makedirs(os.path.dirname(PETCTL_CONFIG), exist_ok=True)
+    with open(PETCTL_CONFIG, "w+") as f:
+        json.dump(petctl_config, f, indent=4)
+
+    log.info(f"Configuration complete. petctl config file: {PETCTL_CONFIG}")
+
+
+def load_configuration():
+    if os.path.isfile(PETCTL_CONFIG):
+        with open(PETCTL_CONFIG) as f:
+            return json.load(f)
+    else:
+        log.warning(f"{PETCTL_CONFIG} not found, consider running: petctl configure")
+        return {}
+
+
 if __name__ == "__main__":
-
-    args = parse_arguments()
-
-    log_level = logging.DEBUG if args.verbose else logging.INFO
     logging.basicConfig(
-        level=log_level, format="[%(levelname)s] %(asctime)s %(module)s: %(message)s"
+        level=logging.INFO, format="[%(levelname)s] %(asctime)s %(module)s: %(message)s"
     )
 
-    region = args.region
-    session = auth.get_session(region)
+    args = parse_arguments(sys.argv, **load_configuration())
 
-    args.func(session, args)
+    if args.command == "configure":
+        configure()
+    else:
+        region = args.region
+        specs_json = load_specs_json(args.specs_file)
+        session = auth.get_session(region)
+        args.func(session, specs_json, args)
