@@ -49,14 +49,6 @@ class EtcdRendezvousRetryImmediately(Exception):
     pass
 
 
-# An existing rendezvous exists which we cannot join (frozen/final).
-# Instead of retrying shortly, we should only re-try after observing
-# any changes, waiting for existing rendezvous to be destroyed
-# or a new one (joinable) to become available.
-class EtcdRendezvousExistsNonJoinable(Exception):
-    pass
-
-
 # Default overall timeout for rendezvous barrier.
 CONST_DEFAULT_OVERALL_TIMEOUT = 600
 
