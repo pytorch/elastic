@@ -29,6 +29,15 @@ class RendezvousTimeoutException(Exception):
     pass
 
 
+class RendezvousNonRetryableError(Exception):
+    """
+    Raised from any of the `RendezvousHandler` methods when a failure
+    occured that should not be retried with the same worker process.
+    """
+
+    pass
+
+
 class RendezvousHandler(abc.ABC):
     @abc.abstractmethod
     def next_rendezvous(self) -> Tuple["torch.distributed.Store", int, int]:

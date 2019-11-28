@@ -18,7 +18,11 @@ from typing import Optional
 
 import etcd
 from torch.distributed import Store, TCPStore, register_rendezvous_handler
-from torchelastic.rendezvous import RendezvousHandler, RendezvousTimeoutException
+from torchelastic.rendezvous import (
+    RendezvousHandler,
+    RendezvousNonRetryableError,
+    RendezvousTimeoutException,
+)
 
 
 _log_fmt = logging.Formatter("%(levelname)s %(asctime)s %(message)s")
@@ -67,6 +71,13 @@ CONST_ETCD_JOINABLE_EPHEMERAL_TTL = 10
 
 # Ephemeral node TTL for worker's keep-alive key:
 CONST_WORKER_KEEPALIVE_TTL = 10
+
+# TTL for the ephemeral run_id-specific directory. All rendezvous state data
+# for a specific run_id (job instance) is contained within directory.
+# Its only role is to clean-up rendezvous data from old runs (for the case when
+# etcd server is persistent), and has no affect on correctnes, but should be
+# larger than any timeouts that a worker process is expected to survive:
+CONST_RUNID_SUBROOT_TTL = 7200  # 2 hours
 
 
 # Delay (sleep) for a small random amount to reduce CAS failures.
@@ -161,8 +172,10 @@ class EtcdRendezvous(object):
             self.create_path_if_not_exists(self._prefix)
 
         # Lease a "sub-root" node specific to this job instance (run_id)
-        self.create_path_if_not_exists(self.get_path(""), ttl=30)
-        self._lease_run_id_stop = self.setup_lease_renewal(self.get_path(""), ttl=30)
+        self.create_path_if_not_exists(self.get_path(""), ttl=CONST_RUNID_SUBROOT_TTL)
+        self._lease_run_id_stop = self.setup_lease_renewal(
+            self.get_path(""), ttl=CONST_RUNID_SUBROOT_TTL
+        )
 
         # Subdir for all rendezvous work
         self.create_path_if_not_exists(self.get_path("/rdzv"))
@@ -349,13 +362,18 @@ class EtcdRendezvous(object):
             ttl=CONST_ETCD_SETUP_TTL,
         )
 
+        try:
+            version_counter = self.client.get(self.get_path("/rdzv/version_counter"))
+            version_counter.value = str(int(version_counter.value) + 1)
+            self.client.update(version_counter)
+        except (etcd.EtcdKeyNotFound, etcd.EtcdCompareFailed):
+            raise RendezvousNonRetryableError(
+                "Unexected state of EtcdRendezvousHandler, worker needs to die."
+            )
+
         # Any failure below results in declaring a retryable rendezvous failure.
         # The ephemeral /rdzv/active_version will expire and someone can then
         # re-try the setup process.
-
-        version_counter = self.client.get(self.get_path("/rdzv/version_counter"))
-        version_counter.value = str(int(version_counter.value) + 1)
-        self.client.update(version_counter)
 
         # Create directory node for participant data
         self.client.write(

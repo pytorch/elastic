@@ -9,6 +9,7 @@
 from .api import (  # noqa: F401
     RendezvousClosedException,
     RendezvousHandler,
+    RendezvousNonRetryableError,
     RendezvousTimeoutException,
 )
 
