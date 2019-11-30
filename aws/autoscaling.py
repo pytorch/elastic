@@ -142,6 +142,7 @@ class AutoScalingGroup:
         security_groups=None,
         accelerator="gpu",
         max_spot_price=None,
+        ebs_volume_gb=128,
         **user_data_kwargs,
     ):
 
@@ -154,6 +155,16 @@ class AutoScalingGroup:
             "SecurityGroups": security_groups,
             "AssociatePublicIpAddress": True,
             "UserData": self.get_user_data(user_data_template, **user_data_kwargs),
+            "BlockDeviceMappings": [
+                {
+                    "DeviceName": "/dev/xvda",
+                    "Ebs": {
+                        "VolumeSize": ebs_volume_gb,
+                        "VolumeType": "gp2",
+                        "DeleteOnTermination": True,
+                    },
+                }
+            ],
         }
 
         if max_spot_price:
@@ -226,12 +237,15 @@ class AutoScalingGroup:
         # launch config needs to be deleted after asg
         self.delete_launch_config(name)
 
+    def list_hostnames(self, name):
+        return self.get_hostnames(name, 1)
+
     def get_hostnames(self, name, size):
         """
         Waits until the asg has at least <size> instances in "InService"
         state and returns their public dns names.
         """
-        for _ in wait_for(f"autoscaling group: {name} to reach size: {size}"):
+        for _ in wait_for(f"autoscaling group: {name} to reach size >= {size}"):
             asg_desc = self.describe_asg(name)
             if not asg_desc:
                 return []

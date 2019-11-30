@@ -14,7 +14,8 @@
       "<YOUR SECURITY GOUP ...>",
       "<YOUR SECURITY GOUP #N>"
     ],
-    "user_data_template": "config/user_data_rdzv"
+    "user_data_template": "config/user_data_rdzv",
+    "ebs_volume_gb" : 64
   },
   "worker": {
     "instance_type": "p3.2xlarge",
@@ -34,6 +35,7 @@
     ],
 
     "user_data_template" : "config/user_data_worker",
+    "ebs_volume_gb" : 64,
     "docker_image" : "torchelastic/aws:0.1.0-rc",
     "s3_bucket" : "<YOUR S3 BUCKET NAME>",
     "s3_prefix" : "<YOUR S3 PREFIX>"

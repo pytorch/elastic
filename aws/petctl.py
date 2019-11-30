@@ -94,6 +94,17 @@ def parse_arguments(args, **default_args):
     parser_kill_job.set_defaults(func=kill_job)
 
     # -----------------------------------------
+    # List hosts in job
+    # -----------------------------------------
+    parser_list_hosts = subparser.add_parser(
+        "list_hosts", help="lists InService hosts in the job"
+    )
+    parser_list_hosts.add_argument(
+        dest="job_name", help="name of the job to list the hosts for"
+    )
+    parser_list_hosts.set_defaults(func=list_hosts)
+
+    # -----------------------------------------
     # Upload script
     # -----------------------------------------
     parser_upload = subparser.add_parser("upload", help="uploads the file/dir to s3")
@@ -165,7 +176,7 @@ def run_job(session, specs_json, args):
     script_args_str = worker_specs["args"]
 
     log.info(
-        f"------------------------------------------------------------------\n"
+        f"\n------------------------------------------------------------------\n"
         f"Starting job...\n"
         f"  job name     : {job_name}\n"
         f"  instance type: {instance_type}\n"
@@ -198,12 +209,29 @@ def upload_script(session, specs_json, args):
         s3_prefix = os.path.join(specs_json["s3_prefix"], getpass.getuser())
     else:
         s3_bucket = urlparse(s3_dest).netloc
-        s3_prefix = urlparse(s3_dest).path
+        s3_prefix = urlparse(s3_dest).path.strip("/")
 
     log.info(f"Uploading: {script_path} to s3://{s3_bucket}/{s3_prefix}")
     s3 = S3(session)
     url = s3.cp(script_path, s3_bucket, s3_prefix)
     log.info(f"Finished uploading to: {url}")
+
+
+def list_hosts(session, specs_json, args):
+    job_name = args.job_name
+    asg = AutoScalingGroup(session)
+    asgs = [f"{job_name}_rdzv", f"{job_name}_worker"]
+    hosts = {}
+
+    for asg_name in asgs:
+        hosts[asg_name] = asg.list_hostnames(asg_name)
+
+    print(f"--------------------------------------------------------------")
+    for asg_name in hosts:
+        print(f"Hosts in {asg_name}:")
+        for i, host in enumerate(hosts[asg_name], start=1):
+            print(f"\t{i}) {host}")
+        print(f"--------------------------------------------------------------")
 
 
 def configure():

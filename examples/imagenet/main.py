@@ -130,7 +130,7 @@ class ImagenetState(torchelastic.State):
         dist.broadcast(state_size, src=max_rank)
 
         if rank != max_rank:
-            state_tensor = torch.ByteTensor([0] * state_size[0])
+            state_tensor = torch.ByteTensor([0 for _ in range(state_size[0])])
 
         dist.broadcast(state_tensor, src=max_rank)
 
@@ -139,9 +139,10 @@ class ImagenetState(torchelastic.State):
 
         log.info(
             f"Rank {rank}: Model state synced from rank: {max_rank}\n"
-            f"\tbatch_size={self.batch_size}"
-            f"\tdata_start_index={self.data_start_index}"
-            f"\titeration={self.iteration}"
+            f"\tbatch_size={self.total_batch_size}\n"
+            f"\tnum_data_workers={self.params.num_data_workers}\n"
+            f"\tdata_start_index={self.data_start_index}\n"
+            f"\titeration={self.iteration}\n"
             f"\tepoch={self.epoch}/{self.num_epochs}"
         )
 
@@ -177,13 +178,15 @@ class ImagenetState(torchelastic.State):
         )
         sampler.set_epoch(epoch)
 
+        num_data_workers = self.params.num_data_workers
         self.data_loader = torch.utils.data.DataLoader(
             self.dataset,
             batch_size=self.total_batch_size,
             shuffle=(sampler is None),
-            num_workers=self.params.num_data_workers,
+            num_workers=num_data_workers,
             pin_memory=True,
             sampler=sampler,
+            multiprocessing_context=None if num_data_workers == 0 else "forkserver",
         )
 
         return iter(self.data_loader)
@@ -198,7 +201,7 @@ class ImagenetState(torchelastic.State):
 
 def single_trainer(
     local_rank,
-    world_size,
+    max_world_size,
     c10d_backend,
     rdzv_init_url,
     model_arch,
@@ -210,9 +213,7 @@ def single_trainer(
 
     """
 
-    log.info("Training world size: {}".format(world_size))
-
-    # Data loading
+    log.info(f"Loading data from: {input_path}")
     normalize = transforms.Normalize(
         mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
     )
@@ -229,6 +230,7 @@ def single_trainer(
         ),
     )
 
+    log.info(f"Loading model: {model_arch}")
     model = models.__dict__[model_arch]()
     # Apply ResNet training in one hour's tricks to the model itself
     # to maintain the accuracy
@@ -253,13 +255,13 @@ def single_trainer(
 
     torch.cuda.set_device(local_rank)
     device = torch.cuda.current_device()
-    log.info(f"Rank [{local_rank}] running on GPU [{device}]")
     model.cuda()
+    log.info(f"Rank [{local_rank}] running on GPU [{device}]")
 
     coordinator = CoordinatorP2P(
         c10d_backend=c10d_backend,
         init_method=rdzv_init_url,
-        max_num_trainers=world_size,
+        max_num_trainers=max_world_size,
         process_group_timeout=60000,
     )
 
@@ -269,6 +271,8 @@ def single_trainer(
         dataset=train_dataset,
         num_epochs=training_params.num_epochs,
     )
+
+    log.info(f"Entering torchelastic train_loop")
     torchelastic.train(coordinator, train_step, state)
 
 
@@ -307,7 +311,10 @@ def train_step(state: ImagenetState):
 
     # Only log for "local master" - assumes homogeneous # gpus per node
     if dist.get_rank() % torch.cuda.device_count() == 0:
-        log.info("Epoch: [{0}][{1}]\t".format(state.epoch, state.iteration))
+        data_idx = state.data_start_index + (state.iteration * state.total_batch_size)
+        log.info(
+            f"epoch: {state.epoch}, iteration: {state.iteration}, data_idx: {data_idx}"
+        )
 
     state.data_start_index += world_size * state.total_batch_size
     state.iteration += 1
@@ -342,7 +349,10 @@ def default_device():
 def main():
     # these parameters should typically be set by the scheduler/resource manager
     # hence read them from environment variables rather than program args
-    num_nodes = os.environ.get("NUM_NODES", 1)
+    num_nodes = os.environ.get("SIZE", 1)
+    min_num_nodes = os.environ.get("MIN_SIZE", num_nodes)
+    max_num_nodes = os.environ.get("MAX_SIZE", num_nodes)
+
     rdzv_endpoint = os.environ.get("RDZV_ENDPOINT", "localhost:2379")
     job_id = os.environ.get("JOB_ID", "torchelastic_imagenet_example")
 
@@ -354,14 +364,7 @@ def main():
     )
 
     parser.add_argument(
-        "--local_world_size",
-        type=int,
-        default=default_local_world_size(),
-        help="Number of workers to spawn locally",
-    )
-
-    parser.add_argument(
-        "--num_data_workers", type=int, default=8, help="Number of data loader workers"
+        "--num_data_workers", type=int, default=0, help="Number of data loader workers"
     )
     parser.add_argument(
         "--epochs", type=int, default=1, help="Number of training epochs"
@@ -384,18 +387,22 @@ def main():
         benchmark_ddp_bucket_size=25,
     )
 
-    world_size = args.local_world_size * num_nodes
+    local_world_size = default_local_world_size()
+    min_world_size = local_world_size * min_num_nodes
+    max_world_size = local_world_size * max_num_nodes
     rdzv_init_method = (
         f"etcd://{rdzv_endpoint}/{job_id}"
-        f"?min_workers={world_size}"
-        f"&max_workers={world_size}"
+        f"?min_workers={min_world_size}"
+        f"&max_workers={max_world_size}"
+        f"&last_call_timeout=5"
     )
 
-    if args.local_world_size == 1:
+    log.info(f"rdzv init method={rdzv_init_method}")
+    if local_world_size == 1:
         local_rank = 0
         single_trainer(
             local_rank,
-            world_size,
+            max_world_size,
             args.c10d_backend,
             rdzv_init_method,
             args.model_arch,
@@ -405,9 +412,9 @@ def main():
     else:
         mp.spawn(
             fn=single_trainer,
-            nprocs=args.local_world_size,
+            nprocs=local_world_size,
             args=(
-                world_size,
+                max_world_size,
                 args.c10d_backend,
                 rdzv_init_method,
                 args.model_arch,

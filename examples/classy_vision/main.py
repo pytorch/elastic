@@ -35,8 +35,9 @@ logging.basicConfig(
     level=logging.INFO, format="[%(levelname)s] %(asctime)s %(module)s: %(message)s"
 )
 
+
 # local_rank == host local rank assigned and passed by torch.multiprocessing
-def main(local_rank, c10d_backend, rdzv_init_url, world_size, classy_args):
+def main(local_rank, c10d_backend, rdzv_init_url, max_world_size, classy_args):
     torch.manual_seed(0)
     set_video_backend(classy_args.video_backend)
 
@@ -87,7 +88,7 @@ def main(local_rank, c10d_backend, rdzv_init_url, world_size, classy_args):
     coordinator = CoordinatorP2P(
         c10d_backend=c10d_backend,
         init_method=rdzv_init_url,
-        max_num_trainers=world_size,
+        max_num_trainers=max_world_size,
         process_group_timeout=60000,
     )
     trainer = ElasticTrainer(
@@ -148,12 +149,29 @@ def to_abs_path(config_path_url):
     return classy_config_file
 
 
+def default_local_world_size():
+    """
+    If CUDA is available, returns the number of GPU devices on the host.
+    Otherwise returns 1.
+    """
+    if torch.cuda.is_available():
+        return torch.cuda.device_count()
+    else:
+        return 1
+
+
 if __name__ == "__main__":
     # num_nodes == number of hosts participating on this job
+    # assumes homogeneous hosts
     # local_world_size = number of workers to run per node
     # world_size = total number of workers
-    num_nodes = os.environ.get("NUM_NODES", 1)
-    local_world_size = os.environ.get("LOCAL_WORLD_SIZE", None)
+    num_nodes = os.environ.get("SIZE", 1)
+    min_num_nodes = os.environ.get("MIN_SIZE", num_nodes)
+    max_num_nodes = os.environ.get("MAX_SIZE", num_nodes)
+
+    local_world_size = default_local_world_size()
+    min_world_size = local_world_size * min_num_nodes
+    max_world_size = local_world_size * max_num_nodes
 
     if torch.cuda.is_available():
         if not local_world_size:
@@ -171,10 +189,11 @@ if __name__ == "__main__":
     job_id = os.environ.get("JOB_ID", "torchelastic_classy_vision_example")
     rdzv_init_method = (
         f"etcd://{rdzv_endpoint}/{job_id}"
-        f"?min_workers={world_size}"
-        f"&max_workers={world_size}"
+        f"?min_workers={min_world_size}"
+        f"&max_workers={max_world_size}"
+        f"&last_call_timeout=5"
     )
-    log.info(f"Using rendezvous init method: {rdzv_init_method}")
+    log.info(f"rdzv init method={rdzv_init_method}")
 
     c10d_backend = os.environ.get("TORCH_DISTRIBUTED_BACKEND", Backend.GLOO).lower()
 
@@ -182,11 +201,18 @@ if __name__ == "__main__":
     import_all_packages_from_directory(file_root)
 
     if local_world_size == 1:
-        main(1, c10d_backend, rdzv_init_method, world_size, parse_classy_args())
+        local_rank = 0
+        main(
+            local_rank,
+            c10d_backend,
+            rdzv_init_method,
+            max_world_size,
+            parse_classy_args(),
+        )
     else:
         torch.multiprocessing.spawn(
             fn=main,
-            args=(c10d_backend, rdzv_init_method, world_size, parse_classy_args()),
+            args=(c10d_backend, rdzv_init_method, max_world_size, parse_classy_args()),
             nprocs=local_world_size,
             join=True,
         )
