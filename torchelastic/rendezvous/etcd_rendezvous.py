@@ -94,15 +94,20 @@ class EtcdRendezvousHandler(RendezvousHandler):
     def next_rendezvous(self):
         rdzv_version, rank, world_size = self._rdzv_impl.rendezvous_barrier()
 
-        # Setup a c10d store for this specific rendezvous version,
-        # by piggybacking on the etcd handler used during rendezvous.
-        # TODO (vladislav): switch back to EtcdStore once issue with
-        # pybind11-trampoline for c10d Store is resolved.
-        # store = self._rdzv_impl.setup_kv_store(rdzv_version)
+        # Setup a c10d store for this specific rendezvous version by
+        # piggybacking on the etcd handler used during rendezvous.
 
-        # FIXME (vladislav): get rid of TCPStore and prefer EtcdStore once issues
-        # with c10d::Store pybind trampoline is resolved.
-        store = setup_tcpstore(rank, world_size, rdzv_version, self._rdzv_impl)
+        # TODO (vladislav): make EtcdStore the default and remove TCPStore code
+        # path once the pybind11-trampoline fix for c10d::Store is included in
+        # the next pytorch release. Then, remove this hack.
+        import torchelastic.rendezvous  # noqa
+
+        if "_TORCHELASTIC_USE_ETCDSTORE" in torchelastic.rendezvous.__dict__:
+            log.info("Using EtcdStore for c10d::Store implementation")
+            store = self._rdzv_impl.setup_kv_store(rdzv_version)
+        else:
+            log.info("Using TCPStore for c10d::Store implementation")
+            store = setup_tcpstore(rank, world_size, rdzv_version, self._rdzv_impl)
 
         return store, rank, world_size
 
@@ -871,6 +876,8 @@ class EtcdStore(Store):
         etcd_store_prefix,
         timeout: Optional[datetime.timedelta] = None,
     ):
+        super().__init__()  # required for pybind trampoline.
+
         self.client = etcd_client
         self.prefix = etcd_store_prefix
 
