@@ -19,6 +19,7 @@ from typing import Optional
 import etcd
 from torch.distributed import Store, TCPStore, register_rendezvous_handler
 from torchelastic.rendezvous import (
+    RendezvousClosedException,
     RendezvousHandler,
     RendezvousNonRetryableError,
     RendezvousTimeoutException,
@@ -106,10 +107,15 @@ class EtcdRendezvousHandler(RendezvousHandler):
         return store, rank, world_size
 
     def is_closed(self):
-        pass
+        try:
+            _, state = self._rdzv_impl.get_rdzv_state()
+            return state["status"] == "closed"
+        except etcd.EtcdKeyNotFound:
+            # No rendezvous state, so it cannot be closed.
+            return False
 
     def set_closed(self):
-        pass
+        self._rdzv_impl.set_closed()
 
     def num_nodes_waiting(self):
         try:
@@ -219,6 +225,15 @@ class EtcdRendezvous(object):
                 log.info("Rendezvous timeout occured in EtcdRendezvousHandler")
                 raise
 
+            except RendezvousClosedException:
+                log.info(
+                    f"Rendezvous for run_id={self._run_id} was observed to be closed"
+                )
+                raise
+
+            except RendezvousNonRetryableError:
+                raise
+
             except Exception as e:
                 # In case of a general exception, wait a small delay
                 # to avoid spamming etcd
@@ -247,6 +262,9 @@ class EtcdRendezvous(object):
             # Note: it is possible for above query to fail (etcd.EtcdKeyNotFound),
             # but this is ok for us - just means we'll restart from beginning.
             log.info("Observed existing rendezvous state: " + str(state))
+
+        if state["status"] == "closed":
+            raise RendezvousClosedException()
 
         if state["status"] == "joinable":
             return self.join_phase(state["version"])
@@ -360,7 +378,7 @@ class EtcdRendezvous(object):
             self.client.update(version_counter)
         except (etcd.EtcdKeyNotFound, etcd.EtcdCompareFailed):
             raise RendezvousNonRetryableError(
-                "Unexected state of EtcdRendezvousHandler, worker needs to die."
+                "Unexpected state of EtcdRendezvousHandler, worker needs to die."
             )
 
         # Any failure below results in declaring a retryable rendezvous failure.
@@ -375,7 +393,9 @@ class EtcdRendezvous(object):
             prevExist=False,
         )
 
-        # Publish rendezvous version and signal it is ready-to-be-joined
+        # Publish rendezvous version and signal it is ready-to-be-joined.
+        # If rendezvous was set closed just before this, a retry will happen,
+        # where the closed condition will be handled.
         return self.client.test_and_set(
             key=self.get_path("/rdzv/active_version"),
             value=json.dumps(
@@ -397,7 +417,8 @@ class EtcdRendezvous(object):
 
             if state["status"] != "joinable":
                 raise EtcdRendezvousRetryableFailure(
-                    "Rendezvous closed before we could join. Must join next one."
+                    "Rendezvous state became non-joinable before we could join. "
+                    "Must join next one."
                 )
 
             if state["version"] != expected_version:
@@ -583,8 +604,8 @@ class EtcdRendezvous(object):
                     log.info("Attempting to destroy it.")
 
                     # Compare-and-delete operation. Throws if compare failed,
-                    # which means rendezvous was already destroyed/re-created,
-                    # and we can re-try on that instead.
+                    # which means rendezvous was already destroyed/re-created/closed,
+                    # and we can try to re-enter the barrier.
                     self.client.delete(
                         key=self.get_path("/rdzv/active_version"),
                         prevValue=active_version.value,
@@ -688,6 +709,30 @@ class EtcdRendezvous(object):
                 cas_delay()
                 active_version, state = self.get_rdzv_state()
 
+    # Mark rendezvous 'closed' for current run_id, which is used to signal other
+    # participants to not attempt to perform (re-)rendezvous. This is useful
+    # when one of the workers decides the job is complete.
+    def set_closed(self):
+        while True:
+            active_version, state = self.get_rdzv_state()
+
+            if state["status"] == "closed":
+                # Already closed by someone else.
+                return
+
+            state["status"] = "closed"
+            try:
+                self.client.test_and_set(
+                    key=self.get_path("/rdzv/active_version"),
+                    value=json.dumps(state),
+                    prev_value=active_version.value,
+                )
+                return
+
+            except etcd.EtcdCompareFailed:
+                log.info("Set closed CAS unsuccessful, retrying")
+                cas_delay()
+
     def get_rdzv_state(self):
         active_version = self.client.get(key=self.get_path("/rdzv/active_version"))
         return active_version, json.loads(active_version.value)
@@ -727,6 +772,11 @@ class EtcdRendezvous(object):
             pass
 
     def setup_lease_renewal(self, full_path, ttl):
+        # NOTE: For ephemeral key TTL renewal (~lease) to work correctly,
+        # make sure you don't call any long-blocking methods that do not
+        # release the Python's GIL! An example of this is calling a pybind11
+        # extension function that is blocking / long-running, but is not
+        # doing a scoped release of the GIL.
         def lease_worker(client, path, ttl, stop_event):
             while True:
                 try:

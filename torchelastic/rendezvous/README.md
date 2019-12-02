@@ -70,9 +70,6 @@ are technically not part of the rendezvous process:
 * Querying how many workers arrived late at the barrier, who can participate in *next* rendezvous.
 * Setting the rendezvous *closed* to signal all workers not to participate in next rendezvous.
 
-**NOTE:** Current default implementation (`EtcdRendezvousHandler`) does not yet
-support closing the rendezvous.
-
 ## Interface:
 Torchelastic rendezvous has the following interface:
 **WARNING:** torchelastic is currently considered experimental, so the APIs may change!
@@ -100,6 +97,9 @@ class RendezvousClosedException(Exception):
 
 class RendezvousTimeoutException(Exception):
     pass
+
+class RendezvousNonRetryableError(Exception):
+    pass
 ```
 
 The `next_rendezvous` is the main entry-point into the rendezvous barrier. It blocks
@@ -114,6 +114,11 @@ If the rendezvous for current job is closed, `RendezvousClosedException` is rais
 all future attempts to re-rendezvous (within same job) will fail.
 
 `set_closed` is used to mark the rendezvous (for current job) as closed.
+
+Note that `is_closed`/`set_closed` have semantics of eventual propagation, and
+should not be used for synchronization. The intention here is that if at least one
+worker decides the job is finished, it will close the rendezvous, and other workers
+will "soon" observe this and stop training/rendezvous-ing as well.
 
 `num_nodes_waiting` returns number of workers who *arrived late* at the rendezvous barrier,
 hence weren't included in the current worker group.
