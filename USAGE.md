@@ -14,7 +14,14 @@ synchronization and persistence.
 Lets take a look at synchronization first. The `sync` method is responsible for
 ensuring that all workers get a consistent view of `state`. It is called at 
 startup as well as on each event that potentially leaves the workers out of sync,
-for instance, on membership changes. Things you should consider doing in `sync` are:
+for instance, on membership changes and rollback events. Torchelastic relies on
+the `sync()` method for `state` recovery from surviving workers (e.g. when
+there are membership changes, either due to worker failure or elasticity,
+the new workers receive the most up-to-date `state` from one of the surviving 
+workers - usually the one that has the most recent `state` - we call this worker
+the most **tenured** worker). 
+
+Things you should consider doing in `sync` are:
 
 1. Broadcasting global parameters/data from a particular worker (e.g. rank 0).
 2. (re)Initializing data loaders based on markers (e.g. last known start index).
@@ -30,25 +37,28 @@ We refer to this initial state as `S_0` and assume that any worker is able to cr
 state. This concept will become important in the next sections when talking about
 state persistence (rollbacks and checkpoints).
 
-### `snapshot()` and `apply(snapshot)`
+### (optional) `capture_snapshot()` and `apply_snapshot()`
+> You do not have to implement these methods if you do not want rollbacks
+from failed `train_steps` 
+
 torchelastic has the ability to rollback a state if a `train_step` fails to 
 execute successfully, which may result in the `state` object being left partially
-updated. It relies on a properly implemented `snapshot()` and `apply(snapshot)`
+updated. It relies on a properly implemented `capture_snapshot()` and `apply_snapshot()`
 methods of the `state` to ensure that the `state` is restored to before the
 faulty `train_step`.
 
-The `snapshot()` method, as the name implies, takes a snapshot of the `state`
+The `capture_snapshot()` method, as the name implies, takes a snapshot of the `state`
  and returns the necessary information to be able to restore
-the `state` object. You may return **any** object from `snpshot()` so long as you
-can use it in the `apply(snapshot)` method. A possible implementation of a 
+the `state` object. You may return **any** object from `capture_snapshot()` so long as you
+can use it in the `apply_snapshot(snapshot)` method. A possible implementation of a 
 rollback is:
 
 ```python
-snapshot = state.snapshot()
+snapshot = state.capture_snapshot()
 try:
     train_step(state)
 except RuntimeError:
-    state.apply(snapshot)
+    state.apply_snapshot(snapshot)
     state.sync()
 ```
 
@@ -62,11 +72,22 @@ that an efficient implementation of `snapshot` should only return mutable, state
 data. Immutable fields or fields that can be derived from other member variables or
 restored in the `sync` method need not be included in the snapshot.
  
- By default the `snapshot()` method returns `None` and the `apply(snapshot)` method
- is a `pass`, which essentially means "rollback not supported".  
+ By default the `capture_snapshot()` method returns `None` and the `apply_snapshot()` method
+ is a `pass`, which essentially means "rollback not supported".
+ 
+ > IMPORTANT: The `apply_snapshot` object should make **no** assumptions about
+ which `state` object it is called on (e.g. the values of the member variables).
+ That is, applying a `snapshot`
+ to **any** state followed by `state.sync()` should effectively restore the
+ state object to when the corresponding `capture_snapshot` method was called. 
+ A good rule of thumb is that the `apply_snapshot` should act more like a `set`
+ method rather than an `update` method.  
 
-### `save(stream)` and `load(stream)`
-Much like the `snapshot` and `rollback`, the `save` and `load` methods form a pair.
+### (optional) `save(stream)` and `load(stream)`
+> You do not have to implement these methods if you do not plan on using
+checkpointing.
+
+Much like the `capture_snapshot` and `apply_snapshot`, the `save` and `load` methods form a pair.
 They are responsible for persisting and restoring the `state` object to and from 
 a `stream` which is a *file-like* object 
 that is compatible with [pytorch.save](https://pytorch.org/docs/stable/torch.html?highlight=save#torch.save).
@@ -75,7 +96,8 @@ torchelastic relies on these methods to provide checkpoint functionality for you
 > We encourage users to use `torch.save` and `torch.load` methods when implementing
 `save` and `load` methods of their `state` class.
 
-
+> NOTE: The default implementations of `save` and `load` use `capture_snapshot`
+and `apply_snapshot`
 
 ## Implement `train_step`
 
