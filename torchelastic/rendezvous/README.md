@@ -133,7 +133,12 @@ in their environment.
 ## Etcd Rendezvous
 
 The `etcd_rendezvous` implementation in torchelastic uses [etcd](https://etcd.io/)
-as the backend store. Torchelastic uses a URL to configure the type of rendezvous
+as the backend store. You can see the full implementation in [etcd_rendezvous.py](etcd_rendezvous.py).
+Below is a state diagram of how it works,
+![etcd rendezvous state diagram](../../docs/_static/img/etcd_rdzv_diagram.png)
+ 
+
+Torchelastic uses a URL to configure the type of rendezvous
 to use and to pass implementation specific configurations to the rendezvous
 module. The basic etcd rendezvous configuration URL looks like the following
 

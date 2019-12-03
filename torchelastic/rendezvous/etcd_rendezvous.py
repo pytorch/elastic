@@ -88,16 +88,19 @@ class EtcdRendezvousHandler(RendezvousHandler):
         self._rdzv_impl = rdzv_impl
 
     def __del__(self):
-        # TODO (vladislav): look into using weakref here instead.
+        # TODO: look into using weakref here instead.
         del self._rdzv_impl
 
     def next_rendezvous(self):
         rdzv_version, rank, world_size = self._rdzv_impl.rendezvous_barrier()
 
-        # Setup a c10d store for this specific rendezvous version by
-        # piggybacking on the etcd handler used during rendezvous.
-
-        # TODO (vladislav): make EtcdStore the default and remove TCPStore code
+        # TODO: https://github.com/pytorch/elastic/issues/11
+        # make EtcdStore the default and remove TCPStore code
+        # Setup a c10d store for this specific rendezvous version,
+        # by piggybacking on the etcd handler used during rendezvous.
+        # Switch back to EtcdStore once issue with
+        # pybind11-trampoline for c10d Store is resolved.
+        # store = self._rdzv_impl.setup_kv_store(rdzv_version)
         # path once the pybind11-trampoline fix for c10d::Store is included in
         # the next pytorch release. Then, remove this hack.
         import torchelastic.rendezvous  # noqa
@@ -132,10 +135,6 @@ class EtcdRendezvousHandler(RendezvousHandler):
         return 0
 
 
-#
-# TODO: add some description on what we define "rendezvous" to be,
-# in terms of a distributed synchronization primitive.
-#
 # TODO: we should probably handle a few additional errors,
 # like EtcdLeaderElectionInProgress and EtcdWatcherCleared. These are
 # only relevant for multi-node Etcd ensemble. A simple retry would work,
@@ -192,7 +191,7 @@ class EtcdRendezvous(object):
             pass
 
     def __del__(self):
-        # TODO (vladislav): look into using weakref here instead.
+        # TODO: look into using weakref here instead.
         if self._lease_run_id_stop is not None:
             self._lease_run_id_stop.set()
 
@@ -242,7 +241,7 @@ class EtcdRendezvous(object):
             except Exception as e:
                 # In case of a general exception, wait a small delay
                 # to avoid spamming etcd
-                # FIXME (vladislav): there are a few things that fall under this like
+                # FIXME: there are a few things that fall under this like
                 # etcd.EtcdKeyNotFound, etc, which could be handled more explicitly.
                 log.info("Rendezvous attempt failed, will retry. Reason: " + str(e))
                 time.sleep(1)
@@ -837,7 +836,8 @@ class EtcdRendezvous(object):
         node = self.get_path("/rdzv/v_{}/extra_data".format(rdzv_version))
         node_dir = self.get_path("/rdzv/v_{}".format(rdzv_version))
 
-        # TODO (T55272170): implement timeout
+        # TODO: implement timeout
+        # https://github.com/pytorch/elastic/issues/12
         while True:
             # Combined wait for the node itself, and the key inside it.
             root = self.client.get(node_dir)
@@ -963,7 +963,6 @@ class EtcdStore(Store):
         Check if all of the keys are immediately present (without waiting).
         Returns bool.
         """
-        # TODO (vladislav): confirm this is actually the expected behavior...
         b64_keys = [self.prefix + self._encode(key) for key in keys]
         kvs = self._try_wait_get(
             b64_keys,

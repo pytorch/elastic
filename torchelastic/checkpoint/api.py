@@ -58,11 +58,8 @@ class CheckpointUtil:
 
     def _do_load_checkpoint(self, state):
         """
-        Do load checkpoint.
+        Loads the checkpoint.
         Construct a new state object if checkpoint existed.
-        TODO: Add timer/perfcounter here
-        TODO: Add retry?
-        TODO: better logic to handle load checkpoint failure
         """
 
         try:
@@ -86,9 +83,6 @@ class CheckpointUtil:
     def load_checkpoint(self, state, rank: int):
         """
         Load checkpoint if necessary.
-        TODO: world_size, rank can be derived from torch.distributed, eg:
-        world_size = dist.get_world_size(), consider to refactor the to remove
-        it.
         """
 
         if not self.checkpoint_manager or self.checkpoint_loaded:
@@ -113,10 +107,7 @@ class CheckpointUtil:
 
     def _do_save_checkpoint(self, state):
         """
-        Save checkpoint
-        TODO: Add timer/perfcounter here
-        TODO: Add retry?
-        TODO: better logic to handle save checkpoint failure
+        Save checkpoint.
         """
         checkpoint = None
         try:
@@ -137,6 +128,9 @@ class CheckpointUtil:
 
     @metrics.profile("torchelastic")
     def save_checkpoint(self, state, rank: int):
+        """
+        TODO: https://github.com/pytorch/elastic/issues/9
+        """
         if (
             self.checkpoint_manager  # checkpoint enabled
             and (
@@ -145,15 +139,13 @@ class CheckpointUtil:
             )
             # ASSUMPTION: `state.should_save_checkpoint()` return
             # consistent value for all workers.
-            # TODO: how to make `state.should_save_checkpoint()` return
-            # consistent value?
         ):
             # we will save checkpoint if coordinator/platform told us
             # or the application told us to do.
-            # ASSUMPTION: PET built on DDP, with DPP, there is a barrier
+            # ASSUMPTION: PET built on DDP, which has an implicit barrier
             # (reduce_all) in train_step(state). State are all good when
-            # We come here, otherwise it will break outthe loop if any
-            # exception raised.
+            # We come here, otherwise it will break out of the loop if any
+            # exception is raised.
             with CheckpointBarrier(rank):
                 if rank == 0:
                     self._do_save_checkpoint(state)
@@ -200,8 +192,9 @@ class Checkpoint(abc.ABC):
     def discard(self):
         """
         Discard current checkpoint.
-        TODO: add implementation
+        TODO: https://github.com/pytorch/elastic/issues/9
         """
+        pass
 
 
 class CheckpointManager(abc.ABC):
@@ -235,7 +228,6 @@ class CheckpointManager(abc.ABC):
     @abc.abstractmethod
     def list_checkpoints(self) -> List[Checkpoint]:
         """
-        list all available checkpoints
-        LATTE might want this API.
+        list all available checkpoints.
         """
         pass

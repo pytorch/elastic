@@ -35,13 +35,12 @@ def train(elastic_coordinator, train_step, state):
 
     failure_count = 0
     rank = 0
-    world_size = 1
 
     checkpoint_util = CheckpointUtil(elastic_coordinator)
 
     while not elastic_coordinator.should_stop_training():
+        # See: https://github.com/pytorch/elastic/issues/7
         if failure_count >= MAX_FAILURES:
-            # TODO(T43254350): print out the last error that occurred as well
             e = RuntimeError(
                 "Exceeded max number of recoverable failures: {}".format(failure_count)
             )
@@ -71,8 +70,7 @@ def train(elastic_coordinator, train_step, state):
             log.info("Rank {0} received stopped signal. Exiting training.".format(rank))
             break
         except RuntimeError as e:
-            # TODO(T43254350): We may want to be more discriminating than
-            # `RuntimeError` here
+            # See: https://github.com/pytorch/elastic/issues/7
             elastic_coordinator.on_error(e)
             state.apply_snapshot(snapshot)
             failure_count += 1
@@ -121,8 +119,7 @@ def train(elastic_coordinator, train_step, state):
                 elastic_coordinator.signal_training_done()
                 break
             except RuntimeError as e:
-                # TODO(T43254350): We may want to be more discriminating than
-                # `RuntimeError` here
+                # See: https://github.com/pytorch/elastic/issues/7
                 elastic_coordinator.on_error(e)
                 state.apply_snapshot(snapshot)
                 failure_count += 1

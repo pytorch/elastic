@@ -150,12 +150,8 @@ class CoordinatorP2P(Coordinator):
     @metrics.profile("torchelastic")
     def should_stop_training(self):
         # Check if coordinator wants the training to stop
-        if self.stop_training:
-            return True
-
-        # This queries if the rendezvous object is closed, which means the
-        # training has been completed.
-        return self.rendezvous.is_closed()
+        # either stop_training flag is set or rendezvous is closed
+        return self.stop_training or self.rendezvous.is_closed()
 
     @metrics.profile("torchelastic")
     def signal_training_done(self):
@@ -163,8 +159,6 @@ class CoordinatorP2P(Coordinator):
         # This also propagates the stop signal to other trainers.
         self.rendezvous.set_closed()
         self._destroy_process_group()
-
-        # Also mark locally that training should stop (TODO: is this needed?)
         self.stop_training = True
 
     @metrics.profile("torchelastic")
@@ -207,8 +201,7 @@ class CoordinatorP2P(Coordinator):
         best_prog_rate = max(known_prog_rates)
         self.last_relative_prog_rate = float(prog_rate / best_prog_rate)
 
-        # TODO (T48082002): pass threshold via some kind of PET config.
-        # Value 0.8 hardcoded here is chosen to be consistent with EDPM.
+        # See: https://github.com/pytorch/elastic/issues/10
         straggler_threshold = 0.8
         if self.last_relative_prog_rate < straggler_threshold:
             self.is_worker_straggler = True
