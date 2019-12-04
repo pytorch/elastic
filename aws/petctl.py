@@ -246,7 +246,7 @@ def list_hosts(session, specs_json, args):
         instance_ids, hostnames = asg.list_hostnames(asg_name)
         hosts[asg_name] = zip(instance_ids, hostnames)
 
-    print(f"--------------------------------------------------------------")
+    print(f"\n--------------------------------------------------------------")
     for asg_name in hosts:
         print(f"Hosts in {asg_name}:")
         for i, host in enumerate(hosts[asg_name], start=1):
@@ -254,21 +254,30 @@ def list_hosts(session, specs_json, args):
             public_dns = host[1]
             print(f"  {i}) {instance_id} ({public_dns})")
         print(f"--------------------------------------------------------------")
-        print("To SSH run:")
-        print(f"\taws ssm start-session --target <instance_id>")
-        print(f"--------------------------------------------------------------")
+    print("To SSH run:")
+    print(f"\taws ssm start-session --target <instance_id>")
+    print(f"--------------------------------------------------------------")
 
 
-def configure():
+def configure(args):
     """
     Configures petctl. Writes a simple json config file indicating
     the specs file to use and the aws region to the petctl config directory
     (default ~/.petctl). Prompts the user to input the specs file location
     and aws region.
     """
+    while True:
+        specs_file = input("Absolute path to specs file (e.g. /home/${USER}/specs.json): ")
+        if os.path.isfile(specs_file):
+            break
+        print(f"{specs_file} does not exist! Provide an existing path", file=sys.stderr)
 
-    specs_file = input("Absolute path to specs file (e.g. /home/${USER}/specs.json): ")
-    region = input("Default aws region to use (e.g. us-west-2): ")
+    while True:
+        region = input("Default aws region to use (e.g. us-west-2): ")
+        if region:
+            break
+        print(f"region cannot be empty", file=sys.stderr)
+
     write_config_file(region, specs_file)
     log.info(f"Configuration complete. petctl config file: {PETCTL_CONFIG_FILE}")
 
@@ -302,10 +311,6 @@ def load_configuration():
         with open(PETCTL_CONFIG_FILE) as f:
             return json.load(f)
     else:
-        log.warning(
-            f"{PETCTL_CONFIG_FILE} not found,"
-            f" consider running: petctl setup|configure"
-        )
         return {}
 
 
@@ -314,13 +319,19 @@ if __name__ == "__main__":
         level=logging.INFO, format="[%(levelname)s] %(asctime)s %(module)s: %(message)s"
     )
 
-    args = parse_arguments(sys.argv, **load_configuration())
+    petctl_configs = load_configuration()
+    args = parse_arguments(sys.argv, **petctl_configs)
 
     if args.command == "setup":
+        args = parse_arguments(sys.argv)
         setup(args)
     elif args.command == "configure":
-        configure()
+        configure(args)
     else:
+        log.info(
+            f"{PETCTL_CONFIG_FILE} not found or is empty,"
+            f" consider running: petctl setup|configure"
+        )
         region = args.region
         specs_json = load_specs_json(args.specs_file)
         session = auth.get_session(region)
