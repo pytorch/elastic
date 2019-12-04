@@ -8,8 +8,13 @@ Content-Transfer-Encoding: 7bit
 Content-Disposition: attachment; filename="cloud-config.txt"
 
 #cloud-config
+repo_update: true
+repo_upgrade: all
 cloud_final_modules:
 - [scripts-user, always]
+runcmd:
+- yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+- systemctl restart amazon-ssm-agent
 
 --//
 Content-Type: text/x-shellscript; charset="us-ascii"

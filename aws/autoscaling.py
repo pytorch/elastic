@@ -8,11 +8,10 @@
 
 import logging
 import os
-import sys
-import time
 from enum import Enum, unique
 
 from jinja2 import Template
+from util import wait_for
 
 
 log = logging.getLogger(__name__)
@@ -60,33 +59,6 @@ class Accelerator(Enum):
 
         string_rep = {Accelerator.NONE.value(): "cpu", Accelerator.GPU.value(): "gpu"}
         return string_rep.get(self, "unknown_accelerator")
-
-
-def wait_for(msg, timeout=300, interval=1, print_spinner=True):
-    """
-    for _ in wait_for("asg to provision", timeout_sec, interval_sec):
-        if check_condition():.
-            break
-    """
-    spin = ["-", "/", "|", "\\", "-", "/", "|", "\\"]
-    idx = 0
-    start = time.time()
-    max_time = start + timeout
-    while True:
-        if print_spinner:
-            elapsed = time.time() - start
-            print(
-                f"Waiting for {msg} ({elapsed:03.0f}/{timeout:3.0f}s elapsed) {spin[idx]}\r",
-                end="",
-            )
-            sys.stdout.flush()
-            idx = (idx + 1) % len(spin)
-
-        if time.time() >= max_time:
-            raise RuntimeError(f"Timed out while waiting for: {msg}")
-        else:
-            time.sleep(interval)
-            yield
 
 
 class AutoScalingGroup:
@@ -137,7 +109,6 @@ class AutoScalingGroup:
         name,
         instance_type,
         instance_role,
-        key_pair,
         user_data_template,
         security_groups=None,
         accelerator="gpu",
@@ -151,7 +122,6 @@ class AutoScalingGroup:
             "InstanceType": instance_type,
             "IamInstanceProfile": instance_role,
             "ImageId": self.get_ami_id(Accelerator.from_str(accelerator)),
-            "KeyName": key_pair,
             "SecurityGroups": security_groups,
             "AssociatePublicIpAddress": True,
             "UserData": self.get_user_data(user_data_template, **user_data_kwargs),
@@ -213,7 +183,8 @@ class AutoScalingGroup:
 
     def create_asg_sync(self, name, size, min_size=None, max_size=None, **kwargs):
         self.create_asg(name, size, min_size, max_size, **kwargs)
-        return self.get_hostnames(name, size)
+        _, hostnames = self.get_hostnames(name, size)
+        return hostnames
 
     def describe_asg(self, name):
         res = self._asg.describe_auto_scaling_groups(AutoScalingGroupNames=[name])
@@ -260,8 +231,10 @@ class AutoScalingGroup:
                     paginator = self._ec2.get_paginator("describe_instances")
 
                     hostnames = []
+                    instance_ids = []
                     for e in paginator.paginate(InstanceIds=ready_instance_ids):
                         for r in e["Reservations"]:
                             for i in r["Instances"]:
                                 hostnames.append(i["PublicDnsName"])
-                    return hostnames
+                                instance_ids.append(i["InstanceId"])
+                    return instance_ids, hostnames

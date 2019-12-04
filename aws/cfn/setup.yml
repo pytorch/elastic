@@ -1,0 +1,307 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "cfn template that creates the minimum set of aws resources required for petctl"
+Parameters:
+  S3BucketName:
+    Description: "name of s3 bucket to create for torchelastic use-case"
+    Type: "String"
+    Default: ""
+
+  EFSFileSystemId:
+    Description: "efs file system id (e.g. fs-d1234567)"
+    Type: "String"
+    Default: ""
+
+  WorkerRoleName:
+    Description: "name of the worker node iam role and ec2 instance profile"
+    Type: "String"
+    Default: "torchelastic_worker_role"
+
+  RendezvousRoleName:
+    Description: "name of the rendezvous node iam role and ec2 instance profile"
+    Type: "String"
+    Default: "torchelastic_rendezvous_role"
+
+Conditions:
+  CreateEFSCondition:
+    Fn::Equals:
+      - Ref: "EFSFileSystemId"
+      - ""
+
+  CreateS3BucketCondition:
+    Fn::Equals:
+      - Ref: "S3BucketName"
+      - ""
+
+Resources:
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: "172.31.0.0/16"
+      EnableDnsHostnames: True
+      EnableDnsSupport: True
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+        VpcId:
+            Ref: "VPC"
+        InternetGatewayId:
+            Ref: "InternetGateway"
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: "VPC"
+
+  InternetRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: InternetGateway
+      RouteTableId:
+        Ref: RouteTable
+
+  Subnet0:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: "VPC"
+      CidrBlock: "172.31.0.0/20"
+      MapPublicIpOnLaunch: True
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs:
+              Ref: AWS::Region
+
+  Subnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: "VPC"
+      CidrBlock: "172.31.16.0/20"
+      MapPublicIpOnLaunch: True
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs:
+              Ref: AWS::Region
+
+  SubnetRouteTableAssociation0:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: "RouteTable"
+      SubnetId:
+        Ref: "Subnet0"
+
+  SubnetRouteTableAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: "RouteTable"
+      SubnetId:
+        Ref: "Subnet1"
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+        GroupDescription: "security group for ec2 instances in the VPC"
+        GroupName: "torchelastic instance security group"
+        VpcId:
+          Ref: "VPC"
+        SecurityGroupIngress:
+        - Description: "allow ssh"
+          IpProtocol: "tcp"
+          FromPort: "22"
+          ToPort: "22"
+          CidrIp: "0.0.0.0/0"
+        - Description: "allow ssh"
+          IpProtocol: "tcp"
+          FromPort: "22"
+          ToPort: "22"
+          CidrIpv6: "::/0"
+        SecurityGroupEgress:
+        - Description: "* egress"
+          IpProtocol: "-1"
+          CidrIp: "0.0.0.0/0"
+
+  SecurityGroupIngress:
+      Type: AWS::EC2::SecurityGroupIngress
+      Properties:
+          Description: "* ingress within the same security group"
+          GroupId:
+            Ref: "InstanceSecurityGroup"
+          IpProtocol: "-1"
+          SourceSecurityGroupId:
+            Ref: "InstanceSecurityGroup"
+
+  EFSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "security group for efs mount targets in the VPC"
+      GroupName: "torchelastic efs security group"
+      VpcId:
+        Ref: "VPC"
+      SecurityGroupIngress:
+        - Description: "allow NFS from ec2"
+          IpProtocol: "tcp"
+          FromPort: "2049"
+          ToPort: "2049"
+          SourceSecurityGroupId:
+            Ref: "InstanceSecurityGroup"
+
+  EFS:
+    Type: AWS::EFS::FileSystem
+    Condition: "CreateEFSCondition"
+
+  EFSMountTarget0:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId:
+        Fn::If:
+          - "CreateEFSCondition"
+          - Ref: "EFS"
+          - Ref: "EFSFileSystemId"
+      SubnetId:
+        Ref: "Subnet0"
+      SecurityGroups:
+        - Ref: "EFSSecurityGroup"
+
+  EFSMountTarget1:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId:
+        Fn::If:
+          - "CreateEFSCondition"
+          - Ref: "EFS"
+          - Ref: "EFSFileSystemId"
+      SubnetId:
+        Ref: "Subnet1"
+      SecurityGroups:
+        - Ref: "EFSSecurityGroup"
+
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Condition: "CreateS3BucketCondition"
+
+  InstanceProfileWorker:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName:
+        Ref: "WorkerRoleName"
+      Roles:
+        - Ref: "IAMRoleWorker"
+
+  IAMRoleWorker:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName:
+        Ref: "WorkerRoleName"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "ec2.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+        - "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+        - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+        - Ref: "ContainerCloudWatchLogsPolicy"
+
+  InstanceProfileRendezvous:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName:
+        Ref: "RendezvousRoleName"
+      Roles:
+        - Ref: "IAMRoleRendezvous"
+
+  IAMRoleRendezvous:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName:
+        Ref: "RendezvousRoleName"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "ec2.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+        - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+        - Ref: "ContainerCloudWatchLogsPolicy"
+
+  ContainerCloudWatchLogsPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: "Allows container instances to use CloudWatch APIs"
+      ManagedPolicyName: "ContainerCloudWatchLogsPolicy"
+      Path: "/"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+            - Effect: Allow
+              Action:
+                - "logs:CreateLogGroup"
+                - "logs:CreateLogStream"
+                - "logs:PutLogEvents"
+                - "logs:DescribeLogStreams"
+              Resource:
+                - "arn:aws:logs:*:*:*"
+Outputs:
+  VPCId:
+    Value:
+      Ref: "VPC"
+
+  SubnetId0:
+    Value:
+      Ref: "Subnet0"
+
+  SubnetId1:
+    Value:
+      Ref: "Subnet1"
+
+  SecurityGroupId:
+    Value:
+      Ref: "InstanceSecurityGroup"
+
+  EFSId:
+      Value:
+        Fn::If:
+          - "CreateEFSCondition"
+          - Ref: "EFS"
+          - Ref: "EFSFileSystemId"
+
+  S3Bucket:
+    Value:
+      Fn::If:
+        - "CreateS3BucketCondition"
+        - Ref: "S3Bucket"
+        - Ref: "S3BucketName"
+
+  WorkerInstanceProfile:
+    Value:
+      Ref: "InstanceProfileWorker"
+
+  RendezvousInstanceProfile:
+    Value:
+      Ref: "InstanceProfileRendezvous"
+
+

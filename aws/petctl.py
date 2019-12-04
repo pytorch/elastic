@@ -17,11 +17,14 @@ from urllib.parse import urlparse
 
 import auth
 from autoscaling import AutoScalingGroup
+from cloudformation import CloudFormation
 from s3 import S3
 
 
 log = logging.getLogger(__name__)
-PETCTL_CONFIG = os.path.join(expanduser("~"), ".petctl/config")
+PETCTL_DIR = os.path.join(expanduser("~"), ".petctl")
+PETCTL_CONFIG_FILE = os.path.join(PETCTL_DIR, "config")
+SPECS_FILE = os.path.join(PETCTL_DIR, "specs.json")
 
 
 def split_args(args, delimiter="--"):
@@ -37,7 +40,6 @@ def split_args(args, delimiter="--"):
 
 def parse_arguments(args, **default_args):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--region", help="the aws region to operate on")
     parser.add_argument(
         "--specs_file",
         help="see https://github.com/pytorch/elastic/blob/master/aws/README.md#create-specs-file",  # noqa B950
@@ -122,6 +124,23 @@ def parse_arguments(args, **default_args):
     # Configure
     # -----------------------------------------
     subparser.add_parser("configure", help="configures petctl")
+
+    # -----------------------------------------
+    # Setup
+    # -----------------------------------------
+    parser_setup = subparser.add_parser(
+        "setup", help="creates necessary aws resources and outputs a specs file"
+    )
+    parser_setup.add_argument(
+        "--region", default="us-west-2", help="aws region to setup on"
+    )
+    parser_setup.add_argument(
+        "--s3_bucket",
+        help="s3 bucket to use for running petctl (if empty, one is created)",
+    )
+    parser_setup.add_argument(
+        "--efs_id", default="", help="efs id to use, if empty, one is created"
+    )
 
     petctl_args, script_args = split_args(args[1:])
     parsed = parser.parse_args(petctl_args)
@@ -224,34 +243,69 @@ def list_hosts(session, specs_json, args):
     hosts = {}
 
     for asg_name in asgs:
-        hosts[asg_name] = asg.list_hostnames(asg_name)
+        instance_ids, hostnames = asg.list_hostnames(asg_name)
+        hosts[asg_name] = zip(instance_ids, hostnames)
 
     print(f"--------------------------------------------------------------")
     for asg_name in hosts:
         print(f"Hosts in {asg_name}:")
         for i, host in enumerate(hosts[asg_name], start=1):
-            print(f"\t{i}) {host}")
+            instance_id = host[0]
+            public_dns = host[1]
+            print(f"  {i}) {instance_id} ({public_dns})")
+        print(f"--------------------------------------------------------------")
+        print("To SSH run:")
+        print(f"\taws ssm start-session --target <instance_id>")
         print(f"--------------------------------------------------------------")
 
 
 def configure():
+    """
+    Configures petctl. Writes a simple json config file indicating
+    the specs file to use and the aws region to the petctl config directory
+    (default ~/.petctl). Prompts the user to input the specs file location
+    and aws region.
+    """
+
     specs_file = input("Absolute path to specs file (e.g. /home/${USER}/specs.json): ")
     region = input("Default aws region to use (e.g. us-west-2): ")
+    write_config_file(region, specs_file)
+    log.info(f"Configuration complete. petctl config file: {PETCTL_CONFIG_FILE}")
 
+
+def setup(args):
+    """
+    Similar to config but creates AWS resources using cfn template
+    and based on the cfn stack output, creates the specs file for the user,
+    then writes petctl config.
+    """
+    region = args.region
+    s3_bucket_name = args.s3_bucket
+    efs_id = args.efs_id
+    os.makedirs(PETCTL_DIR, exist_ok=True)
+    session = auth.get_session(region)
+    cfn = CloudFormation(session)
+    cfn.create_specs_file(SPECS_FILE, s3_bucket_name, efs_id)
+    write_config_file(region, SPECS_FILE)
+    log.info(f"Setup complete. petctl config file: {PETCTL_CONFIG_FILE}")
+
+
+def write_config_file(region, specs_file):
     petctl_config = {"specs_file": specs_file, "region": region}
-    os.makedirs(os.path.dirname(PETCTL_CONFIG), exist_ok=True)
-    with open(PETCTL_CONFIG, "w+") as f:
+    os.makedirs(PETCTL_DIR, exist_ok=True)
+    with open(PETCTL_CONFIG_FILE, "w+") as f:
         json.dump(petctl_config, f, indent=4)
-
-    log.info(f"Configuration complete. petctl config file: {PETCTL_CONFIG}")
 
 
 def load_configuration():
-    if os.path.isfile(PETCTL_CONFIG):
-        with open(PETCTL_CONFIG) as f:
+    if os.path.isfile(PETCTL_CONFIG_FILE):
+        with open(PETCTL_CONFIG_FILE) as f:
             return json.load(f)
     else:
-        log.warning(f"{PETCTL_CONFIG} not found, consider running: petctl configure")
+        log.warning(
+            f"{PETCTL_CONFIG_FILE} not found,"
+            f" consider running: petctl setup|configure"
+        )
         return {}
 
 
@@ -262,7 +316,9 @@ if __name__ == "__main__":
 
     args = parse_arguments(sys.argv, **load_configuration())
 
-    if args.command == "configure":
+    if args.command == "setup":
+        setup(args)
+    elif args.command == "configure":
         configure()
     else:
         region = args.region

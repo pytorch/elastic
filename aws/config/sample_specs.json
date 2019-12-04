@@ -2,17 +2,12 @@
   "rdzv": {
     "instance_type" : "t2.small",
     "accelerator" : "none",
-    "instance_role" : "<YOUR EC2 INSTANCE ROLE>",
-    "key_pair" : "<YOUR KEY PAIR NAME>",
+    "instance_role" : "{{ RendezvousInstanceProfile }}",
     "subnets" : [
-      "<YOUR SUBNET #1>",
-      "<YOUR SUBNET ...>",
-      "<YOUR SUBNET #N>"
+      "{{ SubnetId0 }}"
     ],
     "security_groups" : [
-      "<YOUR SECURITY GOUP #1>",
-      "<YOUR SECURITY GOUP ...>",
-      "<YOUR SECURITY GOUP #N>"
+      "{{ SecurityGroupId }}"
     ],
     "user_data_template": "config/user_data_rdzv",
     "ebs_volume_gb" : 64
@@ -20,24 +15,20 @@
   "worker": {
     "instance_type": "p3.2xlarge",
     "accelerator" : "gpu",
-    "instance_role" : "<YOUR EC2 INSTANCE ROLE>",
-    "key_pair" : "<YOUR KEY PAIR NAME>",
-    "efs_file_system_id" : "<YOUR EFS VOLUME ID>",
+    "instance_role" : "{{ WorkerInstanceProfile }}",
+    "efs_file_system_id" : "{{ EFSId }}",
     "subnets" : [
-      "<YOUR SUBNET #1>",
-      "<YOUR SUBNET ...>",
-      "<YOUR SUBNET #N>"
+      "{{ SubnetId0 }}",
+      "{{ SubnetId1 }}"
     ],
     "security_groups" : [
-      "<YOUR SECURITY GOUP #1>",
-      "<YOUR SECURITY GOUP ...>",
-      "<YOUR SECURITY GOUP #N>"
+      "{{ SecurityGroupId }}"
     ],
 
     "user_data_template" : "config/user_data_worker",
     "ebs_volume_gb" : 64,
-    "docker_image" : "torchelastic/aws:0.1.0-rc",
-    "s3_bucket" : "<YOUR S3 BUCKET NAME>",
-    "s3_prefix" : "<YOUR S3 PREFIX>"
+    "docker_image" : "torchelastic/examples:0.1.0rc1",
+    "s3_bucket" : "{{ S3Bucket }}",
+    "s3_prefix" : "petctl/{{ User }}"
   }
 }

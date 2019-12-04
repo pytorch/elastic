@@ -14,10 +14,10 @@ jobs on AWS.
 2. `git clone https://github.com/pytorch/elastic.git`
 3. The following AWS resources:
     1. EC2 [instance profile](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2_instance-profiles.html)
-    2. EC2 [key pair](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html)
-    3. [Subnet(s)](https://docs.aws.amazon.com/vpc/latest/userguide/default-vpc.html#create-default-subnet)
-    4. [Security group](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html#DefaultSecurityGroup)
-    5. EFS volume
+    2. [Subnet(s)](https://docs.aws.amazon.com/vpc/latest/userguide/default-vpc.html#create-default-subnet)
+    3. [Security group](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html#DefaultSecurityGroup)
+    4. EFS volume
+    5. S3 Bucket
 
 
 ## Quickstart
@@ -26,11 +26,175 @@ This guide shows how to get a simple torchelastic job running on AWS. `petctl`
 is a commandline tool that helps run distributed jobs written with torchelastic
 on EC2 instances.
 
+
+```
+python3 petctl.py setup
+```
+
+This will bootstrap all the AWS resources required to run a torchelastic
+job. For details take a look at the CloudFormation [template](cfn/setup.yml) .
+
+Use `--s3_bucket` and `--efs_id` to use an existing S3 bucket and EFS 
+file system. Otherwise an S3 bucket and EFS volume will be created.
+
+> **IMPORTANT** when specifying `--efs_id` you MUST ensure that NO mount targets
+exist on the EFS file system. torchelastic's cfn stack will attempt to create
+mount targets for the subnets it creates and WILL FAIL if the file system already
+has mount targets on a different VPC. For more information refer to 
+the [EFS docs](https://docs.aws.amazon.com/efs/latest/ug/accessing-fs.html). 
+
+**TIP:** If the stack creation fails, log into the CloudFormation console, inspect
+the failure reason, address the failure, then manually delete the stack and re-run
+`petctl configure`.
+
+If you are familiar with AWS or already have the resources specified in the 
+**Requirements** section above, then you can follow the **Manual Setup** instructions
+below and simply copy the [sample specs file](config/sample_specs.json) and fill
+in the template, then run `python petctl.py configure`. 
+
+
+### Write a script
+If you already have a script that uses torchelastic to run distributed training,
+great! Otherwise you can use the provided [imagenet example](../examples/imagenet/main.py)
+or [classy vision](../examples/classy_vision/main.py). Or... this is a great time to work on one.
+
+> If you are using `examples/imagenet/main.py` you must download the imagenet
+dataset from [here](http://image-net.org/download) onto the EFS volume you specified.
+The dataset will be available to the workers on `/mnt/efs/fs1/<download_dir>`.
+
+### Run the script
+
+We will assume that you are working with the imagenet example and that
+you have downloaded the imagenet dataset to `/mnt/efs/fs1/data/imagenet/train`.
+To run the script we'll use `petctl`,
+
+``` bash
+python3 petctl.py run_job --size 2 --min_size 1 --max_size 3 --name ${USER}-job examples/imagenet/main.py -- --input_path /mnt/efs/fs1/data/imagenet/train
+```
+
+In the example above, the named arguments, such as, `--size` , `--min_size`, and
+`--max_size` are parameters to the `run_job` sub-command of `petctl`. In the example
+above, we created an **elastic** job where the initial worker `--size=2`, we are
+allowed to scale down to `--min_size=1` and up to `--max_size=3`. This is used by
+torchelastic's rendezvous algorithm to determine how many nodes to admit on each
+re-rendezvous before considering the group *final* and start the `train_step`.
+  
+The other positional arguments have the form:
+
+```
+[local script] -- [script args ...]
+  -- or -- 
+[local directory] -- [script] [script args...]
+```
+
+If the first positional argument is a path to a script file, then the script
+is uploaded to S3 and the script arguments specified after the `--` delimiter
+are passed through to the script.
+
+If the first positional argument is a directory, then a tarball of the directory
+is created and uploaded to S3 and is extracted on the worker-side. In this case
+the first argument after the `--` delimiter is the path to the script **relative** to the
+specified directory and the rest of the arguments after the delimiter is passed 
+to the script.
+
+In our example we specified
+```
+petctl.py run_job [...] examples/imagenet/main.py -- --input_path /mnt/efs/fs1/data/imagenet/train
+```
+
+We could have decided to specify the directory instead
+```
+petctl.py run_job [...] examples -- imagenet/main.py --input_path /mnt/efs/fs1/data/imagenet/train
+```
+
+**TIP 1:** Besides a local script or directory you can run with scripts or `tar` files
+that have already been uploaded to S3 or directly point it to a file or directory
+on the container.
+``` bash
+python3 petctl.py run_job [...] s3://my-bucket/my_script.py
+python3 petctl.py run_job [...] s3://my-bucket/my_dir.tar.gz -- my_script.py
+
+# or
+python3 petctl.py run_job [...] docker:///abs/path/in/container/dir -- my_script.py
+python3 petctl.py run_job [...] docker://rel/path/in/container/dir/my_script.py
+```
+
+**TIP 2:** To iterate quickly, simply make changes to your local script and
+upload the script to S3 using
+```bash 
+python3 petctl.py upload examples/imagenet/main.py s3://<bucket>/<prefix>/<job_name> 
+```
+
+**TIP 3:** Use the EFS volume attached on `/mnt/efs/fs1` on all the workers to 
+save input data, checkpoints and job output.
+
+Once the `run_job` command returns log into the EC2 console, you will see two
+Auto Scaling Groups
+1. etcd server 
+2. workers
+
+#### SSH onto worker nodes
+To SSH onto the worker nodes to inspect the worker process we use AWS 
+Session Manager instead of the ec2 key pair. [Install](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html)
+ the Session Manager plugin and run
+
+``` bash
+# get the instance ids of the workers
+python3 petctl.py list_hosts <job_name>
+
+# ssh onto one of the workers
+awscli ssm start-session --target <instance_id>
+ -- example --
+awscli ssm start-session --target i-00b00EXAMPLE
+```
+
+Once SSH'ed, the workers run in a docker container managed by `systemd`.
+You can take a look at their console outputs by running
+
+``` bash
+# see the status of the worker
+systemctl status torchelastic_worker
+# get the container id
+docker ps
+# tail the container logs
+docker logs -f <container id>
+```
+
+You can also manually stop and start the workers by running
+``` bash
+systemctl stop torchelastic_worker
+systemctl start torchelastic_worker
+```
+
+> **EXCERCISE:** Open up two terminals and SSH onto each worker. Tail the docker logs
+on each worker. Now stop worker 1 and observe the worker 2 re-rendezvous and
+since `--min_size=1` it continues training by itself. Now restart worker 1 and
+observe that worker 2 notices that worker 1 is waiting to join and re-rendezvous,
+the `state` object in worker 2 is `sync()`'ed to worker 1 and both resume training
+without loss of progress.
+
+> **Note**: by design, `petctl` tries to use the least number of AWS services. This
+was done intentionally to allow non-AWS users to easily transfer the functionality
+to their environment. Hence it currently does not have the functionality to query
+status of the job or to terminate the ASG when the job is done (there is nothing
+that is monitoring the job!). In practice consider using EKS, Batch, or SageMaker.
+
+### Stop the script
+To stop the job and tear down the resources, use the `kill_job` command:
+
+``` bash
+python3 petctl.py kill_job --name ${USER}-job
+```
+
+You'll notice that the two ASGs created with the `run_job` command are deleted.
+
+
+## Manual Setup
 ### Create specs file
 First, lets create a launch spec. This is a simple json file that specifies
 the launch configuration of EC2 instances. We have included a
 [sample specs file](config/sample_specs.json) so make a copy and fill it in.
-You only need to fill in the fields with `<YOUR XXXXX>`, you can leave the other
+You only need to fill in the fields with `{{ AWS_Resource_Id }}`, you can leave the other
 fields alone for now.
 
 ```
@@ -90,8 +254,9 @@ the EC2 instance (e.g. accessing S3 from the worker host). To learn more about
 instance profiles refer to the
 AWS [documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2_instance-profiles.html).
 
-For this example we will require S3 Read Only access from the workers since
-we will use S3 to upload your local script and download it on the worker-side.
+Refer to the `Ref: IAMRoleRendezvous` and `Ref: IAMRoleWorker` resources
+in the CloudFormation [template](cfn/setup.py) for a full list of IAM policies
+that must be attached to this role.
 
 > You may wish to add other privileges to this role depending on what your workers
 do. For instance, if your job writes output to S3, then you will have to attach
@@ -110,7 +275,7 @@ Workers have a couple of additional specs compared to rdzv.
 
 ##### Docker Image
 ```
-"docker_image" : "torchelastic/aws:0.1.0-rc",
+"docker_image" : "torchelastic/aws:0.1.0rc1",
 ```
 
 Note that the `worker` section in the specs file has an extra `docker_image`
@@ -127,7 +292,7 @@ worker instance (it is mounted **through** all the way to the container).
 EFS acts much like NFS in terms of semantics. Use it as if you were using NFS.
 You may store your input dataset, store model checkpoints, or job outputs here.
 
-> The specified EFS volume is mounted on `/mnt/efs1`. On the host and container.
+> The specified EFS volume is mounted on `/mnt/efs/fs1`. On the host and container.
 
 ### Configure `petctl`
 After creating a specs file, configure `petctl`
@@ -146,90 +311,3 @@ under `$HOME/.petctl`.
 > This is similar to how the aws cli is configured. If you decide to skip
 configuration, then you **must** pass `--specs_file` and `--region` arguments
 to `petctl` each time (e.g. `petctl --sepcs_file /home/$USER/specs.json --region us-west-2`).
-
-### Write a script
-If you already have a script that uses torchelastic to run distributed training,
-great! Otherwise you can use the provided [imagenet example](../examples/imagenet/main.py)
-or [classy vision](../examples/classy_vision/main.py). Or... this is a great time to work on one.
-
-> If you are using `examples/imagenet/main.py` you must download the imagenet
-dataset from [here](http://image-net.org/download) onto the EFS volume you specified.
-The dataset will be available to the workers on `/mnt/efs1/<download_dir>`.
-
-### Run the script
-
-We will assume that you are working with the imagenet example.
-To run the script we'll use `petctl`,
-
-``` bash
-python3 petctl.py run_job --size 2 --name ${USER}-job examples/imagenet/main.py -- model-arch resnet101
-```
-
-In the example above, the named arguments, such as, `--size` and `--specs_file` are 
-self explanatory and are arguments supplied to `petctl`. The positional arguments have the form:
-
-```
-[local script] -- [script args ...]
-  -- or -- 
-[local directory] -- [script] [script args...]
-```
-
-If the first positional argument is a path to a script file, then the script
-is uploaded to S3 and the script arguments specified after the `--` delimiter
-are passed through to the script.
-
-If the first positional argument is a directory, then a tarball of the directory
-is created and uploaded to S3 and is extracted on the worker-side. In this case
-the first argument after the `--` delimiter is the path to the script **relative** to the
-specified directory and the rest of the arguments after the delimiter is passed 
-to the script.
-
-In our example we specified
-```
-petctl.py run_job [...] examples/imagenet/main.py -- --model_arch resenet 101
-```
-
-We could have decided to specify the directory instead
-```
-petctl.py run_job [...] examples/imagenet -- main.py --model_arch resenet 101
-```
-
-(TIP) Besides a local script or directory you can run with scripts or `tar` files
-that have already been uploaded to S3 or directly point it to a file or directory
-on the container.
-``` bash
-python3 petctl.py run_job [...] s3://my-bucket/my_script.py
-python3 petctl.py run_job [...] s3://my-bucket/my_dir.tar.gz -- my_script.py
-
-# or
-python3 petctl.py run_job [...] --no_upload /path/in/container/dir -- my_script.py
-python3 petctl.py run_job [...] --no_upload /path/in/container/dir/my_script.py
-```
-
-Once the `run_job` command returns log into the EC2 console, you will see two
-Auto Scaling Groups
-1. etcd server 
-2. workers
-
-The workers run in a docker container. You can take a look at their console outputs by running
-
-``` bash
-# get the container id
-docker ps
-# tail the container logs
-docker logs -f <container id>
-```
-> Note: by design, `petctl` tries to use the least number of AWS services. This
-was done intentionally to allow non-AWS users to easily transfer the functionality
-to their environment. Hence it currently does not have the functionality to query
-status of the job or to terminate the ASG when the job is done (there is nothing
-that is monitoring the job!). In practice consider using EKS, Batch, or SageMaker.
-
-### Stop the script
-To stop the job and tear down the resources, use the `kill_job` command:
-
-``` bash
-python3 petctl.py kill_job --name ${USER}-job
-```
-
-You'll notice that the two ASGs created with the `run_job` command are deleted.
