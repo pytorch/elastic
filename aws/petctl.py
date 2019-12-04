@@ -267,16 +267,18 @@ def configure(args):
     and aws region.
     """
     while True:
-        specs_file = input("Absolute path to specs file (e.g. /home/${USER}/specs.json): ")
+        specs_file = input(
+            "Absolute path to specs file (e.g. /home/${USER}/specs.json): "
+        )
         if os.path.isfile(specs_file):
             break
-        print(f"{specs_file} does not exist! Provide an existing path", file=sys.stderr)
+        print(f"[{specs_file}] does not exist! Provide an existing path")
 
     while True:
         region = input("Default aws region to use (e.g. us-west-2): ")
         if region:
             break
-        print(f"region cannot be empty", file=sys.stderr)
+        print("AWS region cannot be empty!")
 
     write_config_file(region, specs_file)
     log.info(f"Configuration complete. petctl config file: {PETCTL_CONFIG_FILE}")
