@@ -1,22 +1,13 @@
-ARG BASE_IMAGE=pytorch/elastic:0.1.0-rc
+ARG BASE_IMAGE=pytorch/elastic:0.1.0rc1
 FROM $BASE_IMAGE
 
 ARG WITH_CLASSY_VISION=1
 
-# install utilities
+# install utilities and dependencies
 RUN pip install awscli --upgrade
 
-# TODO (after classy vision open sources)
-# 1. remove ssh_private_key hack when classy is open sourced
-ARG GITHUB_SSH_KEY
-
 RUN if [ "$WITH_CLASSY_VISION" = "1" ]; then \
-      apt-get -yq update && apt-get -yqq install ssh && \
-      mkdir /root/.ssh/ && \
-      echo "${GITHUB_SSH_KEY}" > /root/.ssh/id_rsa && chmod 600 /root/.ssh/id_rsa && \
-      ssh-keyscan github.com > /root/.ssh/known_hosts && \
-      pip install git+ssh://git@github.com/facebookresearch/ClassyVision.git && \
-      rm -rf /root/.ssh ; \
+      pip install classy-vision
     else \
       echo "building without ClassyVision" ; \
     fi
