@@ -133,8 +133,13 @@ Auto Scaling Groups
 1. etcd server 
 2. workers
 
-#### SSH onto worker nodes
-To SSH onto the worker nodes to inspect the worker process we use AWS 
+#### Inspect the logs
+Log into the AWS CloudWatch Logs console. You should see a log group called
+`torchelastic/$USER`. Under it there will be a log stream per instance with the 
+name `$job_name/$instance_id` (e.g. `my_job/i0b938EXAMPLE`).
+
+#### Troubleshooting
+To SSH onto the worker nodes to debug/inspect the worker process use AWS 
 Session Manager instead of the ec2 key pair. [Install](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html)
  the Session Manager plugin and run
 
@@ -160,18 +165,18 @@ docker ps
 docker logs -f <container id>
 ```
 
+> Note since we have configured the log driver to be `awslogs` tailing
+the docker logs will not work. For more information see: https://docs.docker.com/config/containers/logging/awslogs/
+
 You can also manually stop and start the workers by running
 ``` bash
 systemctl stop torchelastic_worker
 systemctl start torchelastic_worker
 ```
 
-> **EXCERCISE:** Open up two terminals and SSH onto each worker. Tail the docker logs
-on each worker. Now stop worker 1 and observe the worker 2 re-rendezvous and
-since `--min_size=1` it continues training by itself. Now restart worker 1 and
-observe that worker 2 notices that worker 1 is waiting to join and re-rendezvous,
-the `state` object in worker 2 is `sync()`'ed to worker 1 and both resume training
-without loss of progress.
+> **EXCERCISE:** Try stopping or adding worker(s) to see elasticity in action!
+To add workers, simply increase the `desired` size of the worker autoscaling group.
+
 
 > **Note**: by design, `petctl` tries to use the least number of AWS services. This
 was done intentionally to allow non-AWS users to easily transfer the functionality

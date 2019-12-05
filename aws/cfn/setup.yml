@@ -252,7 +252,6 @@ Resources:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       Description: "Allows container instances to use CloudWatch APIs"
-      ManagedPolicyName: "ContainerCloudWatchLogsPolicy"
       Path: "/"
       PolicyDocument:
         Version: "2012-10-17"

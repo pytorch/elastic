@@ -139,7 +139,7 @@ def parse_arguments(args, **default_args):
         help="s3 bucket to use for running petctl (if empty, one is created)",
     )
     parser_setup.add_argument(
-        "--efs_id", default="", help="efs id to use, if empty, one is created"
+        "--efs_id", help="efs id to use, if empty, one is created"
     )
 
     petctl_args, script_args = split_args(args[1:])
@@ -190,6 +190,7 @@ def run_job(session, specs_json, args):
     worker_specs["job_name"] = job_name
     worker_specs["script"] = script
     worker_specs["args"] = " ".join(script_args)
+    worker_specs["user"] = getpass.getuser()
 
     instance_type = worker_specs["instance_type"]
     script_args_str = worker_specs["args"]

@@ -10,6 +10,8 @@
 import getpass
 import logging
 import os
+import random
+import string
 
 from jinja2 import Template
 from util import wait_for
@@ -25,17 +27,22 @@ class CloudFormation:
 
     def create_specs_file(self, specs_file, s3_bucket_name, efs_id):
         username = getpass.getuser()
-        stack_name = f"torchelastic-{username}"
+        rand = "".join(random.choices(string.ascii_uppercase + string.digits, k=5))
+        hash = f"{username}-{rand}"
+        stack_name = f"torchelastic-{hash}"
         this_dir = os.path.dirname(__file__)
         cfn_template = os.path.join(this_dir, "cfn/setup.yml")
         sample_specs = os.path.join(this_dir, "config/sample_specs.json")
 
         params = {
-            "S3BucketName": s3_bucket_name,
-            "EFSFileSystemId": efs_id,
-            "WorkerRoleName": f"torchelastic_worker_role-{username}",
-            "RendezvousRoleName": f"torchelastic_rendezvous_role-{username}",
+            "WorkerRoleName": f"torchelastic_worker_role-{hash}",
+            "RendezvousRoleName": f"torchelastic_rendezvous_role-{hash}",
         }
+
+        if s3_bucket_name:
+            params["S3BucketName"] = s3_bucket_name
+        if efs_id:
+            params["EFSFileSystemId"] = efs_id
 
         self.create_stack(stack_name, cfn_template, **params)
 
