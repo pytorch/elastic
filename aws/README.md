@@ -10,15 +10,16 @@ jobs on AWS.
 
 ## Requirements
 
-1. `pip install boto3`
-2. `git clone https://github.com/pytorch/elastic.git`
+1. `git clone https://github.com/pytorch/elastic.git`
+2. `cd elastic/aws && pip install -r requirements.txt`
 3. The following AWS resources:
     1. EC2 [instance profile](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2_instance-profiles.html)
     2. [Subnet(s)](https://docs.aws.amazon.com/vpc/latest/userguide/default-vpc.html#create-default-subnet)
     3. [Security group](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html#DefaultSecurityGroup)
     4. EFS volume
     5. S3 Bucket
-
+4. [Install](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html)
+  the AWS Session Manager plugin
 
 ## Quickstart
 
@@ -69,7 +70,7 @@ you have downloaded the imagenet dataset to `/mnt/efs/fs1/data/imagenet/train`.
 To run the script we'll use `petctl`,
 
 ``` bash
-python3 petctl.py run_job --size 2 --min_size 1 --max_size 3 --name ${USER}-job examples/imagenet/main.py -- --input_path /mnt/efs/fs1/data/imagenet/train
+python3 aws/petctl.py run_job --size 2 --min_size 1 --max_size 3 --name ${USER}-job examples/imagenet/main.py -- --input_path /mnt/efs/fs1/data/imagenet/train
 ```
 
 In the example above, the named arguments, such as, `--size` , `--min_size`, and
@@ -158,11 +159,11 @@ You can take a look at their console outputs by running
 
 ``` bash
 # see the status of the worker
-systemctl status torchelastic_worker
+sudo systemctl status torchelastic_worker
 # get the container id
-docker ps
+sudo docker ps
 # tail the container logs
-docker logs -f <container id>
+sudo docker logs -f <container id>
 ```
 
 > Note since we have configured the log driver to be `awslogs` tailing
@@ -170,8 +171,8 @@ the docker logs will not work. For more information see: https://docs.docker.com
 
 You can also manually stop and start the workers by running
 ``` bash
-systemctl stop torchelastic_worker
-systemctl start torchelastic_worker
+sudo systemctl stop torchelastic_worker
+sudo systemctl start torchelastic_worker
 ```
 
 > **EXCERCISE:** Try stopping or adding worker(s) to see elasticity in action!
@@ -188,7 +189,7 @@ that is monitoring the job!). In practice consider using EKS, Batch, or SageMake
 To stop the job and tear down the resources, use the `kill_job` command:
 
 ``` bash
-python3 petctl.py kill_job --name ${USER}-job
+python3 petctl.py kill_job ${USER}-job
 ```
 
 You'll notice that the two ASGs created with the `run_job` command are deleted.
