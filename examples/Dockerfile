@@ -7,7 +7,7 @@ ARG WITH_CLASSY_VISION=1
 RUN pip install awscli --upgrade
 
 RUN if [ "$WITH_CLASSY_VISION" = "1" ]; then \
-      pip install classy-vision
+      pip install classy-vision \
     else \
       echo "building without ClassyVision" ; \
     fi
