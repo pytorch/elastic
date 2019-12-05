@@ -140,6 +140,8 @@ Log into the AWS CloudWatch Logs console. You should see a log group called
 name `$job_name/$instance_id` (e.g. `my_job/i0b938EXAMPLE`).
 
 #### Troubleshooting
+
+##### SSH
 To SSH onto the worker nodes to debug/inspect the worker process use AWS 
 Session Manager instead of the ec2 key pair. [Install](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html)
  the Session Manager plugin and run
@@ -154,6 +156,7 @@ awscli ssm start-session --target <instance_id>
 awscli ssm start-session --target i-00b00EXAMPLE
 ```
 
+##### Process Status and Logs
 Once SSH'ed, the workers run in a docker container managed by `systemd`.
 You can take a look at their console outputs by running
 
@@ -177,6 +180,10 @@ sudo systemctl start torchelastic_worker
 
 > **EXCERCISE:** Try stopping or adding worker(s) to see elasticity in action!
 To add workers, simply increase the `desired` size of the worker autoscaling group.
+
+##### Notable Directories
+1. torchelastic_worker systemd: `/etc/systemd/service/torchelastic_worker.service`
+2. torchelastic run scripts: `/var/torchelastic`
 
 
 > **Note**: by design, `petctl` tries to use the least number of AWS services. This

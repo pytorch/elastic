@@ -8,6 +8,21 @@ about: Submit a bug report to help us improve PyTorch Elastic
 
 <!-- A clear and concise description of what the bug is. -->
 
+Component (check all that applies):
+ * [ ] `state api`
+ * [ ] `train_step api`
+ * [ ] `train_loop`
+ * [ ] `rendezvous`
+ * [ ] `checkpoint`
+ * [ ] `rollback`
+ * [ ] `metrics`
+ * [ ] `petctl`
+ * [ ] `examples`
+ * [ ] `docker`
+ * [ ] other
+ 
+
+
 ## To Reproduce
 
 Steps to reproduce the behavior:
@@ -24,30 +39,17 @@ Steps to reproduce the behavior:
 
 ## Environment
 
- - What commands did you use to install torchelastic (conda/pip/build from source)?
- - If you are building from source, which commit is it?
- - What does `classy_vision.__version__` print? (If applicable)
-
-Please copy and paste the output from the Pytorch
-[environment collection script](https://raw.githubusercontent.com/pytorch/pytorch/master/torch/utils/collect_env.py)
-(or fill out the checklist below manually).
-
-You can get the script and run it with:
-```
-wget https://raw.githubusercontent.com/pytorch/pytorch/master/torch/utils/collect_env.py
-# For security purposes, please check the contents of collect_env.py before running it.
-python collect_env.py
-```
-
- - PyTorch Version (e.g., 1.0):
+ - torchelastic version (e.g. 0.1.0rc1):
  - OS (e.g., Linux):
- - How you installed PyTorch (`conda`, `pip`, source):
+ - How you installed torchelastic (`conda`, `pip`, source, `docker`):
+ - Docker image and tag (if using docker):
  - Build command you used (if compiling from source):
+ - Git commit (if installed from source):
  - Python version:
  - CUDA/cuDNN version:
  - GPU models and configuration:
- - Any other relevant information:
  - Execution environment (on-prem, aws, etc):
+ - Any other relevant information:
 
 ## Additional context
 

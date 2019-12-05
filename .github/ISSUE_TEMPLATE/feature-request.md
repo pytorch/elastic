@@ -1,24 +1,25 @@
 ---
 name: "\U0001F680Feature Request"
-about: Submit a proposal/request for a new PyTorch Elastic feature
+about: Submit a proposal/request for a new feature or enhancement
 
 ---
 
-## 🚀 Feature
-<!-- A clear and concise description of the feature proposal -->
+## Description
+<!-- concise description of the feature/enhancement -->
 
-## Motivation
+## Motivation/Background
+<!-- why is this feature/enhancement important? provide background context -->
 
-<!-- Please outline the motivation for the proposal. Is your feature request related to a problem? e.g., I'm always frustrated when [...]. If this is related to another GitHub issue, please link here too -->
 
-## Pitch
+## Detailed Proposal
+<!-- provide a detailed proposal -->
 
-<!-- A clear and concise description of what you want to happen. -->
 
 ## Alternatives
+<!-- discuss the alternativese considered and their pros/cons -->
 
-<!-- A clear and concise description of any alternative solutions or features you've considered, if any. -->
 
-## Additional context
+## Additional context/links
+<!-- link to code, documentation, etc -->
 
-<!-- Add any other context or screenshots about the feature request here. -->
+

@@ -105,12 +105,6 @@ in the rendezvous module.
 Please refer to the [usage documentation](USAGE.md) for details on how to write
 and configure a torchelastic job.
 
-## Join the torchelastic community
-* Website: 
-* Facebook page:
-* Mailing list
-* irc: 
-
 See the [CONTRIBUTING](CONTRIBUTING.md) file for how to help out.
 
 ## License
