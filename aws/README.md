@@ -288,7 +288,7 @@ Workers have a couple of additional specs compared to rdzv.
 
 ##### Docker Image
 ```
-"docker_image" : "torchelastic/aws:0.1.0rc1",
+"docker_image" : "torchelastic/examples:0.1.0rc1",
 ```
 
 Note that the `worker` section in the specs file has an extra `docker_image`
