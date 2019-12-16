@@ -11,6 +11,7 @@ import logging
 from typing import List
 
 import torch.distributed as dist
+import torchelastic.distributed as edist
 import torchelastic.metrics as metrics
 
 
@@ -79,14 +80,19 @@ class CheckpointUtil:
             log.error("Load checkpoint fail: {}".format(e))
             raise e
 
+    def is_checkpoint_ever_loaded(self):
+        # all gather `checkpoint_loaded` from all trainers, return true
+        # if any trainer have ever loaded checkpoint
+        return edist.all_gather_return_max_long(1 if self.checkpoint_loaded else 0) == 1
+
     @metrics.profile("torchelastic")
     def load_checkpoint(self, state, rank: int):
         """
-        Load checkpoint if necessary.
+        Loading checkpoint only when none of the trainers did.
         """
-
-        if not self.checkpoint_manager or self.checkpoint_loaded:
-            # checkpoint not enabled
+        if not self.checkpoint_manager or self.is_checkpoint_ever_loaded():
+            # checkpoint not enabled or checkpoint already loaded by one of
+            # existed trainer
             return state
 
         # we load checkpoint only if all trainers start from scratch. it is
