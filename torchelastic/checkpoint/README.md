@@ -63,7 +63,7 @@ to indicate whether or not checkpoint should be saved.
  The `snapshot` that was taken prior to executing the `train_step`
  is applied to the (possibly) corrupt `state` object to restore it 
  to a previously well-defined state. Then `state.sync()` is called to ensure
- that all workers are in concensus regarding the `state`.
+ that all workers are in consensus regarding the `state`.
  
  > IMPORTANT: On a rollback, the snapshot is applied to the EXISTING
   state object NOT a newly created one.

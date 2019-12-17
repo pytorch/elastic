@@ -164,7 +164,7 @@ class State(abc.ABC):
         hence even if the checkpoint is being saved from 1/n workers all workers
         need to enter the checkpoint barrier to ensure that they begin the
         next iteration of train_step together. Otherwise, the collectives
-        operation may faile due to a timeout since 1/n workers will fall behind
+        operation may fail due to a timeout since 1/n workers will fall behind
         due to the checkpoint operation while others have moved on to the next
         round of ``train_step``.
         """

@@ -790,7 +790,7 @@ class ElasticTrainerTestBase(TestCommon, abc.ABC):
         # Near the end of training, there are 2 samples left, with 4 trainers.
         # Depending on how end-of-data condition is handled, the result can be that:
         #  a) all workers stop at total sum 351
-        #  b) some workes continue to add remaining 29+30 to the sum and see 410.
+        #  b) some workers continue to add remaining 29+30 to the sum and see 410.
         self.assertSetEqual(set(sums) - {351, 410}, set())
         # (i.e. sums contains only 410, 351, or both)
 
