@@ -181,7 +181,7 @@ class Checkpoint(abc.ABC):
     @abc.abstractmethod
     def commit(self):
         """
-        the checkpoint only avaible after commit is called. The related checkpoint
+        the checkpoint only available after commit is called. The related checkpoint
         will be saved after this.
 
         This method is idempotent will ignore the call if its already commit.
