@@ -21,6 +21,7 @@ import torch.distributed as dist
 import torchelastic.train_loop as elastic_train_loop
 from test_mocks import (
     TestCoordinatorP2P,
+    TestDataset,
     TestState,
     TestStateFailOnSync,
     TestStateWithRollbackDisabled,
@@ -366,6 +367,52 @@ class ElasticTrainerTestBase(TestCommon, abc.ABC):
 
         # We re-rendezvous on every iteration, but result should be as normal.
         self.assertEqual([410, 410, 410, 410], sums)
+
+    def test_process_rerendezvous_after_closed(self):
+        run_id = self._generate_run_id()
+
+        nprocs = 4
+        qouts = []
+        qerrs = []
+
+        def train_with_non_aligned_dataset(_, run_id, train_step, hooks):
+            state = TestState()
+            # generate a dataset that was not aligned
+            state.dataset = TestDataset(11, 33)
+            return self._train(_, run_id, train_step, hooks, state)
+
+        for _ in range(0, nprocs):
+            _, qout, qerr = self._spawn(
+                train_with_non_aligned_dataset, run_id, _train_step, None
+            )
+            qouts.append(qout)
+            qerrs.append(qerr)
+
+        # get the samples that each worker processed and assert against input data
+        nums = {}
+        sums = []
+        for i in range(0, nprocs):
+            state = _get_or_raise(qouts[i], qerrs[i])
+            self.assertEqual(5, len(state.nums))
+            nums[state.get_worker_rank()] = state.nums
+            sums.append(state.total_sum)
+
+        self._wait_all_and_clean()
+        # created a new trainer, it should exit directly as training complete
+        _, qout, qerr = self._spawn(
+            train_with_non_aligned_dataset, run_id, _train_step, None
+        )
+        qouts.append(qout)
+        qerrs.append(qerr)
+        self.assertEqual(5, len(state.nums))
+
+        # All 4 trainers should train 5 samples without issue
+        # (due to no re-rendezvous, we can assume rank-stability)
+        self.assertEqual([11, 15, 19, 23, 27], nums[0])
+        self.assertEqual([12, 16, 20, 24, 28], nums[1])
+        self.assertEqual([13, 17, 21, 25, 29], nums[2])
+        self.assertEqual([14, 18, 22, 26, 30], nums[3])
+        self.assertEqual([410, 410, 410, 410], sums)  # 410 = 11 + 12 + ... + 30
 
     def test_process_retryable_exception(self):
         """
