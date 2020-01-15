@@ -69,7 +69,7 @@ class CoordinatorP2P(Coordinator):
                 "Rank {0} received RendezvousClosedException."
                 " Raising a StopException".format(self.rank)
             )
-        except (RuntimeError, Exception) as e:
+        except Exception as e:
             raise NonRetryableException(
                 "Rank {0} received an Exception."
                 " Detailed message: {1}".format(self.rank, str(e))
@@ -150,8 +150,7 @@ class CoordinatorP2P(Coordinator):
     @metrics.profile("torchelastic")
     def should_stop_training(self):
         # Check if coordinator wants the training to stop
-        # either stop_training flag is set or rendezvous is closed
-        return self.stop_training or self.rendezvous.is_closed()
+        return self.stop_training
 
     @metrics.profile("torchelastic")
     def signal_training_done(self):

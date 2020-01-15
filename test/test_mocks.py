@@ -25,8 +25,8 @@ log = logging.getLogger(__name__)
 
 
 class TestDataset:
-    def __init__(self):
-        self.data = range(11, 31)
+    def __init__(self, range_start=11, range_end=31):
+        self.data = range(range_start, range_end)
         self.start_index = 0
 
         # All data up to "skip index" is considered previously read. This is
