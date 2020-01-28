@@ -3,7 +3,8 @@
 1. #### Setup your Kubernetes cluster
 ```
 python petctl.py setup --dns_prefix aagarg-pytorch-elastic 
-                       --rg "aagarg-rg" --location "WestEurope" 
+                       --rg "aagarg-rg" 
+                       --location "WestEurope" 
                        --subscription_id 4aaa645c-5ae2-4ae9-a17a-84b9023bc56a 
                        --client_id 661a6fc2-ab3b-4cda-aaf6-78256cdba717 
                        --client_secret E]ltb:ATSZyIFAKI@GVv80m-Qh6RhnG6 
