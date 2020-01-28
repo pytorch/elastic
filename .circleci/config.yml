@@ -49,6 +49,14 @@ install_dep: &install_dep
         which python
         which pip
         pip install --upgrade pip
+        # Remove manual install of torch nightly after torch 1.5.0 releases
+        # https://github.com/pytorch/elastic/issues/39
+        pip uninstall -y torch
+        if [[ -z ${CUDA_VERSION} ]]; then
+          pip install --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+        else
+          pip install --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cu101/torch_nightly.html
+        fi
         pip install --progress-bar off -r requirements.txt
         pip list
 
