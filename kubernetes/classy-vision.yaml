@@ -1,0 +1,112 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: classy-vision-worker-1
+  labels:
+    job-name: classy-vision
+    worker: "1"
+spec:
+  restartPolicy: "OnFailure"
+  containers:
+  - name: classy-vision
+    image: torchelastic/examples:0.1.0rc1
+    args:
+    - "s3://<BUCKET>/petctl/<USER>/<JOB_ID>/main.py"
+    - "--config_file"
+    # Get configuration file from here
+    # https://github.com/facebookresearch/ClassyVision/blob/e7e02b0e4d7fa4cfb8bc909f0e6bb9488a1073b8/classy_vision/configs/resnet50_synthetic_image_classy_config.json
+    - "/data/classy_vision/resnet50_synthetic_image_classy_config.json"
+    - "--checkpoint_folder"
+    - "/data/classy_vision/checkpoint"
+    env:
+    - name: RDZV_ENDPOINT
+      value: "etcd:2379"
+    - name: JOB_ID
+      value: classy-vision-2
+    - name: MIN_SIZE
+      value: "1"
+    - name: MAX_SIZE
+      value: "3"
+    - name: SIZE
+      value: "2"
+    volumeMounts:
+    - name: persistent-storage
+      mountPath: /data
+    - name: dshm
+      mountPath: /dev/shm
+    name: dshm
+  volumes:
+  - name: persistent-storage
+    persistentVolumeClaim:
+      claimName: efs-claim
+  - name: dshm
+    emptyDir:
+      medium: Memory
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: classy-vision-worker-1
+spec:
+  selector:
+    job-name: classy-vision
+    worker: "1"
+  clusterIP: None
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: classy-vision-worker-2
+  labels:
+    job-name: classy-vision
+    worker: "2"
+spec:
+  restartPolicy: "OnFailure"
+  containers:
+  - name: classy-vision
+    image: torchelastic/examples:0.1.0rc1
+    args:
+    - "s3://<BUCKET>/petctl/<USER>/<JOB_ID>/main.py"
+    - "--config_file"
+    # Get configuration file from here
+    # https://github.com/facebookresearch/ClassyVision/blob/e7e02b0e4d7fa4cfb8bc909f0e6bb9488a1073b8/classy_vision/configs/resnet50_synthetic_image_classy_config.json
+    - "/data/classy_vision/resnet50_synthetic_image_classy_config.json"
+    - "--checkpoint_folder"
+    - "/data/classy_vision/checkpoint"
+    env:
+    - name: RDZV_ENDPOINT
+      value: "etcd:2379"
+    - name: JOB_ID
+      value: classy-vision-2
+    - name: MIN_SIZE
+      value: "1"
+    - name: MAX_SIZE
+      value: "3"
+    - name: SIZE
+      value: "2"
+    volumeMounts:
+    - name: persistent-storage
+      mountPath: /data
+    - name: dshm
+      mountPath: /dev/shm
+    name: dshm
+  volumes:
+  - name: persistent-storage
+    persistentVolumeClaim:
+      claimName: efs-claim
+  - name: dshm
+    emptyDir:
+      medium: Memory
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: classy-vision-worker-2
+spec:
+  selector:
+    job-name: classy-vision
+    worker: "2"
+  clusterIP: None

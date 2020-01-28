@@ -50,8 +50,8 @@ By adding the following configuration metrics in the `torchelastic` and
 ```python
 import torchelastic.metrics as metrics
 
-metrics.configure(metrics.ConsoleMetricsHandler(), group = "torchelastic")
-metrics.configure(metrics.ConsoleMetricsHandler(), group = "my_app")
+metrics.configure(metrics.ConsoleMetricHandler(), group = "torchelastic")
+metrics.configure(metrics.ConsoleMetricHandler(), group = "my_app")
 ``` 
 
 #### Implementing a Custom Metric Handler

@@ -94,23 +94,8 @@ class EtcdRendezvousHandler(RendezvousHandler):
     def next_rendezvous(self):
         rdzv_version, rank, world_size = self._rdzv_impl.rendezvous_barrier()
 
-        # TODO: https://github.com/pytorch/elastic/issues/11
-        # make EtcdStore the default and remove TCPStore code
-        # Setup a c10d store for this specific rendezvous version,
-        # by piggybacking on the etcd handler used during rendezvous.
-        # Switch back to EtcdStore once issue with
-        # pybind11-trampoline for c10d Store is resolved.
-        # store = self._rdzv_impl.setup_kv_store(rdzv_version)
-        # path once the pybind11-trampoline fix for c10d::Store is included in
-        # the next pytorch release. Then, remove this hack.
-        import torchelastic.rendezvous  # noqa
-
-        if "_TORCHELASTIC_USE_ETCDSTORE" in torchelastic.rendezvous.__dict__:
-            log.info("Using EtcdStore for c10d::Store implementation")
-            store = self._rdzv_impl.setup_kv_store(rdzv_version)
-        else:
-            log.info("Using TCPStore for c10d::Store implementation")
-            store = setup_tcpstore(rank, world_size, rdzv_version, self._rdzv_impl)
+        log.info("Creating EtcdStore as the c10d::Store implementation")
+        store = self._rdzv_impl.setup_kv_store(rdzv_version)
 
         return store, rank, world_size
 
@@ -151,6 +136,7 @@ class EtcdRendezvous(object):
         num_max_workers,
         timeout,
         last_call_timeout,
+        kwargs,
     ):
         self._prefix = prefix
         self._run_id = run_id
@@ -166,7 +152,7 @@ class EtcdRendezvous(object):
         if not self._prefix.endswith("/"):
             self._prefix += "/"
 
-        self.client = etcd.Client(host=endpoints, allow_reconnect=True)
+        self.client = etcd.Client(host=endpoints, allow_reconnect=True, **kwargs)
         log.info("Etcd machines: " + str(self.client.machines))
 
         # Setup a permanent prefix dir, if didn't exist
@@ -1064,38 +1050,22 @@ def _get_socket_with_port():
     raise RuntimeError("Failed to create a socket")
 
 
-# Helper function to setup a TCPStore-based c10d::Store implementation.
-def setup_tcpstore(rank, world_size, rdzv_version, rdzv_impl):
-    if rank == 0:
-        import socket
-        from contextlib import closing
-
-        # FIXME: ideally, TCPStore should have an API that
-        # accepts a pre-constructed socket.
-        with closing(_get_socket_with_port()) as sock:
-            host = socket.gethostname()
-            port = sock.getsockname()[1]
-
-            rdzv_impl.store_extra_data(
-                rdzv_version, key="tcpstore_server", value="{}:{}".format(host, port)
-            )
-
-            log.info(f"Setting up TCPStore server on {host}:{port}")
-            start_daemon = True
-            sock.close()  # FIXME: get rid of race-condition by improving TCPStore API
-            store = TCPStore(host, port, world_size, start_daemon)
-            log.info(f"TCPStore server initialized on {host}:{port}")
-    else:
-        hostport = rdzv_impl.load_extra_data(rdzv_version, key="tcpstore_server")
-        log.info(f"Rank {rank} will conenct to TCPStore server at {hostport}")
-
-        import re
-
-        host, port = re.match(r"(.+):(\d+)$", hostport).groups()
-        start_daemon = False
-        store = TCPStore(host, int(port), world_size, start_daemon)
-
-    return store
+# Helper for _etcd_rendezvous_handler(url)
+def _parse_etcd_client_params(params):
+    kwargs = {}
+    if "protocol" in params:
+        protocol = params["protocol"]
+        assert protocol in ["http", "https"], "Protocol must be http or https."
+        kwargs["protocol"] = protocol
+    if "cacert" in params:
+        kwargs["ca_cert"] = params["cacert"]
+    if "cert" in params:
+        if "key" in params:
+            # python-etcd client expects key as a second element of `cert` tuple
+            kwargs["cert"] = (params["cert"], params["key"])
+        else:
+            kwargs["cert"] = params["cert"]
+    return kwargs
 
 
 # Handler for torch.distributed "static" registration
@@ -1104,6 +1074,7 @@ def _etcd_rendezvous_handler(url):
     Example URLs:
         etcd://localhost:2379/123?min_workers=4&max_workers=8&timeout=300
         etcd://192.168.0.42/123?etcd_prefix=/custom_prefix/foo&min_workers=4
+        etcd://localhost:2379/123?min_workers=4&protocol=https&cacert=/etc/kubernetes/certs/ca.crt&cert=/etc/kubernetes/certs/client.crt&key=/etc/kubernetes/certs/client.key
 
     Where:
         123 - the run_id (unique id for this training job instance),
@@ -1119,6 +1090,14 @@ def _etcd_rendezvous_handler(url):
         etcd_prefix - path prefix (from etcd root), inside which all
                       etcd nodes will be created.
                       Default is "/torchelastic/p2p".
+        protocol=https - http (default) or https to access etcd.
+        cacert=/etc/kubernetes/certs/ca.crt - CA cert to access etcd,
+                    only makes sense with https.
+        cert=/etc/kubernetes/certs/client.crt - client cert to access etcd,
+                    only makes sense with https.
+        key=/etc/kubernetes/certs/client.key - client key to access etcd,
+                    only makes sense with https.
+
     """
     import re
     from urllib.parse import urlparse
@@ -1155,6 +1134,8 @@ def _etcd_rendezvous_handler(url):
         params.get("last_call_timeout", CONST_DEFAULT_LAST_CALL_TIMEOUT)
     )
 
+    kwargs = _parse_etcd_client_params(params)
+
     # Etcd rendezvous implementation
     etcd_rdzv = EtcdRendezvous(
         endpoints=etcd_endpoints,
@@ -1164,6 +1145,7 @@ def _etcd_rendezvous_handler(url):
         num_max_workers=num_max_workers,
         timeout=timeout,
         last_call_timeout=last_call_timeout,
+        kwargs=kwargs,
     )
     return EtcdRendezvousHandler(rdzv_impl=etcd_rdzv)
 

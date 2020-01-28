@@ -356,6 +356,11 @@ def main():
     rdzv_endpoint = os.environ.get("RDZV_ENDPOINT", "localhost:2379")
     job_id = os.environ.get("JOB_ID", "torchelastic_imagenet_example")
 
+    etcd_protocol = os.environ.get("ETCD_PROTOCOL")
+    etcd_cacert = os.environ.get("ETCD_CACERT")
+    etcd_cert = os.environ.get("ETCD_CERT")
+    etcd_key = os.environ.get("ETCD_KEY")
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--input_path",
@@ -396,6 +401,15 @@ def main():
         f"&max_workers={max_world_size}"
         f"&last_call_timeout=5"
     )
+
+    if etcd_protocol:
+        rdzv_init_method += f"&protocol={etcd_protocol}"
+    if etcd_cacert:
+        rdzv_init_method += f"&cacert={etcd_cacert}"
+    if etcd_cert:
+        rdzv_init_method += f"&cert={etcd_cert}"
+    if etcd_key:
+        rdzv_init_method += f"&key={etcd_key}"
 
     log.info(f"rdzv init method={rdzv_init_method}")
     if local_world_size == 1:

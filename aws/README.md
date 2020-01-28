@@ -178,7 +178,7 @@ sudo systemctl stop torchelastic_worker
 sudo systemctl start torchelastic_worker
 ```
 
-> **EXCERCISE:** Try stopping or adding worker(s) to see elasticity in action!
+> **EXERCISE:** Try stopping or adding worker(s) to see elasticity in action!
 To add workers, simply increase the `desired` size of the worker autoscaling group.
 
 ##### Notable Directories
