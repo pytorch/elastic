@@ -1,0 +1,39 @@
+{
+    "apiVersion": "vlabs",
+    "properties": {
+        "orchestratorProfile": {
+            "orchestratorType": "Kubernetes",
+            "kubernetesConfig": {
+                "apiServerConfig": {
+                    "--tls-cipher-suites": "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256"
+                }
+            }
+        },
+        "masterProfile": {
+            "count": 1,
+            "dnsPrefix": "",
+            "vmSize": "Standard_DS1_v2"
+        },
+        "agentPoolProfiles": [
+            {
+                "name": "agentpool1",
+                "count": 5,
+                "vmSize": "Standard_NC6s_v3"
+            }
+        ],
+        "linuxProfile": {
+            "adminUsername": "azureuser",
+            "ssh": {
+                "publicKeys": [
+                    {
+                        "keyData": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDHrAgGN391eqn+IpJtCL3g4fucbVjQ4tSlVi4RW5jiYQ6UQjRywb3rgnpOf2oLGy8B3D3urskCQ+fyNGBadctpSsbN87tVmjrKXFplYcI3DHZpPTJgGnRPMXY02exdLKPS1UcoLOTUW7rJHKJOEwjg2hPaNvjoN82fESbdk1WJdEZz9XBm7XuHv4kUgP8PKPkgcIPfKC9tFn7qKT54dJEZjAFZcR0vH1b3A3HcusqBxQAj+lyZC/Mm9Lch4U5AqnDkOSUG+AY2ZUUD9oUz6g2A9hR2gh2aPzyXpOJWXXC47yRz2dX58bbmpNlTHKGNod95/ClozVSRD4unxMWsqQD1"
+                    }
+                ]
+            }
+        },
+        "servicePrincipalProfile": {
+            "clientId": "",
+            "secret": ""
+        }
+    }
+}
