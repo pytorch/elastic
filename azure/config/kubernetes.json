@@ -25,9 +25,7 @@
             "adminUsername": "azureuser",
             "ssh": {
                 "publicKeys": [
-                    {
-                        "keyData": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDHrAgGN391eqn+IpJtCL3g4fucbVjQ4tSlVi4RW5jiYQ6UQjRywb3rgnpOf2oLGy8B3D3urskCQ+fyNGBadctpSsbN87tVmjrKXFplYcI3DHZpPTJgGnRPMXY02exdLKPS1UcoLOTUW7rJHKJOEwjg2hPaNvjoN82fESbdk1WJdEZz9XBm7XuHv4kUgP8PKPkgcIPfKC9tFn7qKT54dJEZjAFZcR0vH1b3A3HcusqBxQAj+lyZC/Mm9Lch4U5AqnDkOSUG+AY2ZUUD9oUz6g2A9hR2gh2aPzyXpOJWXXC47yRz2dX58bbmpNlTHKGNod95/ClozVSRD4unxMWsqQD1"
-                    }
+                    {}
                 ]
             }
         },
