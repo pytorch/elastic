@@ -1,6 +1,11 @@
 # Sample Usage
 
-1. #### Setup your Kubernetes cluster
+1. #### Configure your job yaml and kubernetes.json
+```
+python petctl.py configure --name "test_job" --min_size 1 --max_size 5
+```
+
+2. #### Setup your Kubernetes cluster
 ```
 python petctl.py setup --dns_prefix azure-pytorch-elastic 
                        --rg "<resource_group>" 
@@ -13,11 +18,6 @@ python petctl.py setup --dns_prefix azure-pytorch-elastic
                        --docker_server <docker server> 
                        --docker_username <docker username> 
                        --docker_password <docker password>
-```
-
-2. #### Configure your job yaml and kubernetes.json
-```
-python petctl.py configure --name "test_job" --min_size 1 --max_size 5
 ```
 
 3. #### Start your training job
