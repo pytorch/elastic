@@ -51,6 +51,13 @@ class Coordinator(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def barrier(self):
+        """
+        A regular barrier (no rendezvous) for synchronizing trainers.
+        """
+        pass
+
+    @abc.abstractmethod
     def init_process_group(self):
         """
         Creates a ProcessGroup which manages collective and p2p communication

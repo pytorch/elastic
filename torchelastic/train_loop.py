@@ -65,6 +65,7 @@ def train(elastic_coordinator, train_step, state):
                 get_elapsed_time_ms(state_sync_start_time),
             )
             checkpoint_util.set_checkpoint_loaded()
+            elastic_coordinator.barrier()
             log.info("Rank {0} synced state with other nodes".format(rank))
         except StopException:
             log.info("Rank {0} received stopped signal. Exiting training.".format(rank))
