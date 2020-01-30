@@ -1,65 +1,29 @@
-import argparse
-import os
-import subprocess
-import yaml
-import json
-import uuid
+from util import *
 
-
-def configure_yaml(yaml_file, petctl_dir, args):
-    print('Configuring azure-pytorch-elastic.yaml....')
-
-    with open(yaml_file) as f:
-        data = yaml.load(f, Loader=yaml.FullLoader)
-
-    data["spec"]["parallelism"] = args.max_size
-    data["spec"]["template"]["spec"]["containers"][0]["env"].extend(
-        [dict([('name', 'JOB_ID'), ('value', str(uuid.uuid1()) + "_" + args.name)]),
-         dict([('name', 'MIN_SIZE'), ('value', str(args.min_size))]),
-         dict([('name', 'MAX_SIZE'), ('value', str(args.max_size))])])
-    result_yaml = open(os.path.join(petctl_dir, "azure-pytorch-elastic.yaml"), "w")
-    yaml.dump(data, result_yaml)
-
-
-def configure_json(json_file, petctl_dir, args):
-    print('Configuring kubernetes.json file...')
-
-    with open(json_file) as f:
-        data = json.load(f)
-    data["properties"]["masterProfile"]["count"] = 1
-    data["properties"]["agentPoolProfiles"][0]["count"] = args.max_size
-
-    result_json = open(os.path.join(petctl_dir, "kubernetes.json"), "w")
-    json.dump(data, result_json, indent=4)
-
-
-# Create a YAML job file based on user inputs
+# Create a Kubernetes specs and YAML job file based on user inputs
 def configure(args):
-    PETCTL_DIR = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__), 'config/'))
-    SAMPLE_YAML_FILE = os.path.join(PETCTL_DIR, "sample_specs.yaml")
-    KUBERNETES_JSON_FILE = os.path.join(PETCTL_DIR, "kubernetes.json")
-
-    configure_yaml(SAMPLE_YAML_FILE, PETCTL_DIR, args)
-    configure_json(KUBERNETES_JSON_FILE, PETCTL_DIR, args)
-
-
-def run_job():
-    subprocess.call("./run_job.sh", shell=True)
+    configure_yaml(args)
+    configure_json(args)
 
 
 def setup(args):
-    subprocess.call("./setup.sh " +
-                    args.subscription_id + " " +
-                    args.dns_prefix + " " +
-                    args.rg + " " +
-                    args.location + " " +
-                    args.client_id + " " +
-                    args.client_secret + " " +
-                    args.storage_account_name + " " +
-                    args.storage_account_key + " " +
-                    args.docker_server + " " +
-                    args.docker_username + " " +
-                    args.docker_password, shell=True)
+    install_aks_engine()
+    deploy_aks_cluster(args)
+    set_kubeconfig_environment_var()
+    install_nvidia_drivers()
+    create_storage_secrets(args)
+    install_blobfuse_drivers()
+    create_docker_image_secret(args)
+
+
+def run_job():
+    commands = ["kubectl delete -f config/azure-pytorch-elastic.yaml",
+                "kubectl apply -f config/azure-pytorch-elastic.yaml",
+                "kubectl describe pods",
+                "kubectl get pods --selector app=azure-pytorch-elastic"]
+
+    set_kubeconfig_environment_var()
+    run_commands(commands)
 
 
 if __name__ == '__main__':
@@ -200,10 +164,13 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if args.command == "setup":
-        setup(args)
-    elif args.command == "configure":
+    # -----
+    # Execution order: Configure --> Setup --> Run
+    # -----
+    if args.command == "configure":
         configure(args)
+    elif args.command == "setup":
+        setup(args)
     elif args.command == "run_job":
         run_job()
     else:
