@@ -24,3 +24,8 @@ python petctl.py setup --dns_prefix azure-pytorch-elastic
 ```
 python petctl.py run_job
 ```
+
+4. #### Check status of your job
+```
+python petctl.py check_status
+```
