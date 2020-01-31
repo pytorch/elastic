@@ -9,7 +9,6 @@ def setup(args):
     install_aks_engine()
     deploy_aks_cluster(args)
     set_kubeconfig_environment_var()
-    install_nvidia_drivers()
     create_storage_secrets(args)
     install_blobfuse_drivers()
     create_docker_image_secret(args)

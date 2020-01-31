@@ -53,9 +53,6 @@ def install_aks_engine():
 def set_kubeconfig_environment_var():
     os.environ["KUBECONFIG"] = PETCTL_DIR + "/_output/aagarg-pytorch-elastic/kubeconfig/kubeconfig.westeurope.json"
     print("Setting KUBECONFIG env variable ", os.environ.get("KUBECONFIG"))
-def install_nvidia_drivers():
-    commands = ["kubectl create namespace gpu-resources"]
-    run_commands(commands)
 def create_storage_secrets(args):
     commands = ["kubectl create secret generic pet-blob-secret \
                  --from-literal accountname={0} \
@@ -69,6 +66,7 @@ def create_storage_secrets(args):
 def install_blobfuse_drivers():
     commands = ["kubectl apply -f https://raw.githubusercontent.com/Azure/kubernetes-volume-drivers/master/flexvolume/blobfuse/deployment/blobfuse-flexvol-installer-1.9.yaml"]
     run_commands(commands)
+
 def create_docker_image_secret(args):
     commands = ["kubectl create secret \
                 docker-registry pet-docker-secret \
