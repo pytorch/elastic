@@ -8,11 +8,12 @@ import urllib.request
 PETCTL_DIR  = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 def run_commands(cmds):
     for cmd in cmds:
-        process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, env = os.environ)
+        process = subprocess.Popen(cmd, universal_newlines=True, shell=True,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, env = os.environ)
         for line in process.stdout:
             print(line)
 def configure_yaml(args):
-    SAMPLE_YAML_FILE = os.path.join(PETCTL_DIR, "config/sample_specs.yaml")
+    SAMPLE_YAML_FILE       = os.path.join(PETCTL_DIR, "config/sample_specs.yaml")
     result_yaml_file = os.path.join(PETCTL_DIR, 'config/', "azure-pytorch-elastic.yaml")
     
     print('Configuring job yaml ', result_yaml_file)
@@ -62,7 +63,9 @@ def create_storage_secrets(args):
                  --type='azure/blobfuse'"
                  .format(args.storage_account_name,
                          args.storage_account_key)]
+    set_kubeconfig_environment_var()
     run_commands(commands)
+
 def install_blobfuse_drivers():
     commands = ["kubectl apply -f https://raw.githubusercontent.com/Azure/kubernetes-volume-drivers/master/flexvolume/blobfuse/deployment/blobfuse-flexvol-installer-1.9.yaml"]
     run_commands(commands)
@@ -79,7 +82,7 @@ def create_docker_image_secret(args):
  
  
 def deploy_aks_cluster(args):
-    commands = ["aks-engine deploy  --subscription-id {0} \
+    commands = ["aks-engine deploy -f  --subscription-id {0} \
                                    --dns-prefix {1} \
                                    --resource-group {2} \
                                    --location {3} \
