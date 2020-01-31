@@ -51,6 +51,17 @@ class Coordinator(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def barrier(self):
+        """
+        A regular barrier (no rendezvous) for synchronizing trainers.
+         - This method throws a RuntimeError if not all workers reach join the
+           barrier within a specified timeout. The timeout value is implementation
+           specific.
+         - If `barrier()` throws in one trainer, other trainers should throw.
+        """
+        pass
+
+    @abc.abstractmethod
     def init_process_group(self):
         """
         Creates a ProcessGroup which manages collective and p2p communication

@@ -32,7 +32,12 @@ class CoordinatorP2P(Coordinator):
     MONITOR_PROGRESS_FREQ = 1000
 
     def __init__(
-        self, c10d_backend, init_method, max_num_trainers, process_group_timeout=10000
+        self,
+        c10d_backend,
+        init_method,
+        max_num_trainers,
+        process_group_timeout=10000,
+        coordinator_pg_timeout=600000,  # default 10 mins for coordinator pg timeout
     ):
         self.c10d_backend = c10d_backend
         self.init_method = init_method
@@ -40,9 +45,15 @@ class CoordinatorP2P(Coordinator):
         assert isinstance(
             self.rendezvous, RendezvousHandler
         ), "CoordinatorP2P requires a torchelastic.rendezvous.RendezvousHandler"
-
+        assert coordinator_pg_timeout > process_group_timeout, (
+            "coordinator_pg_timeout {} (ms) must larger than or equal to "
+            "process_group_timeout {} (ms)".format(
+                coordinator_pg_timeout, process_group_timeout
+            )
+        )
         self.max_num_trainers = max_num_trainers
         self.process_group_timeout = process_group_timeout
+        self.coordinator_pg_timeout = coordinator_pg_timeout
         self.rank = -1
         self.world_size = 0
         self.is_worker_straggler = False
@@ -85,6 +96,11 @@ class CoordinatorP2P(Coordinator):
 
         return self.store, self.rank, self.world_size
 
+    def barrier(self):
+        # Use gloo process group to implement a barrier in case NCCL get stuck
+        # Note there is an implicit timeout for barrier, which equal coordinator_pg_timeout
+        dist.barrier(group=self.coordinator_process_group)
+
     @metrics.profile("torchelastic")
     def init_process_group(self):
         self.monitor_progress_step = 0
@@ -104,7 +120,7 @@ class CoordinatorP2P(Coordinator):
             # to make it portable with NCCL)
             self.coordinator_process_group = dist.new_group(
                 backend=dist.distributed_c10d.Backend.GLOO,
-                timeout=timedelta(milliseconds=self.process_group_timeout),
+                timeout=timedelta(milliseconds=self.coordinator_pg_timeout),
             )
 
         log.info(
