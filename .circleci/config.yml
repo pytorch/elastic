@@ -96,6 +96,25 @@ run_tests: &run_tests
 # tests
 # ------------------------------------------------------------------------------
 jobs:
+  linter:
+    <<: *cpu
+    working_directory: ~/torchelastic
+    steps:
+      - checkout
+
+      - <<: *install_python
+
+      - run:
+            name: setup lint
+            command: |
+                pip install --upgrade pip
+                pip install --progress-bar off black isort
+
+      - run:
+            name: run isort and black
+            command: |
+              bash ./scripts/formatter_python.sh
+
   cpu_tests:
     <<: *cpu
 
@@ -172,6 +191,7 @@ workflows:
   version: 2
   build_and_test:
     jobs:
+      - linter
       - cpu_tests
       # no gpu tests for now; uncomment to enable
       # - gpu_tests
