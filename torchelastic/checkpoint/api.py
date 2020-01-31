@@ -10,7 +10,6 @@ import abc
 import logging
 from typing import List
 
-import torch.distributed as dist
 import torchelastic.distributed as edist
 import torchelastic.metrics as metrics
 
@@ -37,17 +36,18 @@ class CheckpointBarrier(object):
     Checkpoint Barrier
     """
 
-    def __init__(self, rank):
+    def __init__(self, rank, coordinator):
         self.rank = rank
+        self.coordinator = coordinator
 
     def __enter__(self):
+        log.info(f"Rank {self.rank} enter checkpoint barrier")
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         # We put a explicit barrier here to make sure all trainer sync
         # after checkpoint was loaded
-        log.info(f"Rank {self.rank} enter checkpoint barrier")
-        dist.barrier()
+        self.coordinator.barrier()
         log.info(f"Rank {self.rank} exit checkpoint barrier")
 
 
@@ -157,7 +157,7 @@ class CheckpointUtil:
             # (reduce_all) in train_step(state). State are all good when
             # We come here, otherwise it will break out of the loop if any
             # exception is raised.
-            with CheckpointBarrier(rank):
+            with CheckpointBarrier(rank, self.coordinator):
                 if rank == 0:
                     self._do_save_checkpoint(state)
 
