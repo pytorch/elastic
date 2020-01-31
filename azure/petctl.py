@@ -8,7 +8,6 @@ def setup(args):
     azure_login()
     install_aks_engine()
     deploy_aks_cluster(args)
-    set_kubeconfig_environment_var()
     create_storage_secrets(args)
     install_blobfuse_drivers()
     create_docker_image_secret(args)
@@ -27,6 +26,13 @@ def check_status():
                 "kubectl get pods --selector app=azure-pytorch-elastic"]
     set_kubeconfig_environment_var()
     run_commands(commands)
+
+def delete_resources():
+    commands = ["kubectl config delete-cluster azure-pytorch-elastic", 
+                "kubectl delete secret pet-blob-secret",
+                "kubectl delete namespace --all"]
+    run_commands(commands)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     
@@ -162,14 +168,23 @@ if __name__ == '__main__':
     
     parser_run_job.set_defaults(func=run_job)
     
-    # -----------------------------------------
+     # ---------------------------------- #
+     #              CHECK STATUS          #
+     # ---------------------------------- #
     
     parser_check_status = subparser.add_parser(
         "check_status", help="Check status of your jobs"
     )
-    
     parser_run_job.set_defaults(func=check_status)
-    
+  
+     # ---------------------------------- #
+     #              DELETE RESOURCES      #
+     # ---------------------------------- #
+    parser_delete_resources = subparser.add_parser(
+        "delete_resources", help="Deletes the kubernetes cluster and all namespaces and secrets"
+    )
+    parser_delete_resources.set_defaults(func=delete_resources)
+
     args = parser.parse_args()
     
     # -----
@@ -183,5 +198,7 @@ if __name__ == '__main__':
         run_job()
     elif args.command == "check_status":
         check_status()
+    elif args.command == "delete_resources":
+        delete_resources()
     else:
         print("petctl.py: error: argument command: NULL command: (choose from 'setup', 'configure', 'run_job')")
