@@ -1,4 +1,5 @@
 from util import *
+
 # Create a Kubernetes specs and YAML job file based on user inputs
 def configure(args):  
     configure_yaml(args)
@@ -7,6 +8,7 @@ def setup(args):
     azure_login()
     install_aks_engine()
     deploy_aks_cluster(args)
+    set_kubeconfig_environment_var()
     install_nvidia_drivers()
     create_storage_secrets(args)
     install_blobfuse_drivers()
