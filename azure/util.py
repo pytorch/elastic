@@ -2,16 +2,24 @@ import yaml
 import json
 import argparse
 import os
+import os.path
 import subprocess
 import uuid
 import urllib.request
+
 PETCTL_DIR  = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+
 def run_commands(cmds):
+    output = []
+    set_kubeconfig_environment_var()
+    
     for cmd in cmds:
         process = subprocess.Popen(cmd, universal_newlines=True, shell=True,
                     stdout=subprocess.PIPE, stderr=subprocess.PIPE, env = os.environ)
         for line in process.stdout:
             print(line)
+            output.append(line)
+    return output
 def configure_yaml(args):
     SAMPLE_YAML_FILE       = os.path.join(PETCTL_DIR, "config/sample_specs.yaml")
     result_yaml_file = os.path.join(PETCTL_DIR, 'config/', "azure-pytorch-elastic.yaml")
@@ -51,11 +59,12 @@ def install_aks_engine():
     commands = ["chmod 700 config/get-akse.sh", "./config/get-akse.sh"]
     run_commands(commands)
 def set_kubeconfig_environment_var():
-    os.environ["KUBECONFIG"] = PETCTL_DIR + "/_output/aagarg-pytorch-elastic/kubeconfig/kubeconfig.westeurope.json"
-    print("Setting KUBECONFIG env variable ", os.environ.get("KUBECONFIG"))
-def install_nvidia_drivers():
-    commands = ["kubectl create namespace gpu-resources"]
-    run_commands(commands)
+    config_file =  PETCTL_DIR + "/_output/aagarg-pytorch-elastic/kubeconfig/kubeconfig.westeurope.json"
+    
+    if(os.path.isfile(config_file)): 
+        os.environ["KUBECONFIG"] = config_file
+        print("Setting KUBECONFIG env variable ", os.environ.get("KUBECONFIG"))
+ 
 def create_storage_secrets(args):
     commands = ["kubectl create secret generic pet-blob-secret \
                  --from-literal accountname={0} \
@@ -63,9 +72,8 @@ def create_storage_secrets(args):
                  --type='azure/blobfuse'"
                  .format(args.storage_account_name,
                          args.storage_account_key)]
-    set_kubeconfig_environment_var()
-    run_commands(commands)
 
+    run_commands(commands)
 def install_blobfuse_drivers():
     commands = ["kubectl apply -f https://raw.githubusercontent.com/Azure/kubernetes-volume-drivers/master/flexvolume/blobfuse/deployment/blobfuse-flexvol-installer-1.9.yaml"]
     run_commands(commands)
@@ -99,3 +107,21 @@ def deploy_aks_cluster(args):
                                             args.client_secret,
                                             )]
     run_commands(commands)
+
+def scale_cluster(args):
+    command = ["aks-engine scale \
+            --subscription-id {0} \
+            --resource-group {1} \
+            --client-id {2} \
+            --client-secret {3} \
+            --location {4} \
+            --api-model _output/azure-pytorch-elastic/apimodel.json \
+            --new-node-count {5}\
+            --apiserver azure-pytorch-elastic.westeurope.cloudapp.azure.com"
+    .format(args.subscription_id,
+                    args.rg,
+                    args.client_id,
+                    args.client_secret,
+                    args.location,
+                    args.new_node_count)]
+    run_commands(command)
