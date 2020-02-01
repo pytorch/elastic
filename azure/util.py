@@ -107,3 +107,21 @@ def deploy_aks_cluster(args):
                                             args.client_secret,
                                             )]
     run_commands(commands)
+
+def scale_cluster(args):
+    command = ["aks-engine scale \
+            --subscription-id {0} \
+            --resource-group {1} \
+            --client-id {2} \
+            --client-secret {3} \
+            --location {4} \
+            --api-model _output/azure-pytorch-elastic/apimodel.json \
+            --new-node-count {5}\
+            --apiserver azure-pytorch-elastic.westeurope.cloudapp.azure.com"
+    .format(args.subscription_id,
+                    args.rg,
+                    args.client_id,
+                    args.client_secret,
+                    args.location,
+                    args.new_node_count)]
+    run_commands(command)

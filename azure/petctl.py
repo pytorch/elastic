@@ -200,6 +200,58 @@ if __name__ == '__main__':
     )
     
     parser_get_logs.set_defaults(func=get_logs)
+
+
+     # ---------------------------------- #
+     #            SCALE CLUSTER                #
+     # ---------------------------------- #
+    parser_scale = subparser.add_parser(
+        "scale", help="Scale up/down your cluster"
+    )
+    
+    parser_scale.add_argument(
+        "--subscription_id",
+        type=str,
+        required=True,
+        help="Subscription id of the cluster",
+    )
+    
+    parser_scale.add_argument(
+        "--rg",
+        type=str,
+        required=True,
+        help="Resource group of the cluster",
+    )
+    
+    parser_scale.add_argument(
+        "--location",
+        type=str,
+        required=True,
+        help="Location of the cluster",
+    )
+    
+    parser_scale.add_argument(
+        "--client_id",
+        type=str,
+        required=True,
+        help="Service principal client id",
+    )
+    
+    parser_scale.add_argument(
+        "--client_secret",
+        type=str,
+        required=True,
+        help="Service Principal client secret",
+    )
+    
+    parser_scale.add_argument(
+        "--new_node_count",
+        type=int,
+        required=True,
+        help="New node count to scale cluster to",
+    )
+    
+    parser_scale.set_defaults(func=scale_cluster)
     
     args = parser.parse_args()
     
@@ -218,5 +270,7 @@ if __name__ == '__main__':
         delete_resources()
     elif args.command == "get_logs":
         get_logs()
+    elif args.command == "scale":
+        scale_cluster(args)
     else:
         print("petctl.py: error: argument command: NULL command: (choose from 'setup', 'configure', 'run_job')")
