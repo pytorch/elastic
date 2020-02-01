@@ -1,5 +1,4 @@
 from util import *
-
 # Create a Kubernetes specs and YAML job file based on user inputs
 def configure(args):  
     configure_yaml(args)
@@ -8,8 +7,6 @@ def setup(args):
     azure_login()
     install_aks_engine()
     deploy_aks_cluster(args)
-    set_kubeconfig_environment_var()
-    install_nvidia_drivers()
     create_storage_secrets(args)
     install_blobfuse_drivers()
     create_docker_image_secret(args)
@@ -20,13 +17,27 @@ def run_job():
                 "kubectl describe pods",
                 "kubectl get pods --selector app=azure-pytorch-elastic"]
     
-    set_kubeconfig_environment_var()
     run_commands(commands)
 
 def check_status():
     commands = ["kubectl describe pods",
                 "kubectl get pods --selector app=azure-pytorch-elastic"]
-    set_kubeconfig_environment_var()
+    
+    run_commands(commands)
+    
+def get_logs():
+    pod_names = run_commands(["kubectl get pods --selector app=azure-pytorch-elastic | awk '{print $1}' | sed '1 d'"])
+    
+    for name in pod_names:
+        print("------------***********************************------------------")
+        print("POD:",name.strip())
+        print("------------***********************************------------------")
+        run_commands(["kubectl logs "+name.strip()])
+    
+def delete_resources():
+    commands = ["kubectl config delete-cluster azure-pytorch-elastic", 
+                "kubectl delete secret pet-blob-secret",
+                "kubectl delete namespace --all"]
     run_commands(commands)
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -163,13 +174,84 @@ if __name__ == '__main__':
     
     parser_run_job.set_defaults(func=run_job)
     
-    # -----------------------------------------
+     # ---------------------------------- #
+     #              CHECK STATUS          #
+     # ---------------------------------- #
     
     parser_check_status = subparser.add_parser(
         "check_status", help="Check status of your jobs"
     )
-    
     parser_run_job.set_defaults(func=check_status)
+
+     # ---------------------------------- #
+     #            DELETE RESOURCES        #
+     # ---------------------------------- #
+    parser_delete_resources = subparser.add_parser(
+        "delete_resources", help="Deletes the kubernetes cluster and all namespaces and secrets"
+    )
+    parser_delete_resources.set_defaults(func=delete_resources)
+
+     # ---------------------------------- #
+     #            GET LOGS                #
+     # ---------------------------------- #
+    
+    parser_get_logs = subparser.add_parser(
+        "get_logs", help="Get logs from all your pods"
+    )
+    
+    parser_get_logs.set_defaults(func=get_logs)
+
+
+     # ---------------------------------- #
+     #            SCALE CLUSTER                #
+     # ---------------------------------- #
+    parser_scale = subparser.add_parser(
+        "scale", help="Scale up/down your cluster"
+    )
+    
+    parser_scale.add_argument(
+        "--subscription_id",
+        type=str,
+        required=True,
+        help="Subscription id of the cluster",
+    )
+    
+    parser_scale.add_argument(
+        "--rg",
+        type=str,
+        required=True,
+        help="Resource group of the cluster",
+    )
+    
+    parser_scale.add_argument(
+        "--location",
+        type=str,
+        required=True,
+        help="Location of the cluster",
+    )
+    
+    parser_scale.add_argument(
+        "--client_id",
+        type=str,
+        required=True,
+        help="Service principal client id",
+    )
+    
+    parser_scale.add_argument(
+        "--client_secret",
+        type=str,
+        required=True,
+        help="Service Principal client secret",
+    )
+    
+    parser_scale.add_argument(
+        "--new_node_count",
+        type=int,
+        required=True,
+        help="New node count to scale cluster to",
+    )
+    
+    parser_scale.set_defaults(func=scale_cluster)
     
     args = parser.parse_args()
     
@@ -184,5 +266,11 @@ if __name__ == '__main__':
         run_job()
     elif args.command == "check_status":
         check_status()
+    elif args.command == "delete_resources":
+        delete_resources()
+    elif args.command == "get_logs":
+        get_logs()
+    elif args.command == "scale":
+        scale_cluster(args)
     else:
         print("petctl.py: error: argument command: NULL command: (choose from 'setup', 'configure', 'run_job')")
