@@ -44,11 +44,14 @@ def configure_json(args):
     with open(KUBERNETES_JSON_FILE) as f:
         data =  json.load(f)
     data["properties"]["masterProfile"]["count"] = 1
-    data["properties"]["agentPoolProfiles"][0]["count"] = args.max_size
+    data["properties"]["agentPoolProfiles"][0]["count"] = args.min_size
     
     json.dump(data, open(result_json_file,"w"), indent=4)
 def azure_login():
-    run_commands(["az login"])
+    cmd = "az login"
+    process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, env = os.environ)
+    for line in process.stdout:
+        print(line)
 
 def download_aks_engine_script():
     url = 'https://raw.githubusercontent.com/Azure/aks-engine/master/scripts/get-akse.sh'
