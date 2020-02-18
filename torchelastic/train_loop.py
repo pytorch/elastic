@@ -23,12 +23,32 @@ MAX_FAILURES = 100
 
 def train(elastic_coordinator, train_step, state):
     """
-        This is the main elastic data parallel loop. It starts from an initial 'state'.
-        Each iteration calls 'train_step' and returns a new state. 'train_step'
-        has the following interface:
+        This function defines a train_loop as well as a python generate by iterate '
+        train_step' function, the 'train_step' has the following interface:
             state, worker_stats = train_step(state)
         When 'train_step' exhausts all the data, a StopIteration exception should be
         thrown.
+    """
+
+    def state_generator(state):
+        try:
+            while not elastic_coordinator.should_stop_training():
+                state, worker_state = train_step(state)
+                yield state, worker_state
+        except StopIteration:
+            # exit signal
+            return
+
+    return train_with_state_generator(elastic_coordinator, state_generator, state)
+
+
+def train_with_state_generator(elastic_coordinator, state_generator, state):
+    """
+        This is the main elastic data parallel loop. It starts from an initial 'state'.
+        Each iteration calls state_generator returns a new state. The state_generator
+        is a python generator, typicall it will yield a state object when next() was
+        called. When 'state_generator' exhausts all the data, a StopIteration exception
+        should be thrown.
     """
 
     assert isinstance(state, torchelastic.State)
@@ -88,13 +108,14 @@ def train(elastic_coordinator, train_step, state):
 
         # Note that the loop might not even start if the rendezvous was closed
         # due to one of the trainer processes completing earlier.
+        generator = state_generator(state)
         while not elastic_coordinator.should_stop_training():
             start_time = time.time()
             snapshot = state.capture_snapshot()
 
             try:
                 train_step_start_time = time.time()
-                state, worker_stats = train_step(state)
+                state, worker_stats = next(generator)
                 publish_metric(
                     "torchelastic",
                     "train_step.duration.ms",
