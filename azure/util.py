@@ -48,7 +48,7 @@ def configure_json(args):
     data["properties"]["masterProfile"]["count"] = 1
     data["properties"]["agentPoolProfiles"][0]["count"] = args.min_size
     data["properties"]["masterProfile"]["vmSize"] = args.master_vm
-    data["properties"]["agentPoolProfiles"]["vmSize"] = args.worker_vm
+    data["properties"]["agentPoolProfiles"][0]["vmSize"] = args.worker_vm
     
     json.dump(data, open(result_json_file,"w"), indent=4)
 
