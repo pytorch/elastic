@@ -111,6 +111,7 @@ def create_docker_image_secret(args):
                .format(args.docker_server,
                        args.docker_username,
                     args.docker_password)]
+    run_commands(commands)
     print("Docker image registered..") 
  
 def deploy_aks_cluster(args):
