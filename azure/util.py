@@ -105,9 +105,9 @@ def install_blobfuse_drivers():
 def create_docker_image_secret(args):
     commands = ["kubectl create secret \
                 docker-registry pet-docker-secret \
-                --docker-server= {0} \
-                --docker-username= {1} \
-                --docker-password= {2}"
+                --docker-server={0} \
+                --docker-username={1} \
+                --docker-password={2}"
                .format(args.docker_server,
                        args.docker_username,
                     args.docker_password)]
