@@ -14,6 +14,7 @@ def run_commands(cmds):
     set_kubeconfig_environment_var()
     
     for cmd in cmds:
+        print("Running {}".format(cmd))
         process = subprocess.Popen(cmd, universal_newlines=True, shell=True,
                     stdout=subprocess.PIPE, stderr=subprocess.PIPE, env = os.environ)
         for line in process.stdout:
