@@ -20,6 +20,8 @@ def run_commands(cmds):
         for line in process.stdout:
             print(line)
             output.append(line)
+        for err in process.stderr:
+            print(err)
     return output
 
 def configure_yaml(args):
@@ -76,7 +78,8 @@ def install_aks_engine():
 def set_kubeconfig_environment_var():
     config_path = PETCTL_DIR + "/_output/azure-pytorch-elastic/kubeconfig/kubeconfig.*.json"
     ls_cmd = "ls {}".format(config_path)
-
+    print("Reading KUBECONFIG environment variable from {}".format(config_path))
+    
     p = subprocess.Popen(ls_cmd, shell=True, stdout=subprocess.PIPE, env = os.environ)
     configS,_ = p.communicate()
     if (configS != b''):
