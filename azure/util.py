@@ -79,11 +79,11 @@ def set_kubeconfig_environment_var():
     config_path = PETCTL_DIR + "/_output/azure-pytorch-elastic/kubeconfig/kubeconfig.*.json"
     ls_cmd = "ls {}".format(config_path)
     print("Reading KUBECONFIG environment variable from {}".format(config_path))
-    
+
     p = subprocess.Popen(ls_cmd, shell=True, stdout=subprocess.PIPE, env = os.environ)
     configS,_ = p.communicate()
     if (configS != b''):
-        config_file =  configS.decode('utf-8')
+        config_file =  configS.decode('utf-8').rstrip()
         if(os.path.isfile(config_file)): 
             os.environ["KUBECONFIG"] = config_file
             print("Setting KUBECONFIG env variable ", os.environ.get("KUBECONFIG"))
