@@ -48,10 +48,14 @@ def configure_json(args):
     
     json.dump(data, open(result_json_file,"w"), indent=4)
 def azure_login():
-    cmd = "az login"
-    process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, env = os.environ)
-    for line in process.stdout:
-        print(line)
+    check_cmd = "az account show"
+    p = subprocess.Popen(check_cmd.split(), stdout=subprocess.PIPE, env = os.environ)
+    acctS,_ = p.communicate()
+    if (acctS == b''):
+        login_cmd = "az login"
+        process = subprocess.Popen(login_cmd.split(), stdout=subprocess.PIPE, env = os.environ)
+        for line in process.stdout:
+            print(line)
 
 def download_aks_engine_script():
     url = 'https://raw.githubusercontent.com/Azure/aks-engine/master/scripts/get-akse.sh'
@@ -62,7 +66,7 @@ def install_aks_engine():
     commands = ["chmod 700 config/get-akse.sh", "./config/get-akse.sh"]
     run_commands(commands)
 def set_kubeconfig_environment_var():
-    config_file =  PETCTL_DIR + "/_output/aagarg-pytorch-elastic/kubeconfig/kubeconfig.westeurope.json"
+    config_file =  PETCTL_DIR + "/_output/azure-pytorch-elastic/kubeconfig/kubeconfig.westeurope.json"
     
     if(os.path.isfile(config_file)): 
         os.environ["KUBECONFIG"] = config_file
