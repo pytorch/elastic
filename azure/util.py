@@ -31,7 +31,7 @@ def configure_yaml(args):
     print('Configuring job yaml ', result_yaml_file)
     
     with open(SAMPLE_YAML_FILE) as f:
-        data = yaml.load(f, Loader=yaml.FullLoader)
+        data = yaml.load(f)
     
     data["spec"]["parallelism"] = args.max_size
     data["spec"]["template"]["spec"]["containers"][0]["env"].extend([dict([('name', 'JOB_ID'), ('value', str(uuid.uuid1()) + "_" + args.name)]),
@@ -76,8 +76,9 @@ def install_aks_engine():
     run_commands(commands)
 
 def set_kubeconfig_environment_var():
-    config_path = PETCTL_DIR + "/_output/azure-pytorch-elastic/kubeconfig/kubeconfig.*.json"
-    ls_cmd = "ls {}".format(config_path)
+    config_path = PETCTL_DIR + "\\_output\\aagarg-pytorch-elastic\\kubeconfig\\kubeconfig.*.json"
+    ls_cmd = "dir " +config_path
+    print(ls_cmd)
     print("Reading KUBECONFIG environment variable from {}".format(config_path))
 
     p = subprocess.Popen(ls_cmd, shell=True, stdout=subprocess.PIPE, env = os.environ)
