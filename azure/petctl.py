@@ -1,8 +1,10 @@
 from util import *
+
 # Create a Kubernetes specs and YAML job file based on user inputs
 def configure(args):  
     configure_yaml(args)
     configure_json(args)
+
 def setup(args):
     azure_login()
     install_aks_engine()
@@ -39,6 +41,7 @@ def delete_resources():
                 "kubectl delete secret pet-blob-secret",
                 "kubectl delete namespace --all"]
     run_commands(commands)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     
