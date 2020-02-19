@@ -9,11 +9,11 @@ def setup(args):
     azure_login()
     install_aks_engine()
     deploy_aks_cluster(args)
+
+def run_job(args):
     create_storage_secrets(args)
     install_blobfuse_drivers()
     create_docker_image_secret(args)
-
-def run_job():
     commands = ["kubectl delete -f config/azure-pytorch-elastic.yaml",
                 "kubectl apply -f config/azure-pytorch-elastic.yaml",
                 "kubectl describe pods",
@@ -100,41 +100,6 @@ if __name__ == '__main__':
         help="Service Principal client secret",
     )
     
-    parser_setup.add_argument(
-        "--storage_account_name",
-        type=str,
-        required=True,
-        help="Pet blob storage secrets",
-    )
-    
-    parser_setup.add_argument(
-        "--storage_account_key",
-        type=str,
-        required=True,
-        help="Pet blob storage secrets",
-    )
-    
-    parser_setup.add_argument(
-        "--docker_server",
-        type=str,
-        required=True,
-        help="Docker server",
-    )
-    
-    parser_setup.add_argument(
-        "--docker_username",
-        type=str,
-        required=True,
-        help="Docker username",
-    )
-    
-    parser_setup.add_argument(
-        "--docker_password",
-        type=str,
-        required=True,
-        help="Docker password",
-    )
-    
     parser_setup.set_defaults(func=setup)
     
      # ---------------------------------- #
@@ -187,6 +152,41 @@ if __name__ == '__main__':
     
     parser_run_job = subparser.add_parser(
         "run_job", help="Run your training job"
+    )
+    
+    parser_run_job.add_argument(
+        "--storage_account_name",
+        type=str,
+        required=True,
+        help="Pet blob storage secrets",
+    )
+    
+    parser_run_job.add_argument(
+        "--storage_account_key",
+        type=str,
+        required=True,
+        help="Pet blob storage secrets",
+    )
+    
+    parser_run_job.add_argument(
+        "--docker_server",
+        type=str,
+        required=True,
+        help="Docker server",
+    )
+    
+    parser_run_job.add_argument(
+        "--docker_username",
+        type=str,
+        required=True,
+        help="Docker username",
+    )
+    
+    parser_run_job.add_argument(
+        "--docker_password",
+        type=str,
+        required=True,
+        help="Docker password",
     )
     
     parser_run_job.set_defaults(func=run_job)
@@ -280,7 +280,7 @@ if __name__ == '__main__':
     elif args.command == "setup":
         setup(args)
     elif args.command == "run_job":
-        run_job()
+        run_job(args)
     elif args.command == "check_status":
         check_status()
     elif args.command == "delete_resources":
