@@ -161,6 +161,20 @@ if __name__ == '__main__':
         required=False,
         help="set size to automatically set min_size = max_size = size",
     )
+    parser_configure.add_argument(
+        "--master_vm",
+        type=str,
+        required=False,
+        default="Standard_DS1_v2",
+        help="Azure VM instance for master node",
+    )
+    parser_configure.add_argument(
+        "--worker_vm",
+        type=str,
+        required=False,
+        default="Standard_NC6s_v3",
+        help="Azure VM instance for woker nodes",
+    )
     parser_configure.set_defaults(func=configure)
     
     
