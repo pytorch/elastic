@@ -76,7 +76,7 @@ def install_aks_engine():
     run_commands(commands)
 
 def set_kubeconfig_environment_var():
-    config_path = PETCTL_DIR + "\\_output\\aagarg-pytorch-elastic\\kubeconfig\\kubeconfig.*.json"
+    config_path = PETCTL_DIR + "\\_output\\azure-pytorch-elastic\\kubeconfig\\kubeconfig.*.json"
     ls_cmd = "dir " +config_path
     print(ls_cmd)
     print("Reading KUBECONFIG environment variable from {}".format(config_path))
