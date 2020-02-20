@@ -2,6 +2,7 @@ import yaml
 import json
 import argparse
 import os
+from os import walk
 import os.path
 import subprocess
 import uuid
@@ -92,18 +93,18 @@ def install_aks_engine():
         run_commands(commands)
 
 def set_kubeconfig_environment_var():
-    if(os.path.isdir('PETCTL_DIR + \\_output')):
-        config_path = PETCTL_DIR + "\\_output\\azure-pytorch-elastic\\kubeconfig\\kubeconfig.*.json"
-        ls_cmd = "dir " +config_path
+    if(os.path.isdir('_output')):
+        config_path = PETCTL_DIR + "\\_output\\azure-pytorch-elastic\\kubeconfig"
         print("Reading KUBECONFIG environment variable from {}".format(config_path))
+        
+        for files in walk(config_path):
+            for f in files:
+                if f and f[0].endswith('.json'):
+                    config_path = config_path + "\\" + f[0]
 
-        p = subprocess.Popen(ls_cmd, shell=True, stdout=subprocess.PIPE, env = os.environ)
-        configS,_ = p.communicate()
-        if (configS != b''):
-            config_file =  configS.decode('utf-8').rstrip()
-            if(os.path.isfile(config_file)): 
-                os.environ["KUBECONFIG"] = config_file
-                print("Setting KUBECONFIG env variable ", os.environ.get("KUBECONFIG"))
+        if (config_path.endswith('.json')):
+            os.environ["KUBECONFIG"] = config_path
+            print("Setting KUBECONFIG env variable ", os.environ.get("KUBECONFIG"))
  
 def create_storage_secrets(args):
     commands = ["kubectl create secret generic pet-blob-secret \
