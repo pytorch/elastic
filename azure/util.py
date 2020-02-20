@@ -6,6 +6,8 @@ import os.path
 import subprocess
 import uuid
 import urllib.request
+import zipfile
+from shutil import copyfile
 
 PETCTL_DIR  = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
@@ -70,10 +72,24 @@ def download_aks_engine_script():
     urllib.request.urlretrieve(url, 'config/get-akse.sh')
     print('Downloading aks engine script.....')
 
+def download_aks_engine_script_for_windows():
+    print('Downloading aks engine binary.....')
+    url = 'https://github.com/Azure/aks-engine/releases/download/v0.47.0/aks-engine-v0.47.0-windows-amd64.zip'
+    filename,_ = urllib.request.urlretrieve(url, 'config/aks.zip')
+    zip_file_object = zipfile.ZipFile(filename, 'r')
+    for name in zip_file_object.namelist():
+        if "aks-engine.exe" in name:
+            zip_file_object.extract(name,'aks-engine')
+            copyfile('aks-engine/'+name,'aks-engine.exe')
+            break
+
 def install_aks_engine():
-    download_aks_engine_script()
-    commands = ["chmod 700 config/get-akse.sh", "./config/get-akse.sh"]
-    run_commands(commands)
+    if os.name == "nt":
+        download_aks_engine_script_for_windows()
+    else:
+        download_aks_engine_script()
+        commands = ["chmod 700 config/get-akse.sh", "./config/get-akse.sh"]
+        run_commands(commands)
 
 def set_kubeconfig_environment_var():
     config_path = PETCTL_DIR + "\\_output\\azure-pytorch-elastic\\kubeconfig\\kubeconfig.*.json"
