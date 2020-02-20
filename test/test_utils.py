@@ -6,9 +6,24 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import ctypes
 import multiprocessing
 import queue
 import uuid
+
+
+def is_asan():
+    """Determines if the Python interpreter is running with ASAN"""
+    return hasattr(ctypes.CDLL(""), "__asan_init")
+
+
+def is_tsan():
+    """Determines if the Python interpreter is running with TSAN"""
+    return hasattr(ctypes.CDLL(""), "__tsan_init")
+
+
+def is_asan_or_tsan():
+    return is_asan() or is_tsan()
 
 
 def _get_or_raise(qout, qerr):

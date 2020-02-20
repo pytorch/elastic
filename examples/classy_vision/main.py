@@ -47,7 +47,7 @@ def main(local_rank, c10d_backend, rdzv_init_url, max_world_size, classy_args):
     task = build_task(config)
 
     # Load checkpoint, if available
-    checkpoint = load_checkpoint(classy_args.checkpoint_folder, classy_args.device)
+    checkpoint = load_checkpoint(classy_args.checkpoint_folder)
     task.set_checkpoint(checkpoint)
 
     pretrained_checkpoint = load_checkpoint(
