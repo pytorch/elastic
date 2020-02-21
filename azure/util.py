@@ -127,7 +127,7 @@ def upload_to_azure_blob(args):
         run_commands(commands)
     else:
         download_azcopy_script()
-        commands = ["./azcopy copy \'{}\' \'{}/{}{}\' --recursive=True"
+        commands = ["azcopy copy \'{}\' \'https://{}.blob.core.windows.net/{}{}\' --recursive=True"
         .format(args.source_path,
          args.account_name,
          args.container_name,
