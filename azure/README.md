@@ -78,6 +78,7 @@ python petctl.py --upload_storage --source_path <path to imagenet train folder>
                                   --container_name data
                                   --sas_token <sas token for blob storage>
 ```
+Base docker image to run Pytorch Elastic on Azure is at [Dockerfile](config/Dockerfile). Instructions on publishing docker image to  AzureContainer registry can be found at [ACR](https://docs.microsoft.com/en-us/azure/container-registry/container-registry-get-started-docker-cli).
 
 6. #### Check status of your job
 ```
