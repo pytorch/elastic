@@ -111,8 +111,8 @@ def create_storage_secrets(args):
                  --from-literal accountname={0} \
                  --from-literal accountkey='{1}' \
                  --type='azure/blobfuse'"
-                 .format(args.storage_account_name,
-                         args.storage_account_key)]
+                 .format(args.account_name,
+                         args.account_key)]
 
     run_commands(commands)
 
