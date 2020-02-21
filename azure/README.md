@@ -65,6 +65,19 @@ Submit the training job.
 ```
 python petctl.py run_job
 ```
+To run the provided imagenet example, training script and data can be uploaded to Azure blob storage by running
+```
+python petctl.py --upload_storage --source_path ../examples/imagenet/main.py
+                                  --account_name <storage account name>
+                                  --container_name code
+                                  --sas_token <sas token for blob storage>
+```
+```
+python petctl.py --upload_storage --source_path <path to imagenet train folder>
+                                  --account_name <storage account name>
+                                  --container_name data
+                                  --sas_token <sas token for blob storage>
+```
 
 6. #### Check status of your job
 ```
