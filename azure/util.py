@@ -125,7 +125,8 @@ def create_docker_image_secret(args):
                 docker-registry pet-docker-secret \
                 --docker-server={0} \
                 --docker-username={1} \
-                --docker-password={2}"
+                --docker-password={2} \
+                --docker-email='test@test.com'"
                .format(args.docker_server,
                        args.docker_username,
                     args.docker_password)]
