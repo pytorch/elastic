@@ -127,9 +127,9 @@ def create_docker_image_secret(args):
                 --docker-username={1} \
                 --docker-password={2} \
                 --docker-email='test@test.com'"
-               .format(args.docker_server,
-                       args.docker_username,
-                    args.docker_password)]
+               .format(args.server,
+                       args.username,
+                    args.password)]
     run_commands(commands)
     print("Docker image registered..") 
  
