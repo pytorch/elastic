@@ -109,11 +109,10 @@ def set_kubeconfig_environment_var():
 def create_storage_secrets(args):
     commands = ["kubectl create secret generic pet-blob-secret \
                  --from-literal accountname={0} \
-                 --from-literal accountkey='{1}' \
-                 --type='azure/blobfuse'"
+                 --from-literal accountkey={1} \
+                 --type=azure/blobfuse"
                  .format(args.account_name,
                          args.account_key)]
-
     run_commands(commands)
 
 def install_blobfuse_drivers():
