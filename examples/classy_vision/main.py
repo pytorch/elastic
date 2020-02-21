@@ -50,9 +50,7 @@ def main(local_rank, c10d_backend, rdzv_init_url, max_world_size, classy_args):
     checkpoint = load_checkpoint(classy_args.checkpoint_folder)
     task.set_checkpoint(checkpoint)
 
-    pretrained_checkpoint = load_checkpoint(
-        classy_args.pretrained_checkpoint_folder, classy_args.device
-    )
+    pretrained_checkpoint = load_checkpoint(classy_args.pretrained_checkpoint_folder)
     if pretrained_checkpoint is not None:
         assert isinstance(
             task, FineTuningTask
