@@ -71,11 +71,11 @@ class LocalTimerExample(unittest.TestCase):
 
         server.stop()
 
-    @unittest.skip(is_asan())
+    @unittest.skipIf(is_asan(), "test is asan incompatible")
     def test_example_start_method_spawn(self):
         self._run_example_with(start_method="spawn")
 
-    @unittest.skip(is_asan())
+    @unittest.skipIf(is_asan(), "test is asan incompatible")
     def test_example_start_method_forkserver(self):
         self._run_example_with(start_method="forkserver")
 

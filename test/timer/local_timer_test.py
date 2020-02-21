@@ -12,6 +12,7 @@ import unittest
 import unittest.mock as mock
 
 import torchelastic.timer as timer
+from test_utils import is_tsan
 from torchelastic.timer.api import TimerRequest
 from torchelastic.timer.local_timer import MultiprocessingRequestQueue
 
@@ -54,6 +55,7 @@ class LocalTimerTest(unittest.TestCase):
         with timer.expires(after=0.5):
             time.sleep(0.1)
 
+    @unittest.skipIf(is_tsan(), "test is tsan incompatible")
     def test_get_timer_recursive(self):
         """
         If a function acquires a countdown timer with default scope,
@@ -93,6 +95,7 @@ class LocalTimerTest(unittest.TestCase):
         with timer.expires(after=timeout):
             time.sleep(duration)
 
+    @unittest.skipIf(is_tsan(), "test is tsan incompatible")
     def test_timer(self):
         timeout = 0.1
         duration = 1
@@ -179,6 +182,7 @@ class LocalTimerServerTest(unittest.TestCase):
     def tearDown(self):
         self.server.stop()
 
+    @unittest.skipIf(is_tsan(), "test is tsan incompatible")
     def test_watchdog_call_count(self):
         """
         checks that the watchdog function ran wait/interval +- 1 times
@@ -211,6 +215,7 @@ class LocalTimerServerTest(unittest.TestCase):
     def _release_timer(self, pid, scope):
         return TimerRequest(worker_id=pid, scope_id=scope, expiration_time=-1)
 
+    @unittest.skipIf(is_tsan(), "test is tsan incompatible")
     @mock.patch("os.kill")
     def test_expired_timers(self, mock_os_kill):
         """
