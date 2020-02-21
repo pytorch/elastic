@@ -52,7 +52,7 @@ python petctl.py storage_secret --account_name <storage account name>
 ```
 ##### Generate Docker image secret
 ```
-python petctl.py storage_secret --server <docker server> 
+python petctl.py docker_secret --server <docker server> 
                                 --username <docker username> 
                                 --password <docker password>
 ```
