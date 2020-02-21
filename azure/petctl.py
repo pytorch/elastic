@@ -168,13 +168,6 @@ if __name__ == '__main__':
     )
 
     parser_upload_storage.add_argument(
-        "--account_key",
-        type=str,
-        required=True,
-        help="Azure Blob storage account key",
-    )
-
-    parser_upload_storage.add_argument(
         "--container_name",
         type=str,
         required=True,

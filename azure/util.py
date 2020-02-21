@@ -119,10 +119,10 @@ def download_azcopy_script_for_windows():
 def upload_to_azure_blob(args):
     if os.name == "nt":
         download_azcopy_script_for_windows()
-        commands = ["azcopy copy \"{}\" \"{}/{}{}\" --recursive=True"
+        commands = ["azcopy copy \"{}\" \"https://{}.blob.core.windows.net/{}{}\" --recursive=True"
         .format(args.source_path,
          args.account_name,
-         args.account_key,
+         args.container_name,
          args.sas_token)]        
         run_commands(commands)
     else:
@@ -130,7 +130,7 @@ def upload_to_azure_blob(args):
         commands = ["./azcopy copy \'{}\' \'{}/{}{}\' --recursive=True"
         .format(args.source_path,
          args.account_name,
-         args.account_key,
+         args.container_key,
          args.sas_token)]        
         run_commands(commands)
 
