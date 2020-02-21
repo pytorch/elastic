@@ -248,27 +248,6 @@ if __name__ == '__main__':
     parser_run_job = subparser.add_parser(
         "run_job", help="Run your training job"
     )
-        
-    parser_run_job.add_argument(
-        "--docker_server",
-        type=str,
-        required=True,
-        help="Docker server",
-    )
-    
-    parser_run_job.add_argument(
-        "--docker_username",
-        type=str,
-        required=True,
-        help="Docker username",
-    )
-    
-    parser_run_job.add_argument(
-        "--docker_password",
-        type=str,
-        required=True,
-        help="Docker password",
-    )
     
     parser_run_job.set_defaults(func=run_job)
     

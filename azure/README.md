@@ -29,24 +29,48 @@ python petctl.py setup --dns_prefix azure-pytorch-elastic
 ```
 This creates an Azure Kubernetes cluster with 1 Standard_DS1_v2 master instances and specified number of Standard_NC6s_v3 worker instances. 
 
-3. #### Start your training job
+3. #### Upload to Azure Blob storage
+
+This is an optional step to upload code and data to Azure blob storage. This step can be skipped if the training script and data are already available in Azure Blob storage.
+```
+python petctl.py upload_storage --source_path <path to files>
+                                --account_name <storage account name>
+                                --container_name <name of blob container>
+                                --sas_token <SAS token for blob storage>
+```
+Instructions to generate SAS token are available [here](https://adamtheautomator.com/azure-sas-token/).
+
+4. #### Generate Storage and Docker Image secrets
+
 This step requires user blob storage account and docker image details.
 Instructions for accessing storage account keys can be found at [portal](https://docs.microsoft.com/en-us/azure/storage/common/storage-account-keys-manage), [CLI](https://docs.microsoft.com/en-us/cli/azure/storage/account/keys)  
 
+##### Generate Storage secret
 ```
-python petctl.py run_job --storage_account_name <storage account name> 
-                       --storage_account_key "<storage account key>" 
-                       --docker_server <docker server> 
-                       --docker_username <docker username> 
-                       --docker_password <docker password>
+python petctl.py storage_secret --account_name <storage account name> 
+                                --account_key "<storage account key>" 
 ```
+##### Generate Docker image secret
+```
+python petctl.py storage_secret --server <docker server> 
+                                --username <docker username> 
+                                --password <docker password>
+```
+
 Training job file is updated to mount users storage account onto worker instances and apply the user provided docker image.
 
-4. #### Check status of your job
+5. #### Start your training job
+
+Submit the training job.
+```
+python petctl.py run_job
+```
+
+6. #### Check status of your job
 ```
 python petctl.py check_status
 ```
-5. #### Scale worker instances
+7. #### Scale worker instances
 ```
 python petctl.py scale --rg "<resource_group>"
                        --location "<location>"
@@ -55,7 +79,7 @@ python petctl.py scale --rg "<resource_group>"
                        --client_secret <service principal client secret>
                        --new_node_count <worker instances count>    
 ```
-6. #### Delete resources
+8. #### Delete resources
 ````
 python petctl.py delete_resources
 ````
