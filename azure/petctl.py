@@ -35,13 +35,7 @@ def check_status():
     run_commands(commands)
     
 def get_logs():
-    pod_names = run_commands(["kubectl get pods --selector app=azure-pytorch-elastic | awk '{print $1}' | sed '1 d'"])
-    
-    for name in pod_names:
-        print("------------***********************************------------------")
-        print("POD:",name.strip())
-        print("------------***********************************------------------")
-        run_commands(["kubectl logs "+name.strip()])
+    run_commands(["kubectl logs --selector app=azure-pytorch-elastic "])
     
 def delete_resources():
     commands = ["kubectl config delete-cluster azure-pytorch-elastic", 
