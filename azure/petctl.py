@@ -39,8 +39,10 @@ def get_logs():
 def delete_resources():
     commands = ["kubectl config delete-cluster azure-pytorch-elastic", 
                 "kubectl delete secret pet-blob-secret",
-                "kubectl delete namespace --all"]
+                "kubectl delete namespace --all",
+                "RD /S /Q _output"]
     run_commands(commands)
+    print('Deleted all resources, please manually delete the AKS resources from the Azure Portal.')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
