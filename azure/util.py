@@ -130,7 +130,7 @@ def upload_to_azure_blob(args):
         commands = ["./azcopy copy \'{}\' \'{}/{}{}\' --recursive=True"
         .format(args.source_path,
          args.account_name,
-         args.container_key,
+         args.container_name,
          args.sas_token)]        
         run_commands(commands)
 
