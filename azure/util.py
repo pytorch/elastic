@@ -8,6 +8,7 @@ import subprocess
 import uuid
 import urllib.request
 import zipfile
+import tarfile
 from shutil import copyfile
 
 PETCTL_DIR  = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -92,6 +93,48 @@ def install_aks_engine():
         commands = ["chmod 700 config/get-akse.sh", "./config/get-akse.sh"]
         run_commands(commands)
 
+def download_azcopy_script():
+    print('Downloading azcopy cli')
+    url = 'https://aka.ms/downloadazcopy-v10-linux'
+    filename,_ = urllib.request.urlretrieve(url, 'config/azcopy.tar.gz')
+    tar_file_object = tarfile.open(filename, "r:gz")
+    for member in tar_file_object.getmembers():
+        if member.isreg():
+            member.name = os.path.basename(member.name)
+            if "azcopy" == member.name:
+                tar_file_object.extract(member.name, '.')
+                break
+
+def download_azcopy_script_for_windows():
+    url = 'https://aka.ms/downloadazcopy-v10-windows'
+    filename,_ = urllib.request.urlretrieve(url, 'config/azcopy.zip')
+    zip_file_object = zipfile.ZipFile(filename, 'r')
+    for member in zip_file_object.infolist():
+        if not member.is_dir():
+            member.filename = os.path.basename(member.filename)
+            if 'azcopy' in member.filename:
+                zip_file_object.extract(member, '.')
+                break
+
+def upload_to_azure_blob(args):
+    if os.name == "nt":
+        download_azcopy_script_for_windows()
+        commands = ["azcopy copy \"{}\" \"{}/{}?{}\" --recursive=True"
+        .format(args.source_path,
+         args.accountname,
+         args.accountkey,
+         args.sas_token)]        
+        run_commands(commands)
+    else:
+        download_azcopy_script()
+        commands = ["./azcopy copy \'{}\' \'{}/{}?{}\' --recursive=True"
+        .format(args.source_path,
+         args.accountname,
+         args.accountkey,
+         args.sas_token)]        
+        run_commands(commands)
+
+
 def set_kubeconfig_environment_var():
     if(os.path.isdir('_output')):
         config_path = PETCTL_DIR + "\\_output\\azure-pytorch-elastic\\kubeconfig"
@@ -111,8 +154,8 @@ def create_storage_secrets(args):
                  --from-literal accountname={0} \
                  --from-literal accountkey='{1}' \
                  --type='azure/blobfuse'"
-                 .format(args.storage_account_name,
-                         args.storage_account_key)]
+                 .format(args.account_name,
+                         args.account_key)]
 
     run_commands(commands)
 
@@ -126,9 +169,9 @@ def create_docker_image_secret(args):
                 --docker-server={0} \
                 --docker-username={1} \
                 --docker-password={2}"
-               .format(args.docker_server,
-                       args.docker_username,
-                    args.docker_password)]
+               .format(args.server,
+                       args.username,
+                    args.password)]
     run_commands(commands)
     print("Docker image registered..") 
  

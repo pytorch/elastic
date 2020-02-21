@@ -22,3 +22,4 @@ azure/_output/azure-pytorch-elastic/ca.key
 azure/_output/azure-pytorch-elastic/apiserver.key
 azure/_output/azure-pytorch-elastic/apimodel.json
 azure/config/azure-pytorch-elastic.yaml
+azure/azcopytest.py

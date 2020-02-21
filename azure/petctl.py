@@ -10,10 +10,17 @@ def setup(args):
     install_aks_engine()
     deploy_aks_cluster(args)
 
-def run_job(args):
+def upload_storage(args):
+    upload_to_azure_blob(args)
+
+def storage_secret(args):
     create_storage_secrets(args)
-    install_blobfuse_drivers()
+
+def docker_secret(args):
     create_docker_image_secret(args)
+
+def run_job(args):
+    install_blobfuse_drivers()
     commands = ["kubectl delete -f config/azure-pytorch-elastic.yaml",
                 "kubectl apply -f config/azure-pytorch-elastic.yaml",
                 "kubectl describe pods",
@@ -145,7 +152,102 @@ if __name__ == '__main__':
     )
     parser_configure.set_defaults(func=configure)
     
+     # ---------------------------------- #
+     #              UPLOAD STORAGE        #
+     # ---------------------------------- #
+
+    parser_upload_storage = subparser.add_parser(
+        "upload_storage", help="Upload to Azure Blob storage"
+    )
+
+    parser_upload_storage.add_argument(
+        "--account_name",
+        type=str,
+        required=True,
+        help="Azure Blob storage Account name",
+    )
+
+    parser_upload_storage.add_argument(
+        "--account_key",
+        type=str,
+        required=True,
+        help="Azure Blob storage account key",
+    )
+
+    parser_upload_storage.add_argument(
+        "--container_name",
+        type=str,
+        required=True,
+        help="Azure Blob storage container name",
+    )
+
+    parser_upload_storage.add_argument(
+        "--sas_token",
+        type=str,
+        required=True,
+        help="Azure Blob storage SAS token",
+    )
+
+    parser_upload_storage.add_argument(
+        "--source_path",
+        type=str,
+        required=True,
+        help="Path to local files",
+    )
+
+    parser_upload_storage.set_defaults(func=upload_storage)
     
+     # ---------------------------------- #
+     #              SETUP SECRETS         #
+     # ---------------------------------- #
+    
+    parser_storage_secret = subparser.add_parser(
+        "storage_secret", help="Generate secret for Azure Blob storage"
+    )
+
+    parser_storage_secret.add_argument(
+        "--account_name",
+        type=str,
+        required=True,
+        help="Azure Blob storage account name",
+    )
+
+    parser_storage_secret.add_argument(
+        "--account_key",
+        type=str,
+        required=True,
+        help="Azure Blob storage account key",
+    )
+
+    parser_storage_secret.set_defaults(func=storage_secret)
+
+    parser_docker_secret = subparser.add_parser(
+        "docker_secret", help="Generate secret for Docker Image"
+    )
+
+    parser_docker_secret.add_argument(
+        "--server",
+        type=str,
+        required=True,
+        help="Docker server",
+    )
+    
+    parser_docker_secret.add_argument(
+        "--username",
+        type=str,
+        required=True,
+        help="Docker username",
+    )
+
+    parser_docker_secret.add_argument(
+        "--password",
+        type=str,
+        required=True,
+        help="Docker password",
+    )
+
+    parser_docker_secret.set_defaults(func=docker_secret)
+
      # ---------------------------------- #
      #              RUN JOB               #
      # ---------------------------------- #
@@ -153,21 +255,7 @@ if __name__ == '__main__':
     parser_run_job = subparser.add_parser(
         "run_job", help="Run your training job"
     )
-    
-    parser_run_job.add_argument(
-        "--storage_account_name",
-        type=str,
-        required=True,
-        help="Pet blob storage secrets",
-    )
-    
-    parser_run_job.add_argument(
-        "--storage_account_key",
-        type=str,
-        required=True,
-        help="Pet blob storage secrets",
-    )
-    
+        
     parser_run_job.add_argument(
         "--docker_server",
         type=str,
@@ -279,6 +367,12 @@ if __name__ == '__main__':
         configure(args)
     elif args.command == "setup":
         setup(args)
+    elif args.command == "upload_storage":
+        upload_storage(args)
+    elif args.command == "storage_secret":
+        storage_secret(args)
+    elif args.command == "docker_secret":
+        docker_secret(args)
     elif args.command == "run_job":
         run_job(args)
     elif args.command == "check_status":
