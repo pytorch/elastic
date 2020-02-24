@@ -6,7 +6,9 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import abc
 import logging
+import sys
 from contextlib import contextmanager
 
 import torch
@@ -24,7 +26,25 @@ from torchelastic.worker_stats import WorkerStats
 log = logging.getLogger(__name__)
 
 
-class TestDataset:
+class BaseDataset(abc.ABC):
+    @abc.abstractmethod
+    def reinit(self, world_size, rank, dataset_params):
+        pass
+
+    @abc.abstractmethod
+    def capture_snapshot(self, snapshot):
+        pass
+
+    @abc.abstractmethod
+    def apply_snapshot(self, snapshot):
+        pass
+
+    @abc.abstractmethod
+    def get_sync_parameters(self):
+        pass
+
+
+class TestDataset(BaseDataset):
     def __init__(self, range_start=11, range_end=31):
         self.data = range(range_start, range_end)
         self.start_index = 0
@@ -33,10 +53,12 @@ class TestDataset:
         # used to figure out where we need to "resume" from in case of reinit.
         self.local_skip_index = -1
         self.dist_skip_index = -1  # Max across all local_skip_index values.
+        self.reinit(1, 0, [self.dist_skip_index])
 
-    def reinit(self, world_size, rank, start_index):
+    def reinit(self, world_size, rank, dataset_params):
         self.world_size = world_size
         self.rank = rank
+        start_index = int(dataset_params[0]) + 1
         self.start_index = start_index
 
         self.local_skip_index = start_index - 1
@@ -62,12 +84,83 @@ class TestDataset:
         dist.all_reduce(tensor, op=dist.ReduceOp.MAX)
         return int(tensor[0])
 
+    def capture_snapshot(self, snapshot):
+        snapshot["dataset.dist_skip_index"] = self.dist_skip_index
+        return snapshot
+
+    def apply_snapshot(self, snapshot):
+        dist_skip_index = snapshot["dataset.dist_skip_index"]
+        world_size = dist.get_world_size()
+        rank = dist.get_rank()
+        self.reinit(world_size, rank, [dist_skip_index])
+
+    def get_sync_parameters(self):
+        return [self.dist_skip_index]
+
+
+class RadixTestDataset(BaseDataset):
+    """Dataset that runs specified number of iterations.
+    On each iteration, it produces the output:
+    base * iter + rank.
+    E.g. for base = 1000, iter = 0,1, , rank=0,1,
+    the folllowing output will be produced:
+    rank 0 worker: 1000, 2000
+    rank 1 worker: 1001, 2001
+    """
+
+    def __init__(self, max_iter=5, base=1000):
+        self.max_iter = max_iter
+        self.base = base
+        self.curr_iter = 0
+        self.rank = 0
+        self.start_index = 0
+        max_value = max_iter * base + base - 1
+        assert max_value < sys.maxsize, "The base most likely is too high."
+
+    def reinit(self, world_size, rank, dataset_params):
+        self.rank = rank
+        self.curr_iter = int(dataset_params[0])
+        assert self.rank < self.base, "Base should always be greater than a rank."
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.curr_iter > self.max_iter:
+            raise StopIteration()
+        self.curr_iter += 1
+        return self.base * self.curr_iter + self.rank
+
+    def capture_snapshot(self, snapshot):
+        snapshot["dataset.curr_iter"] = self.curr_iter
+        return snapshot
+
+    def apply_snapshot(self, snapshot):
+        self.curr_iter = snapshot["dataset.curr_iter"]
+        self.rank = dist.get_rank()
+
+    def get_sync_parameters(self):
+        return [self.curr_iter]
+
+    @classmethod
+    def get_expected_sum(cls, num_iter, worker_ranks, start_iter=1, base=1000):
+        # The method computes the expected sum produced by the
+        # IterationBasedTestDataset
+        total_sum = 0
+        for curr_iter in range(start_iter, num_iter + 1):
+            for rank in worker_ranks:
+                total_sum += base * curr_iter + rank
+        return total_sum
+
 
 class TestState(State):
-    def __init__(self):
+    def __init__(self, dataset=None):
         self.total_sum = 0
         self.nums = []
-        self.dataset = TestDataset()
+        if dataset is None:
+            self.dataset = TestDataset()
+        else:
+            self.dataset = dataset
         self._worker_rank = None
 
     def set_worker_rank(self, rank):
@@ -87,26 +180,27 @@ class TestState(State):
     def capture_snapshot(self):
         snapshot = {}
         snapshot["total_sum"] = self.total_sum
-        snapshot["dataset.dist_skip_index"] = self.dataset.dist_skip_index
+        self.dataset.capture_snapshot(snapshot)
         return snapshot
 
     def apply_snapshot(self, snapshot):
         self.total_sum = snapshot["total_sum"]
-        dist_skip_index = snapshot["dataset.dist_skip_index"]
-        world_size = dist.get_world_size()
-        rank = dist.get_rank()
-        self.dataset.reinit(world_size, rank, start_index=dist_skip_index + 1)
+        self.dataset.apply_snapshot(snapshot)
 
     def get_data_iterator(self):
         return iter(self.dataset)
 
     def sync(self, world_size, rank):
-        src_rank = 0
-        tensor = torch.LongTensor([self.dataset.dist_skip_index, self.total_sum])
-        dist.broadcast(tensor, src=src_rank)
+        sync_params = [self.total_sum] + self.dataset.get_sync_parameters()
+        tensor = torch.LongTensor(sync_params)
+        # Etcd does not preserve rank between different Rendezvous
+        # like Zeus does, so in order to have a determenism in sync
+        # we sync on max value.
+        dist.all_reduce(tensor, op=dist.ReduceOp.MAX)
 
-        self.dataset.reinit(world_size, rank, start_index=int(tensor[0]) + 1)
-        self.total_sum = int(tensor[1])
+        dataset_sync_params = tensor[1:].tolist()
+        self.dataset.reinit(world_size, rank, dataset_sync_params)
+        self.total_sum = int(tensor[0])
         self.set_worker_rank(dist.get_rank())
 
 

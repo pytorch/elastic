@@ -20,6 +20,7 @@ import torch
 import torch.distributed as dist
 import torchelastic.train_loop as elastic_train_loop
 from test_mocks import (
+    RadixTestDataset,
     TestCoordinatorP2P,
     TestDataset,
     TestState,
@@ -64,7 +65,7 @@ def _train_step(state, hooks):
     state.total_sum += int(tensor[0])
     log.info(
         f"After all_reduce: rank {state.get_worker_rank()}, "
-        f"sample {sample}, start_index {state.dataset.start_index}, "
+        f"sample {sample},"
         f"train step sum: {int(tensor[0])}, total sum: {state.total_sum}"
     )
     state.nums.append(sample)
@@ -807,8 +808,10 @@ class ElasticTrainerTestBase(TestCommon, abc.ABC):
         qouts = []
         qerrs = []
 
+        state = TestState(RadixTestDataset(max_iter=6))
+
         for _ in range(0, 2):
-            _, qout, qerr = self._spawn(self._train, run_id, _train_step, hooks)
+            _, qout, qerr = self._spawn(self._train, run_id, _train_step, hooks, state)
             qouts.append(qout)
             qerrs.append(qerr)
 
@@ -827,7 +830,9 @@ class ElasticTrainerTestBase(TestCommon, abc.ABC):
             CoordinatorP2P, "rendezvous_barrier", patched_rendezvous_barrier
         ):
             for _ in range(0, 2):
-                _, qout, qerr = self._spawn(self._train, run_id, _train_step, None)
+                _, qout, qerr = self._spawn(
+                    self._train, run_id, _train_step, None, state
+                )
                 qouts.append(qout)
                 qerrs.append(qerr)
 
@@ -836,13 +841,12 @@ class ElasticTrainerTestBase(TestCommon, abc.ABC):
             state = _get_or_raise(qouts[i], qerrs[i])
             sums.append(state.total_sum)
 
-        # Everyone (including late workers) arrive at the same "model".
-        # Near the end of training, there are 2 samples left, with 4 trainers.
-        # Depending on how end-of-data condition is handled, the result can be that:
-        #  a) all workers stop at total sum 351
-        #  b) some workers continue to add remaining 29+30 to the sum and see 410.
-        self.assertSetEqual(set(sums) - {351, 410}, set())
-        # (i.e. sums contains only 410, 351, or both)
+        # The first three iterations are executed by two workers
+        early_iter = RadixTestDataset.get_expected_sum(3, [0, 1])
+        # The rest of the workload is distributed to four workers
+        late_iter = RadixTestDataset.get_expected_sum(7, [0, 1, 2, 3], start_iter=4)
+        for sum in sums:
+            self.assertEqual(sum, early_iter + late_iter)
 
 
 if __name__ == "__main__":

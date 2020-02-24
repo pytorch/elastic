@@ -13,7 +13,7 @@ import unittest
 
 import torch.multiprocessing as torch_mp
 import torchelastic.timer as timer
-from test_utils import is_asan
+from test_utils import is_asan, is_tsan
 
 
 logging.basicConfig(
@@ -71,14 +71,15 @@ class LocalTimerExample(unittest.TestCase):
 
         server.stop()
 
-    @unittest.skip(is_asan())
+    @unittest.skipIf(is_asan(), "test is asan incompatible")
     def test_example_start_method_spawn(self):
         self._run_example_with(start_method="spawn")
 
-    @unittest.skip(is_asan())
+    @unittest.skipIf(is_asan(), "test is asan incompatible")
     def test_example_start_method_forkserver(self):
         self._run_example_with(start_method="forkserver")
 
+    @unittest.skipIf(is_tsan(), "test is tsan incompatible")
     def test_example_start_method_fork(self):
         self._run_example_with(start_method="fork")
 
