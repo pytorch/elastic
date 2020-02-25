@@ -8,6 +8,7 @@
 
 import logging
 import time
+import warnings
 
 import torchelastic
 from torchelastic.checkpoint import CheckpointUtil
@@ -21,38 +22,70 @@ log.setLevel(logging.INFO)
 MAX_FAILURES = 100
 
 
+def to_generator(train_step_fn):
+    """
+        Makes the provided train step function a Python generator.
+        The stop condition for the returned generator is when the
+        train_step_fn raises a ``StopIteration``, which is interpreted
+        as end of data.
+    """
+
+    def wrap(state):
+        while True:
+            try:
+                yield train_step_fn(state)
+            except StopIteration as e:
+                logging.info("End of data reached from train_step", exc_info=e)
+                return
+
+    return wrap
+
+
 def train(elastic_coordinator, train_step, state):
     """
-        This is the main elastic data parallel loop. It starts from an initial 'state'.
-        Each iteration calls 'train_step' and returns a new state. 'train_step'
-        has the following interface:
+        This function defines a train_loop as well as a python generate by iterate '
+        train_step' function, the 'train_step' has the following interface:
             state, worker_stats = train_step(state)
         When 'train_step' exhausts all the data, a StopIteration exception should be
         thrown.
     """
+    warnings.warn("Deprecated, use run_train() instead", DeprecationWarning)
+    return run_train(elastic_coordinator, to_generator(train_step), state)
+
+
+def run_train(coordinator, train_step_gen, state):
+    """
+        Elastic data parallel loop. Iteratively calls ``train_step_gen`` on the
+        provided ``state`` object. The generator is allowed to return
+        ``(state, worker_stats)``.
+        Note: since the returned ``state`` from the generator will be ignored
+        and is kept for backwards compatibility reasons.
+        See: https://github.com/pytorch/elastic/issues/48
+    """
 
     assert isinstance(state, torchelastic.State)
+    assert isinstance(coordinator, torchelastic.Coordinator)
 
     failure_count = 0
     rank = 0
 
-    checkpoint_util = CheckpointUtil(elastic_coordinator)
+    checkpoint_util = CheckpointUtil(coordinator)
 
-    while not elastic_coordinator.should_stop_training():
+    while not coordinator.should_stop_training():
         # See: https://github.com/pytorch/elastic/issues/7
         if failure_count >= MAX_FAILURES:
             e = RuntimeError(
                 "Exceeded max number of recoverable failures: {}".format(failure_count)
             )
-            elastic_coordinator.on_error(e)
+            coordinator.on_error(e)
             raise e
 
         start_time = time.time()
         snapshot = state.capture_snapshot()
 
         try:
-            store, rank, world_size = elastic_coordinator.rendezvous_barrier()
-            elastic_coordinator.init_process_group()
+            store, rank, world_size = coordinator.rendezvous_barrier()
+            coordinator.init_process_group()
 
             # load checkpoint if necessary
             state = checkpoint_util.load_checkpoint(state, rank)
@@ -65,19 +98,19 @@ def train(elastic_coordinator, train_step, state):
                 get_elapsed_time_ms(state_sync_start_time),
             )
             checkpoint_util.set_checkpoint_loaded()
-            elastic_coordinator.barrier()
+            coordinator.barrier()
             log.info("Rank {0} synced state with other nodes".format(rank))
         except StopException:
             log.info("Rank {0} received stopped signal. Exiting training.".format(rank))
             break
         except RuntimeError as e:
             # See: https://github.com/pytorch/elastic/issues/7
-            elastic_coordinator.on_error(e)
+            coordinator.on_error(e)
             state.apply_snapshot(snapshot)
             failure_count += 1
             continue
         except (NonRetryableException, Exception) as e:
-            elastic_coordinator.on_error(e)
+            coordinator.on_error(e)
             raise
         finally:
             publish_metric(
@@ -88,45 +121,46 @@ def train(elastic_coordinator, train_step, state):
 
         # Note that the loop might not even start if the rendezvous was closed
         # due to one of the trainer processes completing earlier.
-        while not elastic_coordinator.should_stop_training():
+        generator = train_step_gen(state)
+        while not coordinator.should_stop_training():
             start_time = time.time()
             snapshot = state.capture_snapshot()
 
             try:
                 train_step_start_time = time.time()
-                state, worker_stats = train_step(state)
+                _, worker_stats = next(generator)
                 publish_metric(
                     "torchelastic",
                     "train_step.duration.ms",
                     get_elapsed_time_ms(train_step_start_time),
                 )
 
-                elastic_coordinator.monitor_progress(state, worker_stats)
+                coordinator.monitor_progress(state, worker_stats)
 
                 checkpoint_util.save_checkpoint(state, rank)
-                if elastic_coordinator.should_rendezvous(state):
+                if coordinator.should_rendezvous(state):
                     log.info("Rank {0} will re-rendezvous".format(rank))
                     # Executor told us, for whatever reason, to re-rendezvous.
                     # This can occur if another node encounters an error,
                     # if a new node becomes available to train,
                     # or potentially even if it's time to checkpoint.
                     break
-                elastic_coordinator.report_progress(state)
+                coordinator.report_progress(state)
             except StopIteration:
                 log.info("Rank {0} finished all the iterations".format(rank))
                 # Current trainer process completed processing assigned subset of
                 # examples. Other trainer processes need to stop as well.
                 # This sends an explicit signal on training completion.
-                elastic_coordinator.signal_training_done()
+                coordinator.signal_training_done()
                 break
             except RuntimeError as e:
                 # See: https://github.com/pytorch/elastic/issues/7
-                elastic_coordinator.on_error(e)
+                coordinator.on_error(e)
                 state.apply_snapshot(snapshot)
                 failure_count += 1
                 break
             except Exception as e:
-                elastic_coordinator.on_error(e)
+                coordinator.on_error(e)
                 raise
             finally:
                 publish_metric(
@@ -135,13 +169,13 @@ def train(elastic_coordinator, train_step, state):
                     get_elapsed_time_ms(start_time),
                 )
 
-    if elastic_coordinator.should_stop_training():
+    if coordinator.should_stop_training():
         return state
     else:
         # This is an error condition and should not happen.
         raise Exception(
             "Exiting without training complete. rank: {0},"
             " should_stop_training: {1}".format(
-                rank, elastic_coordinator.should_stop_training()
+                rank, coordinator.should_stop_training()
             )
         )
