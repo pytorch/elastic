@@ -11,12 +11,10 @@ import logging
 import threading
 import time
 from contextlib import contextmanager
-from dataclasses import dataclass
 from inspect import getframeinfo, stack
 from typing import Any, Dict, List, Set
 
 
-@dataclass
 class TimerRequest:
     """
     Data object representing a countdown timer acquisition and release
@@ -29,9 +27,12 @@ class TimerRequest:
     agreed on to uniquely identify a worker.
     """
 
-    worker_id: Any
-    scope_id: str
-    expiration_time: float
+    __slots__ = ["worker_id", "scope_id", "expiration_time"]
+
+    def __init__(self, worker_id: Any, scope_id: str, expiration_time: float):
+        self.worker_id = worker_id
+        self.scope_id = scope_id
+        self.expiration_time = expiration_time
 
     def __eq__(self, other):
         if isinstance(other, TimerRequest):

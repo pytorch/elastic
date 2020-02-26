@@ -26,7 +26,7 @@ guide](aws/README.md).
 
 ## Requirements
 torchelastic requires
-* python3
+* python3 (3.6+)
 * torch
 * etcd
 
