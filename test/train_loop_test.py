@@ -5,22 +5,20 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
-import typing
 import unittest
-from dataclasses import dataclass
 
 from torchelastic.train_loop import to_generator
 
 
 class TestTrainLoop(unittest.TestCase):
-    @dataclass
     class MockState:
-        data: typing.Generator[int, None, None]
-        sum: int = 0
+        def __init__(self, range: range):
+            self.data_iter = iter(range)
+            self.sum = 0
 
     @staticmethod
     def _mock_train_step(mock_state):
-        mock_state.sum += next(mock_state.data)
+        mock_state.sum += next(mock_state.data_iter)
 
     @staticmethod
     def _mock_train_step_stop_iteration(mock_state):
@@ -28,7 +26,7 @@ class TestTrainLoop(unittest.TestCase):
 
     def test_to_generator(self):
         r = range(0, 10)
-        mock_state = self.MockState(iter(r))
+        mock_state = self.MockState(r)
 
         for _ in to_generator(self._mock_train_step)(mock_state):
             pass
@@ -37,7 +35,7 @@ class TestTrainLoop(unittest.TestCase):
 
     def test_to_generator_throws_stop_iteration(self):
 
-        mock_state = self.MockState(iter(range(0, 10)))
+        mock_state = self.MockState(range(0, 10))
 
         num_iter = 0
         for _ in to_generator(self._mock_train_step_stop_iteration)(mock_state):

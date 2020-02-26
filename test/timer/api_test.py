@@ -58,8 +58,8 @@ class MockTimerServer(TimerServer):
 
 
 class TimerApiTest(unittest.TestCase):
-    @mock.patch("pytorch.elastic.test.timer.api_test.MockTimerServer.register_timers")
-    @mock.patch("pytorch.elastic.test.timer.api_test.MockTimerServer.clear_timers")
+    @mock.patch("timer.api_test.MockTimerServer.register_timers")
+    @mock.patch("timer.api_test.MockTimerServer.clear_timers")
     def test_run_watchdog(self, mock_clear_timers, mock_register_timers):
         """
         tests that when a ``_reap_worker()`` method throws an exception

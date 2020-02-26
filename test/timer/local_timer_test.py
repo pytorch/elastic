@@ -34,6 +34,7 @@ class LocalTimerTest(unittest.TestCase):
 
     def test_no_client(self):
         # no timer client configured; exception expected
+        timer.configure(None)
         with self.assertRaises(RuntimeError):
             with timer.expires(after=1):
                 pass
