@@ -244,4 +244,4 @@ implementation,
 For an example, refer to
 ```etcd_rendezvous.py`` <etcd_rendezvous.py>`__.
 
-.. |etcd rendezvous state diagram| image:: ../../docs/_static/img/etcd_rdzv_diagram.png
+.. |etcd rendezvous state diagram| image:: _static/img/etcd_rdzv_diagram.png

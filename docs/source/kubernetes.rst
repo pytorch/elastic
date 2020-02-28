@@ -61,7 +61,7 @@ can access EFS. Select ``Public`` subnets when you create mount targets.
 Please use security group ``*ClusterSharedNodeSecurityGroup*`` created
 by ``eksctl`` to associate with the mount targets.
 
-.. figure:: ../docs/_static/img/efs-setup.jpg
+.. figure:: _static/img/efs-setup.jpg
    :alt: efs-setup-diagram
 
    efs-setup-diagram

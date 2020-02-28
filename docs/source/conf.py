@@ -48,6 +48,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinxcontrib.katex",
+    "sphinx.ext.autosectionlabel",
     "m2r",
 ]
 
@@ -88,7 +89,7 @@ author = "PyTorch Elastic Contributors"
 #
 # The short X.Y version.
 # TODO: change to [:2] at v1.0
-version = "master "
+version = f"v{torchelastic.__version__}"
 # The full version, including alpha/beta/rc tags.
 # TODO: verify this works as expected
 release = "master"
@@ -125,7 +126,7 @@ html_theme_path = [pytorch_sphinx_theme.get_html_theme_path()]
 # documentation.
 #
 html_theme_options = {
-    "pytorch_project": "audio",
+    "pytorch_project": "elastic",
     "collapse_navigation": False,
     "display_version": True,
     "logo_only": True,
@@ -157,7 +158,7 @@ def setup(app):
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "TorchAudiodoc"
+htmlhelp_basename = "TorchElasticdoc"
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -184,7 +185,7 @@ latex_documents = [
     (
         master_doc,
         "pytorch.tex",
-        "Torchaudio Documentation",
+        "Torchelastic Documentation",
         "Torch Contributors",
         "manual",
     )
@@ -195,7 +196,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "Torchaudio", "Torchaudio Documentation", [author], 1)]
+man_pages = [(master_doc, "Torchelastic", "Torchelastic Documentation", [author], 1)]
 
 
 # -- Options for Texinfo output -------------------------------------------
@@ -206,11 +207,11 @@ man_pages = [(master_doc, "Torchaudio", "Torchaudio Documentation", [author], 1)
 texinfo_documents = [
     (
         master_doc,
-        "Torchaudio",
-        "Torchaudio Documentation",
+        "Torchelastic",
+        "Torchelastic Documentation",
         author,
-        "Torchaudio",
-        "Load audio files into pytorch tensors.",
+        "Torchelastic",
+        "PyTorch Elastic Training",
         "Miscellaneous",
     )
 ]
