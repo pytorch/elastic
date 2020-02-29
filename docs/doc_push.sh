@@ -31,14 +31,14 @@
 #  (on gh-pages branch) _layouts/docs_redirect.html
 
 repo_root=$(git rev-parse --show-toplevel)
-release_tag=$(git describe --tags --exact-match HEAD 2>/dev/null)
 branch=$(git rev-parse --abbrev-ref HEAD)
-commit_id=$(git rev-parse HEAD)
+commit_id=$(git rev-parse --short HEAD)
+release_tag=$(git describe --tags --exact-match HEAD 2>/dev/null)
 
 if [[ $? != 0 ]]; then
     echo "No release tag found, building docs for master..."
     redirect=master
-    release_tag=master
+    release_tag="master"
 else
     echo "Release tag $release_tag found, building docs for release..."
     redirect=latest
@@ -46,6 +46,7 @@ fi
 
 echo "Installing torchelastic from $repo_root..."
 cd $repo_root
+pip uninstall -y torchelastic
 python setup.py install
 
 torchelastic_ver=$(python -c "import torchelastic; print(torchelastic.__version__)")
@@ -62,27 +63,20 @@ rm -rf $tmp_dir
 
 echo "Checking out gh-pages branch..."
 gh_pages_dir=$tmp_dir/elastic_gh_pages
-git clone -b gh-pages --single-branch https://github.com/pytorch/elastic.git  $gh_pages_dir
+git clone -b gh-pages --single-branch git@github.com:pytorch/elastic.gitq  $gh_pages_dir
 
 echo "Copying doc pages for $torchelastic_ver into $gh_pages_dir..."
 rm -rf $gh_pages_dir/$torchelastic_ver
 cp -R $build_dir/$torchelastic_ver/html $gh_pages_dir/$torchelastic_ver
 
-if [[ $release_tag ]]; then
-    redirect=latest
-else
-    redirect=master
-fi
-
 echo "Copying redirects for $redirect -> $torchelastic_ver..."
+rm -rf $gh_pages_dir/$redirect
 cp -R $build_dir/redirects $gh_pages_dir/$redirect
 
 
 cd $gh_pages_dir
 git add .
-git commit -m "[$release_tag doc_push] docs built from $branch#$commit_id. Redirect $redirect points to $torchelastic_ver"
-
-
-
+git commit --quiet -m "[doc_push][$release_tag] built from $commit_id ($branch). Redirect: $redirect -> $torchelastic_ver."
+git push
 
 
