@@ -63,7 +63,7 @@ rm -rf $tmp_dir
 
 echo "Checking out gh-pages branch..."
 gh_pages_dir=$tmp_dir/elastic_gh_pages
-git clone -b gh-pages --single-branch git@github.com:pytorch/elastic.gitq  $gh_pages_dir
+git clone -b gh-pages --single-branch git@github.com:pytorch/elastic.git  $gh_pages_dir
 
 echo "Copying doc pages for $torchelastic_ver into $gh_pages_dir..."
 rm -rf $gh_pages_dir/$torchelastic_ver
