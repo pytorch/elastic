@@ -9,15 +9,15 @@ While going through the sections below, refer to the imagenet `example <examples
 
 for more complete implementation details.
 
-# Implement `state`
+Implement `state`
 ===================
 
 The `State` object has two categories of methods that need to be implemented: 
 
 synchronization and persistence.
 
-## `sync()`
-===========
+`sync()`
+---------
 
 Lets take a look at synchronization first. The `sync` method is responsible for
 
@@ -61,8 +61,8 @@ state. This concept will become important in the next sections when talking abou
 
 state persistence (rollbacks and checkpoints).
 
-## (optional) `capture*snapshot()` and `apply*snapshot()`
-=========================================================
+(optional) `capture*snapshot()` and `apply*snapshot()`
+-------------------------------------------------------
 
 > You do not have to implement these methods if you do not want rollbacks
 
@@ -137,8 +137,8 @@ restored in the `sync` method need not be included in the snapshot.
 
  method rather than an `update` method.  
 
-## (optional) `save(stream)` and `load(stream)`
-===============================================
+(optional) `save(stream)` and `load(stream)`
+---------------------------------------------
 
 > You do not have to implement these methods if you do not plan on using
 
@@ -162,8 +162,8 @@ torchelastic relies on these methods to provide checkpoint functionality for you
 
 and `apply_snapshot`
 
-# Implement `train_step`
-========================
+Implement `train_step`
+=======================
 
 The `train_step` is a function that takes `state` as a single argument
 
@@ -199,8 +199,8 @@ There is a trade-off to be made between how much work you are
 
 willing to lose versus how much overhead you want to pay for that security.
 
-# Write a `main.py`
-===================
+Write a `main.py`
+=================
 
 Now that you have `state` and `train_step` implementations all that remains
 
@@ -245,20 +245,20 @@ if **name** == "**main**":
 
 ```
 
-# Configuring
+Configuring
 =============
 
-## Metrics
+Metrics
 ==========
 
 See metrics `documentation <torchelastic/metrics/README.md>`_.
 
-## Checkpoint and Rollback
+Checkpoint and Rollback
 ==========================
 
 See checkpoint `documentation <torchelastic/checkpoint/README.md>`_
 
-## Rendezvous
+Rendezvous
 =============
 
 See rendezvous `documentation <torchelastic/rendezvous/README.md>`_
