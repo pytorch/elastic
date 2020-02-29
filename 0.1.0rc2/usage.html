@@ -1,0 +1,733 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Usage &mdash; PyTorch/Elastic master documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!-- <link rel="stylesheet" href="_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="_static/katex-math.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Checkpoint" href="checkpoint.html" />
+    <link rel="prev" title="PyTorch Elastic" href="overview.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+  <!-- Preload the theme fonts -->
+
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+
+<!-- Preload the katex fonts -->
+
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Math-Italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size1-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size4-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size2-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size3-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Caligraphic-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+</head>
+
+<div class="container-fluid header-holder tutorials-header" id="header-holder">
+  <div class="container">
+    <div class="header-container">
+      <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <div class="ecosystem-dropdown">
+              <a id="dropdownMenuButton" data-toggle="ecosystem-dropdown">
+                Ecosystem
+              </a>
+              <div class="ecosystem-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub"">
+                  <span class=dropdown-title>Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem">
+                  <span class=dropdown-title>Tools & Libraries</span>
+                  <p>Explore the ecosystem of tools and libraries</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+          </li>
+
+          <li>
+            <div class="resources-dropdown">
+              <a id="resourcesDropdownButton" data-toggle="resources-dropdown">
+                Resources
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources"">
+                  <span class=dropdown-title>Developer Resources</span>
+                  <p>Find resources and get questions answered</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class=dropdown-title>About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">Github</a>
+          </li>
+        </ul>
+      </div>
+
+      <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
+    </div>
+
+  </div>
+</div>
+
+
+<body class="pytorch-body">
+
+   
+
+    
+
+    <div class="table-of-contents-link-wrapper">
+      <span>Table of Contents</span>
+      <a href="#" class="toggle-table-of-contents" data-behavior="toggle-table-of-contents"></a>
+    </div>
+
+    <nav data-toggle="wy-nav-shift" class="pytorch-left-menu" id="pytorch-left-menu">
+      <div class="pytorch-side-scroll">
+        <div class="pytorch-menu pytorch-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          <div class="pytorch-left-menu-search">
+            
+
+            
+              
+              
+                <div class="version">
+                  v0.1.0rc2
+                </div>
+              
+            
+
+            
+
+
+  
+
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search Docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+            
+          </div>
+
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">PyTorch Elastic</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#implement-state"># Implement <cite>state</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="#sync">## <cite>sync()</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="#optional-capture-snapshot-and-apply-snapshot">## (optional) <cite>capture*snapshot()</cite> and <cite>apply*snapshot()</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="#optional-save-stream-and-load-stream">## (optional) <cite>save(stream)</cite> and <cite>load(stream)</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="#implement-train-step"># Implement <cite>train_step</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="#write-a-main-py"># Write a <cite>main.py</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="#configuring"># Configuring</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#metrics">## Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#checkpoint-and-rollback">## Checkpoint and Rollback</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#rendezvous">## Rendezvous</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="checkpoint.html">Checkpoint</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rendezvous.html">Rendezvous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metrics.html">Metrics</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Runtime</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="aws.html">torchelastic on AWS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="azure.html">torchelastic on Azure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kubernetes.html">torchelastic on Kubernetes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <div class="pytorch-container">
+      <div class="pytorch-page-level-bar" id="pytorch-page-level-bar">
+        <div class="pytorch-breadcrumbs-wrapper">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="pytorch-breadcrumbs">
+    
+      <li>
+        <a href="index.html">
+          
+            Docs
+          
+        </a> &gt;
+      </li>
+
+        
+      <li>Usage</li>
+    
+    
+      <li class="pytorch-breadcrumbs-aside">
+        
+            
+            <a href="_sources/usage.rst.txt" rel="nofollow"><img src="_static/images/view-page-source-icon.svg"></a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+</div>
+        </div>
+
+        <div class="pytorch-shortcuts-wrapper" id="pytorch-shortcuts-wrapper">
+          Shortcuts
+        </div>
+      </div>
+
+      <section data-toggle="wy-nav-shift" id="pytorch-content-wrap" class="pytorch-content-wrap">
+        <div class="pytorch-content-left">
+
+        
+          
+          <div class="rst-content">
+          
+            <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
+             <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
+              
+  <div class="section" id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
+<p>torchelastic requires you to implement a <cite>state</cite> object and a <cite>train_step</cite> function.</p>
+<p>For details on what these are refer to <a class="reference external" href="README.md">how torch elastic works</a>.</p>
+<p>While going through the sections below, refer to the imagenet <a class="reference external" href="examples/imagenet/main.py">example</a></p>
+<p>for more complete implementation details.</p>
+</div>
+<div class="section" id="implement-state">
+<h1># Implement <cite>state</cite><a class="headerlink" href="#implement-state" title="Permalink to this headline">¶</a></h1>
+<p>The <cite>State</cite> object has two categories of methods that need to be implemented:</p>
+<p>synchronization and persistence.</p>
+</div>
+<div class="section" id="sync">
+<h1>## <cite>sync()</cite><a class="headerlink" href="#sync" title="Permalink to this headline">¶</a></h1>
+<p>Lets take a look at synchronization first. The <cite>sync</cite> method is responsible for</p>
+<p>ensuring that all workers get a consistent view of <cite>state</cite>. It is called at</p>
+<p>startup as well as on each event that potentially leaves the workers out of sync,</p>
+<p>for instance, on membership changes and rollback events. Torchelastic relies on</p>
+<p>the <cite>sync()</cite> method for <cite>state</cite> recovery from surviving workers (e.g. when</p>
+<p>there are membership changes, either due to worker failure or elasticity,</p>
+<p>the new workers receive the most up-to-date <cite>state</cite> from one of the surviving</p>
+<p>workers - usually the one that has the most recent <cite>state</cite> - we call this worker</p>
+<p>the most <strong>tenured</strong> worker).</p>
+<p>Things you should consider doing in <cite>sync</cite> are:</p>
+<ol class="arabic simple">
+<li>Broadcasting global parameters/data from a particular worker (e.g. rank 0).</li>
+<li>(re)Initializing data loaders based on markers (e.g. last known start index).</li>
+<li>(re)Initializing the model.</li>
+</ol>
+<p>&gt; IMPORTANT: <cite>state.sync()</cite> is <strong>not</strong> meant for synchronizing steps in training. For instance</p>
+<p>you should not be synchronizing weights (e.g .all-reduce model weights for synchronous SGD).</p>
+<p>These type of collectives operations belong in the <cite>train_step</cite>.</p>
+<p>All workers initially create the <cite>state</cite> object with the same constructor arguments.</p>
+<p>We refer to this initial state as <cite>S_0</cite> and assume that any worker is able to create</p>
+<p><cite>S*0</cite> without needing any assistance from torchelastic. Essentially <cite>S*0</cite> is the <strong>bootstrap</strong></p>
+<p>state. This concept will become important in the next sections when talking about</p>
+<p>state persistence (rollbacks and checkpoints).</p>
+</div>
+<div class="section" id="optional-capture-snapshot-and-apply-snapshot">
+<h1>## (optional) <cite>capture*snapshot()</cite> and <cite>apply*snapshot()</cite><a class="headerlink" href="#optional-capture-snapshot-and-apply-snapshot" title="Permalink to this headline">¶</a></h1>
+<p>&gt; You do not have to implement these methods if you do not want rollbacks</p>
+<p>from failed <cite>train_steps</cite></p>
+<p>torchelastic has the ability to rollback a state if a <cite>train_step</cite> fails to</p>
+<p>execute successfully, which may result in the <cite>state</cite> object being left partially</p>
+<p>updated. It relies on a properly implemented <cite>capture*snapshot()</cite> and <cite>apply*snapshot()</cite></p>
+<p>methods of the <cite>state</cite> to ensure that the <cite>state</cite> is restored to before the</p>
+<p>faulty <cite>train_step</cite>.</p>
+<p>The <cite>capture_snapshot()</cite> method, as the name implies, takes a snapshot of the <cite>state</cite></p>
+<blockquote>
+<div>and returns the necessary information to be able to restore</div></blockquote>
+<p>the <cite>state</cite> object. You may return <strong>any</strong> object from <cite>capture_snapshot()</cite> so long as you</p>
+<p>can use it in the <cite>apply_snapshot(snapshot)</cite> method. A possible implementation of a</p>
+<p>rollback is:</p>
+<p><a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>python</p>
+<p>snapshot = state.capture_snapshot()</p>
+<p>try:</p>
+<blockquote>
+<div>train_step(state)</div></blockquote>
+<p>except RuntimeError:</p>
+<blockquote>
+<div><p>state.apply_snapshot(snapshot)</p>
+<p>state.sync()</p>
+</div></blockquote>
+<p><a href="#id5"><span class="problematic" id="id6">``</span></a><a href="#id7"><span class="problematic" id="id8">`</span></a></p>
+<p>&gt; NOTE: Since certain fields of the <cite>state</cite> may need to get re-initialized,</p>
+<blockquote>
+<div><p>torchelastic calls the <cite>sync()</cite> method. For instance, data loaders may need</p>
+<p>to be restarted as their iterators may end up in a corrupted state when the</p>
+<p><cite>train_step</cite> does not exit successfully.</p>
+</div></blockquote>
+<p>Notice that the apply method is called on the existing <cite>state</cite> object, this implies</p>
+<p>that an efficient implementation of <cite>snapshot</cite> should only return mutable, stateful</p>
+<p>data. Immutable fields or fields that can be derived from other member variables or</p>
+<p>restored in the <cite>sync</cite> method need not be included in the snapshot.</p>
+<blockquote>
+<div><p>By default the <cite>capture*snapshot()</cite> method returns <cite>None</cite> and the <cite>apply*snapshot()</cite> method</p>
+<p>is a <cite>pass</cite>, which essentially means “rollback not supported”.</p>
+<p>&gt; IMPORTANT: The <cite>apply_snapshot</cite> object should make <strong>no</strong> assumptions about</p>
+<p>which <cite>state</cite> object it is called on (e.g. the values of the member variables).</p>
+<p>That is, applying a <cite>snapshot</cite></p>
+<p>to <strong>any</strong> state followed by <cite>state.sync()</cite> should effectively restore the</p>
+<p>state object to when the corresponding <cite>capture_snapshot</cite> method was called.</p>
+<p>A good rule of thumb is that the <cite>apply_snapshot</cite> should act more like a <cite>set</cite></p>
+<p>method rather than an <cite>update</cite> method.</p>
+</div></blockquote>
+</div>
+<div class="section" id="optional-save-stream-and-load-stream">
+<h1>## (optional) <cite>save(stream)</cite> and <cite>load(stream)</cite><a class="headerlink" href="#optional-save-stream-and-load-stream" title="Permalink to this headline">¶</a></h1>
+<p>&gt; You do not have to implement these methods if you do not plan on using</p>
+<p>checkpointing.</p>
+<p>Much like the <cite>capture*snapshot</cite> and <cite>apply*snapshot</cite>, the <cite>save</cite> and <cite>load</cite> methods form a pair.</p>
+<p>They are responsible for persisting and restoring the <cite>state</cite> object to and from</p>
+<p>a <cite>stream</cite> which is a <em>file-like</em> object</p>
+<p>that is compatible with <a class="reference external" href="https://pytorch.org/docs/stable/torch.html?highlight=save#torch.save">pytorch.save</a>.</p>
+<p>torchelastic relies on these methods to provide checkpoint functionality for your job.</p>
+<p>&gt; We encourage users to use <cite>torch.save</cite> and <cite>torch.load</cite> methods when implementing</p>
+<p><cite>save</cite> and <cite>load</cite> methods of their <cite>state</cite> class.</p>
+<p>&gt; NOTE: The default implementations of <cite>save</cite> and <cite>load</cite> use <cite>capture_snapshot</cite></p>
+<p>and <cite>apply_snapshot</cite></p>
+</div>
+<div class="section" id="implement-train-step">
+<h1># Implement <cite>train_step</cite><a class="headerlink" href="#implement-train-step" title="Permalink to this headline">¶</a></h1>
+<p>The <cite>train_step</cite> is a function that takes <cite>state</cite> as a single argument</p>
+<p>and carries out a partition of the overall training job.</p>
+<p>This is your unit of work and it is up to you to define what</p>
+<p>a <em>unit</em> is. When deciding what your unit of work should be, keep in mind the</p>
+<p>following:</p>
+<ol class="arabic simple">
+<li>Rollbacks and checkpoints are done at <cite>train_step</cite> granularity. This means</li>
+</ol>
+<p>that torchelastic can only recover to the last successful <cite>train_step</cite> Any failures</p>
+<p><strong>during</strong> the train_step are not recoverable.</p>
+<ol class="arabic simple" start="2">
+<li>A <cite>train*step</cite> iteration in the <cite>train*loop</cite> has overhead due</li>
+</ol>
+<p>to the work that goes in ensuring that your job is fault-tolerant and elastic.</p>
+<p>How much overhead depends on your configurations for rollbacks and checkpoints as well</p>
+<p>as how expensive your <cite>snapshot</cite>, <cite>apply</cite>, <cite>save</cite> and <cite>load</cite> functions are.</p>
+<p>&gt; In most cases, your job naturally lends itself to an</p>
+<p>obvious <cite>train_step</cite>. The most canonical one for many training jobs is to map</p>
+<p>the processing of a mini-batch of training data to a <cite>train_step</cite>.</p>
+<p>There is a trade-off to be made between how much work you are</p>
+<p>willing to lose versus how much overhead you want to pay for that security.</p>
+</div>
+<div class="section" id="write-a-main-py">
+<h1># Write a <cite>main.py</cite><a class="headerlink" href="#write-a-main-py" title="Permalink to this headline">¶</a></h1>
+<p>Now that you have <cite>state</cite> and <cite>train_step</cite> implementations all that remains</p>
+<p>is to bring everything together and implement a <cite>main</cite> that will execute your</p>
+<p>training. Your script should initialize torchelastic’s <cite>coordinator</cite>, create</p>
+<p>your <cite>state</cite> object, and call the <cite>train_loop</cite>. Below is a simple example:</p>
+<p><a href="#id9"><span class="problematic" id="id10">``</span></a><a href="#id11"><span class="problematic" id="id12">`</span></a>python</p>
+<p>import torchelastic</p>
+<p>from torchelastic.p2p import CoordinatorP2P</p>
+<p>if <strong>name</strong> == “<strong>main</strong>”:</p>
+<blockquote>
+<div><p>min_workers = 1</p>
+<p>max_workers = 1</p>
+<p>run_id = 1234</p>
+<p>etcd_endpoint = “localhost:2379”</p>
+<p>state = MyState()</p>
+<p>coordinator = CoordinatorP2P(</p>
+<blockquote>
+<div><p>c10d_backend=”gloo”,</p>
+<p>init_method=f”etcd://{etcd_endpoint}/{run_id}?min_workers={min_workers}&amp;max_workers={max_workers}”,</p>
+<p>max_num_trainers=max_workers,</p>
+<p>process_group_timeout=60000,</p>
+</div></blockquote>
+<p>)</p>
+<p>torchelastic.train(coordinator, train_step, state)</p>
+</div></blockquote>
+<p><a href="#id13"><span class="problematic" id="id14">``</span></a><a href="#id15"><span class="problematic" id="id16">`</span></a></p>
+</div>
+<div class="section" id="configuring">
+<h1># Configuring<a class="headerlink" href="#configuring" title="Permalink to this headline">¶</a></h1>
+</div>
+<div class="section" id="metrics">
+<h1>## Metrics<a class="headerlink" href="#metrics" title="Permalink to this headline">¶</a></h1>
+<p>See metrics <a class="reference external" href="torchelastic/metrics/README.md">documentation</a>.</p>
+</div>
+<div class="section" id="checkpoint-and-rollback">
+<h1>## Checkpoint and Rollback<a class="headerlink" href="#checkpoint-and-rollback" title="Permalink to this headline">¶</a></h1>
+<p>See checkpoint <a class="reference external" href="torchelastic/checkpoint/README.md">documentation</a></p>
+</div>
+<div class="section" id="rendezvous">
+<h1>## Rendezvous<a class="headerlink" href="#rendezvous" title="Permalink to this headline">¶</a></h1>
+<p>See rendezvous <a class="reference external" href="torchelastic/rendezvous/README.md">documentation</a></p>
+</div>
+
+
+             </article>
+             
+            </div>
+            <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="checkpoint.html" class="btn btn-neutral float-right" title="Checkpoint" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+      
+      
+        <a href="overview.html" class="btn btn-neutral" title="PyTorch Elastic" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+      
+    </div>
+  
+
+  
+
+    <hr>
+
+  
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, PyTorch Elastic Contributors.
+
+    </p>
+  </div>
+    
+      <div>
+        Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+      </div>
+     
+
+</footer>
+
+          </div>
+        </div>
+
+        <div class="pytorch-content-right" id="pytorch-content-right">
+          <div class="pytorch-right-menu" id="pytorch-right-menu">
+            <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
+              <ul>
+<li><a class="reference internal" href="#">Usage</a></li>
+<li><a class="reference internal" href="#implement-state"># Implement <cite>state</cite></a></li>
+<li><a class="reference internal" href="#sync">## <cite>sync()</cite></a></li>
+<li><a class="reference internal" href="#optional-capture-snapshot-and-apply-snapshot">## (optional) <cite>capture*snapshot()</cite> and <cite>apply*snapshot()</cite></a></li>
+<li><a class="reference internal" href="#optional-save-stream-and-load-stream">## (optional) <cite>save(stream)</cite> and <cite>load(stream)</cite></a></li>
+<li><a class="reference internal" href="#implement-train-step"># Implement <cite>train_step</cite></a></li>
+<li><a class="reference internal" href="#write-a-main-py"># Write a <cite>main.py</cite></a></li>
+<li><a class="reference internal" href="#configuring"># Configuring</a></li>
+<li><a class="reference internal" href="#metrics">## Metrics</a></li>
+<li><a class="reference internal" href="#checkpoint-and-rollback">## Checkpoint and Rollback</a></li>
+<li><a class="reference internal" href="#rendezvous">## Rendezvous</a></li>
+</ul>
+
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  
+
+
+  
+
+     
+       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+         <script type="text/javascript" src="_static/jquery.js"></script>
+         <script type="text/javascript" src="_static/underscore.js"></script>
+         <script type="text/javascript" src="_static/doctools.js"></script>
+         <script type="text/javascript" src="_static/language_data.js"></script>
+         <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js"></script>
+         <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js"></script>
+         <script type="text/javascript" src="_static/katex_autorenderer.js"></script>
+     
+
+  
+
+  <script type="text/javascript" src="_static/js/vendor/popper.min.js"></script>
+  <script type="text/javascript" src="_static/js/vendor/bootstrap.min.js"></script>
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+  <!-- Begin Footer -->
+
+  <div class="container-fluid docs-tutorials-resources" id="docs-tutorials-resources">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 text-center">
+          <h2>Docs</h2>
+          <p>Access comprehensive developer documentation for PyTorch</p>
+          <a class="with-right-arrow" href="https://pytorch.org/docs/stable/index.html">View Docs</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Tutorials</h2>
+          <p>Get in-depth tutorials for beginners and advanced developers</p>
+          <a class="with-right-arrow" href="https://pytorch.org/tutorials">View Tutorials</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Resources</h2>
+          <p>Find development resources and get your questions answered</p>
+          <a class="with-right-arrow" href="https://pytorch.org/resources">View Resources</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-logo-wrapper">
+        <a href="https://pytorch.org/" class="footer-logo"></a>
+      </div>
+
+      <div class="footer-links-wrapper">
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/">PyTorch</a></li>
+            <li><a href="https://pytorch.org/get-started">Get Started</a></li>
+            <li><a href="https://pytorch.org/features">Features</a></li>
+            <li><a href="https://pytorch.org/ecosystem">Ecosystem</a></li>
+            <li><a href="https://pytorch.org/blog/">Blog</a></li>
+            <li><a href="https://pytorch.org/resources">Resources</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/support">Support</a></li>
+            <li><a href="https://pytorch.org/tutorials">Tutorials</a></li>
+            <li><a href="https://pytorch.org/docs/stable/index.html">Docs</a></li>
+            <li><a href="https://discuss.pytorch.org" target="_blank">Discuss</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/issues" target="_blank">Github Issues</a></li>
+            <li><a href="https://pytorch.slack.com" target="_blank">Slack</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/blob/master/CONTRIBUTING.md" target="_blank">Contributing</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col follow-us-col">
+          <ul>
+            <li class="list-title">Follow Us</li>
+            <li>
+              <div id="mc_embed_signup">
+                <form
+                  action="https://twitter.us14.list-manage.com/subscribe/post?u=75419c71fe0a935e53dfa4a3f&id=91d0dccd39"
+                  method="post"
+                  id="mc-embedded-subscribe-form"
+                  name="mc-embedded-subscribe-form"
+                  class="email-subscribe-form validate"
+                  target="_blank"
+                  novalidate>
+                  <div id="mc_embed_signup_scroll" class="email-subscribe-form-fields-wrapper">
+                    <div class="mc-field-group">
+                      <label for="mce-EMAIL" style="display:none;">Email Address</label>
+                      <input type="email" value="" name="EMAIL" class="required email" id="mce-EMAIL" placeholder="Email Address">
+                    </div>
+
+                    <div id="mce-responses" class="clear">
+                      <div class="response" id="mce-error-response" style="display:none"></div>
+                      <div class="response" id="mce-success-response" style="display:none"></div>
+                    </div>    <!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
+
+                    <div style="position: absolute; left: -5000px;" aria-hidden="true"><input type="text" name="b_75419c71fe0a935e53dfa4a3f_91d0dccd39" tabindex="-1" value=""></div>
+
+                    <div class="clear">
+                      <input type="submit" value="" name="subscribe" id="mc-embedded-subscribe" class="button email-subscribe-button">
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+            </li>
+          </ul>
+
+          <div class="footer-social-icons">
+            <a href="https://www.facebook.com/pytorch" target="_blank" class="facebook"></a>
+            <a href="https://twitter.com/pytorch" target="_blank" class="twitter"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <div class="cookie-banner-wrapper">
+  <div class="container">
+    <p class="gdpr-notice">To analyze traffic and optimize your experience, we serve cookies on this site. By clicking or navigating, you agree to allow our usage of cookies. As the current maintainers of this site, Facebook’s Cookies Policy applies. Learn more, including about available controls: <a href="https://www.facebook.com/policies/cookies/">Cookies Policy</a>.</p>
+    <img class="close-button" src="_static/images/pytorch-x.svg">
+  </div>
+</div>
+
+  <!-- End Footer -->
+
+  <!-- Begin Mobile Menu -->
+
+  <div class="mobile-main-menu">
+    <div class="container-fluid">
+      <div class="container">
+        <div class="mobile-main-menu-header-container">
+          <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+          <a class="main-menu-close-button" href="#" data-behavior="close-mobile-menu"></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-main-menu-links-container">
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/features">Features</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/hub">PyTorch Hub</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/resources">Resources</a>
+          </li>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">Github</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- End Mobile Menu -->
+
+  <script type="text/javascript" src="_static/js/vendor/anchor.min.js"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function() {
+      mobileMenu.bind();
+      mobileTOC.bind();
+      pytorchAnchors.bind();
+      sideMenus.bind();
+      scrollToAnchor.bind();
+      highlightNavigation.bind();
+      mainMenuDropdown.bind();
+
+      // Add class to links that have code blocks, since we cannot create links in code blocks
+      $("article.pytorch-article a span.pre").each(function(e) {
+        $(this).closest("a").addClass("has-code");
+      });
+    })
+  </script>
+</body>
+</html>
