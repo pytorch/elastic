@@ -1,0 +1,98 @@
+Content-Type: multipart/mixed; boundary="//"
+MIME-Version: 1.0
+
+--//
+Content-Type: text/cloud-config; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="cloud-config.txt"
+
+#cloud-config
+repo_update: true
+repo_upgrade: all
+runcmd:
+- yum install -y awslogs
+- yum install -y amazon-efs-utils
+- file_system_id={{ efs_file_system_id }}
+- efs_mount_point=/mnt/efs/fs1
+- mkdir -p "${efs_mount_point}"
+- echo "${file_system_id}:/ ${efs_mount_point} efs tls,_netdev,nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport 0 0" >> /etc/fstab
+- mount -a -t efs
+- chmod 777 ${efs_mount_point}
+- mkdir -p /var/torchelastic
+- yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+- systemctl restart amazon-ssm-agent
+--//
+Content-Type: text/x-shellscript; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="userdata.txt"
+
+cat > /var/torchelastic/ecr_login <<\EOL
+#!/bin/bash
+region=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq .region -r)
+$(aws ecr get-login --no-include-email --region ${region})
+EOL
+
+cat > /var/torchelastic/worker.env <<\EOL
+RDZV_ENDPOINT={{ rdzv_endpoint }}
+JOB_ID={{ job_name }}
+MIN_SIZE={{ min_size }}
+MAX_SIZE={{ max_size }}
+SIZE={{ size }}
+EOL
+
+cat > /var/torchelastic/run_worker <<\EOL
+#!/bin/bash
+container_name=$1
+shift
+
+region=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq .region -r)
+instance_id=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
+
+docker run \
+  --init \
+  --net=host \
+  --restart=on-failure \
+  --shm-size=32g \
+  --env-file /var/torchelastic/worker.env \
+  -v /mnt/efs/fs1:/mnt/efs/fs1 \
+  --name ${container_name} \
+  --log-driver=awslogs \
+  --log-opt awslogs-region=${region} \
+  --log-opt awslogs-group=torchelastic/{{ user }} \
+  --log-opt awslogs-create-group=true \
+  --log-opt awslogs-stream=${container_name}/${instance_id} \
+  {{ docker_image }} $*
+EOL
+
+chmod 755 /var/torchelastic/ecr_login
+chmod 755 /var/torchelastic/run_worker
+
+cat > /etc/systemd/system/torchelastic_worker.service <<\EOL
+[Unit]
+Description=torchelastic worker
+Documentation=https://github.com/pytorch/torchelastic
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=exec
+ExecStartPre=-/var/torchelastic/ecr_login
+ExecStart=/var/torchelastic/run_worker {{ job_name }} {{ script }} {{ args }}
+ExecStop=-/usr/bin/docker kill {{ job_name }}
+ExecStopPost=-/usr/bin/docker rm -f {{ job_name }}
+Restart=no
+LimitNOFILE=40000
+KillMode=control-group
+
+[Install]
+WantedBy=multi-user.target
+EOL
+
+#-------------------------
+# Enable and start worker
+#-------------------------
+systemctl enable torchelastic_worker
+systemctl start torchelastic_worker
+--//

@@ -1,0 +1,34 @@
+{
+  "rdzv": {
+    "instance_type" : "t2.small",
+    "accelerator" : "none",
+    "instance_role" : "{{ RendezvousInstanceProfile }}",
+    "subnets" : [
+      "{{ SubnetId0 }}"
+    ],
+    "security_groups" : [
+      "{{ SecurityGroupId }}"
+    ],
+    "user_data_template": "config/user_data_rdzv",
+    "ebs_volume_gb" : 64
+  },
+  "worker": {
+    "instance_type": "p3.2xlarge",
+    "accelerator" : "gpu",
+    "instance_role" : "{{ WorkerInstanceProfile }}",
+    "efs_file_system_id" : "{{ EFSId }}",
+    "subnets" : [
+      "{{ SubnetId0 }}",
+      "{{ SubnetId1 }}"
+    ],
+    "security_groups" : [
+      "{{ SecurityGroupId }}"
+    ],
+
+    "user_data_template" : "config/user_data_worker",
+    "ebs_volume_gb" : 64,
+    "docker_image" : "torchelastic/examples:0.1.0rc1",
+    "s3_bucket" : "{{ S3Bucket }}",
+    "s3_prefix" : "petctl/{{ User }}"
+  }
+}

@@ -1,0 +1,112 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: imagenet-worker-1
+  labels:
+    job-name: imagenet
+    worker: "1"
+spec:
+  restartPolicy: "OnFailure"
+  containers:
+  - name: elastic-trainer-worker
+    image: torchelastic/examples:0.1.0rc1
+    args:
+    - "s3://<BUCKET>/petctl/<USER>/<JOB_ID>/main.py"
+    - "--input_path"
+    - "/data/tiny-imagenet-200/train"
+    - "--epochs"
+    - "10"
+    env:
+    - name: RDZV_ENDPOINT
+      value: "etcd:2379"
+    - name: JOB_ID
+      value: "imagenet"
+    - name: MIN_SIZE
+      value: "1"
+    - name: MAX_SIZE
+      value: "3"
+    - name: SIZE
+      value: "2"
+    resources:
+      limits:
+        nvidia.com/gpu: 1
+    volumeMounts:
+    - name: persistent-storage
+      mountPath: /data
+    - name: dshm
+      mountPath: /dev/shm
+  volumes:
+  - name: persistent-storage
+    persistentVolumeClaim:
+      claimName: efs-claim
+  - name: dshm
+    emptyDir:
+      medium: Memory
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: imagenet-worker-1
+spec:
+  selector:
+    job-name: imagenet
+    worker: "1"
+  clusterIP: None
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: imagenet-worker-2
+  labels:
+    job-name: imagenet
+    worker: "2"
+spec:
+  restartPolicy: "OnFailure"
+  containers:
+  - name: elastic-trainer-worker
+    image: torchelastic/examples:0.1.0rc1
+    args:
+    - "s3://<BUCKET>/petctl/<USER>/<JOB_ID>/main.py"
+    - "--input_path"
+    - "/data/tiny-imagenet-200/train"
+    - "--epochs"
+    - "10"
+    env:
+    - name: RDZV_ENDPOINT
+      value: "etcd:2379"
+    - name: JOB_ID
+      value: "imagenet"
+    - name: MIN_SIZE
+      value: "1"
+    - name: MAX_SIZE
+      value: "3"
+    - name: SIZE
+      value: "2"
+    resources:
+      limits:
+        nvidia.com/gpu: 1
+    volumeMounts:
+    - name: persistent-storage
+      mountPath: /data
+    - name: dshm
+      mountPath: /dev/shm
+  volumes:
+  - name: persistent-storage
+    persistentVolumeClaim:
+      claimName: efs-claim
+  - name: dshm
+    emptyDir:
+      medium: Memory
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: imagenet-worker-2
+spec:
+  selector:
+    job-name: imagenet
+    worker: "2"
+  clusterIP: None
