@@ -188,13 +188,6 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="overview.html">PyTorch Elastic</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#implement-state">Implement <cite>state</cite></a></li>
-<li class="toctree-l1"><a class="reference internal" href="#implement-train-step">Implement <cite>train_step</cite></a></li>
-<li class="toctree-l1"><a class="reference internal" href="#write-a-main-py">Write a <cite>main.py</cite></a></li>
-<li class="toctree-l1"><a class="reference internal" href="#configuring">Configuring</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#metrics">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#checkpoint-and-rollback">Checkpoint and Rollback</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#rendezvous">Rendezvous</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API</span></p>
 <ul>
@@ -285,13 +278,12 @@
 <p>For details on what these are refer to <a class="reference external" href="README.md">how torch elastic works</a>.</p>
 <p>While going through the sections below, refer to the imagenet <a class="reference external" href="examples/imagenet/main.py">example</a></p>
 <p>for more complete implementation details.</p>
-</div>
 <div class="section" id="implement-state">
-<h1>Implement <cite>state</cite><a class="headerlink" href="#implement-state" title="Permalink to this headline">¶</a></h1>
+<h2>Implement <cite>state</cite><a class="headerlink" href="#implement-state" title="Permalink to this headline">¶</a></h2>
 <p>The <cite>State</cite> object has two categories of methods that need to be implemented:</p>
 <p>synchronization and persistence.</p>
 <div class="section" id="sync">
-<h2><cite>sync()</cite><a class="headerlink" href="#sync" title="Permalink to this headline">¶</a></h2>
+<h3><cite>sync()</cite><a class="headerlink" href="#sync" title="Permalink to this headline">¶</a></h3>
 <p>Lets take a look at synchronization first. The <cite>sync</cite> method is responsible for</p>
 <p>ensuring that all workers get a consistent view of <cite>state</cite>. It is called at</p>
 <p>startup as well as on each event that potentially leaves the workers out of sync,</p>
@@ -317,7 +309,7 @@
 <p>state persistence (rollbacks and checkpoints).</p>
 </div>
 <div class="section" id="optional-capture-snapshot-and-apply-snapshot">
-<h2>(optional) <cite>capture*snapshot()</cite> and <cite>apply*snapshot()</cite><a class="headerlink" href="#optional-capture-snapshot-and-apply-snapshot" title="Permalink to this headline">¶</a></h2>
+<h3>(optional) <cite>capture*snapshot()</cite> and <cite>apply*snapshot()</cite><a class="headerlink" href="#optional-capture-snapshot-and-apply-snapshot" title="Permalink to this headline">¶</a></h3>
 <p>&gt; You do not have to implement these methods if you do not want rollbacks</p>
 <p>from failed <cite>train_steps</cite></p>
 <p>torchelastic has the ability to rollback a state if a <cite>train_step</cite> fails to</p>
@@ -365,7 +357,7 @@
 </div></blockquote>
 </div>
 <div class="section" id="optional-save-stream-and-load-stream">
-<h2>(optional) <cite>save(stream)</cite> and <cite>load(stream)</cite><a class="headerlink" href="#optional-save-stream-and-load-stream" title="Permalink to this headline">¶</a></h2>
+<h3>(optional) <cite>save(stream)</cite> and <cite>load(stream)</cite><a class="headerlink" href="#optional-save-stream-and-load-stream" title="Permalink to this headline">¶</a></h3>
 <p>&gt; You do not have to implement these methods if you do not plan on using</p>
 <p>checkpointing.</p>
 <p>Much like the <cite>capture*snapshot</cite> and <cite>apply*snapshot</cite>, the <cite>save</cite> and <cite>load</cite> methods form a pair.</p>
@@ -380,7 +372,7 @@
 </div>
 </div>
 <div class="section" id="implement-train-step">
-<h1>Implement <cite>train_step</cite><a class="headerlink" href="#implement-train-step" title="Permalink to this headline">¶</a></h1>
+<h2>Implement <cite>train_step</cite><a class="headerlink" href="#implement-train-step" title="Permalink to this headline">¶</a></h2>
 <p>The <cite>train_step</cite> is a function that takes <cite>state</cite> as a single argument</p>
 <p>and carries out a partition of the overall training job.</p>
 <p>This is your unit of work and it is up to you to define what</p>
@@ -404,7 +396,7 @@
 <p>willing to lose versus how much overhead you want to pay for that security.</p>
 </div>
 <div class="section" id="write-a-main-py">
-<h1>Write a <cite>main.py</cite><a class="headerlink" href="#write-a-main-py" title="Permalink to this headline">¶</a></h1>
+<h2>Write a <cite>main.py</cite><a class="headerlink" href="#write-a-main-py" title="Permalink to this headline">¶</a></h2>
 <p>Now that you have <cite>state</cite> and <cite>train_step</cite> implementations all that remains</p>
 <p>is to bring everything together and implement a <cite>main</cite> that will execute your</p>
 <p>training. Your script should initialize torchelastic’s <cite>coordinator</cite>, create</p>
@@ -432,19 +424,20 @@
 <p><a href="#id13"><span class="problematic" id="id14">``</span></a><a href="#id15"><span class="problematic" id="id16">`</span></a></p>
 </div>
 <div class="section" id="configuring">
-<h1>Configuring<a class="headerlink" href="#configuring" title="Permalink to this headline">¶</a></h1>
-</div>
+<h2>Configuring<a class="headerlink" href="#configuring" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="metrics">
-<h1>Metrics<a class="headerlink" href="#metrics" title="Permalink to this headline">¶</a></h1>
+<h3>Metrics<a class="headerlink" href="#metrics" title="Permalink to this headline">¶</a></h3>
 <p>See metrics <a class="reference external" href="torchelastic/metrics/README.md">documentation</a>.</p>
 </div>
 <div class="section" id="checkpoint-and-rollback">
-<h1>Checkpoint and Rollback<a class="headerlink" href="#checkpoint-and-rollback" title="Permalink to this headline">¶</a></h1>
+<h3>Checkpoint and Rollback<a class="headerlink" href="#checkpoint-and-rollback" title="Permalink to this headline">¶</a></h3>
 <p>See checkpoint <a class="reference external" href="torchelastic/checkpoint/README.md">documentation</a></p>
 </div>
 <div class="section" id="rendezvous">
-<h1>Rendezvous<a class="headerlink" href="#rendezvous" title="Permalink to this headline">¶</a></h1>
+<h3>Rendezvous<a class="headerlink" href="#rendezvous" title="Permalink to this headline">¶</a></h3>
 <p>See rendezvous <a class="reference external" href="torchelastic/rendezvous/README.md">documentation</a></p>
+</div>
+</div>
 </div>
 
 
@@ -490,7 +483,7 @@
           <div class="pytorch-right-menu" id="pytorch-right-menu">
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
-<li><a class="reference internal" href="#">Usage</a></li>
+<li><a class="reference internal" href="#">Usage</a><ul>
 <li><a class="reference internal" href="#implement-state">Implement <cite>state</cite></a><ul>
 <li><a class="reference internal" href="#sync"><cite>sync()</cite></a></li>
 <li><a class="reference internal" href="#optional-capture-snapshot-and-apply-snapshot">(optional) <cite>capture*snapshot()</cite> and <cite>apply*snapshot()</cite></a></li>
@@ -499,10 +492,14 @@
 </li>
 <li><a class="reference internal" href="#implement-train-step">Implement <cite>train_step</cite></a></li>
 <li><a class="reference internal" href="#write-a-main-py">Write a <cite>main.py</cite></a></li>
-<li><a class="reference internal" href="#configuring">Configuring</a></li>
+<li><a class="reference internal" href="#configuring">Configuring</a><ul>
 <li><a class="reference internal" href="#metrics">Metrics</a></li>
 <li><a class="reference internal" href="#checkpoint-and-rollback">Checkpoint and Rollback</a></li>
 <li><a class="reference internal" href="#rendezvous">Rendezvous</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 
             </div>
