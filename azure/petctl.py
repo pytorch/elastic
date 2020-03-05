@@ -1,40 +1,29 @@
-from util import *
+import util
 import argparse
-
 # Create a Kubernetes specs and YAML job file based on user inputs
 def configure(args):
-    configure_yaml(args)
-    configure_json(args)
-
-
+    util.configure_yaml(args)
+    util.configure_json(args)
 # Deploys a Kubernetes cluster
 def setup(args):
     # Login to Azure
-    azure_login()
+    util.azure_login()
     # Install AKS Engine
-    install_aks_engine()
+    util.install_aks_engine()
     # Deploy an AKS cluster using kubernetes.json
-    deploy_aks_cluster(args)
-
-
+    util.deploy_aks_cluster(args)
 # Upload code/data to Azure blob storage
 def upload_storage(args):
-    upload_to_azure_blob(args)
-
-
+    util.upload_to_azure_blob(args)
 # Create Azure blob storage secret
 def storage_secret(args):
-    create_storage_secrets(args)
-
-
+    util.create_storage_secrets(args)
 # Create docker image secrets
 def docker_secret(args):
-    create_docker_image_secret(args)
-
-
+    util.create_docker_image_secret(args)
 # Submits your training job
 def run_job(args):
-    install_blobfuse_drivers()
+    util.install_blobfuse_drivers()
     commands = [
         "kubectl delete -f config/azure-pytorch-elastic.yaml",
         "kubectl apply -f config/azure-pytorch-elastic.yaml",
@@ -42,9 +31,7 @@ def run_job(args):
         "kubectl get pods --selector app=azure-pytorch-elastic",
     ]
 
-    run_commands(commands)
-
-
+    util.run_commands(commands)
 # Check current status of your pods
 def check_status():
     commands = [
@@ -52,14 +39,10 @@ def check_status():
         "kubectl get pods --selector app=azure-pytorch-elastic",
     ]
 
-    run_commands(commands)
-
-
+    util.run_commands(commands)
 # Get logs of your job from each pod
 def get_logs():
-    run_commands(["kubectl logs --selector app=azure-pytorch-elastic "])
-
-
+    util.run_commands(["kubectl logs --selector app=azure-pytorch-elastic "])
 # Deletes secrets and cluster
 def delete_resources():
     commands = [
@@ -68,12 +51,10 @@ def delete_resources():
         "kubectl delete namespace --all",
         "RD /S /Q _output",
     ]
-    run_commands(commands)
-    print(
+    util.run_commands(commands)
+    logging.info(
         "Deleted all resources, please manually delete the AKS resources from the Azure Portal."
     )
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
@@ -315,7 +296,7 @@ if __name__ == "__main__":
         help="New node count to scale cluster to",
     )
 
-    parser_scale.set_defaults(func=scale_cluster)
+    parser_scale.set_defaults(func=util.scale_cluster)
 
     args = parser.parse_args()
 
@@ -343,6 +324,6 @@ if __name__ == "__main__":
     elif args.command == "scale":
         scale_cluster(args)
     else:
-        print(
+        logging.info(
             "petctl.py: error: argument command: NULL command: (choose from 'setup', 'configure', 'run_job')"
         )

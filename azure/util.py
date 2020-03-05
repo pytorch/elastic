@@ -10,6 +10,7 @@ import urllib.request
 import tarfile
 import zipfile
 from shutil import copyfile
+import logging
 
 PETCTL_DIR = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
@@ -19,9 +20,9 @@ PETCTL_DIR = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__
 def run_commands(cmds):
     output = []
     set_kubeconfig_environment_var()
-    
+
     for cmd in cmds:
-        print("Running {}".format(cmd))
+        logging.info("Running {}".format(cmd))
         process = subprocess.Popen(
             cmd,
             universal_newlines=True,
@@ -31,10 +32,10 @@ def run_commands(cmds):
             env=os.environ,
         )
         for line in process.stdout:
-            print(line)
+            logging.info(line)
             output.append(line)
         for err in process.stderr:
-            print(err)
+            logging.info(err)
     return output
 
 
@@ -43,7 +44,7 @@ def configure_yaml(args):
     SAMPLE_YAML_FILE = os.path.join(PETCTL_DIR, "config/sample_specs.yaml")
     result_yaml_file = os.path.join(PETCTL_DIR, "config/", "azure-pytorch-elastic.yaml")
 
-    print("Configuring job yaml ", result_yaml_file)
+    logging.info("Configuring job yaml ", result_yaml_file)
 
     with open(SAMPLE_YAML_FILE) as f:
         data = yaml.load(f)
@@ -59,11 +60,12 @@ def configure_yaml(args):
 
     yaml.dump(data, open(result_yaml_file, "w"))
 
+
 # Configures job yaml file based on user docker image
 def configure_yaml_storage(container_name):
     yaml_file = os.path.join(PETCTL_DIR, "config/azure-pytorch-elastic.yaml")
 
-    print("Configuring job yaml ", yaml_file)
+    logging.info("Configuring job yaml ", yaml_file)
 
     with open(yaml_file) as f:
         data = yaml.load(f)
@@ -72,11 +74,12 @@ def configure_yaml_storage(container_name):
 
     yaml.dump(data, open(yaml_file, "w"))
 
+
 # Configures job yaml file based on user docker image
 def configure_yaml_docker(image_name):
     yaml_file = os.path.join(PETCTL_DIR, "config/azure-pytorch-elastic.yaml")
 
-    print("Configuring job yaml ", yaml_file)
+    logging.info("Configuring job yaml ", yaml_file)
 
     with open(yaml_file) as f:
         data = yaml.load(f)
@@ -85,12 +88,13 @@ def configure_yaml_docker(image_name):
 
     yaml.dump(data, open(yaml_file, "w"))
 
+
 # Configures kubernetes json file based on user inputs
 def configure_json(args):
     KUBERNETES_JSON_FILE = os.path.join(PETCTL_DIR, "config/kubernetes.json")
     result_json_file = os.path.join(PETCTL_DIR, "config/", "kubernetes.json")
 
-    print("Configuring kubernetes specs ", result_json_file)
+    logging.info("Configuring kubernetes specs ", result_json_file)
 
     with open(KUBERNETES_JSON_FILE) as f:
         data = json.load(f)
@@ -113,7 +117,7 @@ def azure_login():
             login_cmd, shell=True, stdout=subprocess.PIPE, env=os.environ
         )
         for line in process.stdout:
-            print(line)
+            logging.info(line)
 
 
 # Download AKS engine installer script for Linux
@@ -122,7 +126,7 @@ def download_aks_engine_script():
         "https://raw.githubusercontent.com/Azure/aks-engine/master/scripts/get-akse.sh"
     )
     urllib.request.urlretrieve(url, "config/get-akse.sh")
-    print("Downloading aks engine script.....")
+    logging.info("Downloading aks engine script.....")
 
 
 # Download AKS engine binary for Windows
@@ -147,11 +151,12 @@ def install_aks_engine():
         commands = ["chmod 700 config/get-akse.sh", "./config/get-akse.sh"]
         run_commands(commands)
 
+
 # Download AzCopy script to upload to AzureBlobStorage
 def download_azcopy_script():
     print('Downloading azcopy cli')
     url = 'https://aka.ms/downloadazcopy-v10-linux'
-    filename,_ = urllib.request.urlretrieve(url, 'config/azcopy.tar.gz')
+    filename, _ = urllib.request.urlretrieve(url, 'config/azcopy.tar.gz')
     tar_file_object = tarfile.open(filename, "r:gz")
     for member in tar_file_object.getmembers():
         if member.isreg():
@@ -160,10 +165,11 @@ def download_azcopy_script():
                 tar_file_object.extract(member.name, '.')
                 break
 
+
 # Download AzCopy script for windows
 def download_azcopy_script_for_windows():
     url = 'https://aka.ms/downloadazcopy-v10-windows'
-    filename,_ = urllib.request.urlretrieve(url, 'config/azcopy.zip')
+    filename, _ = urllib.request.urlretrieve(url, 'config/azcopy.zip')
     zip_file_object = zipfile.ZipFile(filename, 'r')
     for member in zip_file_object.infolist():
         if not member.is_dir():
@@ -172,28 +178,31 @@ def download_azcopy_script_for_windows():
                 zip_file_object.extract(member, '.')
                 break
 
+
 """
  Helper function to upload to AzureBlob storage based on
  Storage account,
  Storage container,
  SAS Token
 """
+
+
 def upload_to_azure_blob(args):
     if os.name == "nt":
         download_azcopy_script_for_windows()
         commands = ["azcopy copy \"{}\" \"https://{}.blob.core.windows.net/{}{}\" --recursive=True"
-        .format(args.source_path,
-         args.account_name,
-         args.container_name,
-         args.sas_token)]
+                        .format(args.source_path,
+                                args.account_name,
+                                args.container_name,
+                                args.sas_token)]
         run_commands(commands)
     else:
         download_azcopy_script()
         commands = ["./azcopy copy \'{}\' \'https://{}.blob.core.windows.net/{}{}\' --recursive=True"
-        .format(args.source_path,
-         args.account_name,
-         args.container_name,
-         args.sas_token)]
+                        .format(args.source_path,
+                                args.account_name,
+                                args.container_name,
+                                args.sas_token)]
         run_commands(commands)
     configure_yaml_storage(args.container_name)
 
@@ -210,7 +219,7 @@ def set_kubeconfig_environment_var():
             config_path = PETCTL_DIR + "\\_output\\azure-pytorch-elastic\\kubeconfig"
         else:
             config_path = PETCTL_DIR + "/_output/azure-pytorch-elastic/kubeconfig"
-        print("Reading KUBECONFIG environment variable from {}".format(config_path))
+        logging.info("Reading KUBECONFIG environment variable from {}".format(config_path))
 
         for files in walk(config_path):
             for f in files:
@@ -222,7 +231,7 @@ def set_kubeconfig_environment_var():
 
         if config_path.endswith(".json"):
             os.environ["KUBECONFIG"] = config_path
-            print("Setting KUBECONFIG env variable ", os.environ.get("KUBECONFIG"))
+            logging.info("Setting KUBECONFIG env variable ", os.environ.get("KUBECONFIG"))
 
 
 # Create storage secret named 'pet-blob-secret'
@@ -260,7 +269,7 @@ def create_docker_image_secret(args):
         )
     ]
     run_commands(commands)
-    print("Docker image registered..")
+    logging.info("Docker image registered..")
 
 
 # Deploy AKS cluster
