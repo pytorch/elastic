@@ -4,6 +4,7 @@ import json
 import os
 from os import walk
 import os.path
+import shutil
 import subprocess
 import uuid
 import urllib.request
@@ -14,6 +15,11 @@ import logging
 
 PETCTL_DIR = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
+                    datefmt='%m/%d/%Y %H:%M:%S',
+                    level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 # This method runs all commands in a separate
 # process and returns the output
@@ -22,21 +28,20 @@ def run_commands(cmds):
     set_kubeconfig_environment_var()
 
     for cmd in cmds:
-        logging.info("Running {}".format(cmd))
-        process = subprocess.Popen(
+        process = subprocess.run(
             cmd,
-            universal_newlines=True,
             shell=True,
+            universal_newlines=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             env=os.environ,
         )
-        for line in process.stdout:
-            logging.info(line)
-            output.append(line)
-        for err in process.stderr:
-            logging.info(err)
-    return output
+        if process.stdout:
+            logger.info(process.stdout)
+        if process.stderr:
+            logger.info(process.stderr)
+
+    return process.stdout
 
 
 # Configures job yaml file based on user inputs
@@ -44,7 +49,7 @@ def configure_yaml(args):
     SAMPLE_YAML_FILE = os.path.join(PETCTL_DIR, "config/sample_specs.yaml")
     result_yaml_file = os.path.join(PETCTL_DIR, "config/", "azure-pytorch-elastic.yaml")
 
-    logging.info("Configuring job yaml ", result_yaml_file)
+    logger.info("Configuring job yaml {}".format(result_yaml_file))
 
     with open(SAMPLE_YAML_FILE) as f:
         data = yaml.load(f)
@@ -65,7 +70,7 @@ def configure_yaml(args):
 def configure_yaml_storage(container_name):
     yaml_file = os.path.join(PETCTL_DIR, "config/azure-pytorch-elastic.yaml")
 
-    logging.info("Configuring job yaml ", yaml_file)
+    logger.info("Configuring job yaml {}".format(yaml_file))
 
     with open(yaml_file) as f:
         data = yaml.load(f)
@@ -79,7 +84,7 @@ def configure_yaml_storage(container_name):
 def configure_yaml_docker(image_name):
     yaml_file = os.path.join(PETCTL_DIR, "config/azure-pytorch-elastic.yaml")
 
-    logging.info("Configuring job yaml ", yaml_file)
+    logger.info("Configuring job yaml {}".format(yaml_file))
 
     with open(yaml_file) as f:
         data = yaml.load(f)
@@ -94,7 +99,7 @@ def configure_json(args):
     KUBERNETES_JSON_FILE = os.path.join(PETCTL_DIR, "config/kubernetes.json")
     result_json_file = os.path.join(PETCTL_DIR, "config/", "kubernetes.json")
 
-    logging.info("Configuring kubernetes specs ", result_json_file)
+    logger.info("Configuring kubernetes specs {}".format(result_json_file))
 
     with open(KUBERNETES_JSON_FILE) as f:
         data = json.load(f)
@@ -108,16 +113,13 @@ def configure_json(args):
 
 # Log in to Azure
 def azure_login():
-    check_cmd = "az account show"
-    p = subprocess.Popen(check_cmd, shell=True, stdout=subprocess.PIPE, env=os.environ)
-    acctS, _ = p.communicate()
-    if acctS == b"":
-        login_cmd = "az login"
-        process = subprocess.Popen(
-            login_cmd, shell=True, stdout=subprocess.PIPE, env=os.environ
+    p = run_commands(["az account show"])
+    if not p:
+        process = subprocess.run(
+            ["az login"], shell=True, stdout=subprocess.PIPE, env=os.environ
         )
         for line in process.stdout:
-            logging.info(line)
+            logger.info(line)
 
 
 # Download AKS engine installer script for Linux
@@ -126,7 +128,7 @@ def download_aks_engine_script():
         "https://raw.githubusercontent.com/Azure/aks-engine/master/scripts/get-akse.sh"
     )
     urllib.request.urlretrieve(url, "config/get-akse.sh")
-    logging.info("Downloading aks engine script.....")
+    logger.info("Downloading aks engine script.....")
 
 
 # Download AKS engine binary for Windows
@@ -219,7 +221,7 @@ def set_kubeconfig_environment_var():
             config_path = PETCTL_DIR + "\\_output\\azure-pytorch-elastic\\kubeconfig"
         else:
             config_path = PETCTL_DIR + "/_output/azure-pytorch-elastic/kubeconfig"
-        logging.info("Reading KUBECONFIG environment variable from {}".format(config_path))
+        logger.info("Reading KUBECONFIG environment variable from {}".format(config_path))
 
         for files in walk(config_path):
             for f in files:
@@ -231,7 +233,7 @@ def set_kubeconfig_environment_var():
 
         if config_path.endswith(".json"):
             os.environ["KUBECONFIG"] = config_path
-            logging.info("Setting KUBECONFIG env variable ", os.environ.get("KUBECONFIG"))
+            logger.info("Setting KUBECONFIG env variable {}".format(os.environ.get("KUBECONFIG")))
 
 
 # Create storage secret named 'pet-blob-secret'
@@ -269,7 +271,7 @@ def create_docker_image_secret(args):
         )
     ]
     run_commands(commands)
-    logging.info("Docker image registered..")
+    logger.info("Docker image registered..")
 
 
 # Deploy AKS cluster
@@ -316,3 +318,19 @@ def scale_cluster(args):
         )
     ]
     run_commands(command)
+
+
+def delete_resources_util():
+    commands = [
+        "kubectl config delete-cluster azure-pytorch-elastic",
+        "kubectl delete secret pet-blob-secret",
+        "kubectl delete namespace --all",
+    ]
+    run_commands(commands)
+
+    if os.path.isdir("_output"):
+        shutil.rmtree(os.path.join(PETCTL_DIR, "_output"))
+
+    logger.info(
+        "Deleted all resources, please manually delete the AKS resources from the Azure Portal."
+    )

@@ -1,5 +1,4 @@
 import util
-import argparse
 # Create a Kubernetes specs and YAML job file based on user inputs
 def configure(args):
     util.configure_yaml(args)
@@ -45,18 +44,10 @@ def get_logs():
     util.run_commands(["kubectl logs --selector app=azure-pytorch-elastic "])
 # Deletes secrets and cluster
 def delete_resources():
-    commands = [
-        "kubectl config delete-cluster azure-pytorch-elastic",
-        "kubectl delete secret pet-blob-secret",
-        "kubectl delete namespace --all",
-        "RD /S /Q _output",
-    ]
-    util.run_commands(commands)
-    logging.info(
-        "Deleted all resources, please manually delete the AKS resources from the Azure Portal."
-    )
+    util.delete_resources_util()
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = util.argparse.ArgumentParser()
 
     subparser = parser.add_subparsers(
         title="actions", description="setup | configure | run job", dest="command"
@@ -323,7 +314,3 @@ if __name__ == "__main__":
         get_logs()
     elif args.command == "scale":
         scale_cluster(args)
-    else:
-        logging.info(
-            "petctl.py: error: argument command: NULL command: (choose from 'setup', 'configure', 'run_job')"
-        )
