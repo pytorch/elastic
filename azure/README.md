@@ -5,6 +5,7 @@ This directory contains scripts and libraries that help users run pytorch elasti
 1. Familiarity with [Azure](https://azure.microsoft.com/en-us/), [aks-engine](https://github.com/Azure/aks-engine), [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/)
 2. Quota available for Standard_DS1_v2 instance and Standard_NC6s_v3 instance.
 3. Access to Azure subscription, Resource Group and Storage. (Refer [here](https://github.com/Azure/MachineLearningNotebooks/blob/master/configuration.ipynb) for setup instructions).
+4. Run the Azure login command `az login`.
 
 # Sample Usage
 

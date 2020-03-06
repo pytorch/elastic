@@ -5,8 +5,6 @@ def configure(args):
     util.configure_json(args)
 # Deploys a Kubernetes cluster
 def setup(args):
-    # Login to Azure
-    util.azure_login()
     # Install AKS Engine
     util.install_aks_engine()
     # Deploy an AKS cluster using kubernetes.json

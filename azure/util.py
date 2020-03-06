@@ -111,17 +111,6 @@ def configure_json(args):
     json.dump(data, open(result_json_file, "w"), indent=4)
 
 
-# Log in to Azure
-def azure_login():
-    p = run_commands(["az account show"])
-    if not p:
-        process = subprocess.run(
-            ["az login"], shell=True, stdout=subprocess.PIPE, env=os.environ
-        )
-        for line in process.stdout:
-            logger.info(line)
-
-
 # Download AKS engine installer script for Linux
 def download_aks_engine_script():
     url = (
