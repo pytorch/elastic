@@ -24,7 +24,6 @@ logger = logging.getLogger(__name__)
 # This method runs all commands in a separate
 # process and returns the output
 def run_commands(cmds):
-    output = []
     set_kubeconfig_environment_var()
 
     for cmd in cmds:
