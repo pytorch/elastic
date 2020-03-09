@@ -1,28 +1,31 @@
   
 # Minimal makefile for Sphinx documentation
+# Usage:
+#    make html
 #
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
-SPHINXPROJ    = torchaudio
+SPHINXPROJ    = torchelastic
 SOURCEDIR     = source
 BUILDDIR      = build
+VERSION       := $(shell python -c "import torchelastic; print(torchelastic.__version__)")
 
 # Put it first so that "make" without argument is like "make help".
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-docset: html
-	doc2dash --name $(SPHINXPROJ) --icon $(SOURCEDIR)/_static/img/pytorch-logo-flame.png --enable-js --online-redirect-url http://pytorch.org/audio/ --force $(BUILDDIR)/html/
+redirects:
+	python source/scripts/create_redirect_md.py --source_dir "$(SOURCEDIR)" --build_dir "$(BUILDDIR)/redirects"
 
-	# Manually fix because Zeal doesn't deal well with `icon.png`-only at 2x resolution.
-	cp $(SPHINXPROJ).docset/icon.png $(SPHINXPROJ).docset/icon@2x.png
-	convert $(SPHINXPROJ).docset/icon@2x.png -resize 16x16 $(SPHINXPROJ).docset/icon.png
+clean:
+	@echo "Deleting build directory"
+	rm -rf "$(BUILDDIR)"
 
-.PHONY: help Makefile docset
+.PHONY: help Makefile redirects clean
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
-%: Makefile
-	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+%: Makefile redirects
+	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)/$(VERSION)" $(SPHINXOPTS) $(O)

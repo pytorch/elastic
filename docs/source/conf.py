@@ -48,6 +48,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinxcontrib.katex",
+    "sphinx.ext.autosectionlabel",
     "m2r",
 ]
 
@@ -88,7 +89,7 @@ author = "PyTorch Elastic Contributors"
 #
 # The short X.Y version.
 # TODO: change to [:2] at v1.0
-version = "master "
+version = f"v{torchelastic.__version__}"
 # The full version, including alpha/beta/rc tags.
 # TODO: verify this works as expected
 release = "master"
@@ -125,7 +126,7 @@ html_theme_path = [pytorch_sphinx_theme.get_html_theme_path()]
 # documentation.
 #
 html_theme_options = {
-    "pytorch_project": "audio",
+    "pytorch_project": "elastic",
     "collapse_navigation": False,
     "display_version": True,
     "logo_only": True,
@@ -149,7 +150,7 @@ def setup(app):
 
     # In Sphinx 1.8 it was renamed to `add_css_file`, 1.7 and prior it is
     # `add_stylesheet` (deprecated in 1.8).
-    add_css = getattr(app, "add_css_file", getattr(app, "add_stylesheet"))
+    add_css = getattr(app, "add_css_file", getattr(app, "add_stylesheet"))  # noqa B009
     for css_file in html_css_files:
         add_css(css_file)
 
@@ -157,7 +158,7 @@ def setup(app):
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "TorchAudiodoc"
+htmlhelp_basename = "TorchElasticdoc"
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -184,7 +185,7 @@ latex_documents = [
     (
         master_doc,
         "pytorch.tex",
-        "Torchaudio Documentation",
+        "Torchelastic Documentation",
         "Torch Contributors",
         "manual",
     )
@@ -195,7 +196,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "Torchaudio", "Torchaudio Documentation", [author], 1)]
+man_pages = [(master_doc, "Torchelastic", "Torchelastic Documentation", [author], 1)]
 
 
 # -- Options for Texinfo output -------------------------------------------
@@ -206,11 +207,11 @@ man_pages = [(master_doc, "Torchaudio", "Torchaudio Documentation", [author], 1)
 texinfo_documents = [
     (
         master_doc,
-        "Torchaudio",
-        "Torchaudio Documentation",
+        "Torchelastic",
+        "Torchelastic Documentation",
         author,
-        "Torchaudio",
-        "Load audio files into pytorch tensors.",
+        "Torchelastic",
+        "PyTorch Elastic Training",
         "Miscellaneous",
     )
 ]
@@ -231,7 +232,6 @@ def patched_make_field(self, types, domain, items, **kw):
     # `kw` catches `env=None` needed for newer sphinx while maintaining
     #  backwards compatibility when passed along further down!
 
-    # type: (List, unicode, Tuple) -> nodes.field
     def handle_item(fieldarg, content):
         par = nodes.paragraph()
         par += addnodes.literal_strong("", fieldarg)  # Patch: this line added
@@ -244,7 +244,7 @@ def patched_make_field(self, types, domain, items, **kw):
             # inconsistencies later when references are resolved
             fieldtype = types.pop(fieldarg)
             if len(fieldtype) == 1 and isinstance(fieldtype[0], nodes.Text):
-                typename = u"".join(n.astext() for n in fieldtype)
+                typename = "".join(n.astext() for n in fieldtype)
                 typename = typename.replace("int", "python:int")
                 typename = typename.replace("long", "python:long")
                 typename = typename.replace("float", "python:float")
@@ -255,7 +255,7 @@ def patched_make_field(self, types, domain, items, **kw):
                         domain,
                         typename,
                         addnodes.literal_emphasis,
-                        **kw
+                        **kw,
                     )
                 )
             else:

@@ -1,0 +1,4 @@
+docs/src
+docs/build
+docs/torchelastic.docset
+**/__pycache__
