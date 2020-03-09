@@ -46,11 +46,10 @@ class LocalTimerExample(unittest.TestCase):
     unittest. As of now this will SIGSEGV.
     """
 
-    @unittest.skip("re-enable when torch_mp.spawn() takes mp context as param")
+    @unittest.skipIf(is_asan_or_tsan(), "test is a/tsan incompatible")
     def test_torch_mp_example(self):
         # in practice set the max_interval to a larger value (e.g. 60 seconds)
-        ctx = mp.get_context("spawn")
-        mp_queue = ctx.Queue()
+        mp_queue = mp.get_context("spawn").Queue()
         server = timer.LocalTimerServer(mp_queue, max_interval=0.01)
         server.start()
 
@@ -58,24 +57,24 @@ class LocalTimerExample(unittest.TestCase):
         # all processes should complete successfully
         # since start_process does NOT take context as parameter argument yet
         # this method WILL FAIL (hence the test is disabled)
-        torch_mp.start_process(
-            fn=_happy_function, args=(mp_queue,), nprocs=world_size, context=ctx
+        torch_mp.spawn(
+            fn=_happy_function, args=(mp_queue,), nprocs=world_size, join=True
         )
 
         with self.assertRaises(Exception):
             # torch.multiprocessing.spawn kills all sub-procs
             # if one of them gets killed
-            torch_mp.start_process(
-                fn=_stuck_function, args=(mp_queue,), nprocs=world_size, context=ctx
+            torch_mp.spawn(
+                fn=_stuck_function, args=(mp_queue,), nprocs=world_size, join=True
             )
 
         server.stop()
 
-    @unittest.skipIf(is_asan_or_tsan(), "test is asan incompatible")
+    @unittest.skipIf(is_asan_or_tsan(), "test is a/tsan incompatible")
     def test_example_start_method_spawn(self):
         self._run_example_with(start_method="spawn")
 
-    @unittest.skipIf(is_asan_or_tsan(), "test is asan incompatible")
+    @unittest.skipIf(is_asan_or_tsan(), "test is a/tsan incompatible")
     def test_example_start_method_forkserver(self):
         self._run_example_with(start_method="forkserver")
 
