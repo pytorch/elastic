@@ -30,6 +30,7 @@ def run_commands(cmds):
         process = subprocess.run(
             cmd,
             shell=True,
+            check=True,
             universal_newlines=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
