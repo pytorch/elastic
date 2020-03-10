@@ -48,7 +48,7 @@ def configure_yaml(args):
     SAMPLE_YAML_FILE = os.path.join(PETCTL_DIR, "config/sample_specs.yaml")
     result_yaml_file = os.path.join(PETCTL_DIR, "config/", "azure-pytorch-elastic.yaml")
 
-    logger.info("Configuring job yaml {}".format(result_yaml_file))
+    logger.info(f"Configuring job yaml {result_yaml_file}")
 
     with open(SAMPLE_YAML_FILE) as f:
         data = yaml.load(f)
@@ -69,7 +69,7 @@ def configure_yaml(args):
 def configure_yaml_storage(container_name):
     yaml_file = os.path.join(PETCTL_DIR, "config/azure-pytorch-elastic.yaml")
 
-    logger.info("Configuring job yaml {}".format(yaml_file))
+    logger.info(f"Configuring job yaml {yaml_file}")
 
     with open(yaml_file) as f:
         data = yaml.load(f)
@@ -83,7 +83,7 @@ def configure_yaml_storage(container_name):
 def configure_yaml_docker(image_name):
     yaml_file = os.path.join(PETCTL_DIR, "config/azure-pytorch-elastic.yaml")
 
-    logger.info("Configuring job yaml {}".format(yaml_file))
+    logger.info(f"Configuring job yaml {yaml_file}")
 
     with open(yaml_file) as f:
         data = yaml.load(f)
@@ -98,7 +98,7 @@ def configure_json(args):
     KUBERNETES_JSON_FILE = os.path.join(PETCTL_DIR, "config/kubernetes.json")
     result_json_file = os.path.join(PETCTL_DIR, "config/", "kubernetes.json")
 
-    logger.info("Configuring kubernetes specs {}".format(result_json_file))
+    logger.info(f"Configuring kubernetes specs {result_json_file}")
 
     with open(KUBERNETES_JSON_FILE) as f:
         data = json.load(f)
@@ -180,19 +180,11 @@ def download_azcopy_script_for_windows():
 def upload_to_azure_blob(args):
     if os.name == "nt":
         download_azcopy_script_for_windows()
-        commands = ["azcopy copy \"{}\" \"https://{}.blob.core.windows.net/{}{}\" --recursive=True"
-                        .format(args.source_path,
-                                args.account_name,
-                                args.container_name,
-                                args.sas_token)]
+        commands = [f"azcopy copy \"{args.source_path}\" \"https://{args.account_name}.blob.core.windows.net/{args.container_name}{args.sas_token}\" --recursive=True"]
         run_commands(commands)
     else:
         download_azcopy_script()
-        commands = ["./azcopy copy \'{}\' \'https://{}.blob.core.windows.net/{}{}\' --recursive=True"
-                        .format(args.source_path,
-                                args.account_name,
-                                args.container_name,
-                                args.sas_token)]
+        commands = [f"./azcopy copy \'{args.source_path}\' \'https://{args.account_name}.blob.core.windows.net/{args.container_name}{args.sas_token}\' --recursive=True"]
         run_commands(commands)
     configure_yaml_storage(args.container_name)
 
@@ -205,34 +197,26 @@ def upload_to_azure_blob(args):
 
 def set_kubeconfig_environment_var():
     if os.path.isdir("_output"):
-        if os.name == "nt":
-            config_path = PETCTL_DIR + "\\_output\\azure-pytorch-elastic\\kubeconfig"
-        else:
-            config_path = PETCTL_DIR + "/_output/azure-pytorch-elastic/kubeconfig"
-        logger.info("Reading KUBECONFIG environment variable from {}".format(config_path))
+        config_path = os.path.join(PETCTL_DIR, '_output', 'azure-pytorch-elastic', 'kubeconfig')
+        logger.info(f"Reading KUBECONFIG environment variable from {config_path}")
 
         for files in walk(config_path):
             for f in files:
                 if f and f[0].endswith(".json"):
-                    if os.name == "nt":
-                        config_path = config_path + "\\" + f[0]
-                    else:
-                        config_path = config_path + "/" + f[0]
+                    config_path = os.path.join(config_path, f[0])
 
         if config_path.endswith(".json"):
             os.environ["KUBECONFIG"] = config_path
-            logger.info("Setting KUBECONFIG env variable {}".format(os.environ.get("KUBECONFIG")))
+            logger.info(f"Setting KUBECONFIG env variable {os.environ.get('KUBECONFIG')}")
 
 
 # Create storage secret named 'pet-blob-secret'
 def create_storage_secrets(args):
     commands = [
-        "kubectl create secret generic pet-blob-secret \
-                 --from-literal accountname={0} \
-                 --from-literal accountkey={1} \
-                 --type=azure/blobfuse".format(
-            args.account_name, args.account_key
-        )
+        f"kubectl create secret generic pet-blob-secret \
+                 --from-literal accountname={args.account_name} \
+                 --from-literal accountkey={args.account_key} \
+                 --type=azure/blobfuse"
     ]
     run_commands(commands)
 
@@ -249,14 +233,12 @@ def install_blobfuse_drivers():
 def create_docker_image_secret(args):
     configure_yaml_docker(args.image_name)
     commands = [
-        "kubectl create secret \
+        f"kubectl create secret \
                 docker-registry pet-docker-secret \
-                --docker-server={0} \
-                --docker-username={1} \
-                --docker-password={2} \
-                --docker-email='test@test.com'".format(
-            args.server, args.username, args.password
-        )
+                --docker-server={args.server} \
+                --docker-username={args.username} \
+                --docker-password={args.password} \
+                --docker-email='test@test.com'"
     ]
     run_commands(commands)
     logger.info("Docker image registered..")
@@ -264,23 +246,17 @@ def create_docker_image_secret(args):
 
 # Deploy AKS cluster
 def deploy_aks_cluster(args):
+    logger.info("Started AKS cluster deployment. This will take some time .....")
     commands = [
-        "aks-engine deploy -f  --subscription-id {0} \
-                                   --dns-prefix {1} \
-                                   --resource-group {2} \
-                                   --location {3} \
+        f"aks-engine deploy -f  --subscription-id {args.subscription_id} \
+                                   --dns-prefix {args.dns_prefix} \
+                                   --resource-group {args.rg} \
+                                   --location {args.location} \
                                    --api-model config/kubernetes.json \
-                                   --client-id {4} \
-                                   --client-secret {5} \
-                                   --set servicePrincipalProfile.clientId={4} \
-                                   --set servicePrincipalProfile.secret={5}".format(
-            args.subscription_id,
-            args.dns_prefix,
-            args.rg,
-            args.location,
-            args.client_id,
-            args.client_secret,
-        )
+                                   --client-id {args.client_id} \
+                                   --client-secret {args.client_secret} \
+                                   --set servicePrincipalProfile.clientId={args.client_id} \
+                                   --set servicePrincipalProfile.secret={args.client_secret}"
     ]
     run_commands(commands)
 
@@ -288,22 +264,15 @@ def deploy_aks_cluster(args):
 # Scale the cluster up and down based on user input
 def scale_cluster(args):
     command = [
-        "aks-engine scale \
-            --subscription-id {0} \
-            --resource-group {1} \
-            --client-id {2} \
-            --client-secret {3} \
-            --location {4} \
+        f"aks-engine scale \
+            --subscription-id {args.subscription_id} \
+            --resource-group {args.rg} \
+            --client-id {args.client_id} \
+            --client-secret {args.client_secret} \
+            --location {args.location} \
             --api-model _output/azure-pytorch-elastic/apimodel.json \
-            --new-node-count {5}\
-            --apiserver azure-pytorch-elastic.{4}.cloudapp.azure.com".format(
-            args.subscription_id,
-            args.rg,
-            args.client_id,
-            args.client_secret,
-            args.location,
-            args.new_node_count,
-        )
+            --new-node-count {args.new_node_count}\
+            --apiserver azure-pytorch-elastic.{4}.cloudapp.azure.com"
     ]
     run_commands(command)
 
