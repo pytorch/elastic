@@ -65,7 +65,8 @@ def _train_step(state, hooks):
     state.total_sum += int(tensor[0])
     log.info(
         f"After all_reduce: rank {state.get_worker_rank()}, "
-        f"sample {sample},"
+        f"sample {sample}, "
+        f"PID: {os.getpid()}"
         f"train step sum: {int(tensor[0])}, total sum: {state.total_sum}"
     )
     state.nums.append(sample)
