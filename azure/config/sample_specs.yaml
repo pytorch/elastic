@@ -1,0 +1,52 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: azure-pytorch-elastic
+  name: azure-pytorch-elastic
+spec:
+  template:
+    metadata:
+      labels:
+        app: azure-pytorch-elastic
+    spec:
+      containers:
+      - name: petimage
+        image: mcr.microsoft.com/azureml/elastic:pytorch-elastic-openmpi3.1.2-cuda10.1-cudnn7-ubuntu18.04
+        command: ["/bin/bash", "-c"]
+        args: ["python /mnt/azure/pet/code/imagenet/main.py --input_path /mnt/azure/pet/data/train/"]
+        imagePullPolicy: Always
+        env:
+          - name: RDZV_ENDPOINT
+            value: 10.255.255.5:2379
+          - name: ETCD_PROTOCOL
+            value: https
+          - name: ETCD_CACERT
+            value: /etc/kubernetes/certs/ca.crt
+          - name: ETCD_CERT
+            value: /etc/kubernetes/certs/client.crt
+          - name: ETCD_KEY
+            value: /etc/kubernetes/certs/client.key
+        resources:
+          limits:
+           nvidia.com/gpu: 1
+        volumeMounts:
+          - name: pet
+            mountPath: /mnt/azure/pet
+          - name: etc
+            mountPath: /etc/kubernetes/certs
+      imagePullSecrets:
+      - name: pet-docker-secret
+      volumes:
+      - name: pet
+        flexVolume:
+          driver: "azure/blobfuse"
+          readOnly: true
+          secretRef:
+            name: pet-blob-secret
+          options:
+            container: petimagenet
+      - name: etc
+        hostPath:
+          path: /etc/kubernetes/certs
+      restartPolicy: Never
