@@ -114,7 +114,7 @@ def run_train(coordinator, train_step_gen, state):
             raise
         finally:
             publish_metric(
-                "torch_elastic",
+                "torchelastic",
                 "outer_train_loop.duration.ms",
                 get_elapsed_time_ms(start_time),
             )
