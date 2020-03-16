@@ -209,16 +209,18 @@ class TimerServer(abc.ABC):
 
     def start(self) -> None:
         logging.info(
-            f"Starting {self.__class__.__name__}..."
+            f"Starting {type(self).__name__}..."
             f" max_interval={self._max_interval},"
             f" daemon={self._daemon}"
         )
         self._watchdog_thread = threading.Thread(
             target=self._watchdog_loop, daemon=self._daemon
         )
+        logging.info(f"Starting watchdog thread...")
         self._watchdog_thread.start()
 
     def stop(self) -> None:
+        logging.info(f"Stopping {type(self).__name__}")
         self._stop_signaled = True
         if self._watchdog_thread:
             logging.info(f"Stopping watchdog thread...")
@@ -234,6 +236,7 @@ _timer_client = None
 def configure(timer_client: TimerClient):
     global _timer_client
     _timer_client = timer_client
+    logging.info(f"Timer client configured to: {type(_timer_client).__name__}")
 
 
 @contextmanager
