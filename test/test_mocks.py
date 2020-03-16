@@ -85,13 +85,15 @@ class TestDataset(BaseDataset):
         return int(tensor[0])
 
     def capture_snapshot(self, snapshot):
+        snapshot["dataset.rank"] = self.rank
+        snapshot["dataset.world_size"] = self.world_size
         snapshot["dataset.dist_skip_index"] = self.dist_skip_index
         return snapshot
 
     def apply_snapshot(self, snapshot):
         dist_skip_index = snapshot["dataset.dist_skip_index"]
-        world_size = dist.get_world_size()
-        rank = dist.get_rank()
+        rank = snapshot["dataset.rank"]
+        world_size = snapshot["dataset.world_size"]
         self.reinit(world_size, rank, [dist_skip_index])
 
     def get_sync_parameters(self):
@@ -133,11 +135,12 @@ class RadixTestDataset(BaseDataset):
 
     def capture_snapshot(self, snapshot):
         snapshot["dataset.curr_iter"] = self.curr_iter
+        snapshot["dataset.rank"] = self.rank
         return snapshot
 
     def apply_snapshot(self, snapshot):
         self.curr_iter = snapshot["dataset.curr_iter"]
-        self.rank = dist.get_rank()
+        self.rank = snapshot["dataset.rank"]
 
     def get_sync_parameters(self):
         return [self.curr_iter]

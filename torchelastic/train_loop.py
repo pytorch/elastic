@@ -86,6 +86,9 @@ def run_train(coordinator, train_step_gen, state):
         try:
             store, rank, world_size = coordinator.rendezvous_barrier()
             coordinator.init_process_group()
+            # Sync befor continue any user code since init_process_group
+            # does not sync.
+            coordinator.barrier()
 
             # load checkpoint if necessary
             state = checkpoint_util.load_checkpoint(state, rank)
