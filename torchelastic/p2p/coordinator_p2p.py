@@ -22,7 +22,11 @@ import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
 from torchelastic import metrics
 from torchelastic.coordinator import Coordinator, NonRetryableException, StopException
 from torchelastic.event_logger import get_event_logger
-from torchelastic.rendezvous import RendezvousClosedException, RendezvousHandler
+from torchelastic.rendezvous import (
+    RendezvousClosedException,
+    RendezvousHandler,
+    RendezvousTimeoutException,
+)
 
 
 # Logger
@@ -98,6 +102,14 @@ class CoordinatorP2P(Coordinator):
             raise StopException(
                 "Rank {0} received RendezvousClosedException."
                 " Raising a StopException".format(self.rank)
+            )
+        except RendezvousTimeoutException as e:
+            self._log_event("rendezvous_failed_timeout")
+            raise NonRetryableException(
+                "Rank {0} received a timeout Exception. "
+                "This indicates that workers were permanently stuck."
+                "Make sure that you have available resources. "
+                "Detailed message: {1}".format(self.rank, str(e))
             )
         except Exception as e:
             self._log_event("rendezvous_failed")

@@ -30,7 +30,9 @@ class EtcdElasticTrainerTest(ElasticTrainerTestBase, unittest.TestCase):
     def tearDown(self):
         super().tearDown()
 
-    def get_rdzv_url(self, run_id, min_size, max_size):
+    def get_rdzv_url(
+        self, run_id, min_size, max_size, timeout=300, min_node_timeout=None
+    ):
         host = self._etcd_server.get_host()
         port = self._etcd_server.get_port()
         # Note: last_call_timeout can potentially be a source of test flakiness
@@ -39,6 +41,7 @@ class EtcdElasticTrainerTest(ElasticTrainerTestBase, unittest.TestCase):
             f"etcd://{host}:{port}/{run_id}"
             f"?min_workers={min_size}&max_workers={max_size}"
             f"&last_call_timeout=5"
+            f"&timeout={timeout}"
         )
 
     def test_etcd_server(self):

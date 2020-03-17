@@ -31,6 +31,7 @@ from test_mocks import (
 )
 from test_utils import TestCommon, _get_or_raise
 from torchelastic.checkpoint import FileSystemCheckpointManager
+from torchelastic.coordinator import NonRetryableException
 from torchelastic.p2p.coordinator_p2p import CoordinatorP2P
 
 
@@ -141,13 +142,15 @@ class ElasticTrainerTestBase(TestCommon, abc.ABC):
         state = elastic_train_loop.train(elastic_coordinator, elastic_train_step, state)
         return state
 
-    def _train(self, _, run_id, train_step, hooks, state_override=None):
+    def _train(self, _, run_id, train_step, hooks, state_override=None, timeout=600):
         """
         Common sub-process trainer entry point used by most tests.
         """
         elastic_coordinator = CoordinatorP2P(
             c10d_backend="gloo",
-            init_method=self.get_rdzv_url(run_id, self.min_size, self.max_size),
+            init_method=self.get_rdzv_url(
+                run_id, self.min_size, self.max_size, timeout=timeout
+            ),
             max_num_trainers=self.max_size,
             process_group_timeout=10000,
         )
@@ -252,6 +255,31 @@ class ElasticTrainerTestBase(TestCommon, abc.ABC):
         self.assertEqual([13, 17, 21, 25, 29], nums[2])
         self.assertEqual([14, 18, 22, 26, 30], nums[3])
         self.assertEqual([410, 410, 410, 410], sums)  # 410 = 11 + 12 + ... + 30
+
+    def test_rdzv_timeout(self):
+        """
+        Test timeout exception.
+        """
+        run_id = self._generate_run_id()
+
+        nprocs = 4
+        self.min_size = nprocs
+        qouts = []
+        qerrs = []
+        timeout = 30
+        for _ in range(0, nprocs - 1):
+            _, qout, qerr = self._spawn(
+                self._train, run_id, _train_step, None, None, timeout
+            )
+            qouts.append(qout)
+            qerrs.append(qerr)
+
+        # get the samples that each worker processed and assert against input data
+        for i in range(0, nprocs - 1):
+            with self.assertRaises(NonRetryableException) as err:
+                _get_or_raise(qouts[i], qerrs[i])
+                pattern = "permanently stuck"
+                self.assertTrue(str(err).find(pattern) > 0)
 
     def test_normal_flow_with_worker_stats(self):
         """
