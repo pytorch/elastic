@@ -1,0 +1,26 @@
+# permissions to do edit elasticjobs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: elasticjob-editor-role
+rules:
+- apiGroups:
+  - elastic.pytorch.org
+  resources:
+  - elasticjobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - elastic.pytorch.org
+  resources:
+  - elasticjobs/status
+  verbs:
+  - get
+  - patch
+  - update
