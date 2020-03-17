@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	common "github.com/kubeflow/common/pkg/apis/common/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,15 +28,18 @@ import (
 type ElasticJobSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of ElasticJob. Edit ElasticJob_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	RunPolicy    common.RunPolicy                           `json:",inline"`
+	ReplicaSpecs map[common.ReplicaType]*common.ReplicaSpec `json:"replicaSpecs"`
+	RdzvEndpoint string                                     `json:"rdzvEndpoint,omitempty"`
+	MinReplicas  *int32                                     `json:"minReplicas,omitempty"`
+	MaxReplicas  *int32                                     `json:"maxReplicas,omitempty"`
 }
 
 // ElasticJobStatus defines the observed state of ElasticJob
 type ElasticJobStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	common.JobStatus `json:",inline"`
 }
 
 // +kubebuilder:object:root=true
@@ -57,6 +61,19 @@ type ElasticJobList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []ElasticJob `json:"items"`
 }
+
+type ElasticJobReplicaType common.ReplicaType
+
+const (
+	// ElasticReplicaTypeEtcd is the type for etcd of Elastic Job.
+	ElasticReplicaTypeEtcd ElasticJobReplicaType = "Etcd"
+
+	// ElasticReplicaTypeWorker is the type for workers of Elastic Job.
+	ElasticReplicaTypeWorker ElasticJobReplicaType = "Worker"
+
+	// ElasticReplicaTypeMaster is the type for master of Elastic Job.
+	ElasticReplicaTypeMaster ElasticJobReplicaType = "Master"
+)
 
 func init() {
 	SchemeBuilder.Register(&ElasticJob{}, &ElasticJobList{})
