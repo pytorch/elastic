@@ -39,19 +39,19 @@ However, it can be parallelized.
     2. If a existing worker leaves, there are two different situations, 
 
         * If it is requested by the scheduler, whether due to preemption or stragger detection, the leaving worker could **exit gracefully**.
-          It notifies the peers to start the next rendezvous, **at the same time, it continues train_step.** when the next ``rendezvous_barrier`` completes, other workers will go on in the new process group.
+          It notifies the peers to start the next rendezvous, **at the same time, it continues train_step.** when the next **rendezvous_barrier** completes, other workers will go on in the new process group.
         
-        * If it is due to the node failure, either the ``train_step`` will timeouts or the peers will discover(the failed worker won't renew its lease). In this case, the **train_step** has to stop and wait until **rendezvous_barrier** completes.
+        * If it is due to the node failure, either the **train_step** will timeouts or the peers will discover(the failed worker won't renew its lease). In this case, the **train_step** has to stop and wait until **rendezvous_barrier** completes.
 
 High Level Design
 #################
-We only need to modify ``CoordinatorP2P`` or add a new coordinator called ``CoordinatorParallel``, but most part of them are the same. Let's take the ``CoordinatorP2P`` as an example.
+Modify ``CoordinatorP2P`` or add a new coordinator called ``CoordinatorParallel``, but most part of them are the same. Let's take the ``CoordinatorP2P`` as an example.
 
 1. Add Three functions,
     
     * _rendezvous_barrier(): It is the same with current rendezvous_barrier() logic.
 
-    * _should_rendezvous(): it contains current should_rendezvous() and the un-renewed lease logic.
+    * _should_rendezvous(): it contains current should_rendezvous() and check the un-renewed lease logic.
 
     * graceful_exit(): it will delete its lease in the etcd.
 
@@ -91,8 +91,9 @@ We only need to modify ``CoordinatorP2P`` or add a new coordinator called ``Coor
         return self._should_rendezvous_flag
 
 
+
 Future
 ######
-Although thhe above design could achieve our goal, but somehow not so straight-forward. Maybe it is better to change the train_loop directly.
-
+1. Although thhe above design could achieve our goal, but somehow not so straight-forward. Maybe it is better to change the train_loop directly.
+2. From performance test, state.sync() also has non-negligible overhead(as much as train_step). Is there a way to make sync() more fine-grained and make it in parallel with train_step?
 
