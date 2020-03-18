@@ -15,3 +15,6 @@
 
 # IDE
 .idea/
+
+# Operator Binary
+bin/manager

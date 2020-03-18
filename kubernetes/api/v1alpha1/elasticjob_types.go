@@ -24,15 +24,23 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// +kubebuilder:printcolumn:name="Min",type=integer,JSONPath=`.spec.minReplicas`
+// +kubebuilder:printcolumn:name="Max",type=integer,JSONPath=`.spec.maxReplicas`
+// +kubebuilder:printcolumn:name="Desired",type=integer,JSONPath=`.spec.replicaSpecs[Worker].replicas`
+// +kubebuilder:printcolumn:name="rdzvEndpoint",type=string,JSONPath=`.spec.rdzvEndpoint`
 // ElasticJobSpec defines the desired state of ElasticJob
 type ElasticJobSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	RunPolicy    common.RunPolicy                           `json:",inline"`
+	RunPolicy common.RunPolicy `json:",inline"`
+
+	// +kubebuilder:validation:MinItems=1
 	ReplicaSpecs map[common.ReplicaType]*common.ReplicaSpec `json:"replicaSpecs"`
-	RdzvEndpoint string                                     `json:"rdzvEndpoint,omitempty"`
-	MinReplicas  *int32                                     `json:"minReplicas,omitempty"`
-	MaxReplicas  *int32                                     `json:"maxReplicas,omitempty"`
+	RdzvEndpoint string                                     `json:"rdzvEndpoint"`
+
+	// +kubebuilder:validation:Minimum=1
+	MinReplicas *int32 `json:"minReplicas,omitempty"`
+	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 }
 
 // ElasticJobStatus defines the observed state of ElasticJob

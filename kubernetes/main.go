@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	corev1 "k8s.io/api/core/v1"
 	"os"
 
 	elasticv1alpha1 "github.com/pytorch/elastic/kubernetes/api/v1alpha1"
@@ -39,6 +40,7 @@ func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 
 	_ = elasticv1alpha1.AddToScheme(scheme)
+	_ = corev1.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 

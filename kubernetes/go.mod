@@ -7,9 +7,11 @@ require (
 	github.com/kubeflow/common v0.0.0-20200313171840-64f943084a05
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
+	k8s.io/api v0.15.10
 	k8s.io/apimachinery v0.15.10
 	k8s.io/client-go v0.15.10
-	sigs.k8s.io/controller-runtime v0.4.0
+	k8s.io/kubernetes v1.15.10
+	sigs.k8s.io/controller-runtime v0.3.0
 )
 
 replace (
