@@ -1,11 +1,11 @@
 Motivation
 ##########
 
-Current elastic executes ``memebership discovery`` and ``train step`` in a sequential order.
+Current elastic executes **rendezvous_barrier** and **train_step** in a sequential order.
 
 From elastic performance test on Azure Kubernetes Service (each VM: 1 gpu, 6 vcpus, 56GiB), the metics show as follows,
 
-*I write a very simple controller to || scale out 1 worker || stay || scale in 1 worker || every 60 sec.*
+*I write a very simple controller to  scale out 1 worker || stay || scale in 1 worker in every 60 sec.*
 
 Min Workers: 2
 
@@ -29,25 +29,32 @@ The test shows the overhead of rendezvous_barrier is non-negligible. With so muc
 
 Proposal
 ########
-Our goal is to parallelize ``memebership discovery`` and ``train step``.
+Our goal is to parallelize **rendezvous_barrier** and **train_step** .
 
-Currently, when existing workers discover there are new workers waiting, they stop ``train step`` and wait until ``rendezvous_barrier`` completes.
+Currently, when existing workers discover new workers waiting, they stop **train_step** and wait until **rendezvous_barrier** completes.
 
 However, it can be parallelized. 
 
-    1. If a new worker joins in, existing workers do not need to stop immediately. Instead, they continue ``train step`` until ``rendezvous_barrier`` completes. 
+    1. If a new worker joins in, existing workers do not need to stop immediately. Instead, they continue **train_step** until **rendezvous_barrier** completes. 
     2. If a existing worker leaves, there are two different situations, 
 
         * If it is requested by the scheduler, whether due to preemption or stragger detection, the leaving worker could **exit gracefully**.
-          It notifies the peers to start the next rendezvous, **at the same time, it continues train step.** when the next ``rendezvous_barrier`` completes, other workers will go on in the new process group.
+          It notifies the peers to start the next rendezvous, **at the same time, it continues train_step.** when the next ``rendezvous_barrier`` completes, other workers will go on in the new process group.
         
-        * If it is due to the node failure, either the ``train step`` will timeout or the peers will discover(the failed worker won't renew its lease). In such case, the ``train step`` has to stop and wait until ``rendezvous_barrier`` completes.
+        * If it is due to the node failure, either the ``train_step`` will timeouts or the peers will discover(the failed worker won't renew its lease). In this case, the **train_step** has to stop and wait until **rendezvous_barrier** completes.
 
-High level design
+High Level Design
 #################
-We only need to modify CoordinatorP2P or add a new coordinator called CoordinatorParallel, but most part of them are the same. Let's take the CoordinatorP2P as an example.
+We only need to modify ``CoordinatorP2P`` or add a new coordinator called ``CoordinatorParallel``, but most part of them are the same. Let's take the ``CoordinatorP2P`` as an example.
 
-1. Add two functions, ``_should_rendezvous()`` and ``_rendezvous_barrier()``. Actually they are the same with current ``should_rendezvous()`` and ``rendezvous_barrier()``.
+1. Add Three functions,
+    
+    * _rendezvous_barrier(): It is the same with current rendezvous_barrier() logic.
+
+    * _should_rendezvous(): it contains current should_rendezvous() and the un-renewed lease logic.
+
+    * graceful_exit(): it will delete its lease in the etcd.
+
 
 2. Add a background function called ``memebership_discovery()``.
 
