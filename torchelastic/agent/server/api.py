@@ -186,9 +186,7 @@ class WorkerGroup:
 
     def __init__(self, spec: WorkerSpec):
         self.spec = spec
-        self.workers = []
-        for i in range(self.spec.local_world_size):
-            self.workers.append(Worker(local_rank=i))
+        self.workers = [Worker(local_rank=i) for i in range(self.spec.local_world_size)]
 
         # assigned after rdzv
         self.store = None

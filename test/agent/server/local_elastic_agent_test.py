@@ -137,7 +137,7 @@ class LocalElasticAgentTest(unittest.TestCase):
         run_id = str(uuid.uuid4().int)
 
         procs = []
-        for _ in range(nnodes-1):
+        for _ in range(nnodes - 1):
             p = multiprocessing.Process(
                 target=_run_agent, args=(run_id, host, port, nnodes, nnodes)
             )
@@ -147,7 +147,7 @@ class LocalElasticAgentTest(unittest.TestCase):
         # run one on the main process for debugging
         _run_agent(run_id, host, port, nnodes, nnodes)
 
-        for i in range(nnodes-1):
+        for i in range(nnodes - 1):
             p = procs[i]
             p.join()
             self.assertEqual(0, p.exitcode)
@@ -180,7 +180,6 @@ class LocalElasticAgentTest(unittest.TestCase):
             p = procs[i]
             p.join()
             self.assertEqual(0, p.exitcode)
-
 
     def test_double_agent_elastic(self):
         host = self._etcd_server.get_host()
