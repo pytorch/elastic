@@ -1,7 +1,0 @@
-apiVersion: elastic.pytorch.org/v1alpha1
-kind: ElasticJob
-metadata:
-  name: elasticjob-sample
-spec:
-  # Add fields here
-  foo: bar

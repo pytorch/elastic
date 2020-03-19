@@ -1,0 +1,30 @@
+apiVersion: elastic.pytorch.org/v1alpha1
+kind: ElasticJob
+metadata:
+  name: elasticjob-sample
+spec:
+  rdzvEndpoint: "etcd-service:2379"
+  minReplicas: 1
+  maxReplicas: 4
+  replicaSpecs:
+    Worker:
+      replicas: 3
+      restartPolicy: ExitCode
+      template:
+        apiVersion: v1
+        kind: Pod
+        spec:
+          containers:
+            - name: elasticjob-worker
+              image: torchelastic/examples:0.1.0rc1
+              imagePullPolicy: Always
+              ports:
+                - name: elasticjob-port
+                  containerPort: 10291
+              args:
+                - "s3://<your_script_path>/petctl/<username>/my_job/main.py"
+
+                - --config_file
+                - "/data/classy_vision/resnet50_synthetic_image_classy_config.json"
+                - "--checkpoint_folder"
+                - "/data/classy_vision/checkpoint"

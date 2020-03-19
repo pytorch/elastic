@@ -1,0 +1,32 @@
+apiVersion: elastic.pytorch.org/v1alpha1
+kind: ElasticJob
+metadata:
+  name: imagenet
+spec:
+  rdzvEndpoint: "etcd-service:2379"
+  minReplicas: 1
+  maxReplicas: 5
+  replicaSpecs:
+    Worker:
+      replicas: 2
+      restartPolicy: ExitCode
+      template:
+        apiVersion: v1
+        kind: Pod
+        spec:
+          containers:
+            - name: elasticjob-worker
+              image: torchelastic/examples:0.1.0rc1
+              imagePullPolicy: Always
+              ports:
+                - containerPort: 10291
+                  name: elasticjob-port
+              args:
+                - "s3://<your_script_path>/petctl/<username>/imagenet-job/main.py"
+                - "--input_path"
+                - "/data/tiny-imagenet-200/train"
+                - "--epochs"
+                - "10"
+              resources:
+                limits:
+                  nvidia.com/gpu: 1
