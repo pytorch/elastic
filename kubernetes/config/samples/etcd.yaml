@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: etcd-service
+  namespace: elastic-job
 spec:
   ports:
   - name: etcd-client-port
@@ -18,6 +19,7 @@ metadata:
   labels:
     app: etcd
   name: etcd
+  namespace: elastic-job
 spec:
   containers:
   - command:

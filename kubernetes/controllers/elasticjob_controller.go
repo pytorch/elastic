@@ -62,6 +62,7 @@ type ElasticJobReconciler struct {
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=events,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=elastic.pytorch.org,resources=elasticjobs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=elastic.pytorch.org,resources=elasticjobs/status,verbs=get;update;patch
 
