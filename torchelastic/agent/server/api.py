@@ -17,7 +17,7 @@ from typing import Any, Callable, Dict, Tuple
 import torchelastic.rendezvous as rdzv
 
 
-DEFAULT_ROLE = "trainer"
+DEFAULT_ROLE = "default"
 
 log = logging.getLogger(__name__)
 
