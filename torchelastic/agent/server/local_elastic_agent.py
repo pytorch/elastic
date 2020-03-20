@@ -30,13 +30,30 @@ class _DistInfo:
     preferably only primitive member variables
     """
 
-    __slots__ = ["rank", "world_size", "master_addr", "master_port"]
+    __slots__ = [
+        "rank",
+        "world_size",
+        "master_addr",
+        "master_port",
+        "restart_count",
+        "max_restarts",
+    ]
 
-    def __init__(self, rank: int, world_size: int, master_addr: str, master_port: int):
+    def __init__(
+        self,
+        rank: int,
+        world_size: int,
+        master_addr: str,
+        master_port: int,
+        restart_count: int,
+        max_restarts: int,
+    ):
         self.rank = rank
         self.world_size = world_size
         self.master_addr = master_addr
         self.master_port = master_port
+        self.restart_count = restart_count
+        self.max_restarts = max_restarts
 
 
 def _wrap(local_rank, dist_infos, fn, args):
@@ -46,6 +63,8 @@ def _wrap(local_rank, dist_infos, fn, args):
     os.environ["WORLD_SIZE"] = str(info.world_size)
     os.environ["MASTER_ADDR"] = info.master_addr
     os.environ["MASTER_PORT"] = str(info.master_port)
+    os.environ["TORCHELASTIC_RESTART_COUNT"] = str(info.restart_count)
+    os.environ["TORCHELASTIC_MAX_RESTARTS"] = str(info.max_restarts)
     fn(*args)
 
 
@@ -75,12 +94,18 @@ class LocalElasticAgent(SimpleElasticAgent):
         spec = worker_group.spec
         store = worker_group.store
         master_addr, master_port = super()._get_master_addr_port(store)
+        restart_count = spec.max_restarts - self._remaining_restarts
 
         dist_infos: Dict[int, _DistInfo] = {}
         for worker in worker_group.workers:
             local_rank = worker.local_rank
             dist_infos[local_rank] = _DistInfo(
-                worker.global_rank, worker.world_size, master_addr, master_port
+                worker.global_rank,
+                worker.world_size,
+                master_addr,
+                master_port,
+                restart_count,
+                spec.max_restarts,
             )
 
         self._process_context = mp.start_processes(
