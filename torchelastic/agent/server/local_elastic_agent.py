@@ -17,6 +17,7 @@ from torchelastic.agent.server.api import (
     WorkerSpec,
     WorkerState,
 )
+from torchelastic.metrics.api import prof
 
 
 log = logging.getLogger(__name__)
@@ -85,11 +86,13 @@ class LocalElasticAgent(SimpleElasticAgent):
         self._start_method = start_method
         self._process_context: mp.ProcessContext = None
 
+    @prof
     def _stop_workers(self, worker_group: WorkerGroup) -> None:
         for proc in self._process_context.processes:
             if proc.is_alive():
                 proc.terminate()
 
+    @prof
     def _start_workers(self, worker_group: WorkerGroup) -> Dict[int, Any]:
         spec = worker_group.spec
         store = worker_group.store
@@ -122,6 +125,7 @@ class LocalElasticAgent(SimpleElasticAgent):
             for local_rank, pid in enumerate(self._process_context.pids())
         }
 
+    @prof
     def _monitor_workers(self, worker_group: WorkerGroup) -> WorkerState:
         role = worker_group.spec.role
 
