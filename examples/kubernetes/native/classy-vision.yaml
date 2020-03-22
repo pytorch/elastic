@@ -34,7 +34,6 @@ spec:
       mountPath: /data
     - name: dshm
       mountPath: /dev/shm
-    name: dshm
   volumes:
   - name: persistent-storage
     persistentVolumeClaim:
@@ -91,7 +90,6 @@ spec:
       mountPath: /data
     - name: dshm
       mountPath: /dev/shm
-    name: dshm
   volumes:
   - name: persistent-storage
     persistentVolumeClaim:
