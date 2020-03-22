@@ -1,4 +1,4 @@
-## Contributing
+## Development Guidance
 
 This project uses go modules. We suggest to use golang 1.13.x for development and make sure`GO111MODULE` is enabled.
 
@@ -43,5 +43,5 @@ go test ./... -coverprofile cover.out
 
 ```shell
 # It requires you to build binary locally first.
-docker build -t ${your_dockerhub_username}/torch-elastic-operator:v1alpha1 .
+docker build -t ${your_dockerhub_username}/torch-elastic-operator:latest .
 ```

@@ -1,3 +1,11 @@
+/*
+Copyright (c) Facebook, Inc. and its affiliates.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree.
+*/
+
 package controllers
 
 import (
@@ -104,7 +112,7 @@ func (r *ElasticJobReconciler) UpdateJobStatus(job interface{}, replicas map[v1.
 		log.Infof("ElasticJob=%s, ReplicaType=%s expected=%d, running=%d, succeeded=%d , failed=%d",
 			elasticJob.Name, rtype, expected, running, succeeded, failed)
 
-		if rtype == v1.ReplicaType(v1alpha1.ElasticReplicaTypeMaster) {
+		if rtype == v1.ReplicaType(v1alpha1.ElasticReplicaTypeWorker) {
 			if running > 0 {
 				msg := fmt.Sprintf("ElasticJob %s is running.", elasticJob.Name)
 				err := commonutil.UpdateJobConditions(jobStatus, v1.JobRunning, ElasticJobRunningReason, msg)
@@ -113,7 +121,7 @@ func (r *ElasticJobReconciler) UpdateJobStatus(job interface{}, replicas map[v1.
 					return err
 				}
 			}
-			// when master is succeed, the job is finished.
+			// when all workers succeed, the job is finished.
 			if expected == 0 {
 				msg := fmt.Sprintf("ElasticJob %s is successfully completed.", elasticJob.Name)
 				log.Info(msg)

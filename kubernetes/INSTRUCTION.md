@@ -104,7 +104,7 @@ kubectl logs -f elastic-job-k8s-controller-6d4884c75b-z22cm -n elastic-job
 
 ### Deploy a ElasticJob
  
-Create an etcd instance and service for rdzvEndpoint.
+Create an etcd instance and service for rdzvEndpoint, it will expose a Kubernetes service `etcd-service` with port `2379`.
 ```
 kubectl apply -f config/samples/etcd.yaml
 ``` 
@@ -115,8 +115,8 @@ Build your own trainer image
 export DOCKERHUB_USER=<your_dockerhub_username>
 cd kubernetes/config/samples
 
-docker build -f $DOCKERHUB_USER/examples:0.1.0rc1 .
-docker push $DOCKERHUB_USER/examples:0.1.0rc1
+docker build -t $DOCKERHUB_USER/examples:imagenet .
+docker push $DOCKERHUB_USER/examples:imagenet
 ```
 
 Update `config/samples/imagenet.yaml` to use your image, scripts and rdzvEndpoint. 
@@ -146,8 +146,10 @@ You can adjust desired replica `.spec.replicaSpecs[Worker].replicas` and apply c
 kubectl apply -f config/samples/imagenet.yaml
 ```
 
-
 ### Monitoring jobs
+
+You can describe the job to check job status and job related events.
+In following example, `imagenet` job is created in `elastic-job` namespace, change to use your job name and namespace in your command.
 
 ```yaml
 kubectl describe elasticjob imagenet -n elastic-job
@@ -216,3 +218,7 @@ Events:
   Normal  SuccessfulCreateService  13s   elastic-job-controller  Created service: imagenet-worker-2
 
 ```
+
+### Trouble Shooting
+
+Please check [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)

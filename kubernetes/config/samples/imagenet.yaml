@@ -4,12 +4,14 @@ metadata:
   name: imagenet
   namespace: elastic-job
 spec:
-  rdzvEndpoint: "etcd-service:2379"
+  # Use "etcd-service:2379" if you already apply etcd.yaml
+  rdzvEndpoint: "<your_etcd_endpoint>:<your_etcd_port>"
   minReplicas: 1
   maxReplicas: 5
   replicaSpecs:
     Worker:
       replicas: 3
+      replicas: 2
       restartPolicy: ExitCode
       template:
         apiVersion: v1
@@ -17,13 +19,13 @@ spec:
         spec:
           containers:
             - name: elasticjob-worker
-              image: seedjeffwan/examples:0.1.0rc1
+              image: <your_dockerhub_username>/examples:imagenet
               imagePullPolicy: Always
               ports:
                 - containerPort: 10291
                   name: elasticjob-port
               args:
-                - "s3://torchelastic-shjiaxin-1h71m-s3bucket-m1b9b9pjldqw/petctl/shjiaxin/imagenet-job/main.py"
+                - "s3://<your_script_path>/petctl/<username>/imagenet_job/main.py"
                 - "--input_path"
                 - "/data/tiny-imagenet-200/train"
                 - "--epochs"

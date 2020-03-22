@@ -2,3 +2,24 @@ docs/src
 docs/build
 docs/torchelastic.docset
 **/__pycache__
+
+# Mac OS X files
+.DS_Store
+
+# Binaries for programs and plugins
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# IDE
+**/.idea/
+
+# Operator Binary
+kubernetes//bin/manager
