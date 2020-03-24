@@ -160,8 +160,8 @@ import subprocess
 import sys
 from argparse import REMAINDER, ArgumentParser
 
-import torch.distributed as dist
 import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
+import torchelastic.rendezvous.parameters as parameters
 from torchelastic.agent.server.api import WorkerSpec
 from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
 
@@ -279,23 +279,6 @@ def parse_min_max_nnodes(nnodes: str):
     return min_nodes, max_nodes
 
 
-def get_rdzv_url(
-    backend: str, endpoint: str, id: str, min_nodes: int, max_nodes: int, conf: str
-):
-    # TODO stop relying on init method urls make this a proper factory
-    # url exists for historical reasons since we used to rely on torch's c10d interfaces
-    # the url format currently ONLY works with etcd
-    # TODO note this won't work with zeus because it uses min_size, max_size instead of
-    # min_workers, max_workers, change that is zeus.py
-    url = f"{backend}://{endpoint}/{id}?min_workers={min_nodes}&max_workers={max_nodes}"
-
-    for kv in conf.split(","):
-        if kv:
-            conf_key, conf_val = kv.split("=")
-            url += f"&{conf_key}={conf_val}"
-    return url
-
-
 def wrapper_fn(omp_num_threads, use_env, cmd):
     # TODO get rid of this wrapper_fn
     # the agent uses multiprocessing.spawn to create nproc_per_node
@@ -339,16 +322,16 @@ def main(args=None):
     assert 0 < min_nodes <= max_nodes
     assert args.max_restarts > 0
 
-    rdzv_handler = dist.rendezvous(
-        get_rdzv_url(
-            args.rdzv_backend,
-            args.rdzv_endpoint,
-            args.rdzv_id,
-            min_nodes,
-            max_nodes,
-            args.rdzv_conf,
-        )
+    rdzv_parameters = parameters.RendezvousParameters(
+        args.rdzv_backend,
+        args.rdzv_endpoint,
+        args.rdzv_id,
+        min_nodes,
+        max_nodes,
+        args.rdzv_conf,
     )
+
+    rdzv_handler = parameters.get_rendezvous(rdzv_parameters)
 
     omp_num_threads = None
     if "OMP_NUM_THREADS" not in os.environ and args.nproc_per_node > 1:

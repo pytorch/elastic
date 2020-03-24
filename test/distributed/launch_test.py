@@ -41,36 +41,6 @@ class LaunchTest(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.test_dir)
 
-    def test_get_rdzv_url(self):
-        actual_url = launch.get_rdzv_url(
-            "etcd",
-            "localhost:8081",
-            "1234",
-            1,
-            4,
-            "timeout=60,protocol=https,key=/etc/kubernetes/certs/client.key",
-        )
-
-        expected_url = (
-            "etcd://localhost:8081/1234"
-            "?min_workers=1"
-            "&max_workers=4"
-            "&timeout=60"
-            "&protocol=https"
-            "&key=/etc/kubernetes/certs/client.key"
-        )
-
-        self.assertEqual(expected_url, actual_url)
-
-    def test_get_rdzv_url_no_conf(self):
-        actual_url = launch.get_rdzv_url(
-            "etcd", "localhost:8081", "1234", 1, 4, conf=""
-        )
-
-        expected_url = "etcd://localhost:8081/1234" "?min_workers=1" "&max_workers=4"
-
-        self.assertEqual(expected_url, actual_url)
-
     def test_launch_user_script_python(self):
         run_id = str(uuid.uuid4().int)
         nnodes = 1
