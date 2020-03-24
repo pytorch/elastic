@@ -83,7 +83,7 @@ def _get_metric_name(fn):
         return qualname
 
 
-def prof(fn=None, group: str = None):
+def prof(fn=None, group: str = "torchelastic"):
     r"""
     @profile decorator publishes duration.ms, count, success, failure
     metrics for the function that it decorates. The metric name defaults
@@ -107,16 +107,15 @@ def prof(fn=None, group: str = None):
         @wraps(f)
         def wrapper(*args, **kwargs):
             key = _get_metric_name(f)
-            publish_metric(group, f"{key}.count", 1)
             try:
                 start = time.time()
                 result = f(*args, **kwargs)
-                publish_metric(group, f"{key}.success", 1)
+                put_metric(f"{key}.success", 1, group)
             except Exception:
-                publish_metric(group, f"{key}.failure", 1)
+                put_metric(f"{key}.failure", 1, group)
                 raise
             finally:
-                publish_metric(group, f"{key}.duration.ms", get_elapsed_time_ms(start))
+                put_metric(f"{key}.duration.ms", get_elapsed_time_ms(start), group)
             return result
 
         return wrapper
@@ -131,8 +130,9 @@ def profile(group=None):
     """
     @profile decorator adds latency and success/failure metrics to any given function.
 
+    Usage
 
-    Typical usage:
+    ::
         @metrics.profile("my_metric_group")
         def some_function(<arguments>):
     """
@@ -161,7 +161,24 @@ def profile(group=None):
     return wrap
 
 
+def put_metric(metric_name: str, metric_value: int, metric_group: str = "torchelastic"):
+    """
+    Publishes a metric data point.
+
+    Usage
+
+    ::
+        put_metric("metric_name", 1)
+        put_metric("metric_name", 1, "metric_group_name")
+    """
+
+    getStream(metric_group).add_value(metric_name, metric_value)
+
+
 def publish_metric(metric_group: str, metric_name: str, metric_value: int):
+    warnings.warn(
+        "Deprecated, use put_metric(metric_group)(metric_name, metric_value) instead"
+    )
     metric_stream = getStream(metric_group)
     metric_stream.add_value(metric_name, metric_value)
 

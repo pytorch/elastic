@@ -71,7 +71,6 @@ class MetricsApiTest(unittest.TestCase):
 
         self.bar()
 
-        self.assertEqual(1, handler.metric_data["MetricsApiTest.bar.count"].value)
         self.assertEqual(1, handler.metric_data["MetricsApiTest.bar.success"].value)
         self.assertNotIn("MetricsApiTest.bar.failure", handler.metric_data)
         self.assertIn("MetricsApiTest.bar.duration.ms", handler.metric_data)
@@ -79,14 +78,14 @@ class MetricsApiTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.throw()
 
-        self.assertEqual(1, handler.metric_data["MetricsApiTest.throw.count"].value)
         self.assertEqual(1, handler.metric_data["MetricsApiTest.throw.failure"].value)
         self.assertNotIn("MetricsApiTest.bar_raise.success", handler.metric_data)
         self.assertIn("MetricsApiTest.throw.duration.ms", handler.metric_data)
 
         self.bar2()
         self.assertEqual(
-            "torchelastic", handler.metric_data["MetricsApiTest.bar2.count"].group_name
+            "torchelastic",
+            handler.metric_data["MetricsApiTest.bar2.success"].group_name,
         )
 
     def test_inheritance(self):
@@ -96,6 +95,5 @@ class MetricsApiTest(unittest.TestCase):
         c = Child()
         c.base_func()
 
-        self.assertEqual(1, handler.metric_data["Child.func.count"].value)
         self.assertEqual(1, handler.metric_data["Child.func.success"].value)
         self.assertIn("Child.func.duration.ms", handler.metric_data)

@@ -162,6 +162,7 @@ from argparse import REMAINDER, ArgumentParser
 
 import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
 import torchelastic.rendezvous.parameters as parameters
+from torchelastic import metrics
 from torchelastic.agent.server.api import WorkerSpec
 from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
 
@@ -375,6 +376,7 @@ def main(args=None):
         max_restarts=args.max_restarts,
         monitor_interval=args.monitor_interval,
     )
+    metrics.initialize_metrics()
     elastic_agent = LocalElasticAgent(spec, start_method=args.start_method)
     elastic_agent.run(spec.role)
 
