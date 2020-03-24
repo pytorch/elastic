@@ -13,8 +13,10 @@ from .api import (  # noqa F401
     configure,
     get_elapsed_time_ms,
     getStream,
+    prof,
     profile,
     publish_metric,
+    put_metric,
 )
 
 

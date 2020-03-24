@@ -15,7 +15,7 @@ from enum import Enum
 from typing import Any, Callable, Dict, Tuple
 
 import torchelastic.rendezvous as rdzv
-from torchelastic.metrics.api import prof, publish_metric
+from torchelastic.metrics import prof, put_metric
 
 
 DEFAULT_ROLE = "default"
@@ -419,6 +419,9 @@ class SimpleElasticAgent(ElasticAgent):
         while True:
             assert self._worker_group.state != WorkerState.INIT
             time.sleep(monitor_interval)
+            put_metric(
+                f"worker_group.{role}.remaining_restarts", self._remaining_restarts
+            )
 
             state = self._monitor_workers(self._worker_group)
             self._worker_group.state = state
@@ -454,9 +457,3 @@ class SimpleElasticAgent(ElasticAgent):
                     self._restart_workers(self._worker_group)
             else:
                 raise Exception(f"[{role}] Worker group in {state.name} state")
-
-            publish_metric(
-                None,
-                f"worker_group.{role}.remaining_restarts",
-                self._remaining_restarts,
-            )
