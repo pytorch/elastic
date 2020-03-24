@@ -15,6 +15,7 @@ from enum import Enum
 from typing import Any, Callable, Dict, Tuple
 
 import torchelastic.rendezvous as rdzv
+from torchelastic.metrics.api import prof, publish_metric
 
 
 DEFAULT_ROLE = "default"
@@ -321,6 +322,7 @@ class SimpleElasticAgent(ElasticAgent):
         master_port = int(store.get("MASTER_PORT").decode(encoding="UTF-8"))
         return (master_addr, master_port)
 
+    @prof
     def _rendezvous(self, worker_group: WorkerGroup) -> None:
         r"""
         Runs rendezvous for the workers specified by worker spec.
@@ -362,6 +364,7 @@ class SimpleElasticAgent(ElasticAgent):
             f"\tmaster_port={master_port}\n"
         )
 
+    @prof
     def _initialize_workers(self, worker_group: WorkerGroup) -> None:
         r"""
         Starts a fresh set of workers for the worker_group.
@@ -392,6 +395,7 @@ class SimpleElasticAgent(ElasticAgent):
         worker_group.state = WorkerState.HEALTHY
 
     # TODO (T64139987) handle exceptions thrown by the body of this method
+    @prof
     def _restart_workers(self, worker_group: WorkerGroup) -> None:
         """
         Restarts (stops, rendezvous, starts) all local workers in the group.
@@ -450,3 +454,9 @@ class SimpleElasticAgent(ElasticAgent):
                     self._restart_workers(self._worker_group)
             else:
                 raise Exception(f"[{role}] Worker group in {state.name} state")
+
+            publish_metric(
+                None,
+                f"worker_group.{role}.remaining_restarts",
+                self._remaining_restarts,
+            )
