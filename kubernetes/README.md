@@ -154,7 +154,7 @@ kubectl apply -f config/samples/imagenet.yaml
 You can describe the job to check job status and job related events.
 In following example, `imagenet` job is created in `elastic-job` namespace, change to use your job name and namespace in your command.
 
-```yaml
+```
 kubectl describe elasticjob imagenet -n elastic-job
 
 Name:         imagenet
@@ -177,7 +177,7 @@ Spec:
   Rdzv Endpoint:  etcd-service:2379
   Replica Specs:
     Worker:
-      Replicas:        3
+      Replicas:        2
       Restart Policy:  ExitCode
       Template:
         Metadata:
