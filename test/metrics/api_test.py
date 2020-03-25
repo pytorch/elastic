@@ -7,10 +7,12 @@
 # LICENSE file in the root directory of this source tree.abs
 import abc
 import unittest
+import unittest.mock as mock
 
 from torchelastic.metrics.api import (
     MetricData,
     MetricHandler,
+    MetricStream,
     _get_metric_name,
     configure,
     prof,
@@ -67,33 +69,38 @@ class MetricsApiTest(unittest.TestCase):
 
     def test_profile(self):
         handler = TestMetricsHandler()
-        configure(handler)
+        stream = MetricStream("torchelastic", handler)
+        # patch instead of configure to avoid conflicts when running tests in parallel
+        with mock.patch("torchelastic.metrics.api.getStream", return_value=stream):
+            self.bar()
 
-        self.bar()
+            self.assertEqual(1, handler.metric_data["MetricsApiTest.bar.success"].value)
+            self.assertNotIn("MetricsApiTest.bar.failure", handler.metric_data)
+            self.assertIn("MetricsApiTest.bar.duration.ms", handler.metric_data)
 
-        self.assertEqual(1, handler.metric_data["MetricsApiTest.bar.success"].value)
-        self.assertNotIn("MetricsApiTest.bar.failure", handler.metric_data)
-        self.assertIn("MetricsApiTest.bar.duration.ms", handler.metric_data)
+            with self.assertRaises(RuntimeError):
+                self.throw()
 
-        with self.assertRaises(RuntimeError):
-            self.throw()
+            self.assertEqual(
+                1, handler.metric_data["MetricsApiTest.throw.failure"].value
+            )
+            self.assertNotIn("MetricsApiTest.bar_raise.success", handler.metric_data)
+            self.assertIn("MetricsApiTest.throw.duration.ms", handler.metric_data)
 
-        self.assertEqual(1, handler.metric_data["MetricsApiTest.throw.failure"].value)
-        self.assertNotIn("MetricsApiTest.bar_raise.success", handler.metric_data)
-        self.assertIn("MetricsApiTest.throw.duration.ms", handler.metric_data)
-
-        self.bar2()
-        self.assertEqual(
-            "torchelastic",
-            handler.metric_data["MetricsApiTest.bar2.success"].group_name,
-        )
+            self.bar2()
+            self.assertEqual(
+                "torchelastic",
+                handler.metric_data["MetricsApiTest.bar2.success"].group_name,
+            )
 
     def test_inheritance(self):
         handler = TestMetricsHandler()
-        configure(handler)
+        stream = MetricStream("torchelastic", handler)
+        # patch instead of configure to avoid conflicts when running tests in parallel
+        with mock.patch("torchelastic.metrics.api.getStream", return_value=stream):
+            c = Child()
+            c.base_func()
 
-        c = Child()
-        c.base_func()
+            self.assertEqual(1, handler.metric_data["Child.func.success"].value)
+            self.assertIn("Child.func.duration.ms", handler.metric_data)
 
-        self.assertEqual(1, handler.metric_data["Child.func.success"].value)
-        self.assertIn("Child.func.duration.ms", handler.metric_data)
