@@ -50,11 +50,16 @@ def _distributed_sum(wait):
         raise RuntimeError(f"Expected rank sum {expected}, got {actual}")
 
 
+def _return_rank_times(a):
+    return int(os.environ["RANK"]) * a
+
+
 def _check_env_function():
     # just check these env vars exist, os.environ[...] will naturally throw
     # if the variable does not exist
     os.environ["RANK"]
     os.environ["LOCAL_RANK"]
+    os.environ["GROUP_RANK"]
     os.environ["WORLD_SIZE"]
     os.environ["MASTER_ADDR"]
     os.environ["MASTER_PORT"]
@@ -146,6 +151,16 @@ class LocalElasticAgentTest(unittest.TestCase):
         spec = self._get_worker_spec(fn=_check_env_function, max_restarts=2)
         agent = LocalElasticAgent(spec, start_method="fork")
         agent.run()
+
+    def test_get_worker_return_values(self):
+        spec = self._get_worker_spec(fn=_return_rank_times, args=(2,))
+        agent = LocalElasticAgent(spec, start_method="fork")
+        agent.run()
+        ret_vals = agent.get_worker_return_values()
+
+        self.assertEqual(spec.local_world_size, len(ret_vals))
+        for i in range(spec.local_world_size):
+            self.assertEqual(i * 2, ret_vals[i])
 
     def test_double_agent_happy(self):
         host = self._etcd_server.get_host()
