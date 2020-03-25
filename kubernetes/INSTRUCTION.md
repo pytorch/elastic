@@ -103,6 +103,9 @@ kubectl logs -f elastic-job-k8s-controller-6d4884c75b-z22cm -n elastic-job
 ```
 
 ### Deploy a ElasticJob
+
+In the following example, training container will download training code from S3. Your need to attach `AmazonS3ReadOnlyAccess` 
+policy to your node group role to grant the permission.
  
 Create an etcd instance and service for rdzvEndpoint, it will expose a Kubernetes service `etcd-service` with port `2379`.
 ```

@@ -10,7 +10,6 @@ spec:
   maxReplicas: 5
   replicaSpecs:
     Worker:
-      replicas: 3
       replicas: 2
       restartPolicy: ExitCode
       template:
