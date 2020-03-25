@@ -1,4 +1,4 @@
-## Trouble shooting
+## Troubleshooting
 
 This doc is aimed at making operator work right. 
 It covers sections to debug why controller is not working in Kubernetes and the ways to debug your application failure.  
