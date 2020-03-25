@@ -42,7 +42,7 @@ $ kubectl create -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1
 #### Create EFS and mount targets
 Create an EFS volume in AWS console. `eksctl` will create a new VPC for the cluster, please select the VPC to make sure EKS cluster nodes can access EFS. Select `Public` subnets when you create mount targets. Please use security group `*ClusterSharedNodeSecurityGroup*` created by `eksctl` to associate with the mount targets.
 
-![efs-setup-diagram](../docs/_static/img/efs-setup.jpg)
+![efs-setup-diagram](../../../docs/source/_static/img/efs-setup.jpg)
 
 #### Install EFS CSI Driver
 
