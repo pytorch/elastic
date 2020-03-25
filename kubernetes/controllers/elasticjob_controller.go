@@ -86,6 +86,11 @@ func (r *ElasticJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	// Set default priorities for elastic job
 	scheme.Scheme.Default(elasticJob)
 
+	// Set default cleanPodPolicy for job
+	if elasticJob.Spec.RunPolicy.CleanPodPolicy == nil {
+		elasticJob.Spec.RunPolicy.CleanPodPolicy = &defaultCleanPodPolicy
+	}
+
 	// Use common to reconcile the job related pod and service
 	err = r.jobController.ReconcileJobs(elasticJob, elasticJob.Spec.ReplicaSpecs, elasticJob.Status.JobStatus, &elasticJob.Spec.RunPolicy)
 	if err != nil {
