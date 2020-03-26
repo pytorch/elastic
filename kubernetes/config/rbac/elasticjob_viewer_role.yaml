@@ -1,0 +1,20 @@
+# permissions to do viewer elasticjobs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: elasticjob-viewer-role
+rules:
+- apiGroups:
+  - elastic.pytorch.org
+  resources:
+  - elasticjobs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - elastic.pytorch.org
+  resources:
+  - elasticjobs/status
+  verbs:
+  - get

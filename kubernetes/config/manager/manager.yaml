@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app: elastic-job-k8s-controller
+  name: elastic-job
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elastic-job-k8s-controller
+  namespace: elastic-job
+  labels:
+    app: elastic-job-k8s-controller
+spec:
+  selector:
+    matchLabels:
+      app: elastic-job-k8s-controller
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: elastic-job-k8s-controller
+    spec:
+      containers:
+      - command:
+        - /manager
+        args:
+        - --enable-leader-election
+        image: torchelastic/elastic-job-k8s-controller:v0.1.0
+        name: manager
+        resources:
+          limits:
+            cpu: 100m
+            memory: 30Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+      terminationGracePeriodSeconds: 10

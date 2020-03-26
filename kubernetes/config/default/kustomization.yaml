@@ -1,0 +1,11 @@
+# Adds namespace to all resources.
+namespace: elastic-job
+
+# Labels to add to all resources and selectors.
+commonLabels:
+  app: torch-elastic
+
+bases:
+- ../crd
+- ../rbac
+- ../manager

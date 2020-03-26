@@ -1,0 +1,34 @@
+apiVersion: elastic.pytorch.org/v1alpha1
+kind: ElasticJob
+metadata:
+  name: imagenet
+  namespace: elastic-job
+spec:
+  # Use "etcd-service:2379" if you already apply etcd.yaml
+  rdzvEndpoint: "<your_etcd_endpoint>:<your_etcd_port>"
+  minReplicas: 1
+  maxReplicas: 5
+  replicaSpecs:
+    Worker:
+      replicas: 2
+      restartPolicy: ExitCode
+      template:
+        apiVersion: v1
+        kind: Pod
+        spec:
+          containers:
+            - name: elasticjob-worker
+              image: <your_dockerhub_username>/examples:imagenet
+              imagePullPolicy: Always
+              ports:
+                - containerPort: 10291
+                  name: elasticjob-port
+              args:
+                - "s3://<your_script_path>/petctl/<username>/imagenet_job/main.py"
+                - "--input_path"
+                - "/data/tiny-imagenet-200/train"
+                - "--epochs"
+                - "10"
+              resources:
+                limits:
+                  nvidia.com/gpu: 1

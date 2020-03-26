@@ -1,0 +1,7 @@
+domain: pytorch.org
+repo: github.com/pytorch/elastic/kubernetes
+resources:
+- group: elastic
+  kind: ElasticJob
+  version: v1alpha1
+version: "2"

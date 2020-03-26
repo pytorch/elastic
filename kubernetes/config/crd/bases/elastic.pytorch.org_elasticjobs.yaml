@@ -1,0 +1,152 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.4
+  creationTimestamp: null
+  name: elasticjobs.elastic.pytorch.org
+spec:
+  group: elastic.pytorch.org
+  names:
+    kind: ElasticJob
+    listKind: ElasticJobList
+    plural: elasticjobs
+    singular: elasticjob
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      description: ElasticJob is the Schema for the elasticjobs API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: ElasticJobSpec defines the desired state of ElasticJob
+          properties:
+            activeDeadlineSeconds:
+              description: Specifies the duration in seconds relative to the startTime
+                that the job may be active before the system tries to terminate it;
+                value must be positive integer.
+              format: int64
+              type: integer
+            backoffLimit:
+              description: Optional number of retries before marking this job failed.
+              format: int32
+              type: integer
+            cleanPodPolicy:
+              description: CleanPodPolicy defines the policy to kill pods after the
+                job completes. Default to Running.
+              type: string
+            maxReplicas:
+              format: int32
+              type: integer
+            minReplicas:
+              format: int32
+              minimum: 1
+              type: integer
+            rdzvEndpoint:
+              type: string
+            replicaSpecs: {}
+            schedulingPolicy:
+              description: SchedulingPolicy defines the policy related to scheduling,
+                e.g. gang-scheduling
+              properties:
+                minAvailable:
+                  format: int32
+                  type: integer
+              type: object
+            ttlSecondsAfterFinished:
+              description: TTLSecondsAfterFinished is the TTL to clean up jobs. It
+                may take extra ReconcilePeriod seconds for the cleanup, since reconcile
+                gets called periodically. Default to infinite.
+              format: int32
+              type: integer
+          required:
+          - rdzvEndpoint
+          - replicaSpecs
+          type: object
+        status:
+          description: ElasticJobStatus defines the observed state of ElasticJob
+          properties:
+            completionTime:
+              description: Represents time when the job was completed. It is not guaranteed
+                to be set in happens-before order across separate operations. It is
+                represented in RFC3339 form and is in UTC.
+              format: date-time
+              type: string
+            conditions:
+              description: Conditions is an array of current observed job conditions.
+              items:
+                description: JobCondition describes the state of the job at a certain
+                  point.
+                properties:
+                  lastTransitionTime:
+                    description: Last time the condition transitioned from one status
+                      to another.
+                    format: date-time
+                    type: string
+                  lastUpdateTime:
+                    description: The last time this condition was updated.
+                    format: date-time
+                    type: string
+                  message:
+                    description: A human readable message indicating details about
+                      the transition.
+                    type: string
+                  reason:
+                    description: The reason for the condition's last transition.
+                    type: string
+                  status:
+                    description: Status of the condition, one of True, False, Unknown.
+                    type: string
+                  type:
+                    description: Type of job condition.
+                    type: string
+                required:
+                - status
+                - type
+                type: object
+              type: array
+            lastReconcileTime:
+              description: Represents last time when the job was reconciled. It is
+                not guaranteed to be set in happens-before order across separate operations.
+                It is represented in RFC3339 form and is in UTC.
+              format: date-time
+              type: string
+            replicaStatuses:
+              description: ReplicaStatuses is map of ReplicaType and ReplicaStatus,
+                specifies the status of each replica.
+            startTime:
+              description: Represents time when the job was acknowledged by the job
+                controller. It is not guaranteed to be set in happens-before order
+                across separate operations. It is represented in RFC3339 form and
+                is in UTC.
+              format: date-time
+              type: string
+          required:
+          - conditions
+          - replicaStatuses
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
