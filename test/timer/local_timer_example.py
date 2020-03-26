@@ -54,6 +54,7 @@ class LocalTimerExample(unittest.TestCase):
         server.start()
 
         world_size = 8
+
         # all processes should complete successfully
         # since start_process does NOT take context as parameter argument yet
         # this method WILL FAIL (hence the test is disabled)

@@ -15,7 +15,12 @@ import torch
 import torch.distributed as dist
 import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
 from p2p.etcd_server_fixture import EtcdServerFixture
-from torchelastic.agent.server.api import WorkerSpec, WorkerState
+from test_utils import is_tsan
+from torchelastic.agent.server.api import (
+    WorkerGroupFailureException,
+    WorkerSpec,
+    WorkerState,
+)
 from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
 
 
@@ -50,11 +55,16 @@ def _distributed_sum(wait):
         raise RuntimeError(f"Expected rank sum {expected}, got {actual}")
 
 
+def _return_rank_times(a):
+    return int(os.environ["RANK"]) * a
+
+
 def _check_env_function():
     # just check these env vars exist, os.environ[...] will naturally throw
     # if the variable does not exist
     os.environ["RANK"]
     os.environ["LOCAL_RANK"]
+    os.environ["GROUP_RANK"]
     os.environ["WORLD_SIZE"]
     os.environ["MASTER_ADDR"]
     os.environ["MASTER_PORT"]
@@ -121,6 +131,7 @@ class LocalElasticAgentTest(unittest.TestCase):
         agent = LocalElasticAgent(spec, start_method="fork")
         agent.run()
 
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_run_distributed_sum(self):
         spec = self._get_worker_spec(fn=_distributed_sum, args=(0,))
         agent = LocalElasticAgent(spec, start_method="fork")
@@ -129,8 +140,13 @@ class LocalElasticAgentTest(unittest.TestCase):
     def test_run_sad_function(self):
         spec = self._get_worker_spec(fn=_sad_function, max_restarts=2)
         agent = LocalElasticAgent(spec, start_method="fork")
-        with self.assertRaises(Exception):
+        with self.assertRaises(WorkerGroupFailureException) as cm:
             agent.run()
+
+        excs = cm.exception.get_worker_exceptions()
+        for i in range(spec.local_world_size):
+            self.assertTrue(isinstance(excs[i], Exception))
+
         self.assertEqual(WorkerState.FAILED, agent.get_worker_group().state)
         self.assertEqual(0, agent._remaining_restarts)
 
@@ -147,6 +163,16 @@ class LocalElasticAgentTest(unittest.TestCase):
         agent = LocalElasticAgent(spec, start_method="fork")
         agent.run()
 
+    def test_get_worker_return_values(self):
+        spec = self._get_worker_spec(fn=_return_rank_times, args=(2,))
+        agent = LocalElasticAgent(spec, start_method="fork")
+        ret_vals = agent.run()
+
+        self.assertEqual(spec.local_world_size, len(ret_vals))
+        for i in range(spec.local_world_size):
+            self.assertEqual(i * 2, ret_vals[i])
+
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_double_agent_happy(self):
         host = self._etcd_server.get_host()
         port = self._etcd_server.get_port()
@@ -169,6 +195,7 @@ class LocalElasticAgentTest(unittest.TestCase):
             p.join()
             self.assertEqual(0, p.exitcode)
 
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_double_agent_fault_tolerance(self):
         host = self._etcd_server.get_host()
         port = self._etcd_server.get_port()
@@ -198,6 +225,7 @@ class LocalElasticAgentTest(unittest.TestCase):
             p.join()
             self.assertEqual(0, p.exitcode)
 
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_double_agent_elastic(self):
         host = self._etcd_server.get_host()
         port = self._etcd_server.get_port()

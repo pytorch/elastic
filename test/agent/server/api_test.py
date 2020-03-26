@@ -16,6 +16,7 @@ import torch.distributed as dist
 import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
 from p2p.etcd_server_fixture import EtcdServerFixture
 from torchelastic.agent.server.api import (
+    MonitorResult,
     SimpleElasticAgent,
     WorkerGroup,
     WorkerSpec,
@@ -98,6 +99,10 @@ class TestAgent(SimpleElasticAgent):
 
     def _monitor_workers(self, worker_group: WorkerGroup) -> WorkerState:
         raise NotImplementedError("mock this method")
+
+
+def monres(state: WorkerState):
+    return MonitorResult(state)
 
 
 class SimpleElasticAgentTest(unittest.TestCase):
@@ -203,7 +208,11 @@ class SimpleElasticAgentTest(unittest.TestCase):
     @patch.object(
         TestAgent,
         "_monitor_workers",
-        side_effect=[WorkerState.HEALTHY, WorkerState.HEALTHY, WorkerState.SUCCEEDED],
+        side_effect=[
+            monres(WorkerState.HEALTHY),
+            monres(WorkerState.HEALTHY),
+            monres(WorkerState.SUCCEEDED),
+        ],
     )
     def test_run_happy_path(self, mock_monitor_workers):
         # worker starts
@@ -230,7 +239,10 @@ class SimpleElasticAgentTest(unittest.TestCase):
         self.assertEqual(WorkerState.INIT, worker_group.state)
 
     def test_run_max_retries_exceeded(self):
-        for restartable_state in [WorkerState.FAILED, WorkerState.UNHEALTHY]:
+        for restartable_state in [
+            monres(WorkerState.FAILED),
+            monres(WorkerState.UNHEALTHY),
+        ]:
             with patch.object(
                 TestAgent, "_monitor_workers", return_value=restartable_state
             ) as mock_monitor_workers:
@@ -250,10 +262,10 @@ class SimpleElasticAgentTest(unittest.TestCase):
         TestAgent,
         "_monitor_workers",
         side_effect=[
-            WorkerState.HEALTHY,
-            WorkerState.HEALTHY,
-            WorkerState.HEALTHY,
-            WorkerState.SUCCEEDED,
+            monres(WorkerState.HEALTHY),
+            monres(WorkerState.HEALTHY),
+            monres(WorkerState.HEALTHY),
+            monres(WorkerState.SUCCEEDED),
         ],
     )
     @patch.object(RendezvousHandler, "num_nodes_waiting", side_effect=[1, 1, 0])
@@ -265,7 +277,9 @@ class SimpleElasticAgentTest(unittest.TestCase):
         agent.run()
         self.assertEquals(WorkerState.SUCCEEDED, worker_group.state)
 
-    @patch.object(TestAgent, "_monitor_workers", return_value=WorkerState.UNKNOWN)
+    @patch.object(
+        TestAgent, "_monitor_workers", return_value=monres(WorkerState.UNKNOWN)
+    )
     def test_run_unknown_state(self, mock_monitor_workers):
         # when the state is unknown we exit immediately; no retries
         spec = self._get_worker_spec(max_restarts=100, monitor_interval=0.1)

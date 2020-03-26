@@ -197,6 +197,52 @@ class WorkerGroup:
         self.state = WorkerState.INIT
 
 
+class MonitorResult:
+    """
+    Returned by the agent's ``_monitor_workers`` API. A holder object
+    that holds information about the monitoring results.
+    The ``ret_vals`` and ``exceptions`` field map each worker's
+    return value (output) and exceptions (if any) accordingly by
+    the workers global rank.
+
+    ``state = SUCCEEDED`` will have ``ret_val``.
+    ``state = FAILED`` will have ``exceptions``.
+    For other states both these fields will be empty.
+    """
+
+    __slots__ = ["state", "ret_vals", "exceptions"]
+
+    def __init__(
+        self,
+        state: WorkerState,
+        ret_vals: Dict[int, Any] = None,
+        exceptions: Dict[int, Exception] = None,
+    ):
+        self.state = state
+        self.ret_vals = ret_vals
+        self.exceptions = exceptions
+
+
+class WorkerGroupFailureException(Exception):
+    """
+    Thrown when the agent cannot or has given up trying to run the workers.
+    This is typically thrown:
+
+    1. Exceeded ``max_restarts``.
+    2. Workers fail with errors that are deemed ``NonRestartable``
+
+    When constructing this exception the underlying worker exceptions
+    are provided as a map of the worker's global rank to the exception.
+    """
+
+    def __init__(self, msg: str, worker_excs: Dict[int, Exception]):
+        super().__init__(msg)
+        self._worker_excs = worker_excs
+
+    def get_worker_exceptions(self) -> Dict[int, Exception]:
+        return self._worker_excs
+
+
 def _get_socket_with_port() -> socket.socket:
     """
     Returns a free port on localhost that is "reserved" by binding a temporary
@@ -242,12 +288,18 @@ class ElasticAgent(abc.ABC):
     """
 
     @abc.abstractmethod
-    def run(self, role: str = DEFAULT_ROLE) -> None:
+    def run(self, role: str = DEFAULT_ROLE) -> Dict[int, Any]:
         """
-        Runs the agent, retrying the worker group on failures.
+        Runs the agent, retrying the worker group on failures up to
+        ``max_restarts``.
+
+        Returns:
+            The return values for each worker mapped by the worker's global rank.
+            Empty if workers have void signature.
 
         Raises:
-            Exception - ``spec.max_restarts`` has been exceeded
+            WorkerGroupFailureException - workers did not successfully run
+            Exception - any other failures NOT related to worker process
         """
         raise NotImplementedError()
 
@@ -299,7 +351,7 @@ class SimpleElasticAgent(ElasticAgent):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _monitor_workers(self, worker_group: WorkerGroup) -> WorkerState:
+    def _monitor_workers(self, worker_group: WorkerGroup) -> MonitorResult:
         r"""
         Checks on the workers for the ``worker_group`` and returns
         the new state of the worker group.
@@ -394,7 +446,6 @@ class SimpleElasticAgent(ElasticAgent):
 
         worker_group.state = WorkerState.HEALTHY
 
-    # TODO (T64139987) handle exceptions thrown by the body of this method
     @prof
     def _restart_workers(self, worker_group: WorkerGroup) -> None:
         """
@@ -407,7 +458,7 @@ class SimpleElasticAgent(ElasticAgent):
         worker_group.state = WorkerState.STOPPED
         self._initialize_workers(worker_group)
 
-    def run(self, role: str = DEFAULT_ROLE) -> None:
+    def run(self, role: str = DEFAULT_ROLE) -> Dict[int, Any]:
         # NOTE: currently only works for a single role
 
         spec = self._worker_group.spec
@@ -419,16 +470,16 @@ class SimpleElasticAgent(ElasticAgent):
         while True:
             assert self._worker_group.state != WorkerState.INIT
             time.sleep(monitor_interval)
-            put_metric(
-                f"worker_group.{role}.remaining_restarts", self._remaining_restarts
-            )
-
-            state = self._monitor_workers(self._worker_group)
+            monitor_result = self._monitor_workers(self._worker_group)
+            state = monitor_result.state
             self._worker_group.state = state
+
+            put_metric(f"workers.{role}.remaining_restarts", self._remaining_restarts)
+            put_metric(f"workers.{role}.{state.name.lower()}", 1)
 
             if state == WorkerState.SUCCEEDED:
                 log.info(f"[{role}] All workers successfully finished.")
-                return
+                return monitor_result.ret_vals
             elif state in {WorkerState.UNHEALTHY, WorkerState.FAILED}:
                 if self._remaining_restarts > 0:
                     log.info(
@@ -441,8 +492,9 @@ class SimpleElasticAgent(ElasticAgent):
                 else:
                     self._stop_workers(self._worker_group)
                     self._worker_group.state = WorkerState.FAILED
-                    raise Exception(
-                        f"[{role}] no remaining restarts, stopping worker group"
+                    raise WorkerGroupFailureException(
+                        f"[{role}] exceeded max_restarts={spec.max_restarts}",
+                        monitor_result.exceptions,
                     )
             elif state == WorkerState.HEALTHY:
                 # membership changes do not count as retries

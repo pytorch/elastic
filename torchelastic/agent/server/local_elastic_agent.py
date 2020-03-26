@@ -12,7 +12,9 @@ from typing import Any, Dict
 
 import torch.multiprocessing as mp
 from torchelastic.agent.server.api import (
+    MonitorResult,
     SimpleElasticAgent,
+    Worker,
     WorkerGroup,
     WorkerSpec,
     WorkerState,
@@ -33,6 +35,7 @@ class _DistInfo:
 
     __slots__ = [
         "rank",
+        "group_rank",
         "world_size",
         "master_addr",
         "master_port",
@@ -43,6 +46,7 @@ class _DistInfo:
     def __init__(
         self,
         rank: int,
+        group_rank: int,
         world_size: int,
         master_addr: str,
         master_port: int,
@@ -50,6 +54,7 @@ class _DistInfo:
         max_restarts: int,
     ):
         self.rank = rank
+        self.group_rank = group_rank
         self.world_size = world_size
         self.master_addr = master_addr
         self.master_port = master_port
@@ -57,16 +62,18 @@ class _DistInfo:
         self.max_restarts = max_restarts
 
 
-def _wrap(local_rank, dist_infos, fn, args):
+def _wrap(local_rank, ret_vals, dist_infos, fn, args):
     info = dist_infos[local_rank]
     os.environ["LOCAL_RANK"] = str(local_rank)
     os.environ["RANK"] = str(info.rank)
+    os.environ["GROUP_RANK"] = str(info.group_rank)
     os.environ["WORLD_SIZE"] = str(info.world_size)
     os.environ["MASTER_ADDR"] = info.master_addr
     os.environ["MASTER_PORT"] = str(info.master_port)
     os.environ["TORCHELASTIC_RESTART_COUNT"] = str(info.restart_count)
     os.environ["TORCHELASTIC_MAX_RESTARTS"] = str(info.max_restarts)
-    fn(*args)
+    ret = fn(*args)
+    ret_vals[info.rank] = ret
 
 
 class LocalElasticAgent(SimpleElasticAgent):
@@ -85,6 +92,10 @@ class LocalElasticAgent(SimpleElasticAgent):
         super().__init__(spec)
         self._start_method = start_method
         self._process_context: mp.ProcessContext = None
+        # a map that holds return values for each worker fn
+        # ret_val[0] holds the return value for worker_0 (global rank 0)
+        self._manager = mp.get_context(start_method).Manager()
+        self._ret_vals: Dict[int, Any] = self._manager.dict()
 
     @prof
     def _stop_workers(self, worker_group: WorkerGroup) -> None:
@@ -104,6 +115,7 @@ class LocalElasticAgent(SimpleElasticAgent):
             local_rank = worker.local_rank
             dist_infos[local_rank] = _DistInfo(
                 worker.global_rank,
+                worker_group.group_rank,
                 worker.world_size,
                 master_addr,
                 master_port,
@@ -111,9 +123,10 @@ class LocalElasticAgent(SimpleElasticAgent):
                 spec.max_restarts,
             )
 
+        self._ret_vals.clear()
         self._process_context = mp.start_processes(
             fn=_wrap,
-            args=(dist_infos, spec.fn, spec.args),
+            args=(self._ret_vals, dist_infos, spec.fn, spec.args),
             nprocs=spec.local_world_size,
             join=False,
             daemon=False,
@@ -126,7 +139,7 @@ class LocalElasticAgent(SimpleElasticAgent):
         }
 
     @prof
-    def _monitor_workers(self, worker_group: WorkerGroup) -> WorkerState:
+    def _monitor_workers(self, worker_group: WorkerGroup) -> MonitorResult:
         role = worker_group.spec.role
 
         # torch process context join() isn't really a join in the
@@ -134,20 +147,21 @@ class LocalElasticAgent(SimpleElasticAgent):
         # successfully finished, False if some/all are still running
         # and throws an Exception if some/all of them failed
         # passing timeout < 0 means check worker status and return immediately
-        state = worker_group.state
+
         worker_pids = {w.id for w in worker_group.workers}
         pc_pids = set(self._process_context.pids())
         if worker_pids != pc_pids:
             log.error(f"[{role}] worker pids do not match process_context pids")
-            return WorkerState.UNKNOWN
+            return MonitorResult(WorkerState.UNKNOWN)
 
         try:
             if self._process_context.join(timeout=-1):
-                state = WorkerState.SUCCEEDED
+                return MonitorResult(WorkerState.SUCCEEDED, self._ret_vals)
             else:
-                state = WorkerState.HEALTHY
+                return MonitorResult(WorkerState.HEALTHY)
         except Exception as e:
-            log.error(f"[{role}] Worker set failed", exc_info=e)
-            state = WorkerState.FAILED
-
-        return state
+            log.exception(f"[{role}] Worker group failed")
+            return MonitorResult(
+                WorkerState.FAILED,
+                exceptions={w.global_rank: e for w in worker_group.workers},
+            )
