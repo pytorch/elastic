@@ -463,6 +463,9 @@ class SimpleElasticAgent(ElasticAgent):
 
         spec = self._worker_group.spec
         role = spec.role
+
+        log.info(f"[{role}] starting workers for function: {spec.fn.__name__}")
+
         self._initialize_workers(self._worker_group)
         monitor_interval = spec.monitor_interval
         rdzv_handler = spec.rdzv_handler
