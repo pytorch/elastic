@@ -126,6 +126,7 @@ class LocalElasticAgentTest(unittest.TestCase):
         )
         return spec
 
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_run_happy_function(self):
         spec = self._get_worker_spec(fn=_happy_function)
         agent = LocalElasticAgent(spec, start_method="fork")
@@ -137,6 +138,7 @@ class LocalElasticAgentTest(unittest.TestCase):
         agent = LocalElasticAgent(spec, start_method="fork")
         agent.run()
 
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_run_sad_function(self):
         spec = self._get_worker_spec(fn=_sad_function, max_restarts=2)
         agent = LocalElasticAgent(spec, start_method="fork")
@@ -150,6 +152,7 @@ class LocalElasticAgentTest(unittest.TestCase):
         self.assertEqual(WorkerState.FAILED, agent.get_worker_group().state)
         self.assertEqual(0, agent._remaining_restarts)
 
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_run_bipolar_function(self):
         spec = self._get_worker_spec(fn=_bipolar_function, max_restarts=2)
         agent = LocalElasticAgent(spec, start_method="fork")
