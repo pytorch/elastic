@@ -95,7 +95,7 @@ class LocalElasticAgent(SimpleElasticAgent):
         # a map that holds return values for each worker fn
         # ret_val[0] holds the return value for worker_0 (global rank 0)
         self._manager = mp.get_context(start_method).Manager()
-        self._ret_vals: Dict[int, Any] = self._manager.dict()
+        self._ret_vals = self._manager.dict()
 
     @prof
     def _stop_workers(self, worker_group: WorkerGroup) -> None:
@@ -156,7 +156,8 @@ class LocalElasticAgent(SimpleElasticAgent):
 
         try:
             if self._process_context.join(timeout=-1):
-                return MonitorResult(WorkerState.SUCCEEDED, self._ret_vals)
+                # copy ret_vals since we do not want to return an mp map
+                return MonitorResult(WorkerState.SUCCEEDED, dict(self._ret_vals))
             else:
                 return MonitorResult(WorkerState.HEALTHY)
         except Exception as e:
