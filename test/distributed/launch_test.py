@@ -14,6 +14,7 @@ import uuid
 import torchelastic.distributed.launch as launch
 import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
 from p2p.etcd_server_fixture import EtcdServerFixture
+from test_utils import is_tsan
 
 
 def path(script):
@@ -41,6 +42,7 @@ class LaunchTest(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.test_dir)
 
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_launch_user_script_python(self):
         run_id = str(uuid.uuid4().int)
         nnodes = 1
@@ -65,6 +67,7 @@ class LaunchTest(unittest.TestCase):
             {str(i) for i in range(world_size)}, set(os.listdir(self.test_dir))
         )
 
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_launch_user_script_python_use_env(self):
         run_id = str(uuid.uuid4().int)
         nnodes = 1
@@ -90,6 +93,7 @@ class LaunchTest(unittest.TestCase):
             {str(i) for i in range(world_size)}, set(os.listdir(self.test_dir))
         )
 
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_launch_user_script_bash(self):
         run_id = str(uuid.uuid4().int)
         nnodes = 1
