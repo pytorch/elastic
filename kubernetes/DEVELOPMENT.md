@@ -43,5 +43,5 @@ go test ./... -coverprofile cover.out
 
 ```shell
 # It requires you to build binary locally first.
-docker build -t ${your_dockerhub_username}/torch-elastic-operator:latest .
+docker build -t ${your_dockerhub_username}/elastic-job-k8s-controller:latest .
 ```

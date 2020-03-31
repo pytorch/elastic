@@ -1,8 +1,8 @@
-## Torch elastic k8s controller
+## TorchElastic Controller for Kubernetes
 
 ## Overview
 
-Torch elastic k8s controller managed a Kubernetes custom resource `ElasticJob` and makes it easy to
+TorchElastic Controller for Kubernetes manages a Kubernetes custom resource `ElasticJob` and makes it easy to
 run Torch Elastic workloads on Kubernetes.   
 
 ### Prerequisites
@@ -37,7 +37,7 @@ In order to enable GPU support in your EKS cluster, deploy the following Daemons
 kubectl create -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta4/nvidia-device-plugin.yml
 ```
 
-### Installing the ElasticJob CRD and operator on your k8s cluster
+### Installing the ElasticJob CRD and controller on your k8s cluster
 
 ```shell
 kustomize build config/default  | kubectl apply -f -
