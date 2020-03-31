@@ -21,7 +21,7 @@ spec:
               image: <your_dockerhub_username>/examples:imagenet
               imagePullPolicy: Always
               args:
-                - "s3://<your_script_path>/petctl/<username>/imagenet_job/main.py"
+                - "/opt/main.py"
                 - "--input_path"
                 - "/data/tiny-imagenet-200/train"
                 - "--epochs"
