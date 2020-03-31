@@ -20,9 +20,6 @@ spec:
             - name: elasticjob-worker
               image: <your_dockerhub_username>/examples:imagenet
               imagePullPolicy: Always
-              ports:
-                - containerPort: 10291
-                  name: elasticjob-port
               args:
                 - "s3://<your_script_path>/petctl/<username>/imagenet_job/main.py"
                 - "--input_path"

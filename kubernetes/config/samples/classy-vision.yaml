@@ -20,9 +20,6 @@ spec:
             - name: elasticjob-worker
               image: torchelastic/examples:0.1.0rc1
               imagePullPolicy: Always
-              ports:
-                - name: elasticjob-port
-                  containerPort: 10291
               args:
                 - "s3://<your_script_path>/petctl/<username>/my_job/main.py"
                 - --config_file

@@ -182,11 +182,13 @@ func (r *ElasticJobReconciler) GetDefaultContainerName() string {
 }
 
 func (r *ElasticJobReconciler) GetDefaultContainerPortNumber() int32 {
-	return v1alpha1.DefaultPort
+	// elastic job doesn't use fixed port
+	return -1
 }
 
 func (r *ElasticJobReconciler) GetDefaultContainerPortName() string {
-	return v1alpha1.DefaultContainerPortName
+	// elastic job doesn't use fixed port
+	return ""
 }
 
 func (r *ElasticJobReconciler) GetJobRoleKey() string {
