@@ -89,7 +89,7 @@ spec:
     - "-c"
     - |
       /bin/bash <<'EOF'
-      yum update
+      yum update -y
       yum install -y wget unzip
       wget http://cs231n.stanford.edu/tiny-imagenet-200.zip
       unzip tiny-imagenet-200.zip -d /data
