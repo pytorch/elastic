@@ -348,8 +348,7 @@ The union of all <code class="docutils literal notranslate"><span class="pre">Lo
 <p><strong>Environment Variables:</strong></p>
 <p>The following environment variables are made available to you in your
 script:</p>
-<blockquote>
-<div><ol class="arabic simple">
+<ol class="arabic simple">
 <li><code class="docutils literal notranslate"><span class="pre">LOCAL_RANK</span></code> -  local rank</li>
 <li><code class="docutils literal notranslate"><span class="pre">RANK</span></code> -  global rank</li>
 <li><code class="docutils literal notranslate"><span class="pre">GROUP_RANK</span></code> - rank of the worker group (roughly maps to the
@@ -362,23 +361,21 @@ host the tcp <code class="docutils literal notranslate"><span class="pre">c10d</
 <li><code class="docutils literal notranslate"><span class="pre">TORCHELASTIC_RESTART_COUNT</span></code> - number of worker group restarts so far.</li>
 <li><code class="docutils literal notranslate"><span class="pre">TORCHELASTIC_MAX_RESTARTS</span></code> - configured max number of restarts.</li>
 </ol>
-</div></blockquote>
 <p><strong>Deployment:</strong></p>
-<blockquote>
-<div><ol class="arabic simple" start="0">
+<ol class="arabic simple">
 <li>Start the rdzv backend server and get the endpoint
 (to be passed as <code class="docutils literal notranslate"><span class="pre">--rdzv_endpoint</span></code> to the launcher script)</li>
 <li>Single-node multi-worker - start the launcher on the host to start
 the agent process which creates and monitors a local worker group.</li>
-<li>Multi-node multi-worker - Start the launcher with the same arguments
-on all the nodes participating in training.</li>
 </ol>
-</div></blockquote>
+<dl class="docutils">
+<dt>3.Multi-node multi-worker - Start the launcher with the same arguments</dt>
+<dd>on all the nodes participating in training.</dd>
+</dl>
 <p>When using a job/cluster manager the entry point command to the multi-node
 job is invoking this launcher.</p>
 <p><strong>Failure Modes:</strong></p>
-<blockquote>
-<div><ol class="arabic simple">
+<ol class="arabic simple">
 <li>Worker failure - For a training job with <code class="docutils literal notranslate"><span class="pre">n</span></code> workers, if <code class="docutils literal notranslate"><span class="pre">k</span> <span class="pre">&lt;</span> <span class="pre">n</span></code> workers fail
 all workers are stopped and restarted up to <code class="docutils literal notranslate"><span class="pre">max_restarts</span></code>.</li>
 <li>Agent failure - An agent failure results in local worker group failure,
@@ -386,10 +383,8 @@ it is up to the job manager to fail the entire job (gang semantics) or attempt
 to replace the node. Both behaviors are supported by the agent.</li>
 <li>Node failure - Same as agent failure.</li>
 </ol>
-</div></blockquote>
 <p><strong>Membership Changes:</strong></p>
-<blockquote>
-<div><ol class="arabic simple">
+<ol class="arabic simple">
 <li>Node departure (scale-down) - agent is notified of the departure,
 all existing workers are stopped, a new <code class="docutils literal notranslate"><span class="pre">Worker</span> <span class="pre">Group</span></code> is formed and all
 workers are started with a new <code class="docutils literal notranslate"><span class="pre">RANK</span></code> and <code class="docutils literal notranslate"><span class="pre">WORLD_SIZE</span></code>.</li>
@@ -397,58 +392,46 @@ workers are started with a new <code class="docutils literal notranslate"><span 
 all existing workers are stopped, a new <code class="docutils literal notranslate"><span class="pre">Worker</span> <span class="pre">Group</span></code> is formed and all
 workers are started with a new <code class="docutils literal notranslate"><span class="pre">RANK</span></code> and <code class="docutils literal notranslate"><span class="pre">WORLD_SIZE</span></code>.</li>
 </ol>
-</div></blockquote>
 <p><strong>Important Notices:</strong></p>
-<blockquote>
-<div><ol class="arabic simple">
+<ol class="arabic simple">
 <li>All the items in the important notices section of <code class="docutils literal notranslate"><span class="pre">torch.distributed.launch</span></code>
 apply to this module as well</li>
 <li>The environment variables necessary to initialize a torch process group
 are provided to you by this module, no need for you to pass <code class="docutils literal notranslate"><span class="pre">RANK</span></code> manually.
 To initialize a process group in your training script, simply run</li>
 </ol>
-<blockquote>
-<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">init_process_group</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="s2">&quot;gloo|nccl&quot;</span><span class="p">,</span> <span class="n">_method</span><span class="o">=</span><span class="s2">&quot;env://&quot;</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">torch.distributed</span> <span class="k">as</span> <span class="nn">dist</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dist</span><span class="o">.</span><span class="n">init_process_group</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="s2">&quot;gloo|nccl&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-</div></blockquote>
-<ol class="arabic" start="3">
-<li><p class="first">On failures or membership changes ALL surviving workers are killed
+<ol class="arabic simple" start="3">
+<li>On failures or membership changes ALL surviving workers are killed
 immediately. Make sure to checkpoint your progress. The frequency of
-checkpoints should depend on your job’s tolerance for lost work.</p>
-</li>
-<li><p class="first">This module only supports homogeneous <code class="docutils literal notranslate"><span class="pre">LOCAL_WORLD_SIZE</span></code>. That is,
-it is assumed that all nodes run the same number of local workers (per role).</p>
-</li>
-<li><dl class="first docutils">
-<dt><code class="docutils literal notranslate"><span class="pre">RANK</span></code> is NOT stable. Between restarts, the local workers on a node</dt>
-<dd><p class="first last">can be assgined a different range of ranks than before. NEVER hard code
+checkpoints should depend on your job’s tolerance for lost work.</li>
+<li>This module only supports homogeneous <code class="docutils literal notranslate"><span class="pre">LOCAL_WORLD_SIZE</span></code>. That is,
+it is assumed that all nodes run the same number of local workers (per role).</li>
+<li><code class="docutils literal notranslate"><span class="pre">RANK</span></code> is NOT stable. Between restarts, the local workers on a node
+can be assgined a different range of ranks than before. NEVER hard code
 any assumptions about the stable-ness of ranks or some correlation between
-<code class="docutils literal notranslate"><span class="pre">RANK</span></code> and <code class="docutils literal notranslate"><span class="pre">LOCAL_RANK</span></code>.</p>
-</dd>
-</dl>
-</li>
-<li><p class="first">When using elasticity (<code class="docutils literal notranslate"><span class="pre">min_size</span> <span class="pre">!=</span> <span class="pre">max_size</span></code>) DO NOT hard code
+<code class="docutils literal notranslate"><span class="pre">RANK</span></code> and <code class="docutils literal notranslate"><span class="pre">LOCAL_RANK</span></code>.</li>
+<li>When using elasticity (<code class="docutils literal notranslate"><span class="pre">min_size</span> <span class="pre">!=</span> <span class="pre">max_size</span></code>) DO NOT hard code
 assumptions about <code class="docutils literal notranslate"><span class="pre">WORLD_SIZE</span></code> as the world size can change due as
-nodes are allowed to leave and join.</p>
-</li>
-<li><p class="first">It is recommended your script have the following structure</p>
+nodes are allowed to leave and join.</li>
+<li>It is recommended your script have the following structure</li>
+</ol>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
-  <span class="n">pre_initialize</span><span class="p">()</span>
   <span class="n">load_checkpoint</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">)</span>
   <span class="n">initialize</span><span class="p">()</span>
-  <span class="n">start_train</span><span class="p">()</span>
+  <span class="n">train</span><span class="p">()</span>
 
-  <span class="k">def</span> <span class="nf">start_train</span><span class="p">():</span>
-      <span class="k">while</span> <span class="ow">not</span> <span class="n">end_of_data</span><span class="p">:</span>
-          <span class="n">train_step</span><span class="p">()</span>
-          <span class="k">if</span> <span class="n">should_checkpoint</span><span class="p">:</span>
-              <span class="n">save_checkpoint</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">train</span><span class="p">():</span>
+  <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">iter</span><span class="p">(</span><span class="n">dataset</span><span class="p">):</span>
+    <span class="n">train_step</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">should_checkpoint</span><span class="p">:</span>
+      <span class="n">save_checkpoint</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">)</span>
 </pre></div>
 </div>
-</li>
-</ol>
-</div></blockquote>
 </div>
 </div>
 

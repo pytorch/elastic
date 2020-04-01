@@ -274,8 +274,7 @@
 <p>The elastic agent is the control plane of torchelastic. It is a process
 that launches and manages underlying worker processes. The agent is
 responsible for:</p>
-<blockquote>
-<div><ol class="arabic simple">
+<ol class="arabic simple">
 <li>Working with distributed torch: the workers are started with all the
 necessary information to successfully and trivially call
 <code class="docutils literal notranslate"><span class="pre">torch.distributed.init_process_group()</span></code>.</li>
@@ -284,7 +283,6 @@ or unhealthiness, tears down all workers and restarts everyone.</li>
 <li>Elasticity: Reacts to membership changes and restarts workers with the new
 members.</li>
 </ol>
-</div></blockquote>
 <p>The simplest agents are deployed per node and works with local processes.
 A more advanced agent can launch and manage workers remotely. Agents can
 be completely decentralized, making decisions based on the workers it manages.

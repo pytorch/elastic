@@ -399,7 +399,7 @@
 <span class="sd">  |                                            | (default 600s)           |</span>
 <span class="sd">  +--------------------------------------------+--------------------------+</span>
 <span class="sd">  | last_call_timeout                          | additional wait amount   |</span>
-<span class="sd">  |                                            | (?last call?) after min  |</span>
+<span class="sd">  |                                            | (“last call”) after min  |</span>
 <span class="sd">  |                                            | number of workers has    |</span>
 <span class="sd">  |                                            | been reached (defaults   |</span>
 <span class="sd">  |                                            | to 30s)                  |</span>
@@ -1485,7 +1485,6 @@
 
 <span class="c1"># torchelastic.rendezvous.RendezvousHandler using etcd (API v2):</span>
 <span class="n">register_rendezvous_handler</span><span class="p">(</span><span class="s2">&quot;etcd&quot;</span><span class="p">,</span> <span class="n">_etcd_rendezvous_handler</span><span class="p">)</span>
-
 </pre></div>
 
              </article>
