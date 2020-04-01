@@ -11,7 +11,7 @@ Server
 
 Below is a diagram of an agent that manages a local group of workers.
 
-.. image:: /_static/img/agent_diagram.jpg
+.. image:: agent_diagram.jpg
 
 Concepts
 --------

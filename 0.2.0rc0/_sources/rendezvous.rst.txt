@@ -6,7 +6,7 @@ Rendezvous
 
 Below is a state diagram describing how rendezvous works.
 
-.. image:: /_static/img/etcd_rdzv_diagram.png
+.. image:: etcd_rdzv_diagram.png
 
 Etcd Rendezvous
 ---------------

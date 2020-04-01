@@ -361,13 +361,13 @@
 
 <span class="sd">    ::</span>
 
-<span class="sd">        @metrics.prof</span>
-<span class="sd">        def x():</span>
-<span class="sd">            pass</span>
+<span class="sd">     @metrics.prof</span>
+<span class="sd">     def x():</span>
+<span class="sd">         pass</span>
 
-<span class="sd">        @metrics.prof(group=&quot;agent&quot;)</span>
-<span class="sd">        def y():</span>
-<span class="sd">            pass</span>
+<span class="sd">     @metrics.prof(group=&quot;agent&quot;)</span>
+<span class="sd">     def y():</span>
+<span class="sd">         pass</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">wrap</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
@@ -401,8 +401,8 @@
 
 <span class="sd">    ::</span>
 
-<span class="sd">        @metrics.profile(&quot;my_metric_group&quot;)</span>
-<span class="sd">        def some_function(&lt;arguments&gt;):</span>
+<span class="sd">     @metrics.profile(&quot;my_metric_group&quot;)</span>
+<span class="sd">     def some_function(&lt;arguments&gt;):</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Deprecated, use @prof instead&quot;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
 
@@ -437,8 +437,8 @@
 
 <span class="sd">    ::</span>
 
-<span class="sd">        put_metric(&quot;metric_name&quot;, 1)</span>
-<span class="sd">        put_metric(&quot;metric_name&quot;, 1, &quot;metric_group_name&quot;)</span>
+<span class="sd">     put_metric(&quot;metric_name&quot;, 1)</span>
+<span class="sd">     put_metric(&quot;metric_name&quot;, 1, &quot;metric_group_name&quot;)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">getStream</span><span class="p">(</span><span class="n">metric_group</span><span class="p">)</span><span class="o">.</span><span class="n">add_value</span><span class="p">(</span><span class="n">metric_name</span><span class="p">,</span> <span class="n">metric_value</span><span class="p">)</span></div>

@@ -512,15 +512,17 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns a free port on localhost that is &quot;reserved&quot; by binding a temporary</span>
 <span class="sd">    socket on it. Close the socket before passing the port to the entity</span>
-<span class="sd">    that requires it. Usage example::</span>
+<span class="sd">    that requires it. Usage example</span>
 
-<span class="sd">        sock = _get_socket_with_port()</span>
-<span class="sd">        with closing(sock):</span>
-<span class="sd">            port = sock.getsockname()[1]</span>
-<span class="sd">            sock.close()</span>
-<span class="sd">            # there is still a race-condition that some other process</span>
-<span class="sd">            # may grab this port before func() runs</span>
-<span class="sd">            func(port)</span>
+<span class="sd">    ::</span>
+
+<span class="sd">    sock = _get_socket_with_port()</span>
+<span class="sd">    with closing(sock):</span>
+<span class="sd">        port = sock.getsockname()[1]</span>
+<span class="sd">        sock.close()</span>
+<span class="sd">        # there is still a race-condition that some other process</span>
+<span class="sd">        # may grab this port before func() runs</span>
+<span class="sd">        func(port)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">addrs</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">getaddrinfo</span><span class="p">(</span>
@@ -556,27 +558,26 @@
 <span class="sd">    preferences. For instance, to run a distributed training job on GPU with</span>
 <span class="sd">    8 trainers (one per GPU) one can:</span>
 
-<span class="sd">      1. Use 8 x single GPU instances, place an agent per instance, managing</span>
-<span class="sd">         1 worker per agent.</span>
-<span class="sd">      2. Use 4 x double GPU instances, place an agent per instance, managing</span>
-<span class="sd">         2 workers per agent.</span>
-<span class="sd">      3. Use 2 x quad GPU instances, place an agent per instance, managing</span>
-<span class="sd">         4 workers per agent.</span>
-<span class="sd">      4. Use 1 x 8 GPU instance, place an agent per instance, managing</span>
-<span class="sd">         8 workers per agent.</span>
+<span class="sd">    1. Use 8 x single GPU instances, place an agent per instance, managing</span>
+<span class="sd">       1 worker per agent.</span>
+<span class="sd">    2. Use 4 x double GPU instances, place an agent per instance, managing</span>
+<span class="sd">       2 workers per agent.</span>
+<span class="sd">    3. Use 2 x quad GPU instances, place an agent per instance, managing</span>
+<span class="sd">       4 workers per agent.</span>
+<span class="sd">    4. Use 1 x 8 GPU instance, place an agent per instance, managing</span>
+<span class="sd">       8 workers per agent.</span>
 
-<span class="sd">    Usage:</span>
+<span class="sd">    Usage</span>
+<span class="sd">    ::</span>
 
-<span class="sd">        ::</span>
-
-<span class="sd">            try:</span>
-<span class="sd">                results = agent.run()</span>
-<span class="sd">                return results[0] # return rank 0&#39;s results</span>
-<span class="sd">            except WorkerGroupFailureException as e:</span>
-<span class="sd">                exceptions = e.get_worker_exceptions()</span>
-<span class="sd">                log.exception(f&quot;worker 0 failed with: {exceptions[0]}&quot;)</span>
-<span class="sd">            except Exception as e:</span>
-<span class="sd">                log.exception(f&quot;error while running agent&quot;)</span>
+<span class="sd">     try:</span>
+<span class="sd">         results = agent.run()</span>
+<span class="sd">         return results[0] # return rank 0&#39;s results</span>
+<span class="sd">     except WorkerGroupFailureException as e:</span>
+<span class="sd">         exceptions = e.get_worker_exceptions()</span>
+<span class="sd">         log.exception(f&quot;worker 0 failed with: {exceptions[0]}&quot;)</span>
+<span class="sd">     except Exception as e:</span>
+<span class="sd">         log.exception(f&quot;error while running agent&quot;)</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -806,6 +807,7 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">_restart_workers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{role}</span><span class="s2">] Worker group in </span><span class="si">{state.name}</span><span class="s2"> state&quot;</span><span class="p">)</span></div></div>
+
 </pre></div>
 
              </article>

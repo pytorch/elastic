@@ -309,8 +309,7 @@ a torch process group.</p>
 on the specific implementation of the agent and the user’s job placement
 preferences. For instance, to run a distributed training job on GPU with
 8 trainers (one per GPU) one can:</p>
-<blockquote>
-<div><ol class="arabic simple">
+<ol class="arabic simple">
 <li>Use 8 x single GPU instances, place an agent per instance, managing
 1 worker per agent.</li>
 <li>Use 4 x double GPU instances, place an agent per instance, managing
@@ -320,10 +319,8 @@ preferences. For instance, to run a distributed training job on GPU with
 <li>Use 1 x 8 GPU instance, place an agent per instance, managing
 8 workers per agent.</li>
 </ol>
-</div></blockquote>
-<p>Usage:</p>
-<blockquote>
-<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+<p>Usage</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
     <span class="n">results</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># return rank 0&#39;s results</span>
 <span class="k">except</span> <span class="n">WorkerGroupFailureException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
@@ -333,7 +330,6 @@ preferences. For instance, to run a distributed training job on GPU with
     <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;error while running agent&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-</div></blockquote>
 <dl class="method">
 <dt id="torchelastic.agent.server.ElasticAgent.get_worker_group">
 <code class="descname">get_worker_group</code><span class="sig-paren">(</span><em>role: str = 'default'</em><span class="sig-paren">)</span> &#x2192; torchelastic.agent.server.api.WorkerGroup<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#ElasticAgent.get_worker_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.ElasticAgent.get_worker_group" title="Permalink to this definition">¶</a></dt>

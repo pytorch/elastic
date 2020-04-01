@@ -298,8 +298,7 @@ the job such as the region or stage (dev vs prod).</p>
 framework. You first have to configure a metrics handler before
 trying to add metric data.</p>
 <p>The example below measures the latency for the <code class="docutils literal notranslate"><span class="pre">calculate()</span></code> function.</p>
-<blockquote>
-<div><div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">torchelastic.metrics</span> <span class="k">as</span> <span class="nn">metrics</span>
 
 <span class="c1"># makes all metrics other than the one from &quot;my_module&quot; to go /dev/null</span>
@@ -307,17 +306,15 @@ trying to add metric data.</p>
 <span class="n">metrics</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">metrics</span><span class="o">.</span><span class="n">ConsoleMetricsHandler</span><span class="p">(),</span> <span class="s2">&quot;my_module&quot;</span><span class="p">)</span>
 
 <span class="k">def</span> <span class="nf">my_method</span><span class="p">():</span>
-    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-    <span class="n">calculate</span><span class="p">()</span>
-    <span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-    <span class="n">metrics</span><span class="o">.</span><span class="n">put_metric</span><span class="p">(</span><span class="s2">&quot;calculate_latency&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">end</span><span class="o">-</span><span class="n">start</span><span class="p">),</span> <span class="s2">&quot;my_module&quot;</span><span class="p">)</span>
+  <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+  <span class="n">calculate</span><span class="p">()</span>
+  <span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+  <span class="n">metrics</span><span class="o">.</span><span class="n">put_metric</span><span class="p">(</span><span class="s2">&quot;calculate_latency&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">end</span><span class="o">-</span><span class="n">start</span><span class="p">),</span> <span class="s2">&quot;my_module&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-</div></blockquote>
-<p>You may also use the :py:<a class="reference internal" href="#torchelastic.metrics.prof" title="torchelastic.metrics.prof"><code class="xref py py-func docutils literal notranslate"><span class="pre">torchelastic.metrics.prof()</span></code></a> decorator
+<p>You may also use the torchelastic.metrics.prof` decorator
 to conveniently and succinctly profile functions</p>
-<blockquote>
-<div><div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># -- in module examples.foobar --</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># -- in module examples.foobar --</span>
 
 <span class="kn">import</span> <span class="nn">torchelastic.metrics</span> <span class="k">as</span> <span class="nn">metrics</span>
 
@@ -335,8 +332,7 @@ to conveniently and succinctly profile functions</p>
       <span class="k">pass</span>
 </pre></div>
 </div>
-</div></blockquote>
-<p><code class="docutils literal notranslate"><span class="pre">&#64;metrics.prof</span></code> will publish the following metrics:</p>
+<p><code class="docutils literal notranslate"><span class="pre">&#64;metrics.prof</span></code> will publish the following metrics</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">leaf_module</span> <span class="ow">or</span> <span class="n">classname</span><span class="o">&gt;.</span><span class="n">success</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">the</span> <span class="n">function</span> <span class="n">finished</span> <span class="n">successfully</span>
 <span class="o">&lt;</span><span class="n">leaf_module</span> <span class="ow">or</span> <span class="n">classname</span><span class="o">&gt;.</span><span class="n">failure</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">the</span> <span class="n">function</span> <span class="n">threw</span> <span class="n">an</span> <span class="n">exception</span>
 <span class="o">&lt;</span><span class="n">leaf_module</span> <span class="ow">or</span> <span class="n">classname</span><span class="o">&gt;.</span><span class="n">duration</span><span class="o">.</span><span class="n">ms</span> <span class="o">-</span> <span class="n">function</span> <span class="n">duration</span> <span class="ow">in</span> <span class="n">milliseconds</span>
@@ -350,7 +346,7 @@ configured with different metric handlers.</p>
 By adding the following configuration metrics,
 <code class="docutils literal notranslate"><span class="pre">torchelastic</span></code> and <code class="docutils literal notranslate"><span class="pre">my_app</span></code> metric groups will be printed out to
 console.</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchelastic.metrics</span> <span class="k">as</span> <span class="nn">metrics</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchelastic.metrics</span> <span class="k">as</span> <span class="nn">metrics</span>
 
 <span class="n">metrics</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">metrics</span><span class="o">.</span><span class="n">ConsoleMetricHandler</span><span class="p">(),</span> <span class="n">group</span> <span class="o">=</span> <span class="s2">&quot;torchelastic&quot;</span><span class="p">)</span>
 <span class="n">metrics</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">metrics</span><span class="o">.</span><span class="n">ConsoleMetricHandler</span><span class="p">(),</span> <span class="n">group</span> <span class="o">=</span> <span class="s2">&quot;my_app&quot;</span><span class="p">)</span>
@@ -358,31 +354,27 @@ console.</p>
 </div>
 <p><strong>Writing a Custom Metric Handler</strong>:</p>
 <p>If you want your metrics to be emitted to a custom location, implement
-the <code class="xref py py-class docutils literal notranslate"><span class="pre">torchelastic.metrics.MetricHandler</span></code> interface
+the <cite>torchelastic.metrics.MetricHandler</cite> interface
 and configure your job to use your custom metric handler.</p>
 <p>Below is a toy example that prints the metrics to <code class="docutils literal notranslate"><span class="pre">stdout</span></code></p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchelastic.metrics</span> <span class="k">as</span> <span class="nn">metrics</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchelastic.metrics</span> <span class="k">as</span> <span class="nn">metrics</span>
 
 <span class="k">class</span> <span class="nc">StdoutMetricHandler</span><span class="p">(</span><span class="n">metrics</span><span class="o">.</span><span class="n">MetricHandler</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">emit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metric_data</span><span class="p">):</span>
-        <span class="n">ts</span> <span class="o">=</span> <span class="n">metric_data</span><span class="o">.</span><span class="n">timestamp</span>
-        <span class="n">group</span> <span class="o">=</span> <span class="n">metric_data</span><span class="o">.</span><span class="n">group_name</span>
-        <span class="n">name</span> <span class="o">=</span> <span class="n">metric_data</span><span class="o">.</span><span class="n">name</span>
-        <span class="n">value</span> <span class="o">=</span> <span class="n">metric_data</span><span class="o">.</span><span class="n">value</span>
-        <span class="nb">print</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{ts}</span><span class="s2">][</span><span class="si">{group}</span><span class="s2">]: </span><span class="si">{name}</span><span class="s2">=</span><span class="si">{value}</span><span class="s2">&quot;</span>
-        <span class="p">)</span>
+   <span class="k">def</span> <span class="nf">emit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metric_data</span><span class="p">):</span>
+       <span class="n">ts</span> <span class="o">=</span> <span class="n">metric_data</span><span class="o">.</span><span class="n">timestamp</span>
+       <span class="n">group</span> <span class="o">=</span> <span class="n">metric_data</span><span class="o">.</span><span class="n">group_name</span>
+       <span class="n">name</span> <span class="o">=</span> <span class="n">metric_data</span><span class="o">.</span><span class="n">name</span>
+       <span class="n">value</span> <span class="o">=</span> <span class="n">metric_data</span><span class="o">.</span><span class="n">value</span>
+       <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{ts}</span><span class="s2">][</span><span class="si">{group}</span><span class="s2">]: </span><span class="si">{name}</span><span class="s2">=</span><span class="si">{value}</span><span class="s2">&quot;</span><span class="p">)</span>
 
 <span class="n">metrics</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">StdoutMetricHandler</span><span class="p">(),</span> <span class="n">group</span><span class="o">=</span><span class="s2">&quot;my_app&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now all metrics in the group <code class="docutils literal notranslate"><span class="pre">my_app</span></code> will be printed to stdout as:</p>
-<blockquote>
-<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="mf">1574213883.4182858</span><span class="p">][</span><span class="n">my_app</span><span class="p">]:</span> <span class="n">my_metric</span><span class="o">=&lt;</span><span class="n">value</span><span class="o">&gt;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="mf">1574213883.4182858</span><span class="p">][</span><span class="n">my_app</span><span class="p">]:</span> <span class="n">my_metric</span><span class="o">=&lt;</span><span class="n">value</span><span class="o">&gt;</span>
 <span class="p">[</span><span class="mf">1574213940.5237644</span><span class="p">][</span><span class="n">my_app</span><span class="p">]:</span> <span class="n">my_metric</span><span class="o">=&lt;</span><span class="n">value</span><span class="o">&gt;</span>
 </pre></div>
 </div>
-</div></blockquote>
 <div class="section" id="metric-handlers">
 <h2>Metric Handlers<a class="headerlink" href="#metric-handlers" title="Permalink to this headline">¶</a></h2>
 <p>Below are the metric handlers that come included with torchelastic.</p>
