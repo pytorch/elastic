@@ -78,7 +78,8 @@ def _wrap(local_rank, ret_vals, dist_infos, fn, args):
 
 class LocalElasticAgent(SimpleElasticAgent):
     """
-    An implementation of ``ElasticAgent`` that handles host-local workers.
+    An implementation of :py:class:`torchelastic.agent.server.ElasticAgent`
+    that handles host-local workers.
     This agent is deployed per host and is configured to spawn ``n`` workers.
     When using GPUs, ``n`` maps to the number of GPUs available on the host.
 
@@ -86,6 +87,30 @@ class LocalElasticAgent(SimpleElasticAgent):
     other hosts, even if the workers may communicate inter-host. The worker id
     is interpreted to be a local process. The agent starts and stops all worker
     processes as a single unit.
+
+    The worker function and argument passed to the worker function must be
+    python multiprocessing compatible. To pass multiprocessing data structures
+    to the workers you may create the data structure in the same multiprocessing
+    context as the specified ``start_method`` and pass it as a function argument.
+
+    Example
+
+    ::
+
+        def trainer(shared_queue):
+            pass
+
+        def main():
+            start_method="spawn"
+            shared_queue= multiprocessing.get_context(start_method).Queue()
+            spec = WorkerSpec(
+                        role="trainer",
+                        local_world_size=nproc_per_process,
+                        fn=trainer,
+                        args=(shared_queue,),
+                        ...<OTHER_PARAMS...>)
+            agent = LocalElasticAgent(spec, start_method)
+            agent.run()
     """
 
     def __init__(self, spec: WorkerSpec, start_method="spawn"):

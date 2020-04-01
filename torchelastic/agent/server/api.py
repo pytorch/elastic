@@ -89,24 +89,22 @@ class Worker:
     represents the specifications of a worker. A ``Worker`` is created from
     a ``WorkerSpec``. A ``Worker`` is to a ``WorkerSpec`` as an object is to
     a class.
+
+    The ``id`` of the worker is interpreted
+    by the specific implementation of ``ElasticAgent``. For a local
+    agent, it could be the ``pid (int)`` of the worker, for a remote
+    agent it could be encoded as ``host:port (string)``.
+
+    Arguments:
+        id (Any): uniquely identifies a worker (interpreted by the agent)
+        local_rank (int): local rank of the worker
+        global_rank (int): global rank of the worker
+        world_size (int): number of workers (globally)
     """
 
     __slots__ = ["id", "local_rank", "global_rank", "world_size"]
 
     def __init__(self, local_rank: int):
-        r"""
-        Creates a worker object. The ``id`` of the worker is interpreted
-        by the specific implementation of ``ElasticAgent``. For a local
-        agent, it could be the ``pid (int)`` of the worker, for a remote
-        agent it could be encoded as ``host:port (string)``.
-
-        Arguments:
-            id (Any): uniquely identifies a worker (interpreted by the agent)
-            local_rank (int): local rank of the worker
-            global_rank (int): global rank of the worker
-            world_size (int): number of workers (globally)
-        """
-
         # unique identifier for this worker
         self.id: Any = None
 
@@ -130,13 +128,13 @@ class WorkerState(Enum):
     If a single worker in a worker groupfails the entire set is considered
     failed::
 
-      ``UNKNOWN`` - agent lost track of worker group state, unrecoverable
-      ``INIT`` - worker group object created not yet started
-      ``HEALTHY`` - workers running and healthy
-      ``UNHEALTHY`` - workers running and unhealthy
-      ``STOPPED`` - workers stopped (interruped) by the agent
-      ``SUCCEEDED`` - workers finished running (exit 0)
-      ``FAILED`` - workers failed to successfully finish (exit !0)
+      UNKNOWN - agent lost track of worker group state, unrecoverable
+      INIT - worker group object created not yet started
+      HEALTHY - workers running and healthy
+      UNHEALTHY - workers running and unhealthy
+      STOPPED - workers stopped (interruped) by the agent
+      SUCCEEDED - workers finished running (exit 0)
+      FAILED - workers failed to successfully finish (exit !0)
 
 
     A worker group starts from an initial ``INIT`` state,
@@ -148,8 +146,8 @@ class WorkerState(Enum):
     in the near future by the agent. Some examples of workers being put into
     ``STOPPED`` state are:
 
-      1. Worker group failure|unhealthy observed
-      2. Membership change detected
+    1. Worker group failure|unhealthy observed
+    2. Membership change detected
 
     When actions (start, stop, rdzv, retry, etc) on worker group fails
     and results in the action being partially applied to the worker group
@@ -170,8 +168,9 @@ class WorkerState(Enum):
     @staticmethod
     def is_running(state: "WorkerState") -> bool:
         """
-        Returns ``True`` if the worker state represents workers still running
-        (e.g. that the process exists but not necessarily healthy).
+        Returns:
+             `` True`` if the worker state represents workers still running
+              (e.g. that the process exists but not necessarily healthy).
         """
         return state in {WorkerState.HEALTHY, WorkerState.UNHEALTHY}
 
@@ -247,15 +246,17 @@ def _get_socket_with_port() -> socket.socket:
     """
     Returns a free port on localhost that is "reserved" by binding a temporary
     socket on it. Close the socket before passing the port to the entity
-    that requires it. Usage example::
+    that requires it. Usage example
 
-        sock = _get_socket_with_port()
-        with closing(sock):
-            port = sock.getsockname()[1]
-            sock.close()
-            # there is still a race-condition that some other process
-            # may grab this port before func() runs
-            func(port)
+    ::
+
+    sock = _get_socket_with_port()
+    with closing(sock):
+        port = sock.getsockname()[1]
+        sock.close()
+        # there is still a race-condition that some other process
+        # may grab this port before func() runs
+        func(port)
     """
 
     addrs = socket.getaddrinfo(
@@ -280,11 +281,38 @@ def _get_fq_hostname() -> str:
 
 class ElasticAgent(abc.ABC):
     """
-    Agent process responsible for managing worker one or more worker processes.
+    Agent process responsible for managing one or more worker processes.
     The worker processes are assumed to be regular distributed PyTorch scripts.
     When the worker process is created by the agent, the agent provides the
     necessary information for the worker processes to properly initialize
     a torch process group.
+
+    The exact deployment topology and ratio of of agent-to-worker is dependent
+    on the specific implementation of the agent and the user's job placement
+    preferences. For instance, to run a distributed training job on GPU with
+    8 trainers (one per GPU) one can:
+
+    1. Use 8 x single GPU instances, place an agent per instance, managing
+       1 worker per agent.
+    2. Use 4 x double GPU instances, place an agent per instance, managing
+       2 workers per agent.
+    3. Use 2 x quad GPU instances, place an agent per instance, managing
+       4 workers per agent.
+    4. Use 1 x 8 GPU instance, place an agent per instance, managing
+       8 workers per agent.
+
+    Usage
+    ::
+
+     try:
+         results = agent.run()
+         return results[0] # return rank 0's results
+     except WorkerGroupFailureException as e:
+         exceptions = e.get_worker_exceptions()
+         log.exception(f"worker 0 failed with: {exceptions[0]}")
+     except Exception as e:
+         log.exception(f"error while running agent")
+
     """
 
     @abc.abstractmethod
@@ -306,11 +334,12 @@ class ElasticAgent(abc.ABC):
     @abc.abstractmethod
     def get_worker_group(self, role: str = DEFAULT_ROLE) -> WorkerGroup:
         """
-        Returns the ``WorkerGroup`` for the given ``role``.
-        Note that the worker groupis a mutable object and hence in a
-        multi-threaded/process environment it may change state.
-        Implementors are encouraged (but not required) to return
-        a defensive read-only copy.
+        Returns:
+            The ``WorkerGroup`` for the given ``role``.
+            Note that the worker group is a mutable object and hence in a
+            multi-threaded/process environment it may change state.
+            Implementors are encouraged (but not required) to return
+            a defensive read-only copy.
         """
         raise NotImplementedError()
 

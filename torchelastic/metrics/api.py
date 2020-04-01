@@ -94,13 +94,14 @@ def prof(fn=None, group: str = "torchelastic"):
     Usage
 
     ::
-        @metrics.prof
-        def x():
-            pass
 
-        @metrics.prof(group="agent")
-        def y():
-            pass
+     @metrics.prof
+     def x():
+         pass
+
+     @metrics.prof(group="agent")
+     def y():
+         pass
     """
 
     def wrap(f):
@@ -133,8 +134,9 @@ def profile(group=None):
     Usage
 
     ::
-        @metrics.profile("my_metric_group")
-        def some_function(<arguments>):
+
+     @metrics.profile("my_metric_group")
+     def some_function(<arguments>):
     """
     warnings.warn("Deprecated, use @prof instead", DeprecationWarning)
 
@@ -168,8 +170,9 @@ def put_metric(metric_name: str, metric_value: int, metric_group: str = "torchel
     Usage
 
     ::
-        put_metric("metric_name", 1)
-        put_metric("metric_name", 1, "metric_group_name")
+
+     put_metric("metric_name", 1)
+     put_metric("metric_name", 1, "metric_group_name")
     """
 
     getStream(metric_group).add_value(metric_name, metric_value)

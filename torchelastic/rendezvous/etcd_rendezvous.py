@@ -79,11 +79,73 @@ def cas_delay():
     time.sleep(random.uniform(0, 0.1))
 
 
-#
-# EtcdRendezvousHandler implements a torchelastic.rendezvous.RendezvousHandler.
-# It hides much of the implementation details, which are in EtcdRendezvous.
-#
 class EtcdRendezvousHandler(RendezvousHandler):
+    """
+    Implements a`torchelastic.rendezvous.RendezvousHandler`
+    interface backed by
+    torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.
+
+    Torchelastic uses a URL to configure the type of rendezvous to use and
+    to pass implementation specific configurations to the rendezvous module.
+    The basic etcd rendezvous configuration URL looks like the following
+
+    ::
+
+     etcd://<etcd_address>:<port>/<job_id>?min_workers=<min_workers>&max_workers=<max_workers> # noqa W605
+
+   Example:
+
+       ::
+
+         etcd://localhost:2379/1234?min_workers=1&max_workers=3
+
+   The URL above is interpreted as follows:
+
+   1. Use the rendezvous handler that is registered with the ``etcd``
+      scheme
+   2. The ``etcd`` endpoint to use is ``localhost:2379``
+   3. ``job_id == 1234`` is used as the prefix in etcd (this allows one to
+      share a common etcd server for multiple jobs so long as the
+      ``job_ids`` are guaranteed to be unique). Note that the job id can be
+      any string (e.g. does not need to be a number) as long as it is
+      unique.
+   4. ``min_workers=1`` and ``max_workers=3`` specifies a range for
+      membership size - torchelastic starts running the job as long as the
+      cluster size is greater than or equal to ``min_workers`` and admits
+      up to ``max_workers`` into the cluster.
+
+   Below are a full list of the parameters that can be passed to etcd
+   rendezvous:
+
+  +--------------------------------------------+--------------------------+
+  | Parameter                                  | Description              |
+  +============================================+==========================+
+  | min_workers                                | minimum number of        |
+  |                                            | workers for the          |
+  |                                            | rendezvous to be valid   |
+  +--------------------------------------------+--------------------------+
+  | max_workers                                | maximum number of        |
+  |                                            | workers to admit         |
+  +--------------------------------------------+--------------------------+
+  | timeout                                    | total timeout within     |
+  |                                            | which next_rendezvous is |
+  |                                            | expected to succeed      |
+  |                                            | (default 600s)           |
+  +--------------------------------------------+--------------------------+
+  | last_call_timeout                          | additional wait amount   |
+  |                                            | (“last call”) after min  |
+  |                                            | number of workers has    |
+  |                                            | been reached (defaults   |
+  |                                            | to 30s)                  |
+  +--------------------------------------------+--------------------------+
+  | etcd_prefix                                | path prefix (from etcd   |
+  |                                            | root), inside which all  |
+  |                                            | etcd nodes will be       |
+  |                                            | created (defaults to     |
+  |                                            | ``/torchelastic/p2p``)   |
+  +--------------------------------------------+--------------------------+
+    """
+
     def __init__(self, rdzv_impl):
         self._rdzv_impl = rdzv_impl
 
@@ -127,6 +189,11 @@ class EtcdRendezvousHandler(RendezvousHandler):
 # into auto-retry for these errors?
 #
 class EtcdRendezvous(object):
+    """
+    A rendezvous implementation that uses `etcd <https://etcd.io/>`__ as
+    the backend store.
+    """
+
     def __init__(
         self,
         endpoints,
