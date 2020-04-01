@@ -333,14 +333,12 @@ to initialize job control and data-planes.</p>
 <p>Torchelastic rendezvous handler object provides additional
 functionalities, which are technically not part of the rendezvous
 process:</p>
-<blockquote>
-<div><ol class="arabic simple">
+<ol class="arabic simple">
 <li>Querying how many workers arrived late at the barrier, who
 can participate in <em>next</em> rendezvous.</li>
 <li>Setting the rendezvous <em>closed</em> to signal all workers not
 to participate in next rendezvous.</li>
 </ol>
-</div></blockquote>
 <p>Below is a state diagram describing how rendezvous works.</p>
 <img alt="_images/etcd_rdzv_diagram.png" src="_images/etcd_rdzv_diagram.png" />
 <div class="section" id="etcd-rendezvous">

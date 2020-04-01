@@ -273,17 +273,15 @@
 <span id="elastic-launcher"></span><h2>Elastic launcher<a class="headerlink" href="#module-torchelastic.distributed.launch" title="Permalink to this headline">¶</a></h2>
 <p>This module provides similar functionality as <code class="docutils literal notranslate"><span class="pre">torch.distributed.launch</span></code>,
 with the following additional functionalities:</p>
-<blockquote>
-<div><ol class="arabic simple">
+<ol class="arabic simple">
 <li>Worker failures are handled gracefully by restarting all workers.</li>
 <li>Worker <code class="docutils literal notranslate"><span class="pre">RANK</span></code> and <code class="docutils literal notranslate"><span class="pre">WORLD_SIZE</span></code> are assigned automatically.</li>
 <li>Number of nodes is allowed to change between min and max sizes (elasticity).</li>
 </ol>
-</div></blockquote>
 <p><strong>Usage:</strong></p>
-<blockquote>
-<div><ol class="arabic">
-<li><p class="first">Fault tolerant (fixed sized number of workers, no elasticity):</p>
+<ol class="arabic simple">
+<li>Fault tolerant (fixed sized number of workers, no elasticity):</li>
+</ol>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">torchelastic</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">launch</span>
 <span class="go">    --nnodes=4</span>
 <span class="go">    --nproc_per_node=8</span>
@@ -293,8 +291,9 @@ with the following additional functionalities:</p>
 <span class="go">    YOUR_TRAINING_SCRIPT.py (--arg1 ... train script args...)</span>
 </pre></div>
 </div>
-</li>
-<li><p class="first">Elastic (min=1, max=4):</p>
+<ol class="arabic simple" start="2">
+<li>Elastic (min=1, max=4):</li>
+</ol>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">torchelastic</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">launch</span>
 <span class="go">    --nnodes=1:4</span>
 <span class="go">    --nproc_per_node=8</span>
@@ -304,12 +303,8 @@ with the following additional functionalities:</p>
 <span class="go">    YOUR_TRAINING_SCRIPT.py (--arg1 ... train script args...)</span>
 </pre></div>
 </div>
-</li>
-</ol>
-</div></blockquote>
 <p><strong>Definitions:</strong></p>
-<blockquote>
-<div><ol class="arabic simple">
+<ol class="arabic simple">
 <li><dl class="first docutils">
 <dt><code class="docutils literal notranslate"><span class="pre">Node</span></code> - Physical instance or container.</dt>
 <dd>Maps to the unit that the job manager works with.</dd>
@@ -341,7 +336,6 @@ worker group.</dd>
 </li>
 <li><code class="docutils literal notranslate"><span class="pre">rdzv_endpoint</span></code> - rdzv backend server endpoint in <code class="docutils literal notranslate"><span class="pre">host:port</span></code> format.</li>
 </ol>
-</div></blockquote>
 <p>A <code class="docutils literal notranslate"><span class="pre">Node</span></code> runs <code class="docutils literal notranslate"><span class="pre">LOCAL_WORLD_SIZE</span></code> workers which comprise a <code class="docutils literal notranslate"><span class="pre">LocalWorkerGroup</span></code>.
 The union of all <code class="docutils literal notranslate"><span class="pre">LocalWorkerGroups</span></code> in the nodes in the job comprise the
 <code class="docutils literal notranslate"><span class="pre">WorkerGroup</span></code>.</p>
