@@ -7,11 +7,13 @@
 # LICENSE file in the root directory of this source tree.
 
 r"""
-This module provides similar functionality as `torch.distributed.launch`,
+This module provides similar functionality as ``torch.distributed.launch``,
 with the following additional functionalities:
 
 1. Worker failures are handled gracefully by restarting all workers.
-2. Worker `RANK` and `WORLD_SIZE` are assigned automatically.
+
+2. Worker ``RANK`` and ``WORLD_SIZE`` are assigned automatically.
+
 3. Number of nodes is allowed to change between min and max sizes (elasticity).
 
 **Usage:**
@@ -21,138 +23,163 @@ with the following additional functionalities:
 ::
 
     >>> python -m torchelastic.distributed.launch
-            --nnodes=4
-            --nproc_per_node=8
-            --rdzv_id=JOB_ID
-            --rdzv_backend=etcd
-            --rdzv_endpoint=ETCD_HOST:ETCD_PORT
-            --nproc_per_node=8
-            YOUR_TRAINING_SCRIPT.py (--arg1 ... train script args...)
+        --nnodes=4
+        --nproc_per_node=8
+        --rdzv_id=JOB_ID
+        --rdzv_backend=etcd
+        --rdzv_endpoint=ETCD_HOST:ETCD_PORT
+        YOUR_TRAINING_SCRIPT.py (--arg1 ... train script args...)
 
 2. Elastic (min=1, max=4):
 
 ::
 
     >>> python -m torchelastic.distributed.launch
-            --nnodes=1:4
-            --rdzv_id=JOB_ID
-            --rdzv_backend=etcd
-            --rdzv_endpoint=ETCD_HOST:ETCD_PORT
-            --nproc_per_node=8
-            YOUR_TRAINING_SCRIPT.py (--arg1 ... train script args...)
+        --nnodes=1:4
+        --nproc_per_node=8
+        --rdzv_id=JOB_ID
+        --rdzv_backend=etcd
+        --rdzv_endpoint=ETCD_HOST:ETCD_PORT
+        YOUR_TRAINING_SCRIPT.py (--arg1 ... train script args...)
 
 **Definitions:**
 
-1. `Node` - Physical instance or container.
-Maps to the unit that the job manager works with.
+1. ``Node`` - Physical instance or container.
+    Maps to the unit that the job manager works with.
 
-2. `Worker` - A worker in the context of distributed training.
+2. ``Worker`` - A worker in the context of distributed training.
 
-3. `Worker Group` - Workers with the same function (e.g. trainers)
+3. ``Worker Group`` - Workers with the same function (e.g. trainers)
 
-4. `Local Worker Group` - Subset of the workers in the
-worker group running on the same Node
+4. ``Local Worker Group`` - Subset of the workers in the
+    worker group running on the same Node
 
-4. `RANK` - rank of the worker within a worker group.
+5. ``RANK`` - rank of the worker within a worker group.
 
-5. `WORLD_SIZE` - total number of workers in a worker group.
+6. ``WORLD_SIZE`` - total number of workers in a worker group.
 
-6. `LOCAL_RANK` - rank of the worker within a local worker group
+7. ``LOCAL_RANK`` - rank of the worker within a local worker group
 
-7. `LOCAL_WORLD_SIZE` - size of the local worker group
+8. ``LOCAL_WORLD_SIZE`` - size of the local worker group
 
-8. `rdzv_id` - user defined id that uniquely identifies the worker group
-for a job. This id is used by each node to join as a member of a particular
-worker group.
+9. ``rdzv_id`` - user defined id that uniquely identifies the worker group
+      for a job. This id is used by each node to join as a member of a particular
+      worker group.
 
-9. `rdzv_backend` - the backend store of rendezvous (e.g. etcd). This is
-typically a strongly consistent key-value store.
+9. ``rdzv_backend`` - the backend store of rendezvous (e.g. etcd). This is
+    typically a strongly consistent key-value store.
 
-10. `rdzv_endpoint` - rdzv backend server endpoint in `host:port` format.
+10. ``rdzv_endpoint`` - rdzv backend server endpoint in ``host:port`` format.
 
-A `Node` runs `LOCAL_WORLD_SIZE` workers which comprise a `LocalWorkerGroup`.
-The union of all `LocalWorkerGroups` in the nodes in the job comprise the
-`WorkerGroup`.
+A ``Node`` runs ``LOCAL_WORLD_SIZE`` workers which comprise a ``LocalWorkerGroup``.
+The union of all ``LocalWorkerGroups`` in the nodes in the job comprise the
+``WorkerGroup``.
+
+**Environment Variables:**
+
+The following environment variables are made available to you in your
+script:
+
+1. ``LOCAL_RANK`` -  local rank
+
+2. ``RANK`` -  global rank
+
+3. ``GROUP_RANK`` - rank of the worker group (roughly maps to the
+   rank of the agent). A number between 0 - ``max_nnodes``.
+
+4. ``WORLD_SIZE`` - world size.
+
+5. ``MASTER_ADDR`` - fqdn of the host that is running worker with rank 0.
+   Used to initialize torch distributed backend.
+
+6. ``MASTER_PORT`` - port on the ``MASTER_ADDR`` that can be used to
+   host the tcp ``c10d`` store.
+
+7. ``TORCHELASTIC_RESTART_COUNT`` - number of worker group restarts so far.
+
+8. ``TORCHELASTIC_MAX_RESTARTS`` - configured max number of restarts.
 
 **Deployment:**
 
-0. Start the rdzv backend server and get the endpoint
-(to be passed as `--rdzv_endpoint` to the launcher script)
+1. Start the rdzv backend server and get the endpoint
+   (to be passed as ``--rdzv_endpoint`` to the launcher script)
 
-1. Single-node multi-worker - start the launcher on the host to start
-the agent process which creates and monitors a local worker group.
+2. Single-node multi-worker - start the launcher on the host to start
+   the agent process which creates and monitors a local worker group.
 
-2. Multi-node multi-worker - Start the launcher with the same arguments
-on all the nodes participating in training.
+3.Multi-node multi-worker - Start the launcher with the same arguments
+  on all the nodes participating in training.
 
 When using a job/cluster manager the entry point command to the multi-node
 job is invoking this launcher.
 
 **Failure Modes:**
 
-1. Worker failure - For a training job with `n` workers, if `k < n` workers fail
-all workers are stopped and restarted up to `max_restarts`.
+1. Worker failure - For a training job with ``n`` workers, if ``k < n`` workers fail
+   all workers are stopped and restarted up to ``max_restarts``.
 
 2. Agent failure - An agent failure results in local worker group failure,
-it is up to the job manager to fail the entire job (gang semantics) or attempt
-to replace the node. Both behaviors are supported by the agent.
+   it is up to the job manager to fail the entire job (gang semantics) or attempt
+   to replace the node. Both behaviors are supported by the agent.
 
 3. Node failure - Same as agent failure.
 
 **Membership Changes:**
 
 1. Node departure (scale-down) - agent is notified of the departure,
-all existing workers are stopped, a new `Worker Group` is formed and all
-workers are started with a new `RANK` and `WORLD_SIZE`.
+   all existing workers are stopped, a new ``Worker Group`` is formed and all
+   workers are started with a new ``RANK`` and ``WORLD_SIZE``.
 
 2. Node arrival (scale-up) - the new node is admitted to the job,
-all existing workers are stopped, a new `Worker Group` is formed and all
-workers are started with a new `RANK` and `WORLD_SIZE`.
+   all existing workers are stopped, a new ``Worker Group`` is formed and all
+   workers are started with a new ``RANK`` and ``WORLD_SIZE``.
 
 
 **Important Notices:**
 
-1. All the items in the important notices section of `torch.distributed.launch`
-apply to this module as well
+1. All the items in the important notices section of ``torch.distributed.launch``
+   apply to this module as well
 
 2. The environment variables necessary to initialize a torch process group
-are provided to you by this module, no need for you to pass `RANK` manually.
-To initialize a process group in your training script, simply run
+   are provided to you by this module, no need for you to pass ``RANK`` manually.
+   To initialize a process group in your training script, simply run
 
 ::
-    >>> torch.distributed.init_process_group(backend="gloo|nccl",
-                                             init_method="env://")
+
+ >>> import torch.distributed as dist
+ >>> dist.init_process_group(backend="gloo|nccl")
 
 3. On failures or membership changes ALL surviving workers are killed
-immediately. Make sure to checkpoint your progress. The frequency of
-checkpoints should depend on your job's tolerance for lost work.
+   immediately. Make sure to checkpoint your progress. The frequency of
+   checkpoints should depend on your job's tolerance for lost work.
 
-4. This module only supports homogeneous `LOCAL_WORLD_SIZE`. That is,
-it is assumed that all nodes run the same number of local workers (per role).
+4. This module only supports homogeneous ``LOCAL_WORLD_SIZE``. That is,
+   it is assumed that all nodes run the same number of local workers (per role).
 
-5. `RANK` is NOT stable. Between restarts, the local workers on a node
-can be assgined a different range of ranks than before. NEVER hard code
-any assumptions about the stable-ness of ranks or some correlation between
-`RANK` and `LOCAL_RANK`.
+5. ``RANK`` is NOT stable. Between restarts, the local workers on a node
+   can be assgined a different range of ranks than before. NEVER hard code
+   any assumptions about the stable-ness of ranks or some correlation between
+   ``RANK`` and ``LOCAL_RANK``.
 
-6. When using elasticity (`min_size != max_size`) DO NOT hard code
-assumptions about `WORLD_SIZE` as the world size can change due as
-nodes are allowed to leave and join.
+6. When using elasticity (``min_size != max_size``) DO NOT hard code
+   assumptions about ``WORLD_SIZE`` as the world size can change due as
+   nodes are allowed to leave and join.
 
 7. It is recommended your script have the following structure
 
 ::
-    def main():
-        pre_initialize()
-        load_checkpoint(checkpoint_path)
-        initialize()
-        start_train()
 
-    def start_train():
-        while not end_of_data:
-            train_step()
-            if should_checkpoint:
-                save_checkpoint(checkpoint_path)
+  def main():
+    load_checkpoint(checkpoint_path)
+    initialize()
+    train()
+
+  def train():
+    for batch in iter(dataset):
+      train_step(batch)
+
+      if should_checkpoint:
+        save_checkpoint(checkpoint_path)
 """
 
 import os

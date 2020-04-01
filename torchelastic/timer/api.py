@@ -22,9 +22,9 @@ class TimerRequest:
     A negative ``expiration_time`` should be interpreted as a "release"
     request.
 
-    Note: the type of ``worker_id`` is implementation specific.
-    It is whatever the TimerServer and TimerClient implementations have
-    agreed on to uniquely identify a worker.
+    .. note:: the type of ``worker_id`` is implementation specific.
+              It is whatever the TimerServer and TimerClient implementations
+              have on to uniquely identify a worker.
     """
 
     __slots__ = ["worker_id", "scope_id", "expiration_time"]
@@ -234,6 +234,9 @@ _timer_client = None
 
 
 def configure(timer_client: TimerClient):
+    """
+    Configures a timer client. Must be called before using ``expires``.
+    """
     global _timer_client
     _timer_client = timer_client
     logging.info(f"Timer client configured to: {type(_timer_client).__name__}")
@@ -252,13 +255,11 @@ def expires(after: float, scope: str = None, client: TimerClient = None) -> None
     reaped and the ``TimerServer`` that the client talks to will ultimately
     make the decision when and how to reap the workers with expired timers.
 
-    Usage:
+    Usage::
 
-    ```
         torchelastic.timer.configure(LocalTimerClient())
         with expires(after=10):
             torch.distributed.all_reduce(...)
-    ```
     """
     if client is None:
         if _timer_client is None:
