@@ -161,11 +161,13 @@ class LocalElasticAgentTest(unittest.TestCase):
         self.assertEqual(WorkerState.FAILED, agent.get_worker_group().state)
         self.assertEqual(0, agent._remaining_restarts)
 
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_run_check_env_function(self):
         spec = self._get_worker_spec(fn=_check_env_function, max_restarts=2)
         agent = LocalElasticAgent(spec, start_method="fork")
         agent.run()
 
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_get_worker_return_values(self):
         spec = self._get_worker_spec(fn=_return_rank_times, args=(2,))
         agent = LocalElasticAgent(spec, start_method="fork")

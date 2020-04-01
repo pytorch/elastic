@@ -129,6 +129,7 @@ class LaunchTest(unittest.TestCase):
             {str(i) for i in range(world_size)}, set(os.listdir(self.test_dir))
         )
 
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_launch_elastic(self):
         run_id = str(uuid.uuid4().int)
         min_nodes = 1
