@@ -408,8 +408,7 @@ are provided to you by this module, no need for you to pass <code class="docutil
 To initialize a process group in your training script, simply run</li>
 </ol>
 <blockquote>
-<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">init_process_group</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="s2">&quot;gloo|nccl&quot;</span><span class="p">,</span>
-<span class="go">                                     init_method=&quot;env://&quot;)</span>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">init_process_group</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="s2">&quot;gloo|nccl&quot;</span><span class="p">,</span> <span class="n">_method</span><span class="o">=</span><span class="s2">&quot;env://&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div></blockquote>
@@ -435,16 +434,16 @@ nodes are allowed to leave and join.</p>
 </li>
 <li><p class="first">It is recommended your script have the following structure</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
-    <span class="n">pre_initialize</span><span class="p">()</span>
-    <span class="n">load_checkpoint</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">)</span>
-    <span class="n">initialize</span><span class="p">()</span>
-    <span class="n">start_train</span><span class="p">()</span>
+  <span class="n">pre_initialize</span><span class="p">()</span>
+  <span class="n">load_checkpoint</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">)</span>
+  <span class="n">initialize</span><span class="p">()</span>
+  <span class="n">start_train</span><span class="p">()</span>
 
-<span class="k">def</span> <span class="nf">start_train</span><span class="p">():</span>
-    <span class="k">while</span> <span class="ow">not</span> <span class="n">end_of_data</span><span class="p">:</span>
-        <span class="n">train_step</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">should_checkpoint</span><span class="p">:</span>
-            <span class="n">save_checkpoint</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">)</span>
+  <span class="k">def</span> <span class="nf">start_train</span><span class="p">():</span>
+      <span class="k">while</span> <span class="ow">not</span> <span class="n">end_of_data</span><span class="p">:</span>
+          <span class="n">train_step</span><span class="p">()</span>
+          <span class="k">if</span> <span class="n">should_checkpoint</span><span class="p">:</span>
+              <span class="n">save_checkpoint</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">)</span>
 </pre></div>
 </div>
 </li>
