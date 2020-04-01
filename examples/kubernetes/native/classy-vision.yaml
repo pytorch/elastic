@@ -11,7 +11,7 @@ spec:
   - name: classy-vision
     image: torchelastic/examples:0.1.0rc1
     args:
-    - "s3://<BUCKET>/petctl/<USER>/<JOB_ID>/main.py"
+    - "/workspace/examples/classy_vision/main.py"
     - "--config_file"
     # Get configuration file from here
     # https://github.com/facebookresearch/ClassyVision/blob/e7e02b0e4d7fa4cfb8bc909f0e6bb9488a1073b8/classy_vision/configs/resnet50_synthetic_image_classy_config.json
@@ -67,7 +67,7 @@ spec:
   - name: classy-vision
     image: torchelastic/examples:0.1.0rc1
     args:
-    - "s3://<BUCKET>/petctl/<USER>/<JOB_ID>/main.py"
+    - "/workspace/examples/classy_vision/main.py"
     - "--config_file"
     # Get configuration file from here
     # https://github.com/facebookresearch/ClassyVision/blob/e7e02b0e4d7fa4cfb8bc909f0e6bb9488a1073b8/classy_vision/configs/resnet50_synthetic_image_classy_config.json

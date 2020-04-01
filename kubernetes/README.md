@@ -181,7 +181,7 @@ Spec:
         Spec:
           Containers:
             Args:
-              s3://torchelastic-shjiaxin-1h71m-s3bucket-m1b9b9pjldqw/petctl/shjiaxin/imagenet-job/main.py
+              /workspace/examples/imagenet/main.py
               --input_path
               /data/tiny-imagenet-200/train
               --epochs

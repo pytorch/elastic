@@ -21,7 +21,7 @@ spec:
               image: <your_dockerhub_username>/examples:imagenet
               imagePullPolicy: Always
               args:
-                - "/opt/main.py"
+                - "/workspace/examples/imagenet/main.py"
                 - "--input_path"
                 - "/data/tiny-imagenet-200/train"
                 - "--epochs"
