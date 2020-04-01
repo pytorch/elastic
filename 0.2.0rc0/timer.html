@@ -1,0 +1,716 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Expiration Timers &mdash; PyTorch/Elastic master documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!-- <link rel="stylesheet" href="_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="_static/katex-math.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Rendezvous" href="rendezvous.html" />
+    <link rel="prev" title="Elastic Agent" href="agent.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+  <!-- Preload the theme fonts -->
+
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+
+<!-- Preload the katex fonts -->
+
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Math-Italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size1-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size4-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size2-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size3-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Caligraphic-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+</head>
+
+<div class="container-fluid header-holder tutorials-header" id="header-holder">
+  <div class="container">
+    <div class="header-container">
+      <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <div class="ecosystem-dropdown">
+              <a id="dropdownMenuButton" data-toggle="ecosystem-dropdown">
+                Ecosystem
+              </a>
+              <div class="ecosystem-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub"">
+                  <span class=dropdown-title>Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem">
+                  <span class=dropdown-title>Tools & Libraries</span>
+                  <p>Explore the ecosystem of tools and libraries</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+          </li>
+
+          <li>
+            <div class="resources-dropdown">
+              <a id="resourcesDropdownButton" data-toggle="resources-dropdown">
+                Resources
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources"">
+                  <span class=dropdown-title>Developer Resources</span>
+                  <p>Find resources and get questions answered</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class=dropdown-title>About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">Github</a>
+          </li>
+        </ul>
+      </div>
+
+      <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
+    </div>
+
+  </div>
+</div>
+
+
+<body class="pytorch-body">
+
+   
+
+    
+
+    <div class="table-of-contents-link-wrapper">
+      <span>Table of Contents</span>
+      <a href="#" class="toggle-table-of-contents" data-behavior="toggle-table-of-contents"></a>
+    </div>
+
+    <nav data-toggle="wy-nav-shift" class="pytorch-left-menu" id="pytorch-left-menu">
+      <div class="pytorch-side-scroll">
+        <div class="pytorch-menu pytorch-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          <div class="pytorch-left-menu-search">
+            
+
+            
+              
+              
+                <div class="version">
+                  v0.2.0rc0
+                </div>
+              
+            
+
+            
+
+
+  
+
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search Docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+            
+          </div>
+
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="distributed.html">Elastic Launch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="agent.html">Elastic Agent</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Expiration Timers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rendezvous.html">Rendezvous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metrics.html">Metrics</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Runtime Environments</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="runtime.html">Running torchelastic</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <div class="pytorch-container">
+      <div class="pytorch-page-level-bar" id="pytorch-page-level-bar">
+        <div class="pytorch-breadcrumbs-wrapper">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="pytorch-breadcrumbs">
+    
+      <li>
+        <a href="index.html">
+          
+            Docs
+          
+        </a> &gt;
+      </li>
+
+        
+      <li>Expiration Timers</li>
+    
+    
+      <li class="pytorch-breadcrumbs-aside">
+        
+            
+            <a href="_sources/timer.rst.txt" rel="nofollow"><img src="_static/images/view-page-source-icon.svg"></a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+</div>
+        </div>
+
+        <div class="pytorch-shortcuts-wrapper" id="pytorch-shortcuts-wrapper">
+          Shortcuts
+        </div>
+      </div>
+
+      <section data-toggle="wy-nav-shift" id="pytorch-content-wrap" class="pytorch-content-wrap">
+        <div class="pytorch-content-left">
+
+        
+          
+          <div class="rst-content">
+          
+            <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
+             <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
+              
+  <div class="section" id="module-torchelastic.timer">
+<span id="expiration-timers"></span><h1>Expiration Timers<a class="headerlink" href="#module-torchelastic.timer" title="Permalink to this headline">¶</a></h1>
+<p>Expiration timers are set up on the same process as the agent and
+used from your script to deal with stuck workers. When you go into
+a code-block that has the potential to get stuck you can acquire
+an expiration timer, which instructs the timer server to kill the
+process if it does not release the timer by the self-imposed expiration
+deadline.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchelastic.timer</span> <span class="k">as</span> <span class="nn">timer</span>
+<span class="kn">import</span> <span class="nn">torchelastic.agent.server</span> <span class="k">as</span> <span class="nn">agent</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">start_method</span> <span class="o">=</span> <span class="s2">&quot;spawn&quot;</span>
+    <span class="n">message_queue</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">get_context</span><span class="p">(</span><span class="n">start_method</span><span class="p">)</span><span class="o">.</span><span class="n">Queue</span><span class="p">()</span>
+    <span class="n">server</span> <span class="o">=</span> <span class="n">timer</span><span class="o">.</span><span class="n">LocalTimerServer</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">max_interval</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+    <span class="n">server</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="c1"># non-blocking</span>
+
+    <span class="n">spec</span> <span class="o">=</span> <span class="n">WorkerSpec</span><span class="p">(</span>
+                <span class="n">fn</span><span class="o">=</span><span class="n">trainer_func</span><span class="p">,</span>
+                <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">message_queue</span><span class="p">,),</span>
+                <span class="o">...&lt;</span><span class="n">OTHER_PARAMS</span><span class="o">...&gt;</span><span class="p">)</span>
+    <span class="n">agent</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">LocalElasticAgent</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">start_method</span><span class="p">)</span>
+    <span class="n">agent</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">trainer_func</span><span class="p">(</span><span class="n">message_queue</span><span class="p">):</span>
+    <span class="n">timer</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">timer</span><span class="o">.</span><span class="n">LocalTimerClient</span><span class="p">(</span><span class="n">message_queue</span><span class="p">))</span>
+    <span class="k">with</span> <span class="n">timer</span><span class="o">.</span><span class="n">expires</span><span class="p">(</span><span class="n">after</span><span class="o">=</span><span class="mi">60</span><span class="p">):</span> <span class="c1"># 60 second expiry</span>
+        <span class="c1"># do some work</span>
+</pre></div>
+</div>
+<p>In the example above if <code class="docutils literal notranslate"><span class="pre">trainer_func</span></code> takes more than 60 seconds to
+complete, then the worker process is killed and the agent retries the worker group.</p>
+<div class="section" id="client-methods">
+<h2>Client Methods<a class="headerlink" href="#client-methods" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="torchelastic.timer.configure">
+<code class="descclassname">torchelastic.timer.</code><code class="descname">configure</code><span class="sig-paren">(</span><em>timer_client: torchelastic.timer.api.TimerClient</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/timer/api.html#configure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.configure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configures a timer client. Must be called before using <code class="docutils literal notranslate"><span class="pre">expires</span></code>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchelastic.timer.expires">
+<code class="descclassname">torchelastic.timer.</code><code class="descname">expires</code><span class="sig-paren">(</span><em>after: float</em>, <em>scope: str = None</em>, <em>client: torchelastic.timer.api.TimerClient = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/timer/api.html#expires"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.expires" title="Permalink to this definition">¶</a></dt>
+<dd><p>Acquires a countdown timer that expires in <code class="docutils literal notranslate"><span class="pre">after</span></code> seconds from now,
+unless the code-block that it wraps is finished within the timeframe.
+When the timer expires, this worker is eligible to be reaped. The
+exact meaning of “reaped” depends on the client implementation. In
+most cases, reaping means to terminate the worker process.
+Note that the worker is NOT guaranteed to be reaped at exactly
+<code class="docutils literal notranslate"><span class="pre">time.now()</span> <span class="pre">+</span> <span class="pre">after</span></code>, but rather the worker is “eligible” for being
+reaped and the <code class="docutils literal notranslate"><span class="pre">TimerServer</span></code> that the client talks to will ultimately
+make the decision when and how to reap the workers with expired timers.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">torchelastic</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">LocalTimerClient</span><span class="p">())</span>
+<span class="k">with</span> <span class="n">expires</span><span class="p">(</span><span class="n">after</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">all_reduce</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="server-client-implementations">
+<h2>Server/Client Implementations<a class="headerlink" href="#server-client-implementations" title="Permalink to this headline">¶</a></h2>
+<p>Below are the timer server and client pairs that are provided by torchelastic.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Timer server and clients always have to be implemented and used
+in pairs since there is a messaging protocol between the server
+and client.</p>
+</div>
+<dl class="class">
+<dt id="torchelastic.timer.LocalTimerServer">
+<em class="property">class </em><code class="descclassname">torchelastic.timer.</code><code class="descname">LocalTimerServer</code><span class="sig-paren">(</span><em>mp_queue: multiprocessing.context.BaseContext.Queue</em>, <em>max_interval: float = 60</em>, <em>daemon: bool = True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/timer/local_timer.html#LocalTimerServer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.LocalTimerServer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Server that works with <code class="docutils literal notranslate"><span class="pre">LocalTimerClient</span></code>. Clients are expected to be
+subprocesses to the parent process that is running this server. Each host
+in the job is expected to start its own timer server locally and each
+server instance manages timers for local workers (running on processes
+on the same host).</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="torchelastic.timer.LocalTimerClient">
+<em class="property">class </em><code class="descclassname">torchelastic.timer.</code><code class="descname">LocalTimerClient</code><span class="sig-paren">(</span><em>mp_queue</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/timer/local_timer.html#LocalTimerClient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.LocalTimerClient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Client side of <code class="docutils literal notranslate"><span class="pre">LocalTimerServer</span></code>. This client is meant to be used
+on the same host that the <code class="docutils literal notranslate"><span class="pre">LocalTimerServer</span></code> is running on and uses
+pid to uniquely identify a worker. This is particularly useful in situations
+where one spawns a subprocess (trainer) per GPU on a host with multiple
+GPU devices.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="writing-a-custom-timer-server-client">
+<h2>Writing a custom timer server/client<a class="headerlink" href="#writing-a-custom-timer-server-client" title="Permalink to this headline">¶</a></h2>
+<p>To write your own timer server and client extend the
+<code class="docutils literal notranslate"><span class="pre">torchelastic.timer.TimerServer</span></code> for the server and
+<code class="docutils literal notranslate"><span class="pre">torchelastic.timer.TimerClient</span></code> for the client. The
+<code class="docutils literal notranslate"><span class="pre">TimerRequest</span></code> object is used to pass messages between
+the server and client.</p>
+<dl class="class">
+<dt id="torchelastic.timer.TimerRequest">
+<em class="property">class </em><code class="descclassname">torchelastic.timer.</code><code class="descname">TimerRequest</code><span class="sig-paren">(</span><em>worker_id: Any</em>, <em>scope_id: str</em>, <em>expiration_time: float</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerRequest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerRequest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Data object representing a countdown timer acquisition and release
+that is used between the <code class="docutils literal notranslate"><span class="pre">TimerClient</span></code> and <code class="docutils literal notranslate"><span class="pre">TimerServer</span></code>.
+A negative <code class="docutils literal notranslate"><span class="pre">expiration_time</span></code> should be interpreted as a “release”
+request.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">the type of <code class="docutils literal notranslate"><span class="pre">worker_id</span></code> is implementation specific.
+It is whatever the TimerServer and TimerClient implementations
+have on to uniquely identify a worker.</p>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="torchelastic.timer.TimerServer">
+<em class="property">class </em><code class="descclassname">torchelastic.timer.</code><code class="descname">TimerServer</code><span class="sig-paren">(</span><em>request_queue: torchelastic.timer.api.RequestQueue</em>, <em>max_interval: float</em>, <em>daemon: bool = True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerServer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerServer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Entity that monitors active timers and expires them
+in a timely fashion. This server is responsible for
+reaping workers that have expired timers.</p>
+<dl class="method">
+<dt id="torchelastic.timer.TimerServer.clear_timers">
+<code class="descname">clear_timers</code><span class="sig-paren">(</span><em>worker_ids: Set[Any]</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerServer.clear_timers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerServer.clear_timers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears all timers for the given <code class="docutils literal notranslate"><span class="pre">worker_ids</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="torchelastic.timer.TimerServer.get_expired_timers">
+<code class="descname">get_expired_timers</code><span class="sig-paren">(</span><em>deadline: float</em><span class="sig-paren">)</span> &#x2192; Dict[str, List[torchelastic.timer.api.TimerRequest]]<a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerServer.get_expired_timers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerServer.get_expired_timers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns all expired timers for each worker_id. An expired timer
+is a timer for which the expiration_time is less than or equal to
+the provided deadline.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="torchelastic.timer.TimerServer.register_timers">
+<code class="descname">register_timers</code><span class="sig-paren">(</span><em>timer_requests: List[torchelastic.timer.api.TimerRequest]</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerServer.register_timers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerServer.register_timers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Processes the incoming timer requests and registers them with the server.
+The timer request can either be a acquire-timer or release-timer request.
+Timer requests with a negative expiration_time should be interpreted
+as a release-timer request.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="torchelastic.timer.TimerClient">
+<em class="property">class </em><code class="descclassname">torchelastic.timer.</code><code class="descname">TimerClient</code><a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerClient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerClient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Client library to acquire and release countdown timers by communicating
+with the TimerServer.</p>
+<dl class="method">
+<dt id="torchelastic.timer.TimerClient.acquire">
+<code class="descname">acquire</code><span class="sig-paren">(</span><em>scope_id: str</em>, <em>expiration_time: float</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerClient.acquire"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerClient.acquire" title="Permalink to this definition">¶</a></dt>
+<dd><p>Acquires a timer for the worker that holds this client object
+given the scope_id and expiration_time. Typically registers
+the timer with the TimerServer.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="torchelastic.timer.TimerClient.release">
+<code class="descname">release</code><span class="sig-paren">(</span><em>scope_id: str</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerClient.release"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerClient.release" title="Permalink to this definition">¶</a></dt>
+<dd><p>Releases the timer for the <code class="docutils literal notranslate"><span class="pre">scope_id</span></code> on the worker this
+client represents. After this method is
+called, the countdown timer on the scope is no longer in effect.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+             </article>
+             
+            </div>
+            <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="rendezvous.html" class="btn btn-neutral float-right" title="Rendezvous" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+      
+      
+        <a href="agent.html" class="btn btn-neutral" title="Elastic Agent" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+      
+    </div>
+  
+
+  
+
+    <hr>
+
+  
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, PyTorch Elastic Contributors.
+
+    </p>
+  </div>
+    
+      <div>
+        Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+      </div>
+     
+
+</footer>
+
+          </div>
+        </div>
+
+        <div class="pytorch-content-right" id="pytorch-content-right">
+          <div class="pytorch-right-menu" id="pytorch-right-menu">
+            <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
+              <ul>
+<li><a class="reference internal" href="#">Expiration Timers</a><ul>
+<li><a class="reference internal" href="#client-methods">Client Methods</a></li>
+<li><a class="reference internal" href="#server-client-implementations">Server/Client Implementations</a></li>
+<li><a class="reference internal" href="#writing-a-custom-timer-server-client">Writing a custom timer server/client</a></li>
+</ul>
+</li>
+</ul>
+
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  
+
+
+  
+
+     
+       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+         <script type="text/javascript" src="_static/jquery.js"></script>
+         <script type="text/javascript" src="_static/underscore.js"></script>
+         <script type="text/javascript" src="_static/doctools.js"></script>
+         <script type="text/javascript" src="_static/language_data.js"></script>
+         <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js"></script>
+         <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js"></script>
+         <script type="text/javascript" src="_static/katex_autorenderer.js"></script>
+     
+
+  
+
+  <script type="text/javascript" src="_static/js/vendor/popper.min.js"></script>
+  <script type="text/javascript" src="_static/js/vendor/bootstrap.min.js"></script>
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+  <!-- Begin Footer -->
+
+  <div class="container-fluid docs-tutorials-resources" id="docs-tutorials-resources">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 text-center">
+          <h2>Docs</h2>
+          <p>Access comprehensive developer documentation for PyTorch</p>
+          <a class="with-right-arrow" href="https://pytorch.org/docs/stable/index.html">View Docs</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Tutorials</h2>
+          <p>Get in-depth tutorials for beginners and advanced developers</p>
+          <a class="with-right-arrow" href="https://pytorch.org/tutorials">View Tutorials</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Resources</h2>
+          <p>Find development resources and get your questions answered</p>
+          <a class="with-right-arrow" href="https://pytorch.org/resources">View Resources</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-logo-wrapper">
+        <a href="https://pytorch.org/" class="footer-logo"></a>
+      </div>
+
+      <div class="footer-links-wrapper">
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/">PyTorch</a></li>
+            <li><a href="https://pytorch.org/get-started">Get Started</a></li>
+            <li><a href="https://pytorch.org/features">Features</a></li>
+            <li><a href="https://pytorch.org/ecosystem">Ecosystem</a></li>
+            <li><a href="https://pytorch.org/blog/">Blog</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/blob/master/CONTRIBUTING.md">Contributing</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/resources">Resources</a></li>
+            <li><a href="https://pytorch.org/tutorials">Tutorials</a></li>
+            <li><a href="https://pytorch.org/docs/stable/index.html">Docs</a></li>
+            <li><a href="https://discuss.pytorch.org" target="_blank">Discuss</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/issues" target="_blank">Github Issues</a></li>
+            <li><a href="https://pytorch.org/assets/brand-guidelines/PyTorch-Brand-Guidelines.pdf" target="_blank">Brand Guidelines</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col follow-us-col">
+          <ul>
+            <li class="list-title">Stay Connected</li>
+            <li>
+              <div id="mc_embed_signup">
+                <form
+                  action="https://twitter.us14.list-manage.com/subscribe/post?u=75419c71fe0a935e53dfa4a3f&id=91d0dccd39"
+                  method="post"
+                  id="mc-embedded-subscribe-form"
+                  name="mc-embedded-subscribe-form"
+                  class="email-subscribe-form validate"
+                  target="_blank"
+                  novalidate>
+                  <div id="mc_embed_signup_scroll" class="email-subscribe-form-fields-wrapper">
+                    <div class="mc-field-group">
+                      <label for="mce-EMAIL" style="display:none;">Email Address</label>
+                      <input type="email" value="" name="EMAIL" class="required email" id="mce-EMAIL" placeholder="Email Address">
+                    </div>
+
+                    <div id="mce-responses" class="clear">
+                      <div class="response" id="mce-error-response" style="display:none"></div>
+                      <div class="response" id="mce-success-response" style="display:none"></div>
+                    </div>    <!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
+
+                    <div style="position: absolute; left: -5000px;" aria-hidden="true"><input type="text" name="b_75419c71fe0a935e53dfa4a3f_91d0dccd39" tabindex="-1" value=""></div>
+
+                    <div class="clear">
+                      <input type="submit" value="" name="subscribe" id="mc-embedded-subscribe" class="button email-subscribe-button">
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+            </li>
+          </ul>
+
+          <div class="footer-social-icons">
+            <a href="https://www.facebook.com/pytorch" target="_blank" class="facebook"></a>
+            <a href="https://twitter.com/pytorch" target="_blank" class="twitter"></a>
+            <a href="https://www.youtube.com/pytorch" target="_blank" class="youtube"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <div class="cookie-banner-wrapper">
+  <div class="container">
+    <p class="gdpr-notice">To analyze traffic and optimize your experience, we serve cookies on this site. By clicking or navigating, you agree to allow our usage of cookies. As the current maintainers of this site, Facebook’s Cookies Policy applies. Learn more, including about available controls: <a href="https://www.facebook.com/policies/cookies/">Cookies Policy</a>.</p>
+    <img class="close-button" src="_static/images/pytorch-x.svg">
+  </div>
+</div>
+
+  <!-- End Footer -->
+
+  <!-- Begin Mobile Menu -->
+
+  <div class="mobile-main-menu">
+    <div class="container-fluid">
+      <div class="container">
+        <div class="mobile-main-menu-header-container">
+          <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+          <a class="main-menu-close-button" href="#" data-behavior="close-mobile-menu"></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-main-menu-links-container">
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/features">Features</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/hub">PyTorch Hub</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/resources">Resources</a>
+          </li>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">Github</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- End Mobile Menu -->
+
+  <script type="text/javascript" src="_static/js/vendor/anchor.min.js"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function() {
+      mobileMenu.bind();
+      mobileTOC.bind();
+      pytorchAnchors.bind();
+      sideMenus.bind();
+      scrollToAnchor.bind();
+      highlightNavigation.bind();
+      mainMenuDropdown.bind();
+
+      // Add class to links that have code blocks, since we cannot create links in code blocks
+      $("article.pytorch-article a span.pre").each(function(e) {
+        $(this).closest("a").addClass("has-code");
+      });
+    })
+  </script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 ---
 layout: docs_redirect
 title: PyTorch | Redirect
-redirect_url: "/elastic/0.1.0rc2/checkpoint.html"
+redirect_url: "/elastic/0.2.0rc0/distributed.html"
 ---
