@@ -7,7 +7,6 @@
 # LICENSE file in the root directory of this source tree.
 
 
-import json
 import logging
 import os
 import socket
@@ -21,7 +20,6 @@ import torch.distributed as dist
 import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
 from torchelastic import metrics
 from torchelastic.coordinator import Coordinator, NonRetryableException, StopException
-from torchelastic.event_logger import get_event_logger
 from torchelastic.rendezvous import (
     RendezvousClosedException,
     RendezvousHandler,
@@ -70,17 +68,10 @@ class CoordinatorP2P(Coordinator):
         self.monitor_progress_step = 0
         self.host_name = socket.gethostname()
         self.pid = os.getpid()
-        self.event_logger = get_event_logger()
         metrics.initialize_metrics()
 
     def _log_event(self, event_name, message=None):
-        if message is None:
-            message = {}
-        message["event_name"] = event_name
-        message["host_name"] = self.host_name
-        message["pid"] = self.pid
-        message["rank"] = self.rank
-        self.event_logger.log_event(event_name, json.dumps(message))
+        pass
 
     def _destroy_process_group(self):
         if dist.is_initialized():
@@ -92,19 +83,15 @@ class CoordinatorP2P(Coordinator):
     def rendezvous_barrier(self):
         self._destroy_process_group()
         try:
-            self._log_event("rendezvous_started")
             self.store, self.rank, self.world_size = self.rendezvous.next_rendezvous()
-            self._log_event("rendezvous_succeeded", {"word_size": self.world_size})
         except RendezvousClosedException:
             # Sets the local variable to True
-            self._log_event("rendezvous_closed")
             self.stop_training = True
             raise StopException(
                 "Rank {0} received RendezvousClosedException."
                 " Raising a StopException".format(self.rank)
             )
         except RendezvousTimeoutException as e:
-            self._log_event("rendezvous_failed_timeout")
             raise NonRetryableException(
                 "Rank {0} received a timeout Exception. "
                 "This indicates that workers were permanently stuck."
@@ -112,7 +99,6 @@ class CoordinatorP2P(Coordinator):
                 "Detailed message: {1}".format(self.rank, str(e))
             )
         except Exception as e:
-            self._log_event("rendezvous_failed")
             raise NonRetryableException(
                 "Rank {0} received an Exception."
                 " Detailed message: {1}".format(self.rank, str(e))
@@ -266,7 +252,6 @@ class CoordinatorP2P(Coordinator):
 
     @metrics.profile("torchelastic")
     def on_error(self, e):
-        self._log_event("train_step_runtime_error", {"error": str(e)})
         log.error(
             "Rank: {0}\n"
             "Error: {1}\n"
