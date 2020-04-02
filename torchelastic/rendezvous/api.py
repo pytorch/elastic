@@ -52,6 +52,7 @@ class RendezvousHandler(abc.ABC):
     """
 
     @abc.abstractmethod
+    # pyre-fixme[11]: Annotation `Store` is not defined as a type.
     def next_rendezvous(self) -> Tuple["torch.distributed.Store", int, int]:
         """
         Main entry-point into the rendezvous barrier.

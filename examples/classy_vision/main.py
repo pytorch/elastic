@@ -24,6 +24,8 @@ from classy_vision.hooks import (
     TimeMetricsHook,
 )
 from classy_vision.tasks import FineTuningTask, build_task
+
+# pyre-fixme[21]: Could not find `elastic_trainer`.
 from classy_vision.trainer.elastic_trainer import ElasticTrainer
 from torch.distributed import Backend
 from torchelastic.p2p import CoordinatorP2P

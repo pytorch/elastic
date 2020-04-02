@@ -918,6 +918,7 @@ class EtcdRendezvous(object):
         return EtcdStore(etcd_client=self.client, etcd_store_prefix=store_path)
 
 
+# pyre-fixme[11]: Annotation `Store` is not defined as a type.
 class EtcdStore(Store):
     """
     Implements a c10 Store interface by piggybacking on the rendezvous etcd instance.

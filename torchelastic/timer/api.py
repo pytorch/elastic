@@ -217,6 +217,7 @@ class TimerServer(abc.ABC):
             target=self._watchdog_loop, daemon=self._daemon
         )
         logging.info(f"Starting watchdog thread...")
+        # pyre-fixme[16]: Optional type has no attribute `start`.
         self._watchdog_thread.start()
 
     def stop(self) -> None:
@@ -224,6 +225,7 @@ class TimerServer(abc.ABC):
         self._stop_signaled = True
         if self._watchdog_thread:
             logging.info(f"Stopping watchdog thread...")
+            # pyre-fixme[16]: Optional type has no attribute `join`.
             self._watchdog_thread.join(self._max_interval)
             self._watchdog_thread = None
         else:
@@ -243,6 +245,8 @@ def configure(timer_client: TimerClient):
 
 
 @contextmanager
+# pyre-fixme[9]: scope has type `str`; used as `None`.
+# pyre-fixme[9]: client has type `TimerClient`; used as `None`.
 def expires(after: float, scope: str = None, client: TimerClient = None) -> None:
     """
     Acquires a countdown timer that expires in ``after`` seconds from now,
@@ -264,6 +268,7 @@ def expires(after: float, scope: str = None, client: TimerClient = None) -> None
     if client is None:
         if _timer_client is None:
             raise RuntimeError("Configure timer client before using coundown timers.")
+        # pyre-fixme[9]: client has type `TimerClient`; used as `None`.
         client = _timer_client
     if scope is None:
         # grab the caller file + lineno
@@ -272,6 +277,7 @@ def expires(after: float, scope: str = None, client: TimerClient = None) -> None
     expiration = time.time() + after
     client.acquire(scope, expiration)
     try:
+        # pyre-fixme[7]: Expected `None` but got `Generator[None, None, None]`.
         yield
     finally:
         client.release(scope)

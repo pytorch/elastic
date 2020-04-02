@@ -115,10 +115,12 @@ class Worker:
         #  rank of the worker among all the workers with the same role
         #  across all ``agent`` instances.
         #  Global rank is not stable between re-rendezvous.
+        # pyre-fixme[8]: Attribute has type `int`; used as `None`.
         self.global_rank: int = None
 
         # total number of workers (globally). Due to elasticity
         # the world size may change between re-rendezvous.
+        # pyre-fixme[8]: Attribute has type `int`; used as `None`.
         self.world_size: int = None
 
 
@@ -214,10 +216,13 @@ class MonitorResult:
     def __init__(
         self,
         state: WorkerState,
+        # pyre-fixme[9]: ret_vals has type `Dict[int, typing.Any]`; used as `None`.
         ret_vals: Dict[int, Any] = None,
+        # pyre-fixme[9]: exceptions has type `Dict[int, Exception]`; used as `None`.
         exceptions: Dict[int, Exception] = None,
     ):
         self.state = state
+        # pyre-fixme[8]: Attribute has type `Dict[int, typing.Any]`; used as `None`.
         self.ret_vals = ret_vals
         self.exceptions = exceptions
 
@@ -259,6 +264,7 @@ def _get_socket_with_port() -> socket.socket:
         func(port)
     """
 
+    # pyre-fixme[28]: Unexpected keyword argument `type`.
     addrs = socket.getaddrinfo(
         host="localhost", port=None, family=socket.AF_UNSPEC, type=socket.SOCK_STREAM
     )
@@ -354,6 +360,8 @@ class SimpleElasticAgent(ElasticAgent):
         self._worker_group = WorkerGroup(spec)
         self._remaining_restarts = self._worker_group.spec.max_restarts
 
+    # pyre-fixme[14]: `get_worker_group` overrides method defined in `ElasticAgent`
+    #  inconsistently.
     def get_worker_group(self) -> WorkerGroup:
         # TODO return an RO copy (need to create an ROWorkerGroup and ROWorkerSpec
         # since both these classes contain non-pure-data pointers - e.g. rdzv_handler)

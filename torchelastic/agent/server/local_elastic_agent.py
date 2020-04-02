@@ -116,6 +116,7 @@ class LocalElasticAgent(SimpleElasticAgent):
     def __init__(self, spec: WorkerSpec, start_method="spawn"):
         super().__init__(spec)
         self._start_method = start_method
+        # pyre-fixme[8]: Attribute has type `ProcessContext`; used as `None`.
         self._process_context: mp.ProcessContext = None
         # a map that holds return values for each worker fn
         # ret_val[0] holds the return value for worker_0 (global rank 0)
