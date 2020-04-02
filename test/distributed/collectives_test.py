@@ -23,6 +23,8 @@ log = logging.getLogger(__name__)
 
 
 def compute_checksum(data: np.ndarray) -> bytes:
+    # pyre-fixme[6]: Expected `Union[bytearray, bytes, memoryview]` for 1st param
+    #  but got `ndarray`.
     return md5(data).hexdigest().encode("utf-8")
 
 

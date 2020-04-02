@@ -97,6 +97,8 @@ class TestAgent(SimpleElasticAgent):
         self.start_workers_call_count += 1
         return ids
 
+    # pyre-fixme[15]: `_monitor_workers` overrides method defined in
+    #  `SimpleElasticAgent` inconsistently.
     def _monitor_workers(self, worker_group: WorkerGroup) -> WorkerState:
         raise NotImplementedError("mock this method")
 

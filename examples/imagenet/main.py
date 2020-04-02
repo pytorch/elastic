@@ -282,6 +282,8 @@ def train_step(state: ImagenetState):
     """
 
     start = time.time()
+    # pyre-fixme[23]: Unable to unpack `_T` into 2 values.
+    # pyre-fixme[16]: `ImagenetState` has no attribute `data_iter`.
     input, target = next(state.data_iter)
 
     # This is needed because the world size may change between iterations
@@ -290,8 +292,10 @@ def train_step(state: ImagenetState):
     adjust_learning_rate(
         world_size,
         state.params,
+        # pyre-fixme[16]: `ImagenetState` has no attribute `optimizer`.
         state.optimizer,
         state.epoch,
+        # pyre-fixme[16]: `ImagenetState` has no attribute `data_loader`.
         len(state.data_loader),
         state.iteration,
     )
@@ -301,7 +305,9 @@ def train_step(state: ImagenetState):
     target_var = torch.autograd.Variable(target)
 
     # Compute output
+    # pyre-fixme[16]: `ImagenetState` has no attribute `dist_model`.
     output = state.dist_model(input_var)
+    # pyre-fixme[16]: `ImagenetState` has no attribute `criterion`.
     loss = state.criterion(output, target_var)
 
     # Compute gradient and do SGD step
