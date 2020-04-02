@@ -624,60 +624,6 @@ class ElasticTrainerTestBase(TestCommon, abc.ABC):
         # are retryable / non-fatal
         self.assertEqual([410, 410, 410, 410], sums)
 
-    def test_checkpoint(self):
-        """
-        Test with 4 trainers:
-            - Save checkpoint every train_step
-            - Trainers suicide at 3rd step
-            - Restart training (from checkpoint)
-        """
-
-        def process_crash():
-            log.warning("Suicide, pid:{}".format(os.getpid()))
-            os.kill(os.getpid(), signal.SIGKILL)
-
-        hooks = {"process_crash": process_crash}
-        run_id = self._generate_run_id()
-
-        nprocs = 4
-
-        # Before training, there is no checkpoint
-        checkpoint_manager = FileSystemCheckpointManager(self.test_dir.name)
-        self.assertEqual(0, len(checkpoint_manager.list_checkpoints()))
-
-        for _ in range(0, nprocs):
-            _, qout, qerr = self._spawn(
-                self._train_with_checkpoint, run_id, _train_step, hooks
-            )
-
-        # wait all training process complete
-        # clean up for next run
-        self._wait_all_and_clean()
-
-        # we run 2 steps before suicide, expect two checkpoints be saved
-        self.assertEqual(2, len(checkpoint_manager.list_checkpoints()))
-
-        qouts = []
-        qerrs = []
-        # start next run
-        for _ in range(0, nprocs):
-            _, qout, qerr = self._spawn(
-                self._train_with_checkpoint, run_id, _train_step, None
-            )
-            qouts.append(qout)
-            qerrs.append(qerr)
-
-        # Gather all nums and sums from final states, they should match the input
-        sums = []
-        for i in range(0, nprocs):
-            state = _get_or_raise(qouts[i], qerrs[i])
-            # Everyone reads 3 samples after recovering from checkpoint:
-            self.assertEqual(3, len(state.nums))
-            sums.append(state.total_sum)
-
-        # The job should be completely recovered through checkpoints / crashes:
-        self.assertEqual([410, 410, 410, 410], sums)
-
     def test_process_crash(self):
         """
         Test 4 trainers, 2 of which SIGKILL themselves and terminate.

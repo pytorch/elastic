@@ -11,7 +11,6 @@ import time
 import warnings
 
 import torchelastic
-from torchelastic.checkpoint import CheckpointUtil
 from torchelastic.coordinator import NonRetryableException, StopException
 from torchelastic.metrics import get_elapsed_time_ms, publish_metric
 
@@ -69,8 +68,6 @@ def run_train(coordinator, train_step_gen, state):
     failure_count = 0
     rank = 0
 
-    checkpoint_util = CheckpointUtil(coordinator)
-
     while not coordinator.should_stop_training():
         # See: https://github.com/pytorch/elastic/issues/7
         if failure_count >= MAX_FAILURES:
@@ -90,9 +87,6 @@ def run_train(coordinator, train_step_gen, state):
             # does not sync.
             coordinator.barrier()
 
-            # load checkpoint if necessary
-            state = checkpoint_util.load_checkpoint(state, rank)
-
             state_sync_start_time = time.time()
             state.sync(world_size, rank)
             publish_metric(
@@ -100,7 +94,7 @@ def run_train(coordinator, train_step_gen, state):
                 "state_sync.duration.ms",
                 get_elapsed_time_ms(state_sync_start_time),
             )
-            checkpoint_util.set_checkpoint_loaded()
+
             coordinator.barrier()
             log.info("Rank {0} synced state with other nodes".format(rank))
         except StopException:
@@ -140,7 +134,6 @@ def run_train(coordinator, train_step_gen, state):
 
                 coordinator.monitor_progress(state, worker_stats)
 
-                checkpoint_util.save_checkpoint(state, rank)
                 if coordinator.should_rendezvous(state):
                     log.info("Rank {0} will re-rendezvous".format(rank))
                     # Executor told us, for whatever reason, to re-rendezvous.
