@@ -10,7 +10,6 @@ import abc
 import logging
 from typing import List
 
-import torchelastic.distributed as edist
 import torchelastic.metrics as metrics
 
 
@@ -82,33 +81,7 @@ class CheckpointUtil:
 
     @metrics.profile("torchelastic")
     def load_checkpoint(self, state, rank: int):
-        """
-        Loads checkpoint if the checkpoint manager has been configured and
-        at least one worker has already loaded the checkpoint
-        """
-        if not self.checkpoint_manager:
-            # checkpoint not enabled
-            return state
-
-        # all gather `checkpoint_loaded` from all trainers, return true
-        # if any trainer have ever loaded checkpoint
-        any_checkpoint_loaded = (
-            edist.all_gather_return_max_long(1 if self.checkpoint_loaded else 0) == 1
-        )
-
-        if any_checkpoint_loaded:
-            # checkpoint already loaded by one of the existing trainer
-            return state
-
-        # we load checkpoint only if all trainers start from scratch. it is
-        # not necessary to load checkpoint if there is a good trainer as new
-        # trainer can sync state from it.
-        # Start with simple scenario, we always ask one single trainer to
-        # load checkpoint and other trainer sync from it
-        if rank == 0:
-            state = self._do_load_checkpoint(state)
-
-        return state
+        return self._do_load_checkpoint(state)
 
     def set_checkpoint_loaded(self):
         """
