@@ -27,10 +27,8 @@ from test_mocks import (
     TestStateFailOnSync,
     TestStateWithRollbackDisabled,
     TestWorkerStats,
-    test_checkpoint_manager,
 )
 from test_utils import TestCommon, _get_or_raise
-from torchelastic.checkpoint import FileSystemCheckpointManager
 from torchelastic.coordinator import NonRetryableException
 from torchelastic.p2p.coordinator_p2p import CoordinatorP2P
 
@@ -157,22 +155,6 @@ class ElasticTrainerTestBase(TestCommon, abc.ABC):
         return self._train_common(
             _, elastic_coordinator, train_step, hooks, state_override
         )
-
-    def _train_with_checkpoint(self, _, run_id, train_step, hooks, state_override=None):
-        """
-        Train with checkpoint loading/saving
-        """
-        with test_checkpoint_manager(self.test_dir.name):
-            elastic_coordinator = TestCoordinatorP2P(
-                c10d_backend="gloo",
-                init_method=self.get_rdzv_url(run_id, self.min_size, self.max_size),
-                max_num_trainers=self.max_size,
-                process_group_timeout=10000,
-            )
-            state = self._train_common(
-                _, elastic_coordinator, train_step, hooks, state_override
-            )
-            return state
 
     def _train_with_worker_stats(
         self,

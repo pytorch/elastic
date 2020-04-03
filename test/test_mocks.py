@@ -13,11 +13,6 @@ from contextlib import contextmanager
 
 import torch
 import torch.distributed as dist
-from torchelastic.checkpoint import (
-    FileSystemCheckpointManager,
-    get_checkpoint_manager,
-    set_checkpoint_manager,
-)
 from torchelastic.p2p.coordinator_p2p import CoordinatorP2P
 from torchelastic.state import State
 from torchelastic.worker_stats import WorkerStats
@@ -270,16 +265,6 @@ class TestWorkerStats(WorkerStats):
 
     def get_progress_rate(self):
         return self.progress_rate
-
-
-@contextmanager
-def test_checkpoint_manager(checkpoint_folder):
-    # Code to acquire resource, e.g.:
-    checkpoint_manager = FileSystemCheckpointManager(checkpoint_folder)
-    old_checkpoint_manager = get_checkpoint_manager()
-    set_checkpoint_manager(checkpoint_manager)
-    yield
-    set_checkpoint_manager(old_checkpoint_manager)
 
 
 class TestCoordinatorP2P(CoordinatorP2P):
