@@ -1,4 +1,4 @@
-# TorchElastic Operator on Kubernetes
+# TorchElastic Controller for Kubernetes
 
 ## Background
 
@@ -18,7 +18,7 @@ Cost and GPU utilization will be further optimized with this feature, since user
 
 ## User Experience
 
-* Users should define the `minReplicas` and `maxReplicas` number of tasks of a job instead of a fixed number. The TorchElastic Operator will launch jobs in Kubernetes, setup the needed network topology and manage the job lifecycle.
+* Users should define the `minReplicas` and `maxReplicas` number of tasks of a job instead of a fixed number. TorchElastic controller will launch jobs in Kubernetes, setup the needed network topology and manage the job lifecycle.
 * Users need to specify the etcd endpoint used as the RDZV service for task coordination.
 * The desired `spec.replicaSpecs[Worker].replicas`, being number of tasks, has to be within the range from `minReplicas` to `maxReplicas`.
 * Users can easily create/delete a torch elastic job using `kubectl` using a job manifest.
@@ -174,6 +174,6 @@ Events:
 
 ## Not in scope
 
-TorchElastic Operator can simplify the setups to run torch elastic jobs and manage entire job lifecycle. It is hard for the controller to monitor cluster resources and dynamically adjust the task size. Instead, having a separate component like a batch scheduler to make the decision is a better option at this stage, to limit the scope of this project.
+TorchElastic Controller for Kubernetes can simplify the setups to run torch elastic jobs and manage entire job lifecycle. It is hard for the controller to monitor cluster resources and dynamically adjust the task size. Instead, having a separate component like a batch scheduler to make the decision is a better option at this stage, to limit the scope of this project.
 
-Currently, operator has to accept an etcd service as `rdzvEndpoint`. We may consider to make this field optional and provide etcd service by controller if it's not set.
+Currently, for each `ElasticJob`, it has to accept an etcd service as `rdzvEndpoint`. We may consider to make this field optional and provide etcd service by controller if it's not set.

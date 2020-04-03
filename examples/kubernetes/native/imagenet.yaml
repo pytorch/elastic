@@ -11,7 +11,7 @@ spec:
   - name: elastic-trainer-worker
     image: torchelastic/examples:0.1.0rc1
     args:
-    - "s3://<BUCKET>/petctl/<USER>/<JOB_ID>/main.py"
+    - "/workspace/examples/imagenet/main.py"
     - "--input_path"
     - "/data/tiny-imagenet-200/train"
     - "--epochs"
@@ -68,7 +68,7 @@ spec:
   - name: elastic-trainer-worker
     image: torchelastic/examples:0.1.0rc1
     args:
-    - "s3://<BUCKET>/petctl/<USER>/<JOB_ID>/main.py"
+    - "/workspace/examples/imagenet/main.py"
     - "--input_path"
     - "/data/tiny-imagenet-200/train"
     - "--epochs"

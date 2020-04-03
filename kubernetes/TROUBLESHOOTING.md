@@ -1,12 +1,12 @@
 ## Trouble shooting
 
-This doc is aimed at making operator work right. 
+This doc is aimed at making controller work right.
 It covers sections to debug why controller is not working in Kubernetes and the ways to debug your application failure.  
 
 
 ### Listing your controller pods 
 
-The first thing to debug in your cluster is if your operator has been installed correctly.
+The first thing to debug in your cluster is if your controller has been installed correctly.
 Verify that all pods you expect to see are present and they're in `Ready` state. 
 
 
@@ -30,7 +30,7 @@ If something is wrong on the pod, you can run follow command to get detailed inf
 
 ### Listing your cluster roles
 
-torch elastic operator need to watch `Pods`, `Services`, `ElasticJob` etc to take action on events from resource change.
+TorchElastic Controller for Kubernetes needs to watch `Pods`, `Services`, `ElasticJob` etc to take action on events from resource change.
 If you didn't apply cluster roles, role bindings or carelessly delete roles operator needs, you may see error like this. 
 
 

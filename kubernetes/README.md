@@ -1,8 +1,8 @@
-## Torch elastic k8s controller
+## TorchElastic Controller for Kubernetes
 
 ## Overview
 
-Torch elastic k8s controller managed a Kubernetes custom resource `ElasticJob` and makes it easy to
+TorchElastic Controller for Kubernetes manages a Kubernetes custom resource `ElasticJob` and makes it easy to
 run Torch Elastic workloads on Kubernetes.   
 
 ### Prerequisites
@@ -37,7 +37,7 @@ In order to enable GPU support in your EKS cluster, deploy the following Daemons
 kubectl create -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta4/nvidia-device-plugin.yml
 ```
 
-### Installing the ElasticJob CRD and operator on your k8s cluster
+### Installing the ElasticJob CRD and controller on your k8s cluster
 
 ```shell
 kustomize build config/default  | kubectl apply -f -
@@ -104,50 +104,46 @@ kubectl logs -f elastic-job-k8s-controller-6d4884c75b-z22cm -n elastic-job
 
 ### Deploy a ElasticJob
 
-In the following example, training container will download training code from S3. Your need to attach `AmazonS3ReadOnlyAccess` 
-policy to your node group role to grant the permission.
- 
-Create an etcd instance and service for rdzvEndpoint, it will expose a Kubernetes service `etcd-service` with port `2379`.
-```
-kubectl apply -f config/samples/etcd.yaml
-``` 
- 
-Build your own trainer image 
+1. Create an etcd instance and service for rdzvEndpoint, it will expose a Kubernetes service `etcd-service` with port `2379`.
+    ```
+    kubectl apply -f config/samples/etcd.yaml
+    ```
 
-```
-export DOCKERHUB_USER=<your_dockerhub_username>
-cd kubernetes/config/samples
+1. Build your own trainer image
+    ```
+    export DOCKERHUB_USER=<your_dockerhub_username>
+    cd kubernetes/config/samples
 
-docker build -t $DOCKERHUB_USER/examples:imagenet .
-docker push $DOCKERHUB_USER/examples:imagenet
-```
+    docker build -t $DOCKERHUB_USER/examples:imagenet .
+    docker push $DOCKERHUB_USER/examples:imagenet
+    ```
 
-Update `config/samples/imagenet.yaml` to use your image, scripts and rdzvEndpoint. 
+1. Update `config/samples/imagenet.yaml` to use your image and rdzvEndpoint.
 
+1. Submit the training job.
 
-Submit the training job. 
-```yaml
-kubectl apply -f config/samples/imagenet.yaml
-```
+    ```
+    kubectl apply -f config/samples/imagenet.yaml
+    ```
 
-As you can see, training pod and headless services have been created.
-```yaml
-$ kubectl get pods -n elastic-job
-NAME                                          READY   STATUS    RESTARTS   AGE
-elastic-job-k8s-controller-6d4884c75b-z22cm   1/1     Running   0          11m
-imagenet-worker-0                             1/1     Running   0          5s
-imagenet-worker-1                             1/1     Running   0          5s
+    As you can see, training pod and headless services have been created.
+    ```yaml
+    $ kubectl get pods -n elastic-job
+    NAME                                          READY   STATUS    RESTARTS   AGE
+    elastic-job-k8s-controller-6d4884c75b-z22cm   1/1     Running   0          11m
+    imagenet-worker-0                             1/1     Running   0          5s
+    imagenet-worker-1                             1/1     Running   0          5s
 
-$ kubectl get svc -n elastic-job
-NAME                TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)     AGE
-imagenet-worker-0   ClusterIP   None         <none>        10291/TCP   34s
-imagenet-worker-1   ClusterIP   None         <none>        10291/TCP   34s
-```
+    $ kubectl get svc -n elastic-job
+    NAME                TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)     AGE
+    imagenet-worker-0   ClusterIP   None         <none>        10291/TCP   34s
+    imagenet-worker-1   ClusterIP   None         <none>        10291/TCP   34s
+    ```
 
-You can adjust desired replica `.spec.replicaSpecs[Worker].replicas` and apply change to k8s. 
-```
-kubectl apply -f config/samples/imagenet.yaml
-```
+1. You can adjust desired replica `.spec.replicaSpecs[Worker].replicas` and apply change to k8s.
+    ```
+    kubectl apply -f config/samples/imagenet.yaml
+    ```
 
 ### Monitoring jobs
 
@@ -185,7 +181,7 @@ Spec:
         Spec:
           Containers:
             Args:
-              s3://torchelastic-shjiaxin-1h71m-s3bucket-m1b9b9pjldqw/petctl/shjiaxin/imagenet-job/main.py
+              /workspace/examples/imagenet/main.py
               --input_path
               /data/tiny-imagenet-200/train
               --epochs

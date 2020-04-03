@@ -89,7 +89,7 @@ spec:
     - "-c"
     - |
       /bin/bash <<'EOF'
-      yum update
+      yum update -y
       yum install -y wget unzip
       wget http://cs231n.stanford.edu/tiny-imagenet-200.zip
       unzip tiny-imagenet-200.zip -d /data
@@ -115,29 +115,6 @@ $ kubectl apply -f etcd.yaml
 ```
 
 ### Launch torchelastic job
-
-#### Update training scripts location
-
-In this example, we'd like to reuse container image `torchelastic/examples:0.1.0rc1`, then we need to upload training scripts [main.py](../examples/imagenet/main.py) to a S3 bucket. In addition, args in `imagenet.yaml` needs to be updated as well. Please update `s3://<BUCKET>/petctl/<USER>/<JOB_ID>/main.py` to the your file location.
-
-``` bash
-containers:
-  - name: elastic-trainer-worker
-    image: torchelastic/examples:0.1.0rc1
-    args:
-    - "s3://<BUCKET>/petctl/<USER>/<JOB_ID>/main.py"
-    - "--input_path"
-    ....
-    ....
-```
-
-> Note: You can export env `BUCKET`, `USER`, `JOB_ID` and replace values in the file.
-
-```
-sed -i '' 's/<BUCKET>/'"$BUCKET"'/; s/<USER>/'"$USER"'/; s/<JOB_ID>/'"$JOB_ID"'/;' imagenet.yaml
-```
-
-> Note: If you don't like to use S3 or use a different cloud provider, please modify [Dockerfile](../examples/Dockerfile) and create your own container image.
 
 #### Attach S3 access to EKS worker nodes
 
