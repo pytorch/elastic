@@ -6,444 +6,466 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+r"""
+Source: `pytorch imagenet example <https://github.com/pytorch/examples/blob/master/imagenet/main.py>`_ # noqa B950
+
+Modified and simplified to make the original pytorch example compatible with
+torchelastic.distributed.launch.
+
+Changes:
+
+1. Removed ``rank``, ``gpu``, ``multiprocessing-distributed``, ``dist_url`` options.
+   These are obsolete parameters when using ``torchelastic.distributed.launch``.
+
+2. Removed ``seed``, ``evaluate``, ``pretrained`` options for simplicity.
+
+3. Removed ``resume``, ``start-epoch`` options.
+   Loads the most recent checkpoint by default.
+
+4. ``batch-size`` is now per GPU (worker) batch size rather than for all GPUs.
+
+5. Defaults ``workers`` (num data loader workers) to ``0``.
+
+Usage
+
+::
+
+ >>> python -m torchelastic.distributed.launch
+        --nnodes=$NUM_NODES
+        --nproc_per_node=$WORKERS_PER_NODE
+        --rdzv_id=$JOB_ID
+        --rdzv_backend=etcd
+        --rdzv_endpoint=$ETCD_HOST:$ETCD_PORT
+        main.py
+        --arch resnet18
+        --epochs 20
+        --batch-size 32
+        <DATA_DIR>
+"""
+
 import argparse
-import copy
-import io
-import logging
 import os
+import shutil
 import time
-import typing
+from typing import List, Tuple
 
 import torch
+import torch.backends.cudnn as cudnn
 import torch.distributed as dist
-import torch.multiprocessing as mp
 import torch.nn as nn
 import torch.nn.parallel
 import torch.optim
 import torch.utils.data
 import torch.utils.data.distributed
-import torchelastic
-import torchelastic.distributed as edist
 import torchvision.datasets as datasets
 import torchvision.models as models
 import torchvision.transforms as transforms
-from torch.nn.parameter import Parameter
-from torchelastic.p2p.coordinator_p2p import CoordinatorP2P
-from torchelastic.utils.data import CyclingIterator, ElasticDistributedSampler
-from torchvision.models.resnet import BasicBlock, Bottleneck
+from torch.nn.parallel import DistributedDataParallel
+from torch.optim import SGD
+from torch.utils.data import DataLoader
+from torchelastic.utils.data import ElasticDistributedSampler
 
 
-log = logging.getLogger(__name__)
-log.setLevel(logging.INFO)
-logging.basicConfig(
-    level=logging.INFO, format="[%(levelname)s] %(asctime)s %(module)s: %(message)s"
+model_names = sorted(
+    name
+    for name in models.__dict__
+    if name.islower() and not name.startswith("__") and callable(models.__dict__[name])
+)
+
+parser = argparse.ArgumentParser(description="PyTorch Elastic ImageNet Training")
+parser.add_argument("data", metavar="DIR", help="path to dataset")
+parser.add_argument(
+    "-a",
+    "--arch",
+    metavar="ARCH",
+    default="resnet18",
+    choices=model_names,
+    help="model architecture: " + " | ".join(model_names) + " (default: resnet18)",
+)
+parser.add_argument(
+    "-j",
+    "--workers",
+    default=0,
+    type=int,
+    metavar="N",
+    help="number of data loading workers",
+)
+parser.add_argument(
+    "--epochs", default=90, type=int, metavar="N", help="number of total epochs to run"
+)
+parser.add_argument(
+    "-b",
+    "--batch-size",
+    default=32,
+    type=int,
+    metavar="N",
+    help="mini-batch size (default: 32), per worker (GPU)",
+)
+parser.add_argument(
+    "--lr",
+    "--learning-rate",
+    default=0.1,
+    type=float,
+    metavar="LR",
+    help="initial learning rate",
+    dest="lr",
+)
+parser.add_argument("--momentum", default=0.9, type=float, metavar="M", help="momentum")
+parser.add_argument(
+    "--wd",
+    "--weight-decay",
+    default=1e-4,
+    type=float,
+    metavar="W",
+    help="weight decay (default: 1e-4)",
+    dest="weight_decay",
+)
+parser.add_argument(
+    "-p",
+    "--print-freq",
+    default=10,
+    type=int,
+    metavar="N",
+    help="print frequency (default: 10)",
+)
+parser.add_argument(
+    "--dist-backend",
+    default="nccl",
+    choices=["nccl", "gloo"],
+    type=str,
+    help="distributed backend",
+)
+parser.add_argument(
+    "--checkpoint-file",
+    default="checkpoint.pth.tar",
+    type=str,
+    help="checkpoint file path, to load and save to",
 )
 
 
-class TrainParams(typing.NamedTuple):
-    num_data_workers: int = 8
-    num_epochs: int = 90
-    base_learning_rate: float = 0.0125
-    batch_per_device: int = 32
-    benchmark_num_iter: int = 500
-    benchmark_ddp_bucket_size: int = 25
+def main():
+    args = parser.parse_args()
+
+    device_id = int(os.environ["LOCAL_RANK"])
+    torch.cuda.set_device(device_id)
+    dist.init_process_group(backend=args.dist_backend, init_method="env://")
+
+    model, criterion, optimizer = initialize_model(
+        args.arch, args.lr, args.momentum, args.weight_decay, device_id
+    )
+
+    # resume from checkpoint if one exists
+    start_epoch, best_acc1 = load_checkpoint(
+        args.checkpoint_file, device_id, model, optimizer
+    )
+    print(f"=> start_epoch: {start_epoch}, best_acc1: {best_acc1}")
+
+    train_loader, val_loader = initialize_data_loader(
+        args.data, args.batch_size, args.workers
+    )
+
+    print_freq = args.print_freq
+    for epoch in range(start_epoch, args.epochs):
+        train_loader.batch_sampler.set_epoch(epoch)
+        adjust_learning_rate(optimizer, epoch, args.lr)
+
+        # train for one epoch
+        train(train_loader, model, criterion, optimizer, epoch, device_id, print_freq)
+
+        # evaluate on validation set
+        acc1 = validate(val_loader, model, criterion, device_id, print_freq)
+
+        # remember best acc@1 and save checkpoint
+        is_best = acc1 > best_acc1
+        best_acc1 = max(acc1, best_acc1)
+
+        if device_id == 0:
+            save_checkpoint(
+                {
+                    "epoch": epoch + 1,
+                    "best_acc1": best_acc1,
+                    "arch": args.arch,
+                    "state_dict": model.state_dict(),
+                    "optimizer": optimizer.state_dict(),
+                },
+                is_best,
+                args.checkpoint_file,
+            )
 
 
-def adjust_learning_rate(world_size, params, optimizer, epoch, num_iter, iter_index):
-    """
-    Sets the learning rate to the initial LR decayed by 10 every 30 epochs
-    """
-
-    # Trick: lr scales linearly with world size with warmup
-    if epoch < 5:
-        lr_step = (world_size - 1) * params.base_learning_rate / (5.0 * num_iter)
-        lr = params.base_learning_rate + (epoch * num_iter + iter_index) * lr_step
-    elif epoch < 80:
-        lr = world_size * params.base_learning_rate * (0.1 ** (epoch // 30))
-    else:
-        lr = world_size * params.base_learning_rate * (0.1 ** 3)
-    for param_group in optimizer.param_groups:
-        lr_old = param_group["lr"]
-        param_group["lr"] = lr
-        # Trick: apply momentum correction when lr is updated
-        if lr > lr_old:
-            param_group["momentum"] = lr / lr_old * 0.9  # momentum
-        else:
-            param_group["momentum"] = 0.9  # default momentum
-    return
-
-
-class ImagenetState(torchelastic.State):
-    """
-    Client-provided State object; it is serializable and captures the entire
-    state needed for executing one iteration of training
-    """
-
-    def __init__(self, model, params, dataset, num_epochs, epoch=0):
-        self.model = model
-        self.params = params
-        self.dataset = dataset
-        self.total_batch_size = params.batch_per_device
-
-        self.num_epochs = num_epochs
-        self.epoch = epoch
-
-        self.iteration = 0
-        self.data_start_index = 0
-        self.model_state = {}
-
-    def sync(self, world_size, rank):
-        self._sync_state(rank)
-
-        # re-initialize model
-        self._init_model()
-
-        # re-initialize data loader
-        self._init_data_loader()
-
-        return self
-
-    def capture_snapshot(self):
-        # need only capture mutable fields
-        snapshot = {}
-        snapshot["epoch"] = self.epoch
-        snapshot["iteration"] = self.iteration
-        snapshot["data_start_index"] = self.data_start_index
-        snapshot["model_state"] = copy.deepcopy(self.model_state)
-        return snapshot
-
-    def apply_snapshot(self, snapshot):
-        self.epoch = snapshot["epoch"]
-        self.iteration = snapshot["iteration"]
-        self.data_start_index = snapshot["data_start_index"]
-        self.model_state = snapshot["model_state"]
-
-    def _sync_state(self, rank):
-        # broadcast from the max rank with the biggest start index
-        max_rank, _ = edist.all_gather_return_max_long(self.data_start_index)
-
-        # Broadcast the state from max_rank
-        buffer = io.BytesIO()
-        self.save(buffer)
-        state_tensor = torch.ByteTensor(list(buffer.getvalue()))
-        state_size = torch.LongTensor([state_tensor.size()])
-        dist.broadcast(state_size, src=max_rank)
-
-        if rank != max_rank:
-            state_tensor = torch.ByteTensor([0 for _ in range(state_size[0])])
-
-        dist.broadcast(state_tensor, src=max_rank)
-
-        buffer = io.BytesIO(state_tensor.numpy().tobytes())
-        self.load(buffer)
-
-        log.info(
-            f"Rank {rank}: Model state synced from rank: {max_rank}\n"
-            f"\tbatch_size={self.total_batch_size}\n"
-            f"\tnum_data_workers={self.params.num_data_workers}\n"
-            f"\tdata_start_index={self.data_start_index}\n"
-            f"\titeration={self.iteration}\n"
-            f"\tepoch={self.epoch}/{self.num_epochs}"
-        )
-
-    def _init_model(self):
-        local_rank = dist.get_rank() % torch.cuda.device_count()
-
-        self.dist_model = torch.nn.parallel.DistributedDataParallel(
-            self.model,
-            device_ids=[local_rank],  # Tells DDP to work on a single GPU
-            output_device=local_rank,  # Tells DDP to work on a single GPU
-            broadcast_buffers=False,
-            check_reduction=True,
-        )
-
-        self.criterion = nn.CrossEntropyLoss().cuda()
-        self.optimizer = torch.optim.SGD(
-            self.dist_model.parameters(),
-            self.params.base_learning_rate,
-            momentum=0.9,
-            weight_decay=1e-4,
-        )
-
-        if self.data_start_index > 0:
-            self.dist_model.load_state_dict(self.model_state)
-
-    def _data_iter_generator_fn(self, epoch):
-        self.epoch = epoch
-        sampler = ElasticDistributedSampler(
-            dataset=self.dataset,
-            num_replicas=dist.get_world_size(),
-            rank=dist.get_rank(),
-            start_index=self.data_start_index,
-        )
-        sampler.set_epoch(epoch)
-
-        num_data_workers = self.params.num_data_workers
-        self.data_loader = torch.utils.data.DataLoader(
-            self.dataset,
-            batch_size=self.total_batch_size,
-            shuffle=(sampler is None),
-            num_workers=num_data_workers,
-            pin_memory=True,
-            sampler=sampler,
-            multiprocessing_context=None if num_data_workers == 0 else "forkserver",
-        )
-
-        return iter(self.data_loader)
-
-    def _init_data_loader(self):
-        self.data_iter = CyclingIterator(
-            n=self.num_epochs,
-            generator_fn=self._data_iter_generator_fn,
-            start_epoch=self.epoch,
-        )
-
-
-def single_trainer(
-    local_rank,
-    max_world_size,
-    c10d_backend,
-    rdzv_init_url,
-    model_arch,
-    training_params,
-    input_path,
+def initialize_model(
+    arch: str, lr: float, momentum: float, weight_decay: float, device_id: int
 ):
-    """
-    Single GPU trainer that will only train on the GPU specified by local_rank
+    print(f"=> creating model: {arch}")
+    model = models.__dict__[arch]()
+    # For multiprocessing distributed, DistributedDataParallel constructor
+    # should always set the single device scope, otherwise,
+    # DistributedDataParallel will use all available devices.
+    model.cuda(device_id)
+    cudnn.benchmark = True
+    model = DistributedDataParallel(model, device_ids=[device_id])
+    # define loss function (criterion) and optimizer
+    criterion = nn.CrossEntropyLoss().cuda(device_id)
+    optimizer = SGD(
+        model.parameters(), lr, momentum=momentum, weight_decay=weight_decay
+    )
+    return model, criterion, optimizer
 
-    """
 
-    log.info(f"Loading data from: {input_path}")
+def initialize_data_loader(
+    data_dir, batch_size, num_data_workers
+) -> Tuple[DataLoader, DataLoader]:
+    traindir = os.path.join(data_dir, "train")
+    valdir = os.path.join(data_dir, "val")
     normalize = transforms.Normalize(
         mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
     )
-
     train_dataset = datasets.ImageFolder(
-        input_path,
+        traindir,
         transforms.Compose(
             [
+                # pyre-fixme[16]: Module `transforms` has no attribute
+                #  `RandomResizedCrop`.
                 transforms.RandomResizedCrop(224),
+                # pyre-fixme[16]: Module `transforms` has no attribute
+                #  `RandomHorizontalFlip`.
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 normalize,
             ]
         ),
     )
+    train_sampler = ElasticDistributedSampler(train_dataset)
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        num_workers=num_data_workers,
+        pin_memory=True,
+        sampler=train_sampler,
+    )
+    val_loader = DataLoader(
+        datasets.ImageFolder(
+            valdir,
+            transforms.Compose(
+                [
+                    transforms.Resize(256),
+                    transforms.CenterCrop(224),
+                    transforms.ToTensor(),
+                    normalize,
+                ]
+            ),
+        ),
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_data_workers,
+        pin_memory=True,
+    )
+    return train_loader, val_loader
 
-    log.info(f"Loading model: {model_arch}")
-    model = models.__dict__[model_arch]()
-    # Apply ResNet training in one hour's tricks to the model itself
-    # to maintain the accuracy
-    for m in model.modules():
-        # Trick 1: the last BatchNorm layer in each block need to
-        # be initialized as zero gamma
-        if isinstance(m, BasicBlock):
-            num_features = m.bn2.num_features
-            m.bn2.weight = Parameter(torch.zeros(num_features))
-            if isinstance(m, Bottleneck):
-                num_features = m.bn3.num_features
-                m.bn3.weight = Parameter(torch.zeros(num_features))
-            # Trick 2: linear layers are initialized by
-            # drawing weights from a zero-mean Gaussian with
-            # standard deviation of 0.01. In the paper it was only
-            # fc layer, but in practice we found this better for
-            # accuracy.
-            if isinstance(m, nn.Linear):
-                m.weight.data.normal_(0, 0.01)
 
+def load_checkpoint(
+    checkpoint_file: str,
+    device_id: int,
+    model: DistributedDataParallel,
+    optimizer,  # SGD
+) -> Tuple[int, float]:
+    start_epoch = 0
+    best_acc1 = 0
+    if os.path.isfile(checkpoint_file):
+        print(f"=> loading checkpoint: {checkpoint_file}")
+        # Map model to be loaded to specified single gpu.
+        checkpoint = torch.load(checkpoint_file, map_location=f"cuda:{device_id}")
+        start_epoch = checkpoint["epoch"]
+        best_acc1 = checkpoint["best_acc1"]
+        model.load_state_dict(checkpoint["state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer"])
+        print(f"=> loaded checkpoint: {checkpoint_file}")
+    return start_epoch, best_acc1
+
+
+def train(
+    train_loader: DataLoader,
+    model: DistributedDataParallel,
+    criterion,  # nn.CrossEntropyLoss
+    optimizer,  # SGD,
+    epoch: int,
+    device_id: int,
+    print_freq: int,
+):
+    batch_time = AverageMeter("Time", ":6.3f")
+    data_time = AverageMeter("Data", ":6.3f")
+    losses = AverageMeter("Loss", ":.4e")
+    top1 = AverageMeter("Acc@1", ":6.2f")
+    top5 = AverageMeter("Acc@5", ":6.2f")
+    progress = ProgressMeter(
+        len(train_loader),
+        [batch_time, data_time, losses, top1, top5],
+        prefix="Epoch: [{}]".format(epoch),
+    )
+
+    # switch to train mode
     model.train()
 
-    torch.cuda.set_device(local_rank)
-    device = torch.cuda.current_device()
-    model.cuda()
-    log.info(f"Rank [{local_rank}] running on GPU [{device}]")
-
-    coordinator = CoordinatorP2P(
-        c10d_backend=c10d_backend,
-        init_method=rdzv_init_url,
-        max_num_trainers=max_world_size,
-        process_group_timeout=60000,
-    )
-
-    state = ImagenetState(
-        model=model,
-        params=training_params,
-        dataset=train_dataset,
-        num_epochs=training_params.num_epochs,
-    )
-
-    log.info(f"Entering torchelastic train_loop")
-    torchelastic.train(coordinator, train_step, state)
-
-
-def train_step(state: ImagenetState):
-    """
-    The client-provided train_step(); it does one iteration of training
-    """
-
-    start = time.time()
-    # pyre-fixme[23]: Unable to unpack `_T` into 2 values.
-    # pyre-fixme[16]: `ImagenetState` has no attribute `data_iter`.
-    input, target = next(state.data_iter)
-
-    # This is needed because the world size may change between iterations
-    world_size = dist.get_world_size()
-    # Adjust the learning rate based on the epoch
-    adjust_learning_rate(
-        world_size,
-        state.params,
-        # pyre-fixme[16]: `ImagenetState` has no attribute `optimizer`.
-        state.optimizer,
-        state.epoch,
-        # pyre-fixme[16]: `ImagenetState` has no attribute `data_loader`.
-        len(state.data_loader),
-        state.iteration,
-    )
-
-    target = target.cuda(non_blocking=True)
-    input_var = torch.autograd.Variable(input)
-    target_var = torch.autograd.Variable(target)
-
-    # Compute output
-    # pyre-fixme[16]: `ImagenetState` has no attribute `dist_model`.
-    output = state.dist_model(input_var)
-    # pyre-fixme[16]: `ImagenetState` has no attribute `criterion`.
-    loss = state.criterion(output, target_var)
-
-    # Compute gradient and do SGD step
-    state.optimizer.zero_grad()
-    loss.backward()
-    state.optimizer.step()
-
-    # Only log for "local master" - assumes homogeneous # gpus per node
-    if dist.get_rank() % torch.cuda.device_count() == 0:
-        data_idx = state.data_start_index + (state.iteration * state.total_batch_size)
-        log.info(
-            f"epoch: {state.epoch}, iteration: {state.iteration}, data_idx: {data_idx}"
-        )
-
-    state.data_start_index += world_size * state.total_batch_size
-    state.iteration += 1
-    state.model_state = state.dist_model.state_dict()
-
     end = time.time()
-    # each train_step processes one mini_batch
-    # measuring wall-clock time on the host may not be totally accurate
-    # as CUDA kernels are asynchronous, this is for illustration purposes only
-    batch_per_sec = 1 / (end - start)
-    return state, torchelastic.SimpleWorkerStats(batch_per_sec)
+    for i, (images, target) in enumerate(train_loader):
+        # measure data loading time
+        data_time.update(time.time() - end)
+
+        images = images.cuda(device_id, non_blocking=True)
+        target = target.cuda(device_id, non_blocking=True)
+
+        # compute output
+        output = model(images)
+        loss = criterion(output, target)
+
+        # measure accuracy and record loss
+        acc1, acc5 = accuracy(output, target, topk=(1, 5))
+        losses.update(loss.item(), images.size(0))
+        top1.update(acc1[0], images.size(0))
+        top5.update(acc5[0], images.size(0))
+
+        # compute gradient and do SGD step
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        # measure elapsed time
+        batch_time.update(time.time() - end)
+        end = time.time()
+
+        if i % print_freq == 0:
+            progress.display(i)
 
 
-def default_local_world_size():
-    """
-    If CUDA is available, returns the number of GPU devices on the host.
-    Otherwise returns 1.
-    """
-    if torch.cuda.is_available():
-        return torch.cuda.device_count()
-    else:
-        return 1
-
-
-def default_device():
-    """
-    gpu if this host has a GPU, otherwise cpu
-    """
-    return "gpu" if torch.cuda.is_available() else "cpu"
-
-
-def main():
-    # these parameters should typically be set by the scheduler/resource manager
-    # hence read them from environment variables rather than program args
-    num_nodes = os.environ.get("SIZE", 1)
-    min_num_nodes = os.environ.get("MIN_SIZE", num_nodes)
-    max_num_nodes = os.environ.get("MAX_SIZE", num_nodes)
-
-    rdzv_endpoint = os.environ.get("RDZV_ENDPOINT", "localhost:2379")
-    job_id = os.environ.get("JOB_ID", "torchelastic_imagenet_example")
-
-    etcd_protocol = os.environ.get("ETCD_PROTOCOL")
-    etcd_cacert = os.environ.get("ETCD_CACERT")
-    etcd_cert = os.environ.get("ETCD_CERT")
-    etcd_key = os.environ.get("ETCD_KEY")
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--input_path",
-        required=True,
-        help="Path to the directory containing the dataset",
+def validate(
+    val_loader: DataLoader,
+    model: DistributedDataParallel,
+    criterion,  # nn.CrossEntropyLoss
+    device_id: int,
+    print_freq: int,
+):
+    batch_time = AverageMeter("Time", ":6.3f")
+    losses = AverageMeter("Loss", ":.4e")
+    top1 = AverageMeter("Acc@1", ":6.2f")
+    top5 = AverageMeter("Acc@5", ":6.2f")
+    progress = ProgressMeter(
+        len(val_loader), [batch_time, losses, top1, top5], prefix="Test: "
     )
 
-    parser.add_argument(
-        "--num_data_workers", type=int, default=0, help="Number of data loader workers"
-    )
-    parser.add_argument(
-        "--epochs", type=int, default=1, help="Number of training epochs"
-    )
-    parser.add_argument(
-        "--model_arch", default="resnet101", help="Model architecture (see)"
-    )
+    # switch to evaluate mode
+    model.eval()
 
-    parser.add_argument(
-        "--c10d_backend", default="gloo", choices=["gloo", "nccl"], help="c10d backend"
-    )
+    with torch.no_grad():
+        end = time.time()
+        for i, (images, target) in enumerate(val_loader):
+            if device_id is not None:
+                images = images.cuda(device_id, non_blocking=True)
+            target = target.cuda(device_id, non_blocking=True)
 
-    args = parser.parse_args()
-    training_params = TrainParams(
-        num_data_workers=args.num_data_workers,
-        num_epochs=args.epochs,
-        base_learning_rate=0.1,
-        batch_per_device=32,
-        benchmark_num_iter=500,
-        benchmark_ddp_bucket_size=25,
-    )
+            # compute output
+            output = model(images)
+            loss = criterion(output, target)
 
-    local_world_size = default_local_world_size()
-    min_world_size = local_world_size * min_num_nodes
-    max_world_size = local_world_size * max_num_nodes
-    rdzv_init_method = (
-        f"etcd://{rdzv_endpoint}/{job_id}"
-        f"?min_workers={min_world_size}"
-        f"&max_workers={max_world_size}"
-        f"&last_call_timeout=5"
-    )
+            # measure accuracy and record loss
+            acc1, acc5 = accuracy(output, target, topk=(1, 5))
+            losses.update(loss.item(), images.size(0))
+            top1.update(acc1[0], images.size(0))
+            top5.update(acc5[0], images.size(0))
 
-    if etcd_protocol:
-        rdzv_init_method += f"&protocol={etcd_protocol}"
-    if etcd_cacert:
-        rdzv_init_method += f"&cacert={etcd_cacert}"
-    if etcd_cert:
-        rdzv_init_method += f"&cert={etcd_cert}"
-    if etcd_key:
-        rdzv_init_method += f"&key={etcd_key}"
+            # measure elapsed time
+            batch_time.update(time.time() - end)
+            end = time.time()
 
-    log.info(f"rdzv init method={rdzv_init_method}")
-    if local_world_size == 1:
-        local_rank = 0
-        single_trainer(
-            local_rank,
-            max_world_size,
-            args.c10d_backend,
-            rdzv_init_method,
-            args.model_arch,
-            training_params,
-            args.input_path,
+            if i % print_freq == 0:
+                progress.display(i)
+
+        # TODO: this should also be done with the ProgressMeter
+        print(
+            " * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}".format(top1=top1, top5=top5)
         )
-    else:
-        mp.spawn(
-            fn=single_trainer,
-            nprocs=local_world_size,
-            args=(
-                max_world_size,
-                args.c10d_backend,
-                rdzv_init_method,
-                args.model_arch,
-                training_params,
-                args.input_path,
-            ),
-        )
+
+    return top1.avg
+
+
+def save_checkpoint(state, is_best: bool, filename: str):
+    # save to tmp, then commit by moving the file in case the job
+    # gets interrupted while writing the checkpoint
+    tmp_filename = os.path.join(filename, ".tmp")
+    torch.save(state, tmp_filename)
+    os.rename(tmp_filename, filename)
+    if is_best:
+        shutil.copyfile(filename, "model_best.pth.tar")
+
+
+class AverageMeter(object):
+    """Computes and stores the average and current value"""
+
+    def __init__(self, name: str, fmt: str = ":f"):
+        self.name = name
+        self.fmt = fmt
+        self.reset()
+
+    def reset(self) -> None:
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1) -> None:
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
+
+    def __str__(self):
+        fmtstr = "{name} {val" + self.fmt + "} ({avg" + self.fmt + "})"
+        return fmtstr.format(**self.__dict__)
+
+
+class ProgressMeter(object):
+    def __init__(self, num_batches: int, meters: List[AverageMeter], prefix: str = ""):
+        self.batch_fmtstr = self._get_batch_fmtstr(num_batches)
+        self.meters = meters
+        self.prefix = prefix
+
+    def display(self, batch: int) -> None:
+        entries = [self.prefix + self.batch_fmtstr.format(batch)]
+        entries += [str(meter) for meter in self.meters]
+        print("\t".join(entries))
+
+    def _get_batch_fmtstr(self, num_batches: int) -> str:
+        num_digits = len(str(num_batches // 1))
+        fmt = "{:" + str(num_digits) + "d}"
+        return "[" + fmt + "/" + fmt.format(num_batches) + "]"
+
+
+def adjust_learning_rate(optimizer, epoch: int, lr: float) -> None:
+    """
+    Sets the learning rate to the initial LR decayed by 10 every 30 epochs
+    """
+    learning_rate = lr * (0.1 ** (epoch // 30))
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = learning_rate
+
+
+def accuracy(output, target, topk=(1,)):
+    """
+    Computes the accuracy over the k top predictions for the specified values of k
+    """
+    with torch.no_grad():
+        maxk = max(topk)
+        batch_size = target.size(0)
+
+        _, pred = output.topk(maxk, 1, True, True)
+        pred = pred.t()
+        correct = pred.eq(target.view(1, -1).expand_as(pred))
+
+        res = []
+        for k in topk:
+            correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
+            res.append(correct_k.mul_(100.0 / batch_size))
+        return res
 
 
 if __name__ == "__main__":
-    mp.freeze_support()
     main()

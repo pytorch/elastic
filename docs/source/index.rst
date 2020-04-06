@@ -110,7 +110,9 @@ Documentation
 
 .. toctree::
    :maxdepth: 1
-   :caption: Runtime Environments
+   :caption: Examples
 
+   examples
+   kubernetes
    runtime
 

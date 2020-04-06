@@ -18,29 +18,53 @@ with the following additional functionalities:
 
 **Usage:**
 
-1. Fault tolerant (fixed sized number of workers, no elasticity):
+1. Single-node multi-worker (with sidecar etcd server)
+
+::
+    >>> python -m torchelastic.distributed.launch
+        --with_etcd
+        --nnodes=1
+        --nproc_per_node=$NUM_TRAINERS
+        YOUR_TRAINING_SCRIPT.py (--arg1 ... train script args...)
+
+2. Fault tolerant (fixed sized number of workers, no elasticity).:
 
 ::
 
     >>> python -m torchelastic.distributed.launch
-        --nnodes=4
-        --nproc_per_node=8
-        --rdzv_id=JOB_ID
+        --nnodes=$NUM_NODES
+        --nproc_per_node=$NUM_TRAINERS
+        --rdzv_id=$JOB_ID
         --rdzv_backend=etcd
-        --rdzv_endpoint=ETCD_HOST:ETCD_PORT
+        --rdzv_endpoint=$ETCD_HOST:$ETCD_PORT
         YOUR_TRAINING_SCRIPT.py (--arg1 ... train script args...)
 
-2. Elastic (min=1, max=4):
+3. Elastic (``min=1``, ``max=4``):
 
 ::
 
     >>> python -m torchelastic.distributed.launch
         --nnodes=1:4
-        --nproc_per_node=8
-        --rdzv_id=JOB_ID
+        --nproc_per_node=$NUM_TRAINERS
+        --rdzv_id=$JOB_ID
         --rdzv_backend=etcd
-        --rdzv_endpoint=ETCD_HOST:ETCD_PORT
+        --rdzv_endpoint=$ETCD_HOST:$ETCD_PORT
         YOUR_TRAINING_SCRIPT.py (--arg1 ... train script args...)
+
+**Note on etcd**:
+
+For multi-node training you need to specify:
+
+1. ``--rdzv_id``: a unique job id (shared by all nodes participating in the job)
+2. ``--rdzv_backend``: an implementation of ``torchelastic.rendevous.RendezvousHandler``
+3. ``--rdzv_endpoint``: ``host:port``-style endpoint where the rdzv backend is running.
+
+Currently only ``etcd`` rdzv backend is supported out of the box.
+To use ``etcd``, setup an etcd server with the ``v2`` api enabled
+(e.g. ``--enable-v2``).
+
+.. warning:: ``EtcdRendezvous`` uses etcd api v2. You MUST enable the v2
+             api on the etcd server. Our tests use etcd v3.4.3.
 
 **Definitions:**
 
@@ -84,20 +108,23 @@ script:
 
 2. ``RANK`` -  global rank
 
-3. ``GROUP_RANK`` - rank of the worker group (roughly maps to the
-   rank of the agent). A number between 0 - ``max_nnodes``.
+3. ``GROUP_RANK`` - rank of the worker group. A number between 0 - ``max_nnodes``.
+        When running a single worker group per node, this is the rank of the node.
 
-4. ``WORLD_SIZE`` - world size.
+4. ``LOCAL_WORLD_SIZE`` - local world size (e.g. number of workers running locally).
+       Equal to ``--nproc_per_node`` specified on ``torchelastic.distributed.launch``.
 
-5. ``MASTER_ADDR`` - fqdn of the host that is running worker with rank 0.
+5. ``WORLD_SIZE`` - world size (total number of workers in the job).
+
+6. ``MASTER_ADDR`` - fqdn of the host that is running worker with rank 0.
    Used to initialize torch distributed backend.
 
-6. ``MASTER_PORT`` - port on the ``MASTER_ADDR`` that can be used to
+7. ``MASTER_PORT`` - port on the ``MASTER_ADDR`` that can be used to
    host the tcp ``c10d`` store.
 
-7. ``TORCHELASTIC_RESTART_COUNT`` - number of worker group restarts so far.
+8. ``TORCHELASTIC_RESTART_COUNT`` - number of worker group restarts so far.
 
-8. ``TORCHELASTIC_MAX_RESTARTS`` - configured max number of restarts.
+9. ``TORCHELASTIC_MAX_RESTARTS`` - configured max number of restarts.
 
 **Deployment:**
 
@@ -181,10 +208,10 @@ job is invoking this launcher.
       if should_checkpoint:
         save_checkpoint(checkpoint_path)
 """
-
 import os
 import subprocess
 import sys
+import uuid
 from argparse import REMAINDER, ArgumentParser
 
 import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
@@ -192,6 +219,7 @@ import torchelastic.rendezvous.parameters as parameters
 from torchelastic import metrics
 from torchelastic.agent.server.api import WorkerSpec
 from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
+from torchelastic.rendezvous.etcd_server import EtcdServer
 
 
 def parse_args(args):
@@ -229,6 +257,19 @@ def parse_args(args):
         type=str,
         default="",
         help="additional rdzv configuration (conf1=v1,conf2=v2,...)",
+    )
+
+    # sidecar etcd related arguments
+    parser.add_argument(
+        "--with_etcd",
+        default=False,
+        action="store_true",
+        help="starts a local, standalone etcd server on a random free port"
+        "using the etcd binary specified in TORCHELASTIC_ETCD_BINARY_PATH"
+        " env var or the one found in PATH."
+        " Useful when launching single-node, multi-worker job."
+        " If specified --rdzv_backend, --rdzv_endpoint, --rdzv_id"
+        " are autoassigned, any explicitly set values are ignored",
     )
 
     # user-code launch related arguments
@@ -350,6 +391,17 @@ def main(args=None):
     assert 0 < min_nodes <= max_nodes
     assert args.max_restarts > 0
 
+    if args.with_etcd:
+        assert (
+            min_nodes == max_nodes == 1
+        ), "--with_etcd can only be used with --nodes=1"
+
+        etcd_server = EtcdServer()
+        etcd_server.start()
+        args.rdzv_backend = "etcd"
+        args.rdzv_endpoint = etcd_server.get_endpoint()
+        args.rdzv_id = str(uuid.uuid4())
+
     rdzv_parameters = parameters.RendezvousParameters(
         args.rdzv_backend,
         args.rdzv_endpoint,
@@ -406,6 +458,9 @@ def main(args=None):
     metrics.initialize_metrics()
     elastic_agent = LocalElasticAgent(spec, start_method=args.start_method)
     elastic_agent.run(spec.role)
+
+    if args.with_etcd:
+        etcd_server.stop()
 
 
 if __name__ == "__main__":
