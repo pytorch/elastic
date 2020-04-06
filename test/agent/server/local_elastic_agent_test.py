@@ -65,6 +65,7 @@ def _check_env_function():
     os.environ["RANK"]
     os.environ["LOCAL_RANK"]
     os.environ["GROUP_RANK"]
+    os.environ["LOCAL_WORLD_SIZE"]
     os.environ["WORLD_SIZE"]
     os.environ["MASTER_ADDR"]
     os.environ["MASTER_PORT"]

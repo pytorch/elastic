@@ -13,8 +13,8 @@ import uuid
 
 import torchelastic.distributed.launch as launch
 import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
-from p2p.etcd_server_fixture import EtcdServerFixture
 from test_utils import is_tsan
+from torchelastic.rendezvous.etcd_server import EtcdServer
 
 
 def path(script):
@@ -25,11 +25,9 @@ class LaunchTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # start a standalone, single process etcd server to use for all tests
-        cls._etcd_server = EtcdServerFixture()
+        cls._etcd_server = EtcdServer()
         cls._etcd_server.start()
-        host = cls._etcd_server.get_host()
-        port = cls._etcd_server.get_port()
-        cls._etcd_endpoint = f"{host}:{port}"
+        cls._etcd_endpoint = cls._etcd_server.get_endpoint()
 
     @classmethod
     def tearDownClass(cls):
@@ -143,6 +141,28 @@ class LaunchTest(unittest.TestCase):
             f"--rdzv_backend=etcd",
             f"--rdzv_endpoint={self._etcd_endpoint}",
             f"--rdzv_id={run_id}",
+            f"--monitor_interval=1",
+            f"--start_method=fork",
+            path("bin/test_script.py"),
+            f"--touch_file_dir={self.test_dir}",
+        ]
+        launch.main(args)
+
+        # make sure all the workers ran
+        # each worker touches a file with its global rank as the name
+        self.assertSetEqual(
+            {str(i) for i in range(world_size)}, set(os.listdir(self.test_dir))
+        )
+
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
+    def test_launch_with_etcd(self):
+        nnodes = 1
+        nproc_per_node = 4
+        world_size = nnodes * nproc_per_node
+        args = [
+            f"--nnodes={nnodes}",
+            f"--nproc_per_node={nproc_per_node}",
+            f"--with_etcd",
             f"--monitor_interval=1",
             f"--start_method=fork",
             path("bin/test_script.py"),
