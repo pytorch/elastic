@@ -53,6 +53,7 @@ def _get_socket_with_port():
     raise RuntimeError("Failed to create a socket")
 
 
+# TODO remove this class in favor of torchelastic.rendezvous.EtcdServer
 class EtcdServerFixture:
     """
     Starts and stops a standalone etcd server tied to the
