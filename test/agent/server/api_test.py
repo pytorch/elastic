@@ -14,7 +14,6 @@ from unittest.mock import patch
 
 import torch.distributed as dist
 import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
-from p2p.etcd_server_fixture import EtcdServerFixture
 from torchelastic.agent.server.api import (
     MonitorResult,
     SimpleElasticAgent,
@@ -24,6 +23,7 @@ from torchelastic.agent.server.api import (
     _get_fq_hostname,
 )
 from torchelastic.rendezvous import RendezvousHandler
+from torchelastic.rendezvous.etcd_server import EtcdServer
 
 
 def do_nothing():
@@ -111,7 +111,7 @@ class SimpleElasticAgentTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # start a standalone, single process etcd server to use for all tests
-        cls._etcd_server = EtcdServerFixture()
+        cls._etcd_server = EtcdServer()
         cls._etcd_server.start()
 
     @classmethod
@@ -120,11 +120,10 @@ class SimpleElasticAgentTest(unittest.TestCase):
         cls._etcd_server.stop()
 
     def _get_worker_spec(self, max_restarts=1, monitor_interval=1.0):
-        host = self._etcd_server.get_host()
-        port = self._etcd_server.get_port()
         run_id = str(uuid.uuid4().int)
+        endpoint = self._etcd_server.get_endpoint()
         rdzv_handler = dist.rendezvous(
-            f"etcd://{host}:{port}/{run_id}?min_workers=1&max_workers=1"
+            f"etcd://{endpoint}/{run_id}?min_workers=1&max_workers=1"
         )
         spec = WorkerSpec(
             role="test_trainer",

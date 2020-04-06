@@ -103,4 +103,3 @@ class MetricsApiTest(unittest.TestCase):
 
             self.assertEqual(1, handler.metric_data["Child.func.success"].value)
             self.assertIn("Child.func.duration.ms", handler.metric_data)
-
