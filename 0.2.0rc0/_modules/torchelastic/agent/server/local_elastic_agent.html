@@ -190,8 +190,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../rendezvous.html">Rendezvous</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../metrics.html">Metrics</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Runtime Environments</span></p>
+<p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../kubernetes.html">Torch Elastic Kubernetes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../runtime.html">Running torchelastic</a></li>
 </ul>
 
@@ -302,6 +304,7 @@
     <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span>
         <span class="s2">&quot;rank&quot;</span><span class="p">,</span>
         <span class="s2">&quot;group_rank&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;local_world_size&quot;</span><span class="p">,</span>
         <span class="s2">&quot;world_size&quot;</span><span class="p">,</span>
         <span class="s2">&quot;master_addr&quot;</span><span class="p">,</span>
         <span class="s2">&quot;master_port&quot;</span><span class="p">,</span>
@@ -313,6 +316,7 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">rank</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">group_rank</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">local_world_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">world_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">master_addr</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">master_port</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -321,6 +325,7 @@
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">=</span> <span class="n">rank</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">group_rank</span> <span class="o">=</span> <span class="n">group_rank</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">local_world_size</span> <span class="o">=</span> <span class="n">local_world_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">world_size</span> <span class="o">=</span> <span class="n">world_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">master_addr</span> <span class="o">=</span> <span class="n">master_addr</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">master_port</span> <span class="o">=</span> <span class="n">master_port</span>
@@ -333,6 +338,7 @@
     <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;LOCAL_RANK&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">local_rank</span><span class="p">)</span>
     <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;RANK&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">rank</span><span class="p">)</span>
     <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;GROUP_RANK&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">group_rank</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;LOCAL_WORLD_SIZE&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">local_world_size</span><span class="p">)</span>
     <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;WORLD_SIZE&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">world_size</span><span class="p">)</span>
     <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;MASTER_ADDR&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">master_addr</span>
     <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;MASTER_PORT&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">master_port</span><span class="p">)</span>
@@ -382,6 +388,7 @@
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spec</span><span class="p">:</span> <span class="n">WorkerSpec</span><span class="p">,</span> <span class="n">start_method</span><span class="o">=</span><span class="s2">&quot;spawn&quot;</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_start_method</span> <span class="o">=</span> <span class="n">start_method</span>
+        <span class="c1"># pyre-fixme[8]: Attribute has type `ProcessContext`; used as `None`.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_process_context</span><span class="p">:</span> <span class="n">mp</span><span class="o">.</span><span class="n">ProcessContext</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="c1"># a map that holds return values for each worker fn</span>
         <span class="c1"># ret_val[0] holds the return value for worker_0 (global rank 0)</span>
@@ -407,6 +414,7 @@
             <span class="n">dist_infos</span><span class="p">[</span><span class="n">local_rank</span><span class="p">]</span> <span class="o">=</span> <span class="n">_DistInfo</span><span class="p">(</span>
                 <span class="n">worker</span><span class="o">.</span><span class="n">global_rank</span><span class="p">,</span>
                 <span class="n">worker_group</span><span class="o">.</span><span class="n">group_rank</span><span class="p">,</span>
+                <span class="n">worker_group</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">local_world_size</span><span class="p">,</span>
                 <span class="n">worker</span><span class="o">.</span><span class="n">world_size</span><span class="p">,</span>
                 <span class="n">master_addr</span><span class="p">,</span>
                 <span class="n">master_port</span><span class="p">,</span>

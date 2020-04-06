@@ -190,8 +190,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../rendezvous.html">Rendezvous</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../metrics.html">Metrics</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Runtime Environments</span></p>
+<p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../kubernetes.html">Torch Elastic Kubernetes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../runtime.html">Running torchelastic</a></li>
 </ul>
 
@@ -1184,6 +1186,7 @@
         <span class="k">return</span> <span class="n">EtcdStore</span><span class="p">(</span><span class="n">etcd_client</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">,</span> <span class="n">etcd_store_prefix</span><span class="o">=</span><span class="n">store_path</span><span class="p">)</span></div>
 
 
+<span class="c1"># pyre-fixme[11]: Annotation `Store` is not defined as a type.</span>
 <span class="k">class</span> <span class="nc">EtcdStore</span><span class="p">(</span><span class="n">Store</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Implements a c10 Store interface by piggybacking on the rendezvous etcd instance.</span>

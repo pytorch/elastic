@@ -190,8 +190,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../rendezvous.html">Rendezvous</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../metrics.html">Metrics</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Runtime Environments</span></p>
+<p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../kubernetes.html">Torch Elastic Kubernetes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../runtime.html">Running torchelastic</a></li>
 </ul>
 
@@ -381,10 +383,12 @@
         <span class="c1">#  rank of the worker among all the workers with the same role</span>
         <span class="c1">#  across all ``agent`` instances.</span>
         <span class="c1">#  Global rank is not stable between re-rendezvous.</span>
+        <span class="c1"># pyre-fixme[8]: Attribute has type `int`; used as `None`.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">global_rank</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># total number of workers (globally). Due to elasticity</span>
         <span class="c1"># the world size may change between re-rendezvous.</span>
+        <span class="c1"># pyre-fixme[8]: Attribute has type `int`; used as `None`.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">world_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
@@ -480,10 +484,13 @@
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">state</span><span class="p">:</span> <span class="n">WorkerState</span><span class="p">,</span>
+        <span class="c1"># pyre-fixme[9]: ret_vals has type `Dict[int, typing.Any]`; used as `None`.</span>
         <span class="n">ret_vals</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="c1"># pyre-fixme[9]: exceptions has type `Dict[int, Exception]`; used as `None`.</span>
         <span class="n">exceptions</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="c1"># pyre-fixme[8]: Attribute has type `Dict[int, typing.Any]`; used as `None`.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ret_vals</span> <span class="o">=</span> <span class="n">ret_vals</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exceptions</span> <span class="o">=</span> <span class="n">exceptions</span></div>
 
@@ -525,6 +532,7 @@
 <span class="sd">        func(port)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="c1"># pyre-fixme[28]: Unexpected keyword argument `type`.</span>
     <span class="n">addrs</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">getaddrinfo</span><span class="p">(</span>
         <span class="n">host</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">family</span><span class="o">=</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_UNSPEC</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span>
     <span class="p">)</span>
@@ -620,6 +628,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span> <span class="o">=</span> <span class="n">WorkerGroup</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_remaining_restarts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">max_restarts</span>
 
+    <span class="c1"># pyre-fixme[14]: `get_worker_group` overrides method defined in `ElasticAgent`</span>
+    <span class="c1">#  inconsistently.</span>
 <div class="viewcode-block" id="SimpleElasticAgent.get_worker_group"><a class="viewcode-back" href="../../../../agent.html#torchelastic.agent.server.SimpleElasticAgent.get_worker_group">[docs]</a>    <span class="k">def</span> <span class="nf">get_worker_group</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">WorkerGroup</span><span class="p">:</span>
         <span class="c1"># TODO return an RO copy (need to create an ROWorkerGroup and ROWorkerSpec</span>
         <span class="c1"># since both these classes contain non-pure-data pointers - e.g. rdzv_handler)</span>

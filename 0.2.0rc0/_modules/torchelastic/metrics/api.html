@@ -190,8 +190,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../rendezvous.html">Rendezvous</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../metrics.html">Metrics</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Runtime Environments</span></p>
+<p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../kubernetes.html">Torch Elastic Kubernetes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../runtime.html">Running torchelastic</a></li>
 </ul>
 
@@ -320,9 +322,12 @@
 <span class="n">_default_metrics_handler</span> <span class="o">=</span> <span class="n">NullMetricHandler</span><span class="p">()</span>
 
 
+<span class="c1"># pyre-fixme[9]: group has type `str`; used as `None`.</span>
 <div class="viewcode-block" id="configure"><a class="viewcode-back" href="../../../metrics.html#torchelastic.metrics.api.configure">[docs]</a><span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="n">handler</span><span class="p">:</span> <span class="n">MetricHandler</span><span class="p">,</span> <span class="n">group</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">global</span> <span class="n">_default_metrics_handler</span>
+        <span class="c1"># pyre-fixme[9]: _default_metrics_handler has type `NullMetricHandler`; used</span>
+        <span class="c1">#  as `MetricHandler`.</span>
         <span class="n">_default_metrics_handler</span> <span class="o">=</span> <span class="n">handler</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">_metrics_map</span><span class="p">[</span><span class="n">group</span><span class="p">]</span> <span class="o">=</span> <span class="n">handler</span></div>

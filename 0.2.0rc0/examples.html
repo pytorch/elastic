@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>PyTorch Elastic &mdash; PyTorch/Elastic master documentation</title>
+  <title>Examples &mdash; PyTorch/Elastic master documentation</title>
   
 
   
@@ -32,7 +32,8 @@
   <link rel="stylesheet" href="_static/katex-math.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Elastic Launch" href="distributed.html" /> 
+    <link rel="next" title="Torch Elastic Kubernetes" href="kubernetes.html" />
+    <link rel="prev" title="Metrics" href="metrics.html" /> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -192,8 +193,8 @@
 <li class="toctree-l1"><a class="reference internal" href="metrics.html">Metrics</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="kubernetes.html">Torch Elastic Kubernetes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime.html">Running torchelastic</a></li>
 </ul>
@@ -223,14 +224,12 @@
 
 
 
-
-
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="pytorch-breadcrumbs">
     
       <li>
-        <a href="#">
+        <a href="index.html">
           
             Docs
           
@@ -238,16 +237,13 @@
       </li>
 
         
-      <li>PyTorch Elastic</li>
+      <li>Examples</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
         
             
-            
-              <!-- User defined GitHub URL -->
-              <a href="https://github.com/pytorch/elastic" class="fa fa-github"> Edit on GitHub</a>
-            
+            <a href="_sources/examples.rst.txt" rel="nofollow"><img src="_static/images/view-page-source-icon.svg"></a>
           
         
       </li>
@@ -273,105 +269,74 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <div class="section" id="pytorch-elastic">
-<h1>PyTorch Elastic<a class="headerlink" href="#pytorch-elastic" title="Permalink to this headline">¶</a></h1>
-<p>PyTorch Elastic enables distributed PyTorch training jobs to be executed
-in a fault tolerant and elastic manner.</p>
-<p>Use cases:</p>
+  <div class="section" id="examples">
+<h1>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h1>
+<p>The examples below run on the <a class="reference external" href="https://hub.docker.com/r/torchelastic/examples">torchelastic/examples</a>
+Docker image, built from the <a class="reference external" href="https://github.com/pytorch/elastic/blob/master/examples/Dockerfile">examples/Dockerfile</a>.
+The <code class="docutils literal notranslate"><span class="pre">$VERSION</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">0.2.0rc0</span></code>) variable is used throughout this page,
+this should be substitued with the version of torchelastic you are using.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">the examples below only work on version <code class="docutils literal notranslate"><span class="pre">&gt;0.2.0rc0</span></code>.</p>
+</div>
+<p>In most cases we demonstrate a single-node, multi-worker example. To use
+multiple nodes, run the same commands on multiple nodes with these differences:</p>
 <ol class="arabic simple">
-<li>Fault Tolerance: jobs that run on infrastructure where nodes get replaced
-frequently, either due to flaky hardware or by design. Or mission critical
-production grade jobs that need to be run with resilience to failures.</li>
-<li>Dynamic Capacity Management: jobs that run on leased capacity that can be
-taken away at any time (e.g. AWS spot instances) or shared pools where the
-pool size can change dynamically based on demand.</li>
+<li>Specify <code class="docutils literal notranslate"><span class="pre">--nnodes=$MIN_NODE:$MAX_NODE</span></code> instead of <code class="docutils literal notranslate"><span class="pre">--nnodes=1</span></code>.</li>
+<li>Remove <code class="docutils literal notranslate"><span class="pre">--with_etcd</span></code> and specify <code class="docutils literal notranslate"><span class="pre">--rdzv_backend</span></code>, <code class="docutils literal notranslate"><span class="pre">--rdzv_endpoint</span></code> and <code class="docutils literal notranslate"><span class="pre">--rdzv_id</span></code>.</li>
 </ol>
-<div class="section" id="quickstart">
-<h2>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install torchelastic
-
-<span class="c1"># start a single-node etcd server on ONE host</span>
-etcd --enable-v2
-     --listen-client-urls http://0.0.0.0:2379,http://127.0.0.1:4001
-     --advertise-client-urls PUBLIC_HOSTNAME:2379
-</pre></div>
-</div>
-<p>To launch a <strong>fault-tolerant</strong> job, run the following on all nodes.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python -m torchelastic.distributed.launch
-        --nnodes<span class="o">=</span>NUM_NODES
-        --nproc_per_node<span class="o">=</span>TRAINERS_PER_NODE
-        --rdzv_id<span class="o">=</span>JOB_ID
-        --rdzv_backend<span class="o">=</span>etcd
-        --rdzv_endpoint<span class="o">=</span>ETCD_HOST:ETCD_PORT
-        YOUR_TRAINING_SCRIPT.py <span class="o">(</span>--arg1 ... train script args...<span class="o">)</span>
-</pre></div>
-</div>
-<p>To launch an <strong>elastic</strong> job, run the following on at least <code class="docutils literal notranslate"><span class="pre">MIN_SIZE</span></code> nodes
-and at most <code class="docutils literal notranslate"><span class="pre">MAX_SIZE</span></code> nodes.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python -m torchelastic.distributed.launch
-        --nnodes<span class="o">=</span>MIN_SIZE:MAX_SIZE
-        --nproc_per_node<span class="o">=</span>TRAINERS_PER_NODE
-        --rdzv_id<span class="o">=</span>JOB_ID
-        --rdzv_backend<span class="o">=</span>etcd
-        --rdzv_endpoint<span class="o">=</span>ETCD_HOST:ETCD_PORT
-        YOUR_TRAINING_SCRIPT.py <span class="o">(</span>--arg1 ... train script args...<span class="o">)</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="train-script">
-<h2>Train script<a class="headerlink" href="#train-script" title="Permalink to this headline">¶</a></h2>
-<p>If your train script works with <code class="docutils literal notranslate"><span class="pre">torch.distributed.launch</span></code> it will continue
-working with <code class="docutils literal notranslate"><span class="pre">torchelastic.distributed.launch</span></code> with these differences:</p>
+<p>For more information see <a class="reference external" href="distributed.html">elastic launch</a>).</p>
+<p>Alternatively, you can use our kubernetes <a class="reference external" href="kubernetes.html">elastic job controller</a>
+to launch a multi-node job.</p>
+<div class="section" id="prerequisite">
+<h2>Prerequisite<a class="headerlink" href="#prerequisite" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
-<li>No need to manually pass <code class="docutils literal notranslate"><span class="pre">RANK</span></code>, <code class="docutils literal notranslate"><span class="pre">WORLD_SIZE</span></code>,
-<code class="docutils literal notranslate"><span class="pre">MASTER_ADDR</span></code>, and <code class="docutils literal notranslate"><span class="pre">MASTER_PORT</span></code>.</li>
-<li><code class="docutils literal notranslate"><span class="pre">rdzv_backend</span></code> and <code class="docutils literal notranslate"><span class="pre">rdzv_endpoint</span></code> must be provided. For most users
-this will be set to <code class="docutils literal notranslate"><span class="pre">etcd</span></code> (see <a class="reference external" href="rendezvous.html">rendezvous</a>).</li>
-<li>Make sure you have a <code class="docutils literal notranslate"><span class="pre">load_checkpoint(path)</span></code> and
-<code class="docutils literal notranslate"><span class="pre">save_checkpoint(path)</span></code> logic in your script. When workers fail
-we restart all the workers with the same program arguments so you will
-lose progress up to the most recent checkpoint
-(see <a class="reference external" href="distributed.html">elastic launch</a>).</li>
+<li><a class="reference external" href="https://docs.docker.com/install/">Docker</a></li>
+<li><code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">VERSION=&lt;torchelastic</span> <span class="pre">version&gt;</span></code></li>
 </ol>
-<p>Here’s an expository example of a training script that checkpoints on each epoch,
-hence the max progress lost on failure is one full epoch worth of training.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
-     <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
-     <span class="n">state</span> <span class="o">=</span> <span class="n">load_checkpoint</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">checkpoint_path</span><span class="p">)</span>
-     <span class="n">initialize</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
-
-     <span class="c1"># torchelastic.distributed.launch ensure that this will work</span>
-     <span class="c1"># by exporting all the env vars needed to initialize the process group</span>
-     <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">init_process_group</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">backend</span><span class="p">)</span>
-
-     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">epoch</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">total_num_epochs</span><span class="p">)</span>
-          <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">iter</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
-              <span class="n">train</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
-
-          <span class="n">state</span><span class="o">.</span><span class="n">epoch</span> <span class="o">+=</span> <span class="mi">1</span>
-          <span class="n">save_checkpoint</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+</div>
+<div class="section" id="classy-vision">
+<h2>Classy Vision<a class="headerlink" href="#classy-vision" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://classyvision.ai/">Classy Vision</a> is an end-to-end framework
+for image and video classification built on PyTorch. It works out-of-the-box
+with torchelastic’s launcher.</p>
+<p>Launch two trainers on a single node:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker run torchelastic/examples:<span class="nv">$VERSION</span>
+           --with_etcd
+           --nnodes<span class="o">=</span><span class="m">1</span>
+           --nproc_per_node<span class="o">=</span><span class="m">2</span>
+           /workspace/classy_vision/classy_train.py
+           --config_file /workspace/classy_vision/configs/template_config.json
+</pre></div>
+</div>
+<p>If you have an instance with GPUs, run a worker on each GPU:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker run torchelastic/examples:<span class="nv">$VERSION</span>
+           --with_etcd
+           --nnodes<span class="o">=</span><span class="m">1</span>
+           --nproc_per_node<span class="o">=</span><span class="nv">$NUM_CUDA_DEVICES</span>
+           /workspace/classy_vision/classy_train.py
+           --device<span class="o">=</span>gpu
+           --config_file /workspace/classy_vision/configs/template_config.json
 </pre></div>
 </div>
 </div>
-<div class="section" id="documentation">
-<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
-<div class="toctree-wrapper compound">
-<p class="caption"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="distributed.html">Elastic Launch</a></li>
-<li class="toctree-l1"><a class="reference internal" href="agent.html">Elastic Agent</a></li>
-<li class="toctree-l1"><a class="reference internal" href="timer.html">Expiration Timers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="rendezvous.html">Rendezvous</a></li>
-<li class="toctree-l1"><a class="reference internal" href="metrics.html">Metrics</a></li>
-</ul>
+<div class="section" id="imagenet">
+<h2>Imagenet<a class="headerlink" href="#imagenet" title="Permalink to this headline">¶</a></h2>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">an instance with at least one GPU is required for this example</p>
 </div>
-<div class="toctree-wrapper compound">
-<p class="caption"><span class="caption-text">Examples</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="kubernetes.html">Torch Elastic Kubernetes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runtime.html">Running torchelastic</a></li>
-</ul>
+<p>Launch <code class="docutils literal notranslate"><span class="pre">$NUM_CUDA_DEVICES</span></code> number of workers on a single node:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker run torchelastic/examples:<span class="nv">$VERSION</span>
+           --with_etcd
+           --nnodes<span class="o">=</span><span class="m">1</span>
+           --nproc_per_node<span class="o">=</span><span class="nv">$NUM_CUDA_DEVICES</span>
+           /workspace/examples/imagenet/main.py
+           --arch resnet18
+           --epochs <span class="m">20</span>
+           --batch-size <span class="m">32</span>
+           /workspace/data/tiny-imagenet-200
+</pre></div>
 </div>
 </div>
 </div>
@@ -384,8 +349,10 @@ hence the max progress lost on failure is one full epoch worth of training.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="distributed.html" class="btn btn-neutral float-right" title="Elastic Launch" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="kubernetes.html" class="btn btn-neutral float-right" title="Torch Elastic Kubernetes" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
       
+      
+        <a href="metrics.html" class="btn btn-neutral" title="Metrics" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
@@ -417,12 +384,10 @@ hence the max progress lost on failure is one full epoch worth of training.</p>
           <div class="pytorch-right-menu" id="pytorch-right-menu">
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
-<li><a class="reference internal" href="#">PyTorch Elastic</a><ul>
-<li><a class="reference internal" href="#quickstart">Quickstart</a></li>
-<li><a class="reference internal" href="#train-script">Train script</a></li>
-<li><a class="reference internal" href="#documentation">Documentation</a><ul>
-</ul>
-</li>
+<li><a class="reference internal" href="#">Examples</a><ul>
+<li><a class="reference internal" href="#prerequisite">Prerequisite</a></li>
+<li><a class="reference internal" href="#classy-vision">Classy Vision</a></li>
+<li><a class="reference internal" href="#imagenet">Imagenet</a></li>
 </ul>
 </li>
 </ul>

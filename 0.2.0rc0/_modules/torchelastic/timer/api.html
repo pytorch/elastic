@@ -190,8 +190,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../rendezvous.html">Rendezvous</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../metrics.html">Metrics</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Runtime Environments</span></p>
+<p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../kubernetes.html">Torch Elastic Kubernetes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../runtime.html">Running torchelastic</a></li>
 </ul>
 
@@ -483,6 +485,7 @@
             <span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_watchdog_loop</span><span class="p">,</span> <span class="n">daemon</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_daemon</span>
         <span class="p">)</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Starting watchdog thread...&quot;</span><span class="p">)</span>
+        <span class="c1"># pyre-fixme[16]: Optional type has no attribute `start`.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_watchdog_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -490,6 +493,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_stop_signaled</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_watchdog_thread</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stopping watchdog thread...&quot;</span><span class="p">)</span>
+            <span class="c1"># pyre-fixme[16]: Optional type has no attribute `join`.</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_watchdog_thread</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_max_interval</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_watchdog_thread</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
@@ -509,6 +513,8 @@
 
 
 <div class="viewcode-block" id="expires"><a class="viewcode-back" href="../../../timer.html#torchelastic.timer.expires">[docs]</a><span class="nd">@contextmanager</span>
+<span class="c1"># pyre-fixme[9]: scope has type `str`; used as `None`.</span>
+<span class="c1"># pyre-fixme[9]: client has type `TimerClient`; used as `None`.</span>
 <span class="k">def</span> <span class="nf">expires</span><span class="p">(</span><span class="n">after</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">scope</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">client</span><span class="p">:</span> <span class="n">TimerClient</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Acquires a countdown timer that expires in ``after`` seconds from now,</span>
@@ -530,6 +536,7 @@
     <span class="k">if</span> <span class="n">client</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">_timer_client</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Configure timer client before using coundown timers.&quot;</span><span class="p">)</span>
+        <span class="c1"># pyre-fixme[9]: client has type `TimerClient`; used as `None`.</span>
         <span class="n">client</span> <span class="o">=</span> <span class="n">_timer_client</span>
     <span class="k">if</span> <span class="n">scope</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># grab the caller file + lineno</span>
@@ -538,6 +545,7 @@
     <span class="n">expiration</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">after</span>
     <span class="n">client</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="n">scope</span><span class="p">,</span> <span class="n">expiration</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># pyre-fixme[7]: Expected `None` but got `Generator[None, None, None]`.</span>
         <span class="k">yield</span>
     <span class="k">finally</span><span class="p">:</span>
         <span class="n">client</span><span class="o">.</span><span class="n">release</span><span class="p">(</span><span class="n">scope</span><span class="p">)</span></div>

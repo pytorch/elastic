@@ -192,8 +192,10 @@
 <li class="toctree-l1"><a class="reference internal" href="rendezvous.html">Rendezvous</a></li>
 <li class="toctree-l1"><a class="reference internal" href="metrics.html">Metrics</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Runtime Environments</span></p>
+<p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kubernetes.html">Torch Elastic Kubernetes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime.html">Running torchelastic</a></li>
 </ul>
 
@@ -280,28 +282,57 @@ with the following additional functionalities:</p>
 </ol>
 <p><strong>Usage:</strong></p>
 <ol class="arabic simple">
-<li>Fault tolerant (fixed sized number of workers, no elasticity):</li>
+<li>Single-node multi-worker (with sidecar etcd server)</li>
 </ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">torchelastic</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">launch</span>
-<span class="go">    --nnodes=4</span>
-<span class="go">    --nproc_per_node=8</span>
-<span class="go">    --rdzv_id=JOB_ID</span>
-<span class="go">    --rdzv_backend=etcd</span>
-<span class="go">    --rdzv_endpoint=ETCD_HOST:ETCD_PORT</span>
+<dl class="docutils">
+<dt>::</dt>
+<dd><div class="first last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">torchelastic</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">launch</span>
+<span class="go">    --with_etcd</span>
+<span class="go">    --nnodes=1</span>
+<span class="go">    --nproc_per_node=$NUM_TRAINERS</span>
 <span class="go">    YOUR_TRAINING_SCRIPT.py (--arg1 ... train script args...)</span>
 </pre></div>
 </div>
+</dd>
+</dl>
 <ol class="arabic simple" start="2">
-<li>Elastic (min=1, max=4):</li>
+<li>Fault tolerant (fixed sized number of workers, no elasticity).:</li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">torchelastic</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">launch</span>
+<span class="go">    --nnodes=$NUM_NODES</span>
+<span class="go">    --nproc_per_node=$NUM_TRAINERS</span>
+<span class="go">    --rdzv_id=$JOB_ID</span>
+<span class="go">    --rdzv_backend=etcd</span>
+<span class="go">    --rdzv_endpoint=$ETCD_HOST:$ETCD_PORT</span>
+<span class="go">    YOUR_TRAINING_SCRIPT.py (--arg1 ... train script args...)</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li>Elastic (<code class="docutils literal notranslate"><span class="pre">min=1</span></code>, <code class="docutils literal notranslate"><span class="pre">max=4</span></code>):</li>
 </ol>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">torchelastic</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">launch</span>
 <span class="go">    --nnodes=1:4</span>
-<span class="go">    --nproc_per_node=8</span>
-<span class="go">    --rdzv_id=JOB_ID</span>
+<span class="go">    --nproc_per_node=$NUM_TRAINERS</span>
+<span class="go">    --rdzv_id=$JOB_ID</span>
 <span class="go">    --rdzv_backend=etcd</span>
-<span class="go">    --rdzv_endpoint=ETCD_HOST:ETCD_PORT</span>
+<span class="go">    --rdzv_endpoint=$ETCD_HOST:$ETCD_PORT</span>
 <span class="go">    YOUR_TRAINING_SCRIPT.py (--arg1 ... train script args...)</span>
 </pre></div>
+</div>
+<p><strong>Note on etcd</strong>:</p>
+<p>For multi-node training you need to specify:</p>
+<ol class="arabic simple">
+<li><code class="docutils literal notranslate"><span class="pre">--rdzv_id</span></code>: a unique job id (shared by all nodes participating in the job)</li>
+<li><code class="docutils literal notranslate"><span class="pre">--rdzv_backend</span></code>: an implementation of <code class="docutils literal notranslate"><span class="pre">torchelastic.rendevous.RendezvousHandler</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">--rdzv_endpoint</span></code>: <code class="docutils literal notranslate"><span class="pre">host:port</span></code>-style endpoint where the rdzv backend is running.</li>
+</ol>
+<p>Currently only <code class="docutils literal notranslate"><span class="pre">etcd</span></code> rdzv backend is supported out of the box.
+To use <code class="docutils literal notranslate"><span class="pre">etcd</span></code>, setup an etcd server with the <code class="docutils literal notranslate"><span class="pre">v2</span></code> api enabled
+(e.g. <code class="docutils literal notranslate"><span class="pre">--enable-v2</span></code>).</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last"><code class="docutils literal notranslate"><span class="pre">EtcdRendezvous</span></code> uses etcd api v2. You MUST enable the v2
+api on the etcd server. Our tests use etcd v3.4.3.</p>
 </div>
 <p><strong>Definitions:</strong></p>
 <ol class="arabic simple">
@@ -345,9 +376,17 @@ script:</p>
 <ol class="arabic simple">
 <li><code class="docutils literal notranslate"><span class="pre">LOCAL_RANK</span></code> -  local rank</li>
 <li><code class="docutils literal notranslate"><span class="pre">RANK</span></code> -  global rank</li>
-<li><code class="docutils literal notranslate"><span class="pre">GROUP_RANK</span></code> - rank of the worker group (roughly maps to the
-rank of the agent). A number between 0 - <code class="docutils literal notranslate"><span class="pre">max_nnodes</span></code>.</li>
-<li><code class="docutils literal notranslate"><span class="pre">WORLD_SIZE</span></code> - world size.</li>
+<li><dl class="first docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">GROUP_RANK</span></code> - rank of the worker group. A number between 0 - <code class="docutils literal notranslate"><span class="pre">max_nnodes</span></code>.</dt>
+<dd>When running a single worker group per node, this is the rank of the node.</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">LOCAL_WORLD_SIZE</span></code> - local world size (e.g. number of workers running locally).</dt>
+<dd>Equal to <code class="docutils literal notranslate"><span class="pre">--nproc_per_node</span></code> specified on <code class="docutils literal notranslate"><span class="pre">torchelastic.distributed.launch</span></code>.</dd>
+</dl>
+</li>
+<li><code class="docutils literal notranslate"><span class="pre">WORLD_SIZE</span></code> - world size (total number of workers in the job).</li>
 <li><code class="docutils literal notranslate"><span class="pre">MASTER_ADDR</span></code> - fqdn of the host that is running worker with rank 0.
 Used to initialize torch distributed backend.</li>
 <li><code class="docutils literal notranslate"><span class="pre">MASTER_PORT</span></code> - port on the <code class="docutils literal notranslate"><span class="pre">MASTER_ADDR</span></code> that can be used to
