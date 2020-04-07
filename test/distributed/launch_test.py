@@ -115,7 +115,7 @@ class LaunchTest(unittest.TestCase):
 
         script_args = [path("bin/test_script.sh"), f"{self.test_dir}"]
 
-        launch.main(args + ["--use_env"] + script_args)
+        launch.main(args + script_args)
 
         world_size = nnodes * expected_number
         # make sure all the workers ran
