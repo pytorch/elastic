@@ -134,15 +134,6 @@ class EtcdServer:
         """
         return f"{self._host}:{self._port}"
 
-    def get_client(self) -> etcd.Client:
-        """
-        Returns: an etcd client object that can be used to make requests to
-           this server.
-        """
-        return etcd.Client(
-            host=self._host, port=self._port, version_prefix="/v2", read_timeout=10
-        )
-
     def start(self, timeout: int = 60) -> None:
         """
         Starts the server, and waits for it to be ready. When this function
@@ -185,6 +176,15 @@ class EtcdServer:
         self._etcd_proc = subprocess.Popen(etcd_cmd, close_fds=True)
         atexit.register(stop_etcd, self._etcd_proc, self._data_dir)
         self._wait_for_ready(timeout)
+
+    def get_client(self) -> etcd.Client:
+        """
+        Returns: an etcd client object that can be used to make requests to
+           this server.
+        """
+        return etcd.Client(
+            host=self._host, port=self._port, version_prefix="/v2", read_timeout=10
+        )
 
     def _wait_for_ready(self, timeout: int = 60):
         client = etcd.Client(

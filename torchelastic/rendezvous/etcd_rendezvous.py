@@ -203,7 +203,7 @@ class EtcdRendezvous(object):
         num_max_workers,
         timeout,
         last_call_timeout,
-        kwargs,
+        **kwargs,
     ):
         self._prefix = prefix
         self._run_id = run_id
@@ -1213,7 +1213,7 @@ def _etcd_rendezvous_handler(url):
         num_max_workers=num_max_workers,
         timeout=timeout,
         last_call_timeout=last_call_timeout,
-        kwargs=kwargs,
+        **kwargs,
     )
     return EtcdRendezvousHandler(rdzv_impl=etcd_rdzv)
 

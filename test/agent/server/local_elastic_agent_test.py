@@ -14,7 +14,6 @@ import uuid
 import torch
 import torch.distributed as dist
 import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
-from p2p.etcd_server_fixture import EtcdServerFixture
 from test_utils import is_tsan
 from torchelastic.agent.server.api import (
     WorkerGroupFailureException,
@@ -22,6 +21,7 @@ from torchelastic.agent.server.api import (
     WorkerState,
 )
 from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
+from torchelastic.rendezvous.etcd_server import EtcdServer
 
 
 def _happy_function():
@@ -97,7 +97,7 @@ class LocalElasticAgentTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # start a standalone, single process etcd server to use for all tests
-        cls._etcd_server = EtcdServerFixture()
+        cls._etcd_server = EtcdServer()
         cls._etcd_server.start()
 
     @classmethod
@@ -108,11 +108,9 @@ class LocalElasticAgentTest(unittest.TestCase):
     def _get_worker_spec(
         self, fn, args=(), max_restarts=1, num_agents=1, monitor_interval=0.1
     ):
-        host = self._etcd_server.get_host()
-        port = self._etcd_server.get_port()
         run_id = str(uuid.uuid4().int)
         rdzv_handler = dist.rendezvous(
-            f"etcd://{host}:{port}/{run_id}"
+            f"etcd://{self._etcd_server.get_endpoint()}/{run_id}"
             f"?min_workers={num_agents}"
             f"&max_workers={num_agents}"
         )
