@@ -1,5 +1,5 @@
-Writing your distributed train script
---------------------------------------
+Train script
+-------------
 
 If your train script works with ``torch.distributed.launch`` it will continue
 working with ``torchelastic.distributed.launch`` with these differences:
@@ -20,7 +20,7 @@ working with ``torchelastic.distributed.launch`` with these differences:
    the ``--local_rank`` option, you need to now get the local rank from the
    environment variable ``LOCAL_RANK`` (e.g. ``os.environ["LOCAL_RANK"]``).
 
-Belwo is an expository example of a training script that checkpoints on each
+Below is an expository example of a training script that checkpoints on each
 epoch, hence the worst-case progress lost on failure is one full epoch worth
 of training.
 
@@ -44,3 +44,4 @@ of training.
 
 For concrete examples of torchelastic-compliant train scripts, visit
 our `examples <examples.html>`_ page.
+

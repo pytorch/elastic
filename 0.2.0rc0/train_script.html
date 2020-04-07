@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Writing your distributed train script &mdash; PyTorch/Elastic master documentation</title>
+  <title>Train script &mdash; PyTorch/Elastic master documentation</title>
   
 
   
@@ -187,7 +187,7 @@
               <p class="caption"><span class="caption-text">Get Started</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Writing your distributed train script</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Train script</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API</span></p>
@@ -200,7 +200,7 @@
 </ul>
 <p class="caption"><span class="caption-text">Plugins</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="kubernetes.html">Torch Elastic Kubernetes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kubernetes.html">TorchElastic Kubernetes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime.html">Cloud Provider Support (Deprecated)</a></li>
 </ul>
 
@@ -242,7 +242,7 @@
       </li>
 
         
-      <li>Writing your distributed train script</li>
+      <li>Train script</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
@@ -274,8 +274,8 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <div class="section" id="writing-your-distributed-train-script">
-<h1>Writing your distributed train script<a class="headerlink" href="#writing-your-distributed-train-script" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="train-script">
+<h1>Train script<a class="headerlink" href="#train-script" title="Permalink to this headline">¶</a></h1>
 <p>If your train script works with <code class="docutils literal notranslate"><span class="pre">torch.distributed.launch</span></code> it will continue
 working with <code class="docutils literal notranslate"><span class="pre">torchelastic.distributed.launch</span></code> with these differences:</p>
 <ol class="arabic simple">
@@ -292,7 +292,7 @@ lose progress up to the most recent checkpoint
 the <code class="docutils literal notranslate"><span class="pre">--local_rank</span></code> option, you need to now get the local rank from the
 environment variable <code class="docutils literal notranslate"><span class="pre">LOCAL_RANK</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">os.environ[&quot;LOCAL_RANK&quot;]</span></code>).</li>
 </ol>
-<p>Belwo is an expository example of a training script that checkpoints on each
+<p>Below is an expository example of a training script that checkpoints on each
 epoch, hence the worst-case progress lost on failure is one full epoch worth
 of training.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
@@ -359,7 +359,7 @@ our <a class="reference external" href="examples.html">examples</a> page.</p>
           <div class="pytorch-right-menu" id="pytorch-right-menu">
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
-<li><a class="reference internal" href="#">Writing your distributed train script</a></li>
+<li><a class="reference internal" href="#">Train script</a></li>
 </ul>
 
             </div>
