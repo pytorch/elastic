@@ -354,65 +354,66 @@
 
 <div class="viewcode-block" id="EtcdRendezvousHandler"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvousHandler">[docs]</a><span class="k">class</span> <span class="nc">EtcdRendezvousHandler</span><span class="p">(</span><span class="n">RendezvousHandler</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Implements a ``torchelastic.rendezvous.RendezvousHandler``</span>
+<span class="sd">    Implements a :py:class:`torchelastic.rendezvous.RendezvousHandler`</span>
 <span class="sd">    interface backed by</span>
-<span class="sd">    torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.</span>
+<span class="sd">    :py:class:`torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous`.</span>
 
 <span class="sd">    Torchelastic uses a URL to configure the type of rendezvous to use and</span>
 <span class="sd">    to pass implementation specific configurations to the rendezvous module.</span>
-<span class="sd">    The basic etcd rendezvous configuration URL looks like the following::</span>
+<span class="sd">    The basic etcd rendezvous configuration URL looks like the following</span>
+<span class="sd">    ::</span>
 
-<span class="sd">    etcd://&lt;etcd_address&gt;:&lt;port&gt;/&lt;job_id&gt;?min_workers=&lt;min_workers&gt;&amp;max_workers=&lt;max_workers&gt; # noqa W605</span>
+<span class="sd">     etcd://&lt;etcd_address&gt;:&lt;port&gt;/&lt;job_id&gt;?min_workers=&lt;min_workers&gt;&amp;max_workers=&lt;max_workers&gt; # noqa W605</span>
 
-<span class="sd">   Example::</span>
+<span class="sd">     -- example --</span>
 
-<span class="sd">    etcd://localhost:2379/1234?min_workers=1&amp;max_workers=3</span>
+<span class="sd">     etcd://localhost:2379/1234?min_workers=1&amp;max_workers=3</span>
 
-<span class="sd">   The URL above is interpreted as follows:</span>
+<span class="sd">    The URL above is interpreted as follows:</span>
 
-<span class="sd">   1. Use the rendezvous handler that is registered with the ``etcd``</span>
-<span class="sd">      scheme</span>
-<span class="sd">   2. The ``etcd`` endpoint to use is ``localhost:2379``</span>
-<span class="sd">   3. ``job_id == 1234`` is used as the prefix in etcd (this allows one to</span>
-<span class="sd">      share a common etcd server for multiple jobs so long as the</span>
-<span class="sd">      ``job_ids`` are guaranteed to be unique). Note that the job id can be</span>
-<span class="sd">      any string (e.g. does not need to be a number) as long as it is</span>
-<span class="sd">      unique.</span>
-<span class="sd">   4. ``min_workers=1`` and ``max_workers=3`` specifies a range for</span>
-<span class="sd">      membership size - torchelastic starts running the job as long as the</span>
-<span class="sd">      cluster size is greater than or equal to ``min_workers`` and admits</span>
-<span class="sd">      up to ``max_workers`` into the cluster.</span>
+<span class="sd">    1. Use the rendezvous handler that is registered with the ``etcd``</span>
+<span class="sd">       scheme</span>
+<span class="sd">    2. The ``etcd`` endpoint to use is ``localhost:2379``</span>
+<span class="sd">    3. ``job_id == 1234`` is used as the prefix in etcd (this allows one to</span>
+<span class="sd">       share a common etcd server for multiple jobs so long as the</span>
+<span class="sd">       ``job_ids`` are guaranteed to be unique). Note that the job id can be</span>
+<span class="sd">       any string (e.g. does not need to be a number) as long as it is</span>
+<span class="sd">       unique.</span>
+<span class="sd">    4. ``min_workers=1`` and ``max_workers=3`` specifies a range for</span>
+<span class="sd">       membership size - torchelastic starts running the job as long as the</span>
+<span class="sd">       cluster size is greater than or equal to ``min_workers`` and admits</span>
+<span class="sd">       up to ``max_workers`` into the cluster.</span>
 
-<span class="sd">   Below are a full list of the parameters that can be passed to etcd</span>
-<span class="sd">   rendezvous:</span>
+<span class="sd">    Below are a full list of the parameters that can be passed to etcd</span>
+<span class="sd">    rendezvous:</span>
 
-<span class="sd">  +--------------------------------------------+--------------------------+</span>
-<span class="sd">  | Parameter                                  | Description              |</span>
-<span class="sd">  +============================================+==========================+</span>
-<span class="sd">  | min_workers                                | minimum number of        |</span>
-<span class="sd">  |                                            | workers for the          |</span>
-<span class="sd">  |                                            | rendezvous to be valid   |</span>
-<span class="sd">  +--------------------------------------------+--------------------------+</span>
-<span class="sd">  | max_workers                                | maximum number of        |</span>
-<span class="sd">  |                                            | workers to admit         |</span>
-<span class="sd">  +--------------------------------------------+--------------------------+</span>
-<span class="sd">  | timeout                                    | total timeout within     |</span>
-<span class="sd">  |                                            | which next_rendezvous is |</span>
-<span class="sd">  |                                            | expected to succeed      |</span>
-<span class="sd">  |                                            | (default 600s)           |</span>
-<span class="sd">  +--------------------------------------------+--------------------------+</span>
-<span class="sd">  | last_call_timeout                          | additional wait amount   |</span>
-<span class="sd">  |                                            | (“last call”) after min  |</span>
-<span class="sd">  |                                            | number of workers has    |</span>
-<span class="sd">  |                                            | been reached (defaults   |</span>
-<span class="sd">  |                                            | to 30s)                  |</span>
-<span class="sd">  +--------------------------------------------+--------------------------+</span>
-<span class="sd">  | etcd_prefix                                | path prefix (from etcd   |</span>
-<span class="sd">  |                                            | root), inside which all  |</span>
-<span class="sd">  |                                            | etcd nodes will be       |</span>
-<span class="sd">  |                                            | created (defaults to     |</span>
-<span class="sd">  |                                            | ``/torchelastic/p2p``)   |</span>
-<span class="sd">  +--------------------------------------------+--------------------------+</span>
+<span class="sd">    +--------------------------------------------+--------------------------+</span>
+<span class="sd">    | Parameter                                  | Description              |</span>
+<span class="sd">    +============================================+==========================+</span>
+<span class="sd">    | min_workers                                | minimum number of        |</span>
+<span class="sd">    |                                            | workers for the          |</span>
+<span class="sd">    |                                            | rendezvous to be valid   |</span>
+<span class="sd">    +--------------------------------------------+--------------------------+</span>
+<span class="sd">    | max_workers                                | maximum number of        |</span>
+<span class="sd">    |                                            | workers to admit         |</span>
+<span class="sd">    +--------------------------------------------+--------------------------+</span>
+<span class="sd">    | timeout                                    | total timeout within     |</span>
+<span class="sd">    |                                            | which next_rendezvous is |</span>
+<span class="sd">    |                                            | expected to succeed      |</span>
+<span class="sd">    |                                            | (default 600s)           |</span>
+<span class="sd">    +--------------------------------------------+--------------------------+</span>
+<span class="sd">    | last_call_timeout                          | additional wait amount   |</span>
+<span class="sd">    |                                            | (?last call?) after min  |</span>
+<span class="sd">    |                                            | number of workers has    |</span>
+<span class="sd">    |                                            | been reached (defaults   |</span>
+<span class="sd">    |                                            | to 30s)                  |</span>
+<span class="sd">    +--------------------------------------------+--------------------------+</span>
+<span class="sd">    | etcd_prefix                                | path prefix (from etcd   |</span>
+<span class="sd">    |                                            | root), inside which all  |</span>
+<span class="sd">    |                                            | etcd nodes will be       |</span>
+<span class="sd">    |                                            | created (defaults to     |</span>
+<span class="sd">    |                                            | ``/torchelastic/p2p``)   |</span>
+<span class="sd">    +--------------------------------------------+--------------------------+</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rdzv_impl</span><span class="p">):</span>
@@ -1489,6 +1490,7 @@
 
 <span class="c1"># torchelastic.rendezvous.RendezvousHandler using etcd (API v2):</span>
 <span class="n">register_rendezvous_handler</span><span class="p">(</span><span class="s2">&quot;etcd&quot;</span><span class="p">,</span> <span class="n">_etcd_rendezvous_handler</span><span class="p">)</span>
+
 </pre></div>
 
              </article>
