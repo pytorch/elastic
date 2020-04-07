@@ -26,14 +26,14 @@ def find_free_port():
     Finds a free port and binds a temporary socket to it so that
     the port can be "reserved" until used.
 
-    Returns: a socket binded to the reserved free port
-
     .. note:: the returned socket must be closed before using the port,
               otherwise a ``address already in use`` error will happen.
               The socket should be held and closed as close to the
               consumer of the port as possible since otherwise, there
               is a greater chance of race-condition where a different
               process may see the port as being free and take it.
+
+    Returns: a socket binded to the reserved free port
 
     Usage::
 
@@ -88,16 +88,17 @@ class EtcdServer:
     2. Uses ``<this file root>/bin/etcd`` if one exists
     3. Uses ``etcd`` from ``PATH``
 
+    Usage
+    ::
+
+     server = EtcdServer("/usr/bin/etcd", 2379, "/tmp/default.etcd")
+     server.start()
+     client = server.get_client()
+     # use client
+     server.stop()
+
     Args:
         etcd_binary_path: path of etcd server binary (see above for fallback path)
-
-    Usage::
-
-    server = EtcdServer("/usr/bin/etcd", 2379, "/tmp/default.etcd")
-    server.start()
-    client = server.get_client()
-    # use client
-    server.stop()
     """
 
     def __init__(self):
@@ -118,19 +119,22 @@ class EtcdServer:
 
     def get_port(self) -> int:
         """
-        Returns: the port the server is running on.
+        Returns:
+            the port the server is running on.
         """
         return self._port
 
     def get_host(self) -> str:
         """
-        Returns: the host the server is running on.
+        Returns:
+            the host the server is running on.
         """
         return self._host
 
     def get_endpoint(self) -> str:
         """
-        Returns: the etcd server endpoint (host:port)
+        Returns:
+            the etcd server endpoint (host:port)
         """
         return f"{self._host}:{self._port}"
 
@@ -179,7 +183,8 @@ class EtcdServer:
 
     def get_client(self) -> etcd.Client:
         """
-        Returns: an etcd client object that can be used to make requests to
+        Returns:
+           An etcd client object that can be used to make requests to
            this server.
         """
         return etcd.Client(
