@@ -10,6 +10,7 @@ import shutil
 import tempfile
 import unittest
 import uuid
+from unittest.mock import patch
 
 import torchelastic.distributed.launch as launch
 import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
@@ -126,6 +127,48 @@ class LaunchTest(unittest.TestCase):
         self.assertSetEqual(
             {str(i) for i in range(world_size)}, set(os.listdir(self.test_dir))
         )
+
+    def _test_nproc_launch_configuration(self, nproc_type, expected_number):
+        run_id = str(uuid.uuid4().int)
+        nnodes = 1
+
+        args = [
+            f"--nnodes={nnodes}",
+            f"--nproc_per_node={nproc_type}",
+            f"--rdzv_backend=etcd",
+            f"--rdzv_endpoint={self._etcd_endpoint}",
+            f"--rdzv_id={run_id}",
+            f"--monitor_interval=1",
+            f"--start_method=fork",
+            f"--no_python",
+        ]
+
+        script_args = [path("bin/test_script.sh"), f"{self.test_dir}"]
+
+        launch.main(args + ["--use_env"] + script_args)
+
+        world_size = nnodes * expected_number
+        # make sure all the workers ran
+        # each worker touches a file with its global rank as the name
+        self.assertSetEqual(
+            {str(i) for i in range(world_size)}, set(os.listdir(self.test_dir))
+        )
+
+    def test_nproc_launch_auto_configurations(self):
+        self._test_nproc_launch_configuration("auto", os.cpu_count())
+
+    def test_nproc_launch_number_configurations(self):
+        self._test_nproc_launch_configuration("4", 4)
+
+    def test_nproc_launch_unknown_configurations(self):
+        with self.assertRaises(ValueError):
+            self._test_nproc_launch_configuration("unknown", 4)
+
+    @patch("torch.cuda.is_available", return_value=True)
+    @patch("torch.cuda.device_count", return_value=3)
+    def test_nproc_gpu_launch_configurations(self, _mock1, _mock2):
+        self._test_nproc_launch_configuration("auto", 3)
+        self._test_nproc_launch_configuration("gpu", 3)
 
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_launch_elastic(self):

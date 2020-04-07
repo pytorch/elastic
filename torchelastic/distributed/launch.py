@@ -208,12 +208,15 @@ job is invoking this launcher.
       if should_checkpoint:
         save_checkpoint(checkpoint_path)
 """
+
+import logging
 import os
 import subprocess
 import sys
 import uuid
 from argparse import REMAINDER, ArgumentParser
 
+import torch
 import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
 import torchelastic.rendezvous.parameters as parameters
 from torchelastic import metrics
@@ -238,7 +241,10 @@ def parse_args(args):
         help="number of nodes or MIN_NODES:MAX_NODES",
     )
     parser.add_argument(
-        "--nproc_per_node", type=int, default=1, help="number of workers per node"
+        "--nproc_per_node",
+        type=str,
+        default="auto",
+        help="number of workers per node, supported values: [auto, cpu, gpu, int]",
     )
 
     # rendezvous related arguments
@@ -383,6 +389,37 @@ def wrapper_fn(omp_num_threads, use_env, cmd):
         raise subprocess.CalledProcessError(returncode=process.returncode, cmd=cmd)
 
 
+def determine_local_world_size(nproc_per_node: str):
+    try:
+        logging.info(f"Using nproc_per_node={nproc_per_node}.")
+        return int(nproc_per_node)
+    except ValueError:
+        if nproc_per_node == "cpu":
+            num_proc = os.cpu_count()
+            device_type = "cpu"
+        elif nproc_per_node == "gpu":
+            if not torch.cuda.is_available():
+                raise ValueError("Cuda is not available.")
+            device_type = "gpu"
+            num_proc = torch.cuda.device_count()
+        elif nproc_per_node == "auto":
+            if torch.cuda.is_available():
+                num_proc = torch.cuda.device_count()
+                device_type = "gpu"
+            else:
+                num_proc = os.cpu_count()
+                device_type = "cpu"
+        else:
+            raise ValueError(f"Unsupported nproc_per_node value: {nproc_per_node}")
+
+        logging.info(
+            f"Using nproc_per_node={nproc_per_node},"
+            f" seting to {num_proc} since the instance "
+            f"has {os.cpu_count()} {device_type}"
+        )
+        return num_proc
+
+
 def main(args=None):
     # If ``args`` not passed, defaults to ``sys.argv[:1]``
     args = parse_args(args)
@@ -412,9 +449,9 @@ def main(args=None):
     )
 
     rdzv_handler = parameters.get_rendezvous(rdzv_parameters)
-
+    nproc_per_node = determine_local_world_size(args.nproc_per_node)
     omp_num_threads = None
-    if "OMP_NUM_THREADS" not in os.environ and args.nproc_per_node > 1:
+    if "OMP_NUM_THREADS" not in os.environ and nproc_per_node > 1:
         omp_num_threads = 1
         print(
             f"*****************************************\n"
@@ -448,7 +485,7 @@ def main(args=None):
 
     spec = WorkerSpec(
         role="default",
-        local_world_size=args.nproc_per_node,
+        local_world_size=nproc_per_node,
         fn=wrapper_fn,
         args=(omp_num_threads, args.use_env, cmd),
         rdzv_handler=rdzv_handler,
