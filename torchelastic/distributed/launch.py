@@ -282,13 +282,13 @@ def parse_args(args):
     parser.add_argument(
         "--max_restarts",
         type=int,
-        default=100,
+        default=3,
         help="max number of worker group restarts before failing",
     )
     parser.add_argument(
         "--monitor_interval",
         type=float,
-        default=60,
+        default=5,
         help="interval (in seconds) to monitor the state of workers",
     )
     parser.add_argument(
@@ -298,16 +298,6 @@ def parse_args(args):
         choices=["spawn", "fork", "forkserver"],
         help="multiprocessing start_method to use when creating workers",
     )
-    parser.add_argument(
-        "--use_env",
-        default=False,
-        action="store_true",
-        help="Use environment variable to pass "
-        "'local rank'. For legacy reasons, the default value is False. "
-        "If set to True, the script will not pass "
-        "--local_rank as argument, and will instead set LOCAL_RANK.",
-    )
-
     parser.add_argument(
         "-m",
         "--module",
@@ -354,7 +344,7 @@ def parse_min_max_nnodes(nnodes: str):
     return min_nodes, max_nodes
 
 
-def wrapper_fn(omp_num_threads, use_env, cmd):
+def wrapper_fn(omp_num_threads, cmd):
     # TODO get rid of this wrapper_fn
     # the agent uses multiprocessing.spawn to create nproc_per_node
     # instances of fn, and hence expects fn to be a callable
@@ -378,10 +368,6 @@ def wrapper_fn(omp_num_threads, use_env, cmd):
     # set PyTorch distributed related environmental variables
     if omp_num_threads is not None:
         os.environ["OMP_NUM_THREADS"] = str(omp_num_threads)
-
-    if not use_env:
-        # LOCAL_RANK is set by the agent
-        cmd.append("--local_rank={}".format(os.environ["LOCAL_RANK"]))
 
     process = subprocess.Popen(cmd)
     process.wait()
@@ -469,11 +455,6 @@ def main(args=None):
         if args.module:
             cmd.append("-m")
     else:
-        if not args.use_env:
-            raise ValueError(
-                "When using the '--no_python' flag,"
-                " you must also set the '--use_env' flag."
-            )
         if args.module:
             raise ValueError(
                 "Don't use both the '--no_python' flag"
@@ -487,7 +468,7 @@ def main(args=None):
         role="default",
         local_world_size=nproc_per_node,
         fn=wrapper_fn,
-        args=(omp_num_threads, args.use_env, cmd),
+        args=(omp_num_threads, cmd),
         rdzv_handler=rdzv_handler,
         max_restarts=args.max_restarts,
         monitor_interval=args.monitor_interval,

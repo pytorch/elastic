@@ -59,5 +59,3 @@ to implement.
    :private-members:
 
 .. autoclass:: torchelastic.agent.server.api.MonitorResult
-
-

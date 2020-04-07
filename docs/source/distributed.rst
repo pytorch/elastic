@@ -7,4 +7,3 @@ Elastic launcher
 ------------------
 
 .. automodule:: torchelastic.distributed.launch
-

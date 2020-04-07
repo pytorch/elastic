@@ -3,28 +3,25 @@ Examples
 
 The examples below run on the `torchelastic/examples <https://hub.docker.com/r/torchelastic/examples>`_
 Docker image, built from the `examples/Dockerfile <https://github.com/pytorch/elastic/blob/master/examples/Dockerfile>`_.
-The ``$VERSION`` (e.g. ``0.2.0rc0``) variable is used throughout this page,
-this should be substitued with the version of torchelastic you are using.
 
-.. note:: the examples below only work on version ``>0.2.0rc0``.
-
-In most cases we demonstrate a single-node, multi-worker example. To use
-multiple nodes, run the same commands on multiple nodes with these differences:
-
-1. Specify ``--nnodes=$MIN_NODE:$MAX_NODE`` instead of ``--nnodes=1``.
-2. Remove ``--with_etcd`` and specify ``--rdzv_backend``, ``--rdzv_endpoint`` and ``--rdzv_id``.
-
-For more information see `elastic launch <distributed.html>`_).
-
-Alternatively, you can use our kubernetes `elastic job controller <kubernetes.html>`_
-to launch a multi-node job.
-
+.. note:: The ``$VERSION`` (e.g. ``0.2.0rc0``) variable is used throughout this page,
+          this should be substituted with the version of torchelastic you are using.
+          The examples below only work on torchelastic ``>0.2.0rc0``.
 
 Prerequisite
 --------------
 
-1. `Docker <https://docs.docker.com/install/>`_
-2. ``export VERSION=<torchelastic version>``
+1. (recommended) Instance with GPU(s)
+2. `Docker <https://docs.docker.com/install/>`_
+3. `NVIDIA Container Toolkit <https://github.com/NVIDIA/nvidia-docker>`_
+4. ``export VERSION=<torchelastic version>``
+
+.. note:: PyTorch data loaders use ``shm``. The default docker ``shm-size`` is not
+          large enough and will OOM when using multiple data loader workers.
+          You must pass ``--shm-size`` to the ``docker run`` command or set the
+          number of data loader workers to ``0`` (run on the same process)
+          by passing the appropriate option to the script (use the ``--help`` flag
+          to see all script options). In the examples below we set ``--shm-size``.
 
 Classy Vision
 --------------
@@ -36,7 +33,7 @@ Launch two trainers on a single node:
 
 .. code-block:: bash
 
-   docker run torchelastic/examples:$VERSION
+   docker run --shm-size=2g torchelastic/examples:$VERSION
               --with_etcd
               --nnodes=1
               --nproc_per_node=2
@@ -47,7 +44,7 @@ If you have an instance with GPUs, run a worker on each GPU:
 
 .. code-block:: bash
 
-   docker run torchelastic/examples:$VERSION
+   docker run --shm-size=2g --gpus=all torchelastic/examples:$VERSION
               --with_etcd
               --nnodes=1
               --nproc_per_node=$NUM_CUDA_DEVICES
@@ -64,7 +61,7 @@ Launch ``$NUM_CUDA_DEVICES`` number of workers on a single node:
 
 .. code-block:: bash
 
-   docker run torchelastic/examples:$VERSION
+   docker run --shm-size=2g --gpus=all torchelastic/examples:$VERSION
               --with_etcd
               --nnodes=1
               --nproc_per_node=$NUM_CUDA_DEVICES
@@ -73,3 +70,29 @@ Launch ``$NUM_CUDA_DEVICES`` number of workers on a single node:
               --epochs 20
               --batch-size 32
               /workspace/data/tiny-imagenet-200
+
+Multi-container, multi-worker
+-------------------------------
+
+In this example we will launch multiple containers on a single node.
+Each container is running multiple workers.
+This demonstrates how a multi-node launch would work (each node runs a container).
+
+The high-level differences between a single-container vs multi-container
+launches are:
+
+1. Specify ``--nnodes=$MIN_NODE:$MAX_NODE`` instead of ``--nnodes=1``.
+2. An etcd server must be setup before starting the worker containers.
+3. Remove ``--with_etcd`` and specify ``--rdzv_backend``, ``--rdzv_endpoint`` and ``--rdzv_id``.
+
+For more information see `elastic launch <distributed.html>`_).
+
+<PLACEHOLDER, add multi-container example instructions here>
+
+Multi-node, multi-worker
+-------------------------
+
+The multi-node, multi-worker case is similar to running multi-container, multi-worker.
+Simply run each container on a separate node, occupying the entire node.
+Alternatively, you can use our kubernetes
+`elastic job controller <kubernetes.html>`_ to launch a multi-node job.

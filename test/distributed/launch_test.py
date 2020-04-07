@@ -67,32 +67,6 @@ class LaunchTest(unittest.TestCase):
         )
 
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
-    def test_launch_user_script_python_use_env(self):
-        run_id = str(uuid.uuid4().int)
-        nnodes = 1
-        nproc_per_node = 4
-        world_size = nnodes * nproc_per_node
-        args = [
-            f"--nnodes={nnodes}",
-            f"--nproc_per_node={nproc_per_node}",
-            f"--use_env",
-            f"--rdzv_backend=etcd",
-            f"--rdzv_endpoint={self._etcd_endpoint}",
-            f"--rdzv_id={run_id}",
-            f"--monitor_interval=1",
-            f"--start_method=fork",
-            path("bin/test_script_use_env.py"),
-            f"--touch_file_dir={self.test_dir}",
-        ]
-        launch.main(args)
-
-        # make sure all the workers ran
-        # each worker touches a file with its global rank as the name
-        self.assertSetEqual(
-            {str(i) for i in range(world_size)}, set(os.listdir(self.test_dir))
-        )
-
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_launch_user_script_bash(self):
         run_id = str(uuid.uuid4().int)
         nnodes = 1
@@ -113,14 +87,10 @@ class LaunchTest(unittest.TestCase):
         script_args = [path("bin/test_script.sh"), f"{self.test_dir}"]
 
         with self.assertRaises(ValueError):
-            # --no_python also requires --use_env
-            launch.main(args + script_args)
-
-        with self.assertRaises(ValueError):
             # --no_python cannot be used with --module
             launch.main(args + ["--module"] + script_args)
 
-        launch.main(args + ["--use_env"] + script_args)
+        launch.main(args + script_args)
 
         # make sure all the workers ran
         # each worker touches a file with its global rank as the name
