@@ -1,0 +1,26 @@
+version: '2'
+
+networks:
+  app-tier:
+    driver: bridge
+
+services:
+  etcd-server:
+    image: 'bitnami/etcd:latest'
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd-server:2379
+      - ETCD_ENABLE_V2=1
+    ports:
+      - 2379:2379
+      - 2380:2380
+    networks:
+      - app-tier
+  example:
+    image: 'drdarshan/hello-elastic:dev'
+    # Use a volume mount to point to your own scripts without rebuilding the image
+    # volumes:
+    #   - /path/to/your/application:/workspace
+    command: --nnode=1 --nproc_per_node=2 --rdzv_endpoint=etcd-server /workspace/echo.py
+    networks:
+      - app-tier
