@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Metrics &mdash; PyTorch/Elastic master documentation</title>
+  <title>Quickstart &mdash; PyTorch/Elastic master documentation</title>
   
 
   
@@ -32,8 +32,8 @@
   <link rel="stylesheet" href="_static/katex-math.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Torch Elastic Kubernetes" href="kubernetes.html" />
-    <link rel="prev" title="Rendezvous" href="rendezvous.html" /> 
+    <link rel="next" title="Writing your distributed train script" href="train_script.html" />
+    <link rel="prev" title="TorchElastic" href="index.html" /> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -185,18 +185,18 @@
             
             
               <p class="caption"><span class="caption-text">Get Started</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="train_script.html">Writing your distributed train script</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API</span></p>
-<ul class="current">
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="distributed.html">Elastic Launch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="agent.html">Elastic Agent</a></li>
 <li class="toctree-l1"><a class="reference internal" href="timer.html">Expiration Timers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="rendezvous.html">Rendezvous</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metrics.html">Metrics</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Plugins</span></p>
 <ul>
@@ -242,13 +242,13 @@
       </li>
 
         
-      <li>Metrics</li>
+      <li>Quickstart</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
         
             
-            <a href="_sources/metrics.rst.txt" rel="nofollow"><img src="_static/images/view-page-source-icon.svg"></a>
+            <a href="_sources/quickstart.rst.txt" rel="nofollow"><img src="_static/images/view-page-source-icon.svg"></a>
           
         
       </li>
@@ -274,171 +274,42 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <div class="section" id="module-torchelastic.metrics">
-<span id="metrics"></span><h1>Metrics<a class="headerlink" href="#module-torchelastic.metrics" title="Permalink to this headline">¶</a></h1>
-<p>Metrics API</p>
-<p><strong>Overview</strong>:</p>
-<p>The metrics API in torchelastic is used to publish telemetry metrics.
-It is designed to be used by torchelastic’s internal modules to
-publish metrics for the end user with the goal of increasing visibility
-and helping with debugging. However you may use the same API in your
-jobs to publish metrics to the same metrics <code class="docutils literal notranslate"><span class="pre">sink</span></code>.</p>
-<p>A <code class="docutils literal notranslate"><span class="pre">metric</span></code> can be thought of as timeseries data
-and is uniquely identified by the string-valued tuple
-<code class="docutils literal notranslate"><span class="pre">(metric_group,</span> <span class="pre">metric_name)</span></code>.</p>
-<p>torchelastic makes no assumptions about what a <code class="docutils literal notranslate"><span class="pre">metric_group</span></code> is
-and what relationship it has with <code class="docutils literal notranslate"><span class="pre">metric_name</span></code>. It is totally up
-to the user to use these two fields to uniquely identify a metric.</p>
+  <div class="section" id="quickstart">
+<h1>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this headline">¶</a></h1>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install torchelastic
+
+<span class="c1"># start a single-node etcd server on ONE host</span>
+etcd --enable-v2
+     --listen-client-urls http://0.0.0.0:2379,http://127.0.0.1:4001
+     --advertise-client-urls PUBLIC_HOSTNAME:2379
+</pre></div>
+</div>
+<p>To launch a <strong>fault-tolerant</strong> job, run the following on all nodes.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python -m torchelastic.distributed.launch
+        --nnodes<span class="o">=</span>NUM_NODES
+        --nproc_per_node<span class="o">=</span>TRAINERS_PER_NODE
+        --rdzv_id<span class="o">=</span>JOB_ID
+        --rdzv_backend<span class="o">=</span>etcd
+        --rdzv_endpoint<span class="o">=</span>ETCD_HOST:ETCD_PORT
+        YOUR_TRAINING_SCRIPT.py <span class="o">(</span>--arg1 ... train script args...<span class="o">)</span>
+</pre></div>
+</div>
+<p>To launch an <strong>elastic</strong> job, run the following on at least <code class="docutils literal notranslate"><span class="pre">MIN_SIZE</span></code> nodes
+and at most <code class="docutils literal notranslate"><span class="pre">MAX_SIZE</span></code> nodes.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python -m torchelastic.distributed.launch
+        --nnodes<span class="o">=</span>MIN_SIZE:MAX_SIZE
+        --nproc_per_node<span class="o">=</span>TRAINERS_PER_NODE
+        --rdzv_id<span class="o">=</span>JOB_ID
+        --rdzv_backend<span class="o">=</span>etcd
+        --rdzv_endpoint<span class="o">=</span>ETCD_HOST:ETCD_PORT
+        YOUR_TRAINING_SCRIPT.py <span class="o">(</span>--arg1 ... train script args...<span class="o">)</span>
+</pre></div>
+</div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">The metric group <code class="docutils literal notranslate"><span class="pre">torchelastic</span></code> is reserved by torchelastic for
-platform level metrics that it produces.
-For instance torchelastic may output the latency (in milliseconds)
-of a re-rendezvous operation from the agent as
-<code class="docutils literal notranslate"><span class="pre">(torchelastic,</span> <span class="pre">agent.rendezvous.duration.ms)</span></code></p>
-</div>
-<p>A sensible way to use metric groups is to map them to a stage or module
-in your job. You may also encode certain high level properties
-the job such as the region or stage (dev vs prod).</p>
-<p><strong>Publish Metrics</strong>:</p>
-<p>Using torchelastic’s metrics API is similar to using python’s logging
-framework. You first have to configure a metrics handler before
-trying to add metric data.</p>
-<p>The example below measures the latency for the <code class="docutils literal notranslate"><span class="pre">calculate()</span></code> function.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">import</span> <span class="nn">torchelastic.metrics</span> <span class="k">as</span> <span class="nn">metrics</span>
-
-<span class="c1"># makes all metrics other than the one from &quot;my_module&quot; to go /dev/null</span>
-<span class="n">metrics</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">metrics</span><span class="o">.</span><span class="n">NullMetricsHandler</span><span class="p">())</span>
-<span class="n">metrics</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">metrics</span><span class="o">.</span><span class="n">ConsoleMetricsHandler</span><span class="p">(),</span> <span class="s2">&quot;my_module&quot;</span><span class="p">)</span>
-
-<span class="k">def</span> <span class="nf">my_method</span><span class="p">():</span>
-  <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-  <span class="n">calculate</span><span class="p">()</span>
-  <span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-  <span class="n">metrics</span><span class="o">.</span><span class="n">put_metric</span><span class="p">(</span><span class="s2">&quot;calculate_latency&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">end</span><span class="o">-</span><span class="n">start</span><span class="p">),</span> <span class="s2">&quot;my_module&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>You may also use the torchelastic.metrics.prof` decorator
-to conveniently and succinctly profile functions</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># -- in module examples.foobar --</span>
-
-<span class="kn">import</span> <span class="nn">torchelastic.metrics</span> <span class="k">as</span> <span class="nn">metrics</span>
-
-<span class="n">metrics</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">metrics</span><span class="o">.</span><span class="n">ConsoleMetricsHandler</span><span class="p">(),</span> <span class="s2">&quot;foobar&quot;</span><span class="p">)</span>
-<span class="n">metrics</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">metrics</span><span class="o">.</span><span class="n">ConsoleMetricsHandler</span><span class="p">(),</span> <span class="s2">&quot;Bar&quot;</span><span class="p">)</span>
-
-<span class="nd">@metrics</span><span class="o">.</span><span class="n">prof</span>
-<span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
-  <span class="k">pass</span>
-
-<span class="k">class</span> <span class="nc">Bar</span><span class="p">():</span>
-
-  <span class="nd">@metrics</span><span class="o">.</span><span class="n">prof</span>
-  <span class="k">def</span> <span class="nf">baz</span><span class="p">():</span>
-      <span class="k">pass</span>
-</pre></div>
-</div>
-<p><code class="docutils literal notranslate"><span class="pre">&#64;metrics.prof</span></code> will publish the following metrics</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">leaf_module</span> <span class="ow">or</span> <span class="n">classname</span><span class="o">&gt;.</span><span class="n">success</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">the</span> <span class="n">function</span> <span class="n">finished</span> <span class="n">successfully</span>
-<span class="o">&lt;</span><span class="n">leaf_module</span> <span class="ow">or</span> <span class="n">classname</span><span class="o">&gt;.</span><span class="n">failure</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">the</span> <span class="n">function</span> <span class="n">threw</span> <span class="n">an</span> <span class="n">exception</span>
-<span class="o">&lt;</span><span class="n">leaf_module</span> <span class="ow">or</span> <span class="n">classname</span><span class="o">&gt;.</span><span class="n">duration</span><span class="o">.</span><span class="n">ms</span> <span class="o">-</span> <span class="n">function</span> <span class="n">duration</span> <span class="ow">in</span> <span class="n">milliseconds</span>
-</pre></div>
-</div>
-<p><strong>Configuring Metrics Handler</strong>:</p>
-<p><cite>torchelastic.metrics.MetricHandler</cite> is responsible for emitting
-the added metric values to a particular destination. Metric groups can be
-configured with different metric handlers.</p>
-<p>By default torchelastic emits all metrics to <code class="docutils literal notranslate"><span class="pre">/dev/null</span></code>.
-By adding the following configuration metrics,
-<code class="docutils literal notranslate"><span class="pre">torchelastic</span></code> and <code class="docutils literal notranslate"><span class="pre">my_app</span></code> metric groups will be printed out to
-console.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchelastic.metrics</span> <span class="k">as</span> <span class="nn">metrics</span>
-
-<span class="n">metrics</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">metrics</span><span class="o">.</span><span class="n">ConsoleMetricHandler</span><span class="p">(),</span> <span class="n">group</span> <span class="o">=</span> <span class="s2">&quot;torchelastic&quot;</span><span class="p">)</span>
-<span class="n">metrics</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">metrics</span><span class="o">.</span><span class="n">ConsoleMetricHandler</span><span class="p">(),</span> <span class="n">group</span> <span class="o">=</span> <span class="s2">&quot;my_app&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p><strong>Writing a Custom Metric Handler</strong>:</p>
-<p>If you want your metrics to be emitted to a custom location, implement
-the <cite>torchelastic.metrics.MetricHandler</cite> interface
-and configure your job to use your custom metric handler.</p>
-<p>Below is a toy example that prints the metrics to <code class="docutils literal notranslate"><span class="pre">stdout</span></code></p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchelastic.metrics</span> <span class="k">as</span> <span class="nn">metrics</span>
-
-<span class="k">class</span> <span class="nc">StdoutMetricHandler</span><span class="p">(</span><span class="n">metrics</span><span class="o">.</span><span class="n">MetricHandler</span><span class="p">):</span>
-   <span class="k">def</span> <span class="nf">emit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metric_data</span><span class="p">):</span>
-       <span class="n">ts</span> <span class="o">=</span> <span class="n">metric_data</span><span class="o">.</span><span class="n">timestamp</span>
-       <span class="n">group</span> <span class="o">=</span> <span class="n">metric_data</span><span class="o">.</span><span class="n">group_name</span>
-       <span class="n">name</span> <span class="o">=</span> <span class="n">metric_data</span><span class="o">.</span><span class="n">name</span>
-       <span class="n">value</span> <span class="o">=</span> <span class="n">metric_data</span><span class="o">.</span><span class="n">value</span>
-       <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{ts}</span><span class="s2">][</span><span class="si">{group}</span><span class="s2">]: </span><span class="si">{name}</span><span class="s2">=</span><span class="si">{value}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-<span class="n">metrics</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">StdoutMetricHandler</span><span class="p">(),</span> <span class="n">group</span><span class="o">=</span><span class="s2">&quot;my_app&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>Now all metrics in the group <code class="docutils literal notranslate"><span class="pre">my_app</span></code> will be printed to stdout as:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="mf">1574213883.4182858</span><span class="p">][</span><span class="n">my_app</span><span class="p">]:</span> <span class="n">my_metric</span><span class="o">=&lt;</span><span class="n">value</span><span class="o">&gt;</span>
-<span class="p">[</span><span class="mf">1574213940.5237644</span><span class="p">][</span><span class="n">my_app</span><span class="p">]:</span> <span class="n">my_metric</span><span class="o">=&lt;</span><span class="n">value</span><span class="o">&gt;</span>
-</pre></div>
-</div>
-<div class="section" id="metric-handlers">
-<h2>Metric Handlers<a class="headerlink" href="#metric-handlers" title="Permalink to this headline">¶</a></h2>
-<p>Below are the metric handlers that come included with torchelastic.</p>
-<dl class="class">
-<dt id="torchelastic.metrics.api.MetricHandler">
-<em class="property">class </em><code class="descclassname">torchelastic.metrics.api.</code><code class="descname">MetricHandler</code><a class="reference internal" href="_modules/torchelastic/metrics/api.html#MetricHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.metrics.api.MetricHandler" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="torchelastic.metrics.api.ConsoleMetricHandler">
-<em class="property">class </em><code class="descclassname">torchelastic.metrics.api.</code><code class="descname">ConsoleMetricHandler</code><a class="reference internal" href="_modules/torchelastic/metrics/api.html#ConsoleMetricHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.metrics.api.ConsoleMetricHandler" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="torchelastic.metrics.api.NullMetricHandler">
-<em class="property">class </em><code class="descclassname">torchelastic.metrics.api.</code><code class="descname">NullMetricHandler</code><a class="reference internal" href="_modules/torchelastic/metrics/api.html#NullMetricHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.metrics.api.NullMetricHandler" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</div>
-<div class="section" id="methods">
-<h2>Methods<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
-<dt id="torchelastic.metrics.configure">
-<code class="descclassname">torchelastic.metrics.</code><code class="descname">configure</code><span class="sig-paren">(</span><em>handler: torchelastic.metrics.api.MetricHandler</em>, <em>group: str = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/metrics/api.html#configure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.metrics.configure" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="torchelastic.metrics.prof">
-<code class="descclassname">torchelastic.metrics.</code><code class="descname">prof</code><span class="sig-paren">(</span><em>fn=None</em>, <em>group: str = 'torchelastic'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/metrics/api.html#prof"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.metrics.prof" title="Permalink to this definition">¶</a></dt>
-<dd><p>&#64;profile decorator publishes duration.ms, count, success, failure
-metrics for the function that it decorates. The metric name defaults
-to the qualified name (<code class="docutils literal notranslate"><span class="pre">class_name.def_name</span></code>) of the function.
-If the function does not belong to a class, it uses the leaf module name
-instead.</p>
-<p>Usage</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@metrics</span><span class="o">.</span><span class="n">prof</span>
-<span class="k">def</span> <span class="nf">x</span><span class="p">():</span>
-    <span class="k">pass</span>
-
-<span class="nd">@metrics</span><span class="o">.</span><span class="n">prof</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s2">&quot;agent&quot;</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">y</span><span class="p">():</span>
-    <span class="k">pass</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
-<dt id="torchelastic.metrics.put_metric">
-<code class="descclassname">torchelastic.metrics.</code><code class="descname">put_metric</code><span class="sig-paren">(</span><em>metric_name: str</em>, <em>metric_value: int</em>, <em>metric_group: str = 'torchelastic'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/metrics/api.html#put_metric"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.metrics.put_metric" title="Permalink to this definition">¶</a></dt>
-<dd><p>Publishes a metric data point.</p>
-<p>Usage</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">put_metric</span><span class="p">(</span><span class="s2">&quot;metric_name&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-<span class="n">put_metric</span><span class="p">(</span><span class="s2">&quot;metric_name&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;metric_group_name&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
+<p class="last">If <code class="docutils literal notranslate"><span class="pre">torchelastic.distributed.launch</span></code> does not meet your requirements
+you may use our APIs directly for more powerful customization. Start by
+taking a look at the <cite>elastic agent &lt;agent.html&gt;</cite> API).</p>
 </div>
 </div>
 
@@ -450,10 +321,10 @@ instead.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="kubernetes.html" class="btn btn-neutral float-right" title="Torch Elastic Kubernetes" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="train_script.html" class="btn btn-neutral float-right" title="Writing your distributed train script" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="rendezvous.html" class="btn btn-neutral" title="Rendezvous" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="index.html" class="btn btn-neutral" title="TorchElastic" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
@@ -485,11 +356,7 @@ instead.</p>
           <div class="pytorch-right-menu" id="pytorch-right-menu">
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
-<li><a class="reference internal" href="#">Metrics</a><ul>
-<li><a class="reference internal" href="#metric-handlers">Metric Handlers</a></li>
-<li><a class="reference internal" href="#methods">Methods</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#">Quickstart</a></li>
 </ul>
 
             </div>

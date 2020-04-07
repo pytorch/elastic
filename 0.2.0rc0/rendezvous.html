@@ -184,7 +184,13 @@
               
             
             
-              <p class="caption"><span class="caption-text">API</span></p>
+              <p class="caption"><span class="caption-text">Get Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="train_script.html">Writing your distributed train script</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="distributed.html">Elastic Launch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="agent.html">Elastic Agent</a></li>
@@ -192,11 +198,10 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Rendezvous</a></li>
 <li class="toctree-l1"><a class="reference internal" href="metrics.html">Metrics</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p class="caption"><span class="caption-text">Plugins</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="kubernetes.html">Torch Elastic Kubernetes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runtime.html">Running torchelastic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime.html">Cloud Provider Support (Deprecated)</a></li>
 </ul>
 
             
@@ -486,7 +491,7 @@ calling <code class="docutils literal notranslate"><span class="pre">next_rendez
 
 <dl class="class">
 <dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous">
-<em class="property">class </em><code class="descclassname">torchelastic.rendezvous.etcd_rendezvous.</code><code class="descname">EtcdRendezvous</code><span class="sig-paren">(</span><em>endpoints</em>, <em>prefix</em>, <em>run_id</em>, <em>num_min_workers</em>, <em>num_max_workers</em>, <em>timeout</em>, <em>last_call_timeout</em>, <em>kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdRendezvous"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">torchelastic.rendezvous.etcd_rendezvous.</code><code class="descname">EtcdRendezvous</code><span class="sig-paren">(</span><em>endpoints</em>, <em>prefix</em>, <em>run_id</em>, <em>num_min_workers</em>, <em>num_max_workers</em>, <em>timeout</em>, <em>last_call_timeout</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdRendezvous"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous" title="Permalink to this definition">¶</a></dt>
 <dd><p>A rendezvous implementation that uses <a class="reference external" href="https://etcd.io/">etcd</a> as
 the backend store.</p>
 </dd></dl>

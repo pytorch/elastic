@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Running torchelastic &mdash; PyTorch/Elastic master documentation</title>
+  <title>Cloud Provider Support (Deprecated) &mdash; PyTorch/Elastic master documentation</title>
   
 
   
@@ -183,7 +183,13 @@
               
             
             
-              <p class="caption"><span class="caption-text">API</span></p>
+              <p class="caption"><span class="caption-text">Get Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="train_script.html">Writing your distributed train script</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="distributed.html">Elastic Launch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="agent.html">Elastic Agent</a></li>
@@ -191,11 +197,10 @@
 <li class="toctree-l1"><a class="reference internal" href="rendezvous.html">Rendezvous</a></li>
 <li class="toctree-l1"><a class="reference internal" href="metrics.html">Metrics</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p class="caption"><span class="caption-text">Plugins</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="kubernetes.html">Torch Elastic Kubernetes</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Running torchelastic</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Cloud Provider Support (Deprecated)</a></li>
 </ul>
 
             
@@ -236,7 +241,7 @@
       </li>
 
         
-      <li>Running torchelastic</li>
+      <li>Cloud Provider Support (Deprecated)</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
@@ -268,13 +273,16 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <div class="section" id="running-torchelastic">
-<h1>Running torchelastic<a class="headerlink" href="#running-torchelastic" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="cloud-provider-support-deprecated">
+<h1>Cloud Provider Support (Deprecated)<a class="headerlink" href="#cloud-provider-support-deprecated" title="Permalink to this headline">¶</a></h1>
 <p>Sections below are instructions on running torchelastic on Kubernetes and
 various cloud providers.</p>
-<div class="section" id="kubernetes">
-<h2>Kubernetes<a class="headerlink" href="#kubernetes" title="Permalink to this headline">¶</a></h2>
-<p>Refer to our github’s <a class="reference external" href="https://github.com/pytorch/elastic/tree/master/kubernetes">k8 README</a></p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The instructions below will only work on torchelastic <code class="docutils literal notranslate"><span class="pre">0.1.0rc</span></code>.
+We highly encourage you to use our kubernetes
+<a class="reference external" href="kubernetes.html">elastic job controller</a> and use a kubernetes
+cluster setup on your preferred cloud provider.</p>
 </div>
 <div class="section" id="aws-ec2">
 <h2>AWS (EC2)<a class="headerlink" href="#aws-ec2" title="Permalink to this headline">¶</a></h2>
@@ -327,8 +335,7 @@ various cloud providers.</p>
           <div class="pytorch-right-menu" id="pytorch-right-menu">
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
-<li><a class="reference internal" href="#">Running torchelastic</a><ul>
-<li><a class="reference internal" href="#kubernetes">Kubernetes</a></li>
+<li><a class="reference internal" href="#">Cloud Provider Support (Deprecated)</a><ul>
 <li><a class="reference internal" href="#aws-ec2">AWS (EC2)</a></li>
 <li><a class="reference internal" href="#azure">Azure</a></li>
 </ul>

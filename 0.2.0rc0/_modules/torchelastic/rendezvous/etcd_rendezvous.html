@@ -182,7 +182,13 @@
               
             
             
-              <p class="caption"><span class="caption-text">API</span></p>
+              <p class="caption"><span class="caption-text">Get Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../train_script.html">Writing your distributed train script</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../distributed.html">Elastic Launch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../agent.html">Elastic Agent</a></li>
@@ -190,11 +196,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../rendezvous.html">Rendezvous</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../metrics.html">Metrics</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p class="caption"><span class="caption-text">Plugins</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../kubernetes.html">Torch Elastic Kubernetes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../runtime.html">Running torchelastic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../runtime.html">Cloud Provider Support (Deprecated)</a></li>
 </ul>
 
             
@@ -471,7 +476,7 @@
         <span class="n">num_max_workers</span><span class="p">,</span>
         <span class="n">timeout</span><span class="p">,</span>
         <span class="n">last_call_timeout</span><span class="p">,</span>
-        <span class="n">kwargs</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span> <span class="o">=</span> <span class="n">prefix</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_run_id</span> <span class="o">=</span> <span class="n">run_id</span>
@@ -1481,7 +1486,7 @@
         <span class="n">num_max_workers</span><span class="o">=</span><span class="n">num_max_workers</span><span class="p">,</span>
         <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span>
         <span class="n">last_call_timeout</span><span class="o">=</span><span class="n">last_call_timeout</span><span class="p">,</span>
-        <span class="n">kwargs</span><span class="o">=</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">EtcdRendezvousHandler</span><span class="p">(</span><span class="n">rdzv_impl</span><span class="o">=</span><span class="n">etcd_rdzv</span><span class="p">)</span>
 
