@@ -21,7 +21,8 @@ class RendezvousClosedException(Exception):
 
 class RendezvousTimeoutException(Exception):
     """
-    Raised from `next_rendezvous` to signal that the rendezvous did not
+    Raised from ``RendezvousHandler.next_rendezvous()`` to signal that the
+    rendezvous did not
     succeed within the allocated time. This is meant to be interpreted
     as a non-retryable type of failure.
     """
@@ -31,7 +32,7 @@ class RendezvousTimeoutException(Exception):
 
 class RendezvousNonRetryableError(Exception):
     """
-    Raised from any of the `RendezvousHandler` methods when a failure
+    Raised from any of the ``RendezvousHandler`` methods when a failure
     occured that should not be retried with the same worker process.
     """
 
@@ -60,12 +61,12 @@ class RendezvousHandler(abc.ABC):
         process is included in the formed worker group), or a timeout occurs, or
         rendezvous was marked closed.
 
-        Returns a tuple of (``c10d Store``, ``rank``, ``world size``)
+        Returns: a tuple of (``c10d Store``, ``rank``, ``world size``)
 
         Raises:
-            ``RendezvousClosedException`` if rendezvous for the current
+            RendezvousClosedException - if rendezvous for the current
                job is closed.
-            ``RendezvousTimeoutException`` on timeout
+            RendezvousTimeoutException - on timeout
         """
         pass
 
@@ -76,7 +77,7 @@ class RendezvousHandler(abc.ABC):
         which means all future attempts to re-rendezvous (within same job) will
         fail.
 
-        .. note:: ``is_closed``/``set_closed`` have semantics of eventual
+        .. note:: ``is_closed`` and ``set_closed`` have semantics of eventual
                   propagation, and should not be used for synchronization.
                   The intention here is that if at least one worker decides
                   the job is finished, it will close the rendezvous, and

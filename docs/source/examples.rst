@@ -1,5 +1,5 @@
 Examples
-=========
+=============
 
 The examples below run on the `torchelastic/examples <https://hub.docker.com/r/torchelastic/examples>`_
 Docker image, built from the `examples/Dockerfile <https://github.com/pytorch/elastic/blob/master/examples/Dockerfile>`_.
@@ -71,12 +71,15 @@ Launch ``$NUM_CUDA_DEVICES`` number of workers on a single node:
               --batch-size 32
               /workspace/data/tiny-imagenet-200
 
-Multi-container, multi-worker
--------------------------------
+Multi-container
+----------------
 
 In this example we will launch multiple containers on a single node.
-Each container is running multiple workers.
-This demonstrates how a multi-node launch would work (each node runs a container).
+Please follow the instructions in the multi-container example
+`README <https://github.com/pytorch/elastic/tree/master/examples/multi_container/README.md>`_.
+
+Each container runs multiple workers. This demonstrates how a multi-node launch
+would work (each node runs a container occupying the whole node).
 
 The high-level differences between a single-container vs multi-container
 launches are:
@@ -85,14 +88,22 @@ launches are:
 2. An etcd server must be setup before starting the worker containers.
 3. Remove ``--with_etcd`` and specify ``--rdzv_backend``, ``--rdzv_endpoint`` and ``--rdzv_id``.
 
-For more information see `elastic launch <distributed.html>`_).
+For more information see `elastic launch <distributed.html>`_.
 
-<PLACEHOLDER, add multi-container example instructions here>
 
-Multi-node, multi-worker
--------------------------
+
+Multi-node
+-----------
 
 The multi-node, multi-worker case is similar to running multi-container, multi-worker.
 Simply run each container on a separate node, occupying the entire node.
 Alternatively, you can use our kubernetes
 `elastic job controller <kubernetes.html>`_ to launch a multi-node job.
+
+.. warning:: We recommend you setup a highly available etcd server when
+             deploying multi-node jobs in production as this is the single
+             point of failure for your jobs. Depending on your usecase
+             you can either sidecar an etcd server with each job or setup
+             a shared etcd server. If etcd does not meet your requirements
+             you can implement your own rendezvous handler and use our
+             APIs to create a custom launcher.
