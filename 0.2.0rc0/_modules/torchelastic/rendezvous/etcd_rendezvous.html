@@ -354,23 +354,19 @@
 
 <div class="viewcode-block" id="EtcdRendezvousHandler"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvousHandler">[docs]</a><span class="k">class</span> <span class="nc">EtcdRendezvousHandler</span><span class="p">(</span><span class="n">RendezvousHandler</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Implements a`torchelastic.rendezvous.RendezvousHandler`</span>
+<span class="sd">    Implements a ``torchelastic.rendezvous.RendezvousHandler``</span>
 <span class="sd">    interface backed by</span>
 <span class="sd">    torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.</span>
 
 <span class="sd">    Torchelastic uses a URL to configure the type of rendezvous to use and</span>
 <span class="sd">    to pass implementation specific configurations to the rendezvous module.</span>
-<span class="sd">    The basic etcd rendezvous configuration URL looks like the following</span>
+<span class="sd">    The basic etcd rendezvous configuration URL looks like the following::</span>
 
-<span class="sd">    ::</span>
+<span class="sd">    etcd://&lt;etcd_address&gt;:&lt;port&gt;/&lt;job_id&gt;?min_workers=&lt;min_workers&gt;&amp;max_workers=&lt;max_workers&gt; # noqa W605</span>
 
-<span class="sd">     etcd://&lt;etcd_address&gt;:&lt;port&gt;/&lt;job_id&gt;?min_workers=&lt;min_workers&gt;&amp;max_workers=&lt;max_workers&gt; # noqa W605</span>
+<span class="sd">   Example::</span>
 
-<span class="sd">   Example:</span>
-
-<span class="sd">       ::</span>
-
-<span class="sd">         etcd://localhost:2379/1234?min_workers=1&amp;max_workers=3</span>
+<span class="sd">    etcd://localhost:2379/1234?min_workers=1&amp;max_workers=3</span>
 
 <span class="sd">   The URL above is interpreted as follows:</span>
 

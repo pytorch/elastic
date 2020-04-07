@@ -355,22 +355,18 @@ to participate in next rendezvous.</li>
 <em class="property">class </em><code class="descclassname">torchelastic.rendezvous.etcd_rendezvous.</code><code class="descname">EtcdRendezvousHandler</code><span class="sig-paren">(</span><em>rdzv_impl</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdRendezvousHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvousHandler" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
 <div><blockquote>
-<div><p>Implements a`torchelastic.rendezvous.RendezvousHandler`
+<div><p>Implements a <code class="docutils literal notranslate"><span class="pre">torchelastic.rendezvous.RendezvousHandler</span></code>
 interface backed by
 torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.</p>
 <p>Torchelastic uses a URL to configure the type of rendezvous to use and
 to pass implementation specific configurations to the rendezvous module.
-The basic etcd rendezvous configuration URL looks like the following</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>etcd://&lt;etcd_address&gt;:&lt;port&gt;/&lt;job_id&gt;?min_workers=&lt;min_workers&gt;&amp;max_workers=&lt;max_workers&gt; # noqa W605
-</pre></div>
-</div>
+The basic etcd rendezvous configuration URL looks like the following:</p>
+<p>etcd://&lt;etcd_address&gt;:&lt;port&gt;/&lt;job_id&gt;?min_workers=&lt;min_workers&gt;&amp;max_workers=&lt;max_workers&gt; # noqa W605</p>
 </div></blockquote>
 <p>Example:</p>
-<blockquote>
-<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span>etcd://localhost:2379/1234?min_workers=1&amp;max_workers=3
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>etcd://localhost:2379/1234?min_workers=1&amp;max_workers=3
 </pre></div>
 </div>
-</div></blockquote>
 <p>The URL above is interpreted as follows:</p>
 <ol class="arabic simple">
 <li>Use the rendezvous handler that is registered with the <code class="docutils literal notranslate"><span class="pre">etcd</span></code>
