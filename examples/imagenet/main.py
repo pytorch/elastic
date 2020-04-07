@@ -166,7 +166,7 @@ def main():
 
     print_freq = args.print_freq
     for epoch in range(start_epoch, args.epochs):
-        train_loader.batch_sampler.set_epoch(epoch)
+        train_loader.batch_sampler.sampler.set_epoch(epoch)
         adjust_learning_rate(optimizer, epoch, args.lr)
 
         # train for one epoch
@@ -390,7 +390,7 @@ def validate(
 def save_checkpoint(state, is_best: bool, filename: str):
     # save to tmp, then commit by moving the file in case the job
     # gets interrupted while writing the checkpoint
-    tmp_filename = os.path.join(filename, ".tmp")
+    tmp_filename = filename + ".tmp"
     torch.save(state, tmp_filename)
     os.rename(tmp_filename, filename)
     if is_best:

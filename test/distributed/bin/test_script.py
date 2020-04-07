@@ -8,21 +8,17 @@
 
 import argparse
 import os
-import sys
 from pathlib import Path
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="test script, parses --local_rank,"
-        " used to test launcher with no --use_env flag"
-    )
+    parser = argparse.ArgumentParser(description="test script")
 
-    # make this required so that if --local_rank is not passed
-    # when --use_env is used, the script fails as it fails to
-    # parse arguments
     parser.add_argument(
-        "--local_rank", required=True, type=int, help="set by launch.py"
+        "--fail",
+        default=False,
+        action="store_true",
+        help="forces the script to throw a RuntimeError",
     )
 
     # file is used for assertions
@@ -36,7 +32,6 @@ def parse_args():
 
 def main():
     args = parse_args()
-    print(f"Running {sys.argv}")
 
     env_vars = ["RANK", "LOCAL_RANK", "WORLD_SIZE", "MASTER_ADDR", "MASTER_PORT"]
 
@@ -45,9 +40,12 @@ def main():
         value = os.environ[env_var]
         print(f"{env_var} = {value}")
 
-    file = os.path.join(args.touch_file_dir, os.environ["RANK"])
-    Path(file).touch()
-    print(f"Success, created {file}")
+    if args.fail:
+        raise RuntimeError("raising exception since --fail flag was set")
+    else:
+        file = os.path.join(args.touch_file_dir, os.environ["RANK"])
+        Path(file).touch()
+        print(f"Success, created {file}")
 
 
 if __name__ == "__main__":
