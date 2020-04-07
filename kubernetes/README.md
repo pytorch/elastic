@@ -11,15 +11,31 @@ run Torch Elastic workloads on Kubernetes.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl)
 - [kustomize](https://github.com/kubernetes-sigs/kustomize/blob/master/docs/INSTALL.md)
 
-### Use Amazon EKS to create a Kubernetes cluster
+> **NOTE**: 
+>
+>  1. (recommended) create a cluster with GPU instances as some examples
+>     (e.g. imagenet) only work on GPU.
+>  2. If you provision instances with a single GPU you will only be able to run
+>     a single worker per node.
+>  3. Our examples assume > 1 GPUs per node so you will have to adjust 
+>     `--nproc_per_node` to be equal to the number of CUDA devices
+>     on the instance you are using.
 
-We highly recommend to use eksctl to create Amazon EKS cluster. This process will take 10~15 minutes. 
-Use other instance type if you don't want to use GPU.   
+### (Optional) Setup
+
+Here we provide the instructions to create an Amazon EKS cluster. If you 
+are not using AWS please refer to your cloud/infrastructure provider's manual
+to setup a kubernetes cluster. 
+
+> **NOTE**: EKS is not required to run this controller, 
+>  you can use other Kubernetes clusters.
+
+Use `eksctl` to create an Amazon EKS cluster. This process takes ~15 minutes. 
 
 ```shell
 eksctl create cluster \
     --name=torchelastic \
-    --node-type=p3.2xlarge \
+    --node-type=p3.8xlarge \
     --region=us-west-2 \
     --version=1.15 \
     --ssh-access \
@@ -27,30 +43,26 @@ eksctl create cluster \
     --nodes=2
 ```
 
-> Note: EKS is not required to run this controller, you can use other Kubernetes clusters. 
-> This controller has been tested running well on EKS.
-
-### Install Nvidia Device Plugin
-In order to enable GPU support in your EKS cluster, deploy the following Daemonset:
+Install Nvidia device plugin to enable GPU support on your cluster.
+Deploy the following Daemonset:
 
 ```shell
 kubectl create -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta4/nvidia-device-plugin.yml
 ```
 
-### Installing the ElasticJob CRD and controller on your k8s cluster
+### Install `ElasticJob` controller and CRD 
 
 ```shell
 kustomize build config/default  | kubectl apply -f -
-```
 
-or 
-```shell
+-- or --
+
 kubectl apply -k config/default
 ```
 
 You will see logs like following
 
-```yaml
+```shell
 $ kustomize build config/default | kubectl apply -f -
 
 namespace/elastic-job created
@@ -62,7 +74,7 @@ clusterrolebinding.rbac.authorization.k8s.io/elastic-job-k8s-controller-rolebind
 deployment.apps/elastic-job-k8s-controller created
 ```
 
-Verify that the ElasticJob custom resource is installed
+Verify that the `ElasticJob` custom resource is installed
 
 ```shell
 kubectl get crd
@@ -109,23 +121,25 @@ kubectl logs -f elastic-job-k8s-controller-6d4884c75b-z22cm -n elastic-job
     kubectl apply -f config/samples/etcd.yaml
     ```
 
-1. Build your own trainer image
-    ```
-    export DOCKERHUB_USER=<your_dockerhub_username>
-    cd kubernetes/config/samples
-
-    docker build -t $DOCKERHUB_USER/examples:imagenet .
-    docker push $DOCKERHUB_USER/examples:imagenet
-    ```
-
-1. Update `config/samples/imagenet.yaml` to use your image and rdzvEndpoint.
+1. Update `config/samples/<imagenet.yaml|classy_vision.yaml>`:
+    1. set `rdzvEndpoint` to the etcd server you just provisioned.
+    1. set `minReplicas` and `maxReplicas` to the desired min and max num nodes
+       (max should not exceed your cluster capacity)
+    1. set `Worker.replicas` to the number of nodes to start with (you may 
+       modify this later to scale the job in/out)
+    1. set the correct `--nproc_per_node` in `container.args` based on the
+       instance you are running on.
+     
+    > **IMPORTANT** A `Worker` in the context of kubernetes refers to `Node` in
+      `torchelastic.distributed.launch`. Each kubernetes `Worker` runs multiple
+       trainers processes (a.k.a `worker` in `torchelastic.distributed.launch`).
 
 1. Submit the training job.
 
     ```
     kubectl apply -f config/samples/imagenet.yaml
     ```
-
+    
     As you can see, training pod and headless services have been created.
     ```yaml
     $ kubectl get pods -n elastic-job
@@ -140,11 +154,17 @@ kubectl logs -f elastic-job-k8s-controller-6d4884c75b-z22cm -n elastic-job
     imagenet-worker-1   ClusterIP   None         <none>        10291/TCP   34s
     ```
 
-1. You can adjust desired replica `.spec.replicaSpecs[Worker].replicas` and apply change to k8s.
+1. You can scale the number of nodes by adjusting 
+   `.spec.replicaSpecs[Worker].replicas` and applying the change.
     ```
     kubectl apply -f config/samples/imagenet.yaml
     ```
-
+    
+    > **NOTE** since you are scaling the containers, you will be scaling in 
+      increments of `nproc_per_node` trainers. For a more fine grained
+      scaling, consider running `--nproc_per_node=1` on a smaller instance.
+  
+   
 ### Monitoring jobs
 
 You can describe the job to check job status and job related events.
