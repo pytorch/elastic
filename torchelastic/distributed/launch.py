@@ -225,6 +225,9 @@ from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
 from torchelastic.rendezvous.etcd_server import EtcdServer
 
 
+log = logging.getLogger(__name__)
+
+
 def parse_args(args):
     """
     Helper function parsing the command line options.
@@ -482,4 +485,8 @@ def main(args=None):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO, format="[%(levelname)s] %(asctime)s %(module)s: %(message)s"
+    )
+    log.info(f"Running torchelastic.distributed.launch with args: {sys.argv}")
     main()

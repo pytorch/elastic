@@ -1,13 +1,13 @@
 apiVersion: elastic.pytorch.org/v1alpha1
 kind: ElasticJob
 metadata:
-  name: elasticjob-sample
+  name: classy-vision
   namespace: elastic-job
 spec:
   # Use "etcd-service:2379" if you already apply etcd.yaml
   rdzvEndpoint: "<your_etcd_endpoint>:<your_etcd_port>"
   minReplicas: 1
-  maxReplicas: 4
+  maxReplicas: 2
   replicaSpecs:
     Worker:
       replicas: 2
@@ -18,13 +18,15 @@ spec:
         spec:
           containers:
             - name: elasticjob-worker
-              image: torchelastic/examples:0.1.0rc1
+              image: torchelastic/examples:0.2.0rc0
               imagePullPolicy: Always
               args:
-                - "/workspace/examples/classy_vision/main.py"
-                - --config_file
-                # Get configuration file from here
-                # https://github.com/facebookresearch/ClassyVision/blob/e7e02b0e4d7fa4cfb8bc909f0e6bb9488a1073b8/classy_vision/configs/resnet50_synthetic_image_classy_config.json
-                - "/data/classy_vision/resnet50_synthetic_image_classy_config.json"
-                - "--checkpoint_folder"
-                - "/data/classy_vision/checkpoint"
+                - "--nproc_per_node=1"
+                - "/workspace/classy_vision/classy_train.py"
+                - "--config_file"
+                - "/workspace/classy_vision/configs/template_config.json"
+                # number of data loader workers (NOT trainers)
+                # zero means load the data on the same process as the trainer
+                # this is set so that the container does not OOM since
+                # pytorch data loaders use shm
+                - "--num_workers=0"

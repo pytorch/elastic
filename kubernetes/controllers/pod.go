@@ -113,31 +113,14 @@ func SetClusterSpecForPod(job interface{}, podTemplate *corev1.PodTemplateSpec) 
 		maxReplicas = desiredReplicas
 	}
 
-	for i := range podTemplate.Spec.Containers {
-		if len(podTemplate.Spec.Containers[i].Env) == 0 {
-			podTemplate.Spec.Containers[i].Env = make([]corev1.EnvVar, 0)
-		}
+	launchDefaultArgs := []string{
+		"--rdzv_backend=etcd",
+		"--rdzv_endpoint=" + elasticJob.Spec.RdzvEndpoint,
+		"--rdzv_id=" + elasticJob.Name,
+		"--nnodes=" + strconv.Itoa(int(minReplicas)) + ":" + strconv.Itoa(int(maxReplicas))}
 
-		podTemplate.Spec.Containers[i].Env = append(podTemplate.Spec.Containers[i].Env, corev1.EnvVar{
-			Name:  "RDZV_ENDPOINT",
-			Value: elasticJob.Spec.RdzvEndpoint,
-		})
-		podTemplate.Spec.Containers[i].Env = append(podTemplate.Spec.Containers[i].Env, corev1.EnvVar{
-			Name:  "JOB_ID",
-			Value: elasticJob.Name,
-		})
-		podTemplate.Spec.Containers[i].Env = append(podTemplate.Spec.Containers[i].Env, corev1.EnvVar{
-			Name:  "SIZE",
-			Value: strconv.Itoa(int(desiredReplicas)),
-		})
-		podTemplate.Spec.Containers[i].Env = append(podTemplate.Spec.Containers[i].Env, corev1.EnvVar{
-			Name:  "MIN_SIZE",
-			Value: strconv.Itoa(int(minReplicas)),
-		})
-		podTemplate.Spec.Containers[i].Env = append(podTemplate.Spec.Containers[i].Env, corev1.EnvVar{
-			Name:  "MAX_SIZE",
-			Value: strconv.Itoa(int(maxReplicas)),
-		})
+	for i := range podTemplate.Spec.Containers {
+		podTemplate.Spec.Containers[i].Args = append(launchDefaultArgs, podTemplate.Spec.Containers[i].Args...)
 	}
 
 	return nil

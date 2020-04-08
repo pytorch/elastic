@@ -1,3 +1,6 @@
+# Image name: torchelastic/kubernetes:$VERSION
+# If the image name changes, also change config/manager/manager.yaml
+
 # Build the manager binary
 FROM golang:1.13 as builder
 

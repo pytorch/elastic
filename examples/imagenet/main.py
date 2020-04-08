@@ -148,6 +148,7 @@ def main():
 
     device_id = int(os.environ["LOCAL_RANK"])
     torch.cuda.set_device(device_id)
+    print(f"=> set cuda device = {device_id}")
     dist.init_process_group(backend=args.dist_backend, init_method="env://")
 
     model, criterion, optimizer = initialize_model(

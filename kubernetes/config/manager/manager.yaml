@@ -27,7 +27,7 @@ spec:
         - /manager
         args:
         - --enable-leader-election
-        image: torchelastic/elastic-job-k8s-controller:v0.1.0
+        image: torchelastic/kubernetes:0.1.0
         name: manager
         resources:
           limits:

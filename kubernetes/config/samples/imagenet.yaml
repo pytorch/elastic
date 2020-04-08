@@ -7,7 +7,7 @@ spec:
   # Use "etcd-service:2379" if you already apply etcd.yaml
   rdzvEndpoint: "<your_etcd_endpoint>:<your_etcd_port>"
   minReplicas: 1
-  maxReplicas: 5
+  maxReplicas: 2
   replicaSpecs:
     Worker:
       replicas: 2
@@ -18,14 +18,20 @@ spec:
         spec:
           containers:
             - name: elasticjob-worker
-              image: <your_dockerhub_username>/examples:imagenet
+              image: torchelastic/examples:0.2.0rc0
               imagePullPolicy: Always
               args:
+                - "--nproc_per_node=1"
                 - "/workspace/examples/imagenet/main.py"
-                - "--input_path"
-                - "/data/tiny-imagenet-200/train"
-                - "--epochs"
-                - "10"
+                - "--arch=resnet18"
+                - "--epochs=20"
+                - "--batch-size=32"
+                # number of data loader workers (NOT trainers)
+                # zero means load the data on the same process as the trainer
+                # this is set so that the container does not OOM since
+                # pytorch data loaders use shm
+                - "--workers=0"
+                - "/workspace/data/tiny-imagenet-200"
               resources:
                 limits:
                   nvidia.com/gpu: 1
