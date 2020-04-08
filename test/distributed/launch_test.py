@@ -124,16 +124,20 @@ class LaunchTest(unittest.TestCase):
             {str(i) for i in range(world_size)}, set(os.listdir(self.test_dir))
         )
 
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_nproc_launch_auto_configurations(self):
         self._test_nproc_launch_configuration("auto", os.cpu_count())
 
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_nproc_launch_number_configurations(self):
         self._test_nproc_launch_configuration("4", 4)
 
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_nproc_launch_unknown_configurations(self):
         with self.assertRaises(ValueError):
             self._test_nproc_launch_configuration("unknown", 4)
 
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     @patch("torch.cuda.is_available", return_value=True)
     @patch("torch.cuda.device_count", return_value=3)
     def test_nproc_gpu_launch_configurations(self, _mock1, _mock2):
