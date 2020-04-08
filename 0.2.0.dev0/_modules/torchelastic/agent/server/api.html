@@ -1,0 +1,1084 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>torchelastic.agent.server.api &mdash; PyTorch/Elastic master documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <!-- <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/katex-math.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+
+  
+  <script src="../../../../_static/js/modernizr.min.js"></script>
+
+  <!-- Preload the theme fonts -->
+
+<link rel="preload" href="../../../../_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../../_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../../_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../../_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../../_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../../_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+
+<!-- Preload the katex fonts -->
+
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Math-Italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size1-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size4-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size2-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size3-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Caligraphic-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+</head>
+
+<div class="container-fluid header-holder tutorials-header" id="header-holder">
+  <div class="container">
+    <div class="header-container">
+      <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <div class="ecosystem-dropdown">
+              <a id="dropdownMenuButton" data-toggle="ecosystem-dropdown">
+                Ecosystem
+              </a>
+              <div class="ecosystem-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub"">
+                  <span class=dropdown-title>Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem">
+                  <span class=dropdown-title>Tools & Libraries</span>
+                  <p>Explore the ecosystem of tools and libraries</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+          </li>
+
+          <li>
+            <div class="resources-dropdown">
+              <a id="resourcesDropdownButton" data-toggle="resources-dropdown">
+                Resources
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources"">
+                  <span class=dropdown-title>Developer Resources</span>
+                  <p>Find resources and get questions answered</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class=dropdown-title>About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">Github</a>
+          </li>
+        </ul>
+      </div>
+
+      <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
+    </div>
+
+  </div>
+</div>
+
+
+<body class="pytorch-body">
+
+   
+
+    
+
+    <div class="table-of-contents-link-wrapper">
+      <span>Table of Contents</span>
+      <a href="#" class="toggle-table-of-contents" data-behavior="toggle-table-of-contents"></a>
+    </div>
+
+    <nav data-toggle="wy-nav-shift" class="pytorch-left-menu" id="pytorch-left-menu">
+      <div class="pytorch-side-scroll">
+        <div class="pytorch-menu pytorch-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          <div class="pytorch-left-menu-search">
+            
+
+            
+              
+              
+                <div class="version">
+                  v0.2.0.dev0
+                </div>
+              
+            
+
+            
+
+
+  
+
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search Docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+            
+          </div>
+
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Get Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../train_script.html">Train script</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples.html">Examples</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../distributed.html">Elastic Launch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../agent.html">Elastic Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../timer.html">Expiration Timers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rendezvous.html">Rendezvous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../metrics.html">Metrics</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../kubernetes.html">TorchElastic Kubernetes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../runtime.html">Cloud Provider Support (Deprecated)</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <div class="pytorch-container">
+      <div class="pytorch-page-level-bar" id="pytorch-page-level-bar">
+        <div class="pytorch-breadcrumbs-wrapper">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="pytorch-breadcrumbs">
+    
+      <li>
+        <a href="../../../../index.html">
+          
+            Docs
+          
+        </a> &gt;
+      </li>
+
+        
+          <li><a href="../../../index.html">Module code</a> &gt;</li>
+        
+      <li>torchelastic.agent.server.api</li>
+    
+    
+      <li class="pytorch-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+</div>
+        </div>
+
+        <div class="pytorch-shortcuts-wrapper" id="pytorch-shortcuts-wrapper">
+          Shortcuts
+        </div>
+      </div>
+
+      <section data-toggle="wy-nav-shift" id="pytorch-content-wrap" class="pytorch-content-wrap">
+        <div class="pytorch-content-left">
+
+        
+          
+          <div class="rst-content">
+          
+            <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
+             <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
+              
+  <h1>Source code for torchelastic.agent.server.api</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+
+<span class="c1"># Copyright (c) Facebook, Inc. and its affiliates.</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># This source code is licensed under the BSD-style license found in the</span>
+<span class="c1"># LICENSE file in the root directory of this source tree.</span>
+
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">closing</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span> <span class="nn">torchelastic.rendezvous</span> <span class="k">as</span> <span class="nn">rdzv</span>
+<span class="kn">from</span> <span class="nn">torchelastic.metrics</span> <span class="kn">import</span> <span class="n">prof</span><span class="p">,</span> <span class="n">put_metric</span>
+
+
+<span class="n">DEFAULT_ROLE</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="WorkerSpec"><a class="viewcode-back" href="../../../../agent.html#torchelastic.agent.server.WorkerSpec">[docs]</a><span class="k">class</span> <span class="nc">WorkerSpec</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Contains blueprint information about a particular type of worker.</span>
+<span class="sd">    For a given role, there must only exist a single worker spec.</span>
+<span class="sd">    Worker spec is expected to be homogenous across all nodes (machine),</span>
+<span class="sd">    that is each node runs the same number of workers for a particular spec.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;role&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;local_world_size&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;fn&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;args&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;rdzv_handler&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;max_restarts&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;monitor_interval&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;master_port&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">role</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">local_world_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+        <span class="n">args</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">,</span>
+        <span class="n">rdzv_handler</span><span class="p">:</span> <span class="n">rdzv</span><span class="o">.</span><span class="n">RendezvousHandler</span><span class="p">,</span>
+        <span class="n">max_restarts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="n">monitor_interval</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">,</span>
+        <span class="n">master_port</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Arguments:</span>
+<span class="sd">            role (str): user-defined role for the workers with this spec</span>
+<span class="sd">            local_world_size (int): number local workers to run</span>
+<span class="sd">            fn (Callable): worker main entry point function</span>
+<span class="sd">            args (Tuple): arguments to pass to ``fn(args)``</span>
+<span class="sd">            rdzv_handler (RendezvousHandler): handles rdzv for this set of workers</span>
+<span class="sd">            max_restarts (int): number of max retries for the workers</span>
+<span class="sd">            monitor_interval (int): monitor status of workers every ``n`` seconds</span>
+<span class="sd">            master_port (int): fixed port to run the c10d store on rank 0</span>
+<span class="sd">                               if not specified then will chose a random free port</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">assert</span> <span class="n">local_world_size</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">assert</span> <span class="n">max_restarts</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">assert</span> <span class="n">monitor_interval</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+        <span class="c1"># Note: role is not used for data parallel, every worker has the same role</span>
+        <span class="c1"># wiring it in to handle more elaborate situations later</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="o">=</span> <span class="n">role</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">local_world_size</span> <span class="o">=</span> <span class="n">local_world_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fn</span> <span class="o">=</span> <span class="n">fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rdzv_handler</span> <span class="o">=</span> <span class="n">rdzv_handler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_restarts</span> <span class="o">=</span> <span class="n">max_restarts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">monitor_interval</span> <span class="o">=</span> <span class="n">monitor_interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">master_port</span> <span class="o">=</span> <span class="n">master_port</span></div>
+
+
+<div class="viewcode-block" id="Worker"><a class="viewcode-back" href="../../../../agent.html#torchelastic.agent.server.Worker">[docs]</a><span class="k">class</span> <span class="nc">Worker</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents a worker instance. Contrast this with ``WorkerSpec`` that</span>
+<span class="sd">    represents the specifications of a worker. A ``Worker`` is created from</span>
+<span class="sd">    a ``WorkerSpec``. A ``Worker`` is to a ``WorkerSpec`` as an object is to</span>
+<span class="sd">    a class.</span>
+
+<span class="sd">    The ``id`` of the worker is interpreted</span>
+<span class="sd">    by the specific implementation of ``ElasticAgent``. For a local</span>
+<span class="sd">    agent, it could be the ``pid (int)`` of the worker, for a remote</span>
+<span class="sd">    agent it could be encoded as ``host:port (string)``.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        id (Any): uniquely identifies a worker (interpreted by the agent)</span>
+<span class="sd">        local_rank (int): local rank of the worker</span>
+<span class="sd">        global_rank (int): global rank of the worker</span>
+<span class="sd">        world_size (int): number of workers (globally)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;local_rank&quot;</span><span class="p">,</span> <span class="s2">&quot;global_rank&quot;</span><span class="p">,</span> <span class="s2">&quot;world_size&quot;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">local_rank</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="c1"># unique identifier for this worker</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># rank of the worker among workers with the same role being monitored</span>
+        <span class="c1"># by the same ``agent`` instance.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">local_rank</span>
+
+        <span class="c1">#  rank of the worker among all the workers with the same role</span>
+        <span class="c1">#  across all ``agent`` instances.</span>
+        <span class="c1">#  Global rank is not stable between re-rendezvous.</span>
+        <span class="c1"># pyre-fixme[8]: Attribute has type `int`; used as `None`.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">global_rank</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># total number of workers (globally). Due to elasticity</span>
+        <span class="c1"># the world size may change between re-rendezvous.</span>
+        <span class="c1"># pyre-fixme[8]: Attribute has type `int`; used as `None`.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">world_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="WorkerState"><a class="viewcode-back" href="../../../../agent.html#torchelastic.agent.server.WorkerState">[docs]</a><span class="k">class</span> <span class="nc">WorkerState</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    State of the ``WorkerGroup``. Workers in a worker groupchange state as a unit.</span>
+<span class="sd">    If a single worker in a worker groupfails the entire set is considered</span>
+<span class="sd">    failed::</span>
+
+<span class="sd">      UNKNOWN - agent lost track of worker group state, unrecoverable</span>
+<span class="sd">      INIT - worker group object created not yet started</span>
+<span class="sd">      HEALTHY - workers running and healthy</span>
+<span class="sd">      UNHEALTHY - workers running and unhealthy</span>
+<span class="sd">      STOPPED - workers stopped (interruped) by the agent</span>
+<span class="sd">      SUCCEEDED - workers finished running (exit 0)</span>
+<span class="sd">      FAILED - workers failed to successfully finish (exit !0)</span>
+
+
+<span class="sd">    A worker group starts from an initial ``INIT`` state,</span>
+<span class="sd">    then progresses to ``HEALTHY`` or ``UNHEALTHY`` states,</span>
+<span class="sd">    and finally reaches a terminal ``SUCCEEDED`` or ``FAILED`` state.</span>
+
+<span class="sd">    Worker groups can be interrupted and temporarily put into ``STOPPED`` state</span>
+<span class="sd">    by the agent. Workers in ``STOPPED`` state are scheduled to be restarted</span>
+<span class="sd">    in the near future by the agent. Some examples of workers being put into</span>
+<span class="sd">    ``STOPPED`` state are:</span>
+
+<span class="sd">    1. Worker group failure|unhealthy observed</span>
+<span class="sd">    2. Membership change detected</span>
+
+<span class="sd">    When actions (start, stop, rdzv, retry, etc) on worker group fails</span>
+<span class="sd">    and results in the action being partially applied to the worker group</span>
+<span class="sd">    the state will be ``UNKNOWN``. Typically this happens on uncaught/unhandled</span>
+<span class="sd">    exceptions during state change events on the agent. The agent is not</span>
+<span class="sd">    expected to recover worker groups in ``UNKNOWN`` state and is better off</span>
+<span class="sd">    self terminating and allowing the job manager to retry the node.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">UNKNOWN</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">INIT</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">HEALTHY</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">UNHEALTHY</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">STOPPED</span> <span class="o">=</span> <span class="mi">8</span>
+    <span class="n">SUCCEEDED</span> <span class="o">=</span> <span class="mi">16</span>
+    <span class="n">FAILED</span> <span class="o">=</span> <span class="mi">32</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">is_running</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="s2">&quot;WorkerState&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">             `` True`` if the worker state represents workers still running</span>
+<span class="sd">              (e.g. that the process exists but not necessarily healthy).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">state</span> <span class="ow">in</span> <span class="p">{</span><span class="n">WorkerState</span><span class="o">.</span><span class="n">HEALTHY</span><span class="p">,</span> <span class="n">WorkerState</span><span class="o">.</span><span class="n">UNHEALTHY</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="WorkerGroup"><a class="viewcode-back" href="../../../../agent.html#torchelastic.agent.server.WorkerGroup">[docs]</a><span class="k">class</span> <span class="nc">WorkerGroup</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents the set of ``Worker`` instances for the given ``WorkerSpec``</span>
+<span class="sd">    managed by ``ElasticAgent``. Whether the worker groupcontains cross</span>
+<span class="sd">    instance workers or not depends on the implementation of the agent.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;spec&quot;</span><span class="p">,</span> <span class="s2">&quot;workers&quot;</span><span class="p">,</span> <span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="s2">&quot;group_rank&quot;</span><span class="p">,</span> <span class="s2">&quot;group_world_size&quot;</span><span class="p">,</span> <span class="s2">&quot;state&quot;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spec</span><span class="p">:</span> <span class="n">WorkerSpec</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spec</span> <span class="o">=</span> <span class="n">spec</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">workers</span> <span class="o">=</span> <span class="p">[</span><span class="n">Worker</span><span class="p">(</span><span class="n">local_rank</span><span class="o">=</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">local_world_size</span><span class="p">)]</span>
+
+        <span class="c1"># assigned after rdzv</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">group_rank</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">group_world_size</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">WorkerState</span><span class="o">.</span><span class="n">INIT</span></div>
+
+
+<div class="viewcode-block" id="MonitorResult"><a class="viewcode-back" href="../../../../agent.html#torchelastic.agent.server.MonitorResult">[docs]</a><span class="k">class</span> <span class="nc">MonitorResult</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returned by the agent&#39;s ``_monitor_workers`` API. A holder object</span>
+<span class="sd">    that holds information about the monitoring results.</span>
+<span class="sd">    The ``ret_vals`` and ``exceptions`` field map each worker&#39;s</span>
+<span class="sd">    return value (output) and exceptions (if any) accordingly by</span>
+<span class="sd">    the workers global rank.</span>
+
+<span class="sd">    ``state = SUCCEEDED`` will have ``ret_val``.</span>
+<span class="sd">    ``state = FAILED`` will have ``exceptions``.</span>
+<span class="sd">    For other states both these fields will be empty.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;state&quot;</span><span class="p">,</span> <span class="s2">&quot;ret_vals&quot;</span><span class="p">,</span> <span class="s2">&quot;exceptions&quot;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">WorkerState</span><span class="p">,</span>
+        <span class="c1"># pyre-fixme[9]: ret_vals has type `Dict[int, typing.Any]`; used as `None`.</span>
+        <span class="n">ret_vals</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="c1"># pyre-fixme[9]: exceptions has type `Dict[int, Exception]`; used as `None`.</span>
+        <span class="n">exceptions</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="c1"># pyre-fixme[8]: Attribute has type `Dict[int, typing.Any]`; used as `None`.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ret_vals</span> <span class="o">=</span> <span class="n">ret_vals</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exceptions</span> <span class="o">=</span> <span class="n">exceptions</span></div>
+
+
+<span class="k">class</span> <span class="nc">WorkerGroupFailureException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Thrown when the agent cannot or has given up trying to run the workers.</span>
+<span class="sd">    This is typically thrown:</span>
+
+<span class="sd">    1. Exceeded ``max_restarts``.</span>
+<span class="sd">    2. Workers fail with errors that are deemed ``NonRestartable``</span>
+
+<span class="sd">    When constructing this exception the underlying worker exceptions</span>
+<span class="sd">    are provided as a map of the worker&#39;s global rank to the exception.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">worker_excs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">]):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_worker_excs</span> <span class="o">=</span> <span class="n">worker_excs</span>
+
+    <span class="k">def</span> <span class="nf">get_worker_exceptions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_worker_excs</span>
+
+
+<span class="k">def</span> <span class="nf">_get_socket_with_port</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a free port on localhost that is &quot;reserved&quot; by binding a temporary</span>
+<span class="sd">    socket on it. Close the socket before passing the port to the entity</span>
+<span class="sd">    that requires it. Usage example</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">    sock = _get_socket_with_port()</span>
+<span class="sd">    with closing(sock):</span>
+<span class="sd">        port = sock.getsockname()[1]</span>
+<span class="sd">        sock.close()</span>
+<span class="sd">        # there is still a race-condition that some other process</span>
+<span class="sd">        # may grab this port before func() runs</span>
+<span class="sd">        func(port)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># pyre-fixme[28]: Unexpected keyword argument `type`.</span>
+    <span class="n">addrs</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">getaddrinfo</span><span class="p">(</span>
+        <span class="n">host</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">family</span><span class="o">=</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_UNSPEC</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">addr</span> <span class="ow">in</span> <span class="n">addrs</span><span class="p">:</span>
+        <span class="n">family</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">proto</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">addr</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">family</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">proto</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">s</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Socket creation attempt failed.&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="n">e</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Failed to create a socket&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_get_fq_hostname</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">socket</span><span class="o">.</span><span class="n">getfqdn</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">gethostname</span><span class="p">())</span>
+
+
+<div class="viewcode-block" id="ElasticAgent"><a class="viewcode-back" href="../../../../agent.html#torchelastic.agent.server.ElasticAgent">[docs]</a><span class="k">class</span> <span class="nc">ElasticAgent</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Agent process responsible for managing one or more worker processes.</span>
+<span class="sd">    The worker processes are assumed to be regular distributed PyTorch scripts.</span>
+<span class="sd">    When the worker process is created by the agent, the agent provides the</span>
+<span class="sd">    necessary information for the worker processes to properly initialize</span>
+<span class="sd">    a torch process group.</span>
+
+<span class="sd">    The exact deployment topology and ratio of of agent-to-worker is dependent</span>
+<span class="sd">    on the specific implementation of the agent and the user&#39;s job placement</span>
+<span class="sd">    preferences. For instance, to run a distributed training job on GPU with</span>
+<span class="sd">    8 trainers (one per GPU) one can:</span>
+
+<span class="sd">    1. Use 8 x single GPU instances, place an agent per instance, managing</span>
+<span class="sd">       1 worker per agent.</span>
+<span class="sd">    2. Use 4 x double GPU instances, place an agent per instance, managing</span>
+<span class="sd">       2 workers per agent.</span>
+<span class="sd">    3. Use 2 x quad GPU instances, place an agent per instance, managing</span>
+<span class="sd">       4 workers per agent.</span>
+<span class="sd">    4. Use 1 x 8 GPU instance, place an agent per instance, managing</span>
+<span class="sd">       8 workers per agent.</span>
+
+<span class="sd">    Usage</span>
+<span class="sd">    ::</span>
+
+<span class="sd">     try:</span>
+<span class="sd">         results = agent.run()</span>
+<span class="sd">         return results[0] # return rank 0&#39;s results</span>
+<span class="sd">     except WorkerGroupFailureException as e:</span>
+<span class="sd">         exceptions = e.get_worker_exceptions()</span>
+<span class="sd">         log.exception(f&quot;worker 0 failed with: {exceptions[0]}&quot;)</span>
+<span class="sd">     except Exception as e:</span>
+<span class="sd">         log.exception(f&quot;error while running agent&quot;)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ElasticAgent.run"><a class="viewcode-back" href="../../../../agent.html#torchelastic.agent.server.ElasticAgent.run">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_ROLE</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Runs the agent, retrying the worker group on failures up to</span>
+<span class="sd">        ``max_restarts``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The return values for each worker mapped by the worker&#39;s global rank.</span>
+<span class="sd">            Empty if workers have void signature.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            WorkerGroupFailureException - workers did not successfully run</span>
+<span class="sd">            Exception - any other failures NOT related to worker process</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ElasticAgent.get_worker_group"><a class="viewcode-back" href="../../../../agent.html#torchelastic.agent.server.ElasticAgent.get_worker_group">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_worker_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_ROLE</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">WorkerGroup</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The ``WorkerGroup`` for the given ``role``.</span>
+<span class="sd">            Note that the worker group is a mutable object and hence in a</span>
+<span class="sd">            multi-threaded/process environment it may change state.</span>
+<span class="sd">            Implementors are encouraged (but not required) to return</span>
+<span class="sd">            a defensive read-only copy.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="SimpleElasticAgent"><a class="viewcode-back" href="../../../../agent.html#torchelastic.agent.server.SimpleElasticAgent">[docs]</a><span class="k">class</span> <span class="nc">SimpleElasticAgent</span><span class="p">(</span><span class="n">ElasticAgent</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An ``ElasticAgent`` that manages workers (``WorkerGroup``)</span>
+<span class="sd">    for a single ``WorkerSpec`` (e.g. one particular type of worker role).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spec</span><span class="p">:</span> <span class="n">WorkerSpec</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span> <span class="o">=</span> <span class="n">WorkerGroup</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_remaining_restarts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">max_restarts</span>
+
+    <span class="c1"># pyre-fixme[14]: `get_worker_group` overrides method defined in `ElasticAgent`</span>
+    <span class="c1">#  inconsistently.</span>
+<div class="viewcode-block" id="SimpleElasticAgent.get_worker_group"><a class="viewcode-back" href="../../../../agent.html#torchelastic.agent.server.SimpleElasticAgent.get_worker_group">[docs]</a>    <span class="k">def</span> <span class="nf">get_worker_group</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">WorkerGroup</span><span class="p">:</span>
+        <span class="c1"># TODO return an RO copy (need to create an ROWorkerGroup and ROWorkerSpec</span>
+        <span class="c1"># since both these classes contain non-pure-data pointers - e.g. rdzv_handler)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span></div>
+
+<div class="viewcode-block" id="SimpleElasticAgent._start_workers"><a class="viewcode-back" href="../../../../agent.html#torchelastic.agent.server.SimpleElasticAgent._start_workers">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_start_workers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_group</span><span class="p">:</span> <span class="n">WorkerGroup</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Starts ``worker_group.spec.local_world_size`` number of workers</span>
+<span class="sd">        according to worker spec for the worker group .</span>
+
+<span class="sd">        Returns a map of ``local_rank`` to worker ``id``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SimpleElasticAgent._stop_workers"><a class="viewcode-back" href="../../../../agent.html#torchelastic.agent.server.SimpleElasticAgent._stop_workers">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_stop_workers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_group</span><span class="p">:</span> <span class="n">WorkerGroup</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Stops all workers in the given worker group. Implementors</span>
+<span class="sd">        must deal with workers in all states defined by ``WorkerState``.</span>
+<span class="sd">        That is, it must gracefully handle stopping non-existent workers,</span>
+<span class="sd">        unhealthy (stuck) workers, etc.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SimpleElasticAgent._monitor_workers"><a class="viewcode-back" href="../../../../agent.html#torchelastic.agent.server.SimpleElasticAgent._monitor_workers">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_monitor_workers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_group</span><span class="p">:</span> <span class="n">WorkerGroup</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MonitorResult</span><span class="p">:</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks on the workers for the ``worker_group`` and returns</span>
+<span class="sd">        the new state of the worker group.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_set_master_addr_port</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">master_port</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">master_port</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sock</span> <span class="o">=</span> <span class="n">_get_socket_with_port</span><span class="p">()</span>
+            <span class="k">with</span> <span class="n">closing</span><span class="p">(</span><span class="n">sock</span><span class="p">):</span>
+                <span class="n">master_port</span> <span class="o">=</span> <span class="n">sock</span><span class="o">.</span><span class="n">getsockname</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">store</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;MASTER_ADDR&quot;</span><span class="p">,</span> <span class="n">_get_fq_hostname</span><span class="p">()</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;UTF-8&quot;</span><span class="p">))</span>
+        <span class="n">store</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;MASTER_PORT&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">master_port</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;UTF-8&quot;</span><span class="p">))</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_get_master_addr_port</span><span class="p">(</span><span class="n">store</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+        <span class="n">master_addr</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;MASTER_ADDR&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;UTF-8&quot;</span><span class="p">)</span>
+        <span class="n">master_port</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;MASTER_PORT&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;UTF-8&quot;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">master_addr</span><span class="p">,</span> <span class="n">master_port</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SimpleElasticAgent._rendezvous"><a class="viewcode-back" href="../../../../agent.html#torchelastic.agent.server.SimpleElasticAgent._rendezvous">[docs]</a>    <span class="nd">@prof</span>
+    <span class="k">def</span> <span class="nf">_rendezvous</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_group</span><span class="p">:</span> <span class="n">WorkerGroup</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Runs rendezvous for the workers specified by worker spec.</span>
+<span class="sd">        Assigns workers a new global rank and world size.</span>
+<span class="sd">        Updates the rendezvous store for the worker group.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">spec</span> <span class="o">=</span> <span class="n">worker_group</span><span class="o">.</span><span class="n">spec</span>
+        <span class="n">stride</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">local_world_size</span>
+
+        <span class="n">store</span><span class="p">,</span> <span class="n">group_rank</span><span class="p">,</span> <span class="n">group_world_size</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">rdzv_handler</span><span class="o">.</span><span class="n">next_rendezvous</span><span class="p">()</span>
+        <span class="n">world_size</span> <span class="o">=</span> <span class="n">group_world_size</span> <span class="o">*</span> <span class="n">spec</span><span class="o">.</span><span class="n">local_world_size</span>
+
+        <span class="n">worker_group</span><span class="o">.</span><span class="n">store</span> <span class="o">=</span> <span class="n">store</span>
+        <span class="n">worker_group</span><span class="o">.</span><span class="n">group_rank</span> <span class="o">=</span> <span class="n">group_rank</span>
+        <span class="n">worker_group</span><span class="o">.</span><span class="n">group_world_size</span> <span class="o">=</span> <span class="n">group_world_size</span>
+
+        <span class="k">if</span> <span class="n">group_rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_master_addr_port</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">master_port</span><span class="p">)</span>
+
+        <span class="n">assigned_global_ranks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">worker</span> <span class="ow">in</span> <span class="n">worker_group</span><span class="o">.</span><span class="n">workers</span><span class="p">:</span>
+            <span class="n">global_rank</span> <span class="o">=</span> <span class="p">(</span><span class="n">group_rank</span> <span class="o">*</span> <span class="n">stride</span><span class="p">)</span> <span class="o">+</span> <span class="n">worker</span><span class="o">.</span><span class="n">local_rank</span>
+            <span class="n">worker</span><span class="o">.</span><span class="n">global_rank</span> <span class="o">=</span> <span class="n">global_rank</span>
+            <span class="n">worker</span><span class="o">.</span><span class="n">world_size</span> <span class="o">=</span> <span class="n">world_size</span>
+            <span class="n">assigned_global_ranks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">global_rank</span><span class="p">)</span>
+
+        <span class="n">master_addr</span><span class="p">,</span> <span class="n">master_port</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_master_addr_port</span><span class="p">(</span><span class="n">store</span><span class="p">)</span>
+        <span class="n">restart_count</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">max_restarts</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_remaining_restarts</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{spec.role}</span><span class="s2">] Rendezvous complete for workers.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Result:</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">restart_count=</span><span class="si">{restart_count}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">group_rank=</span><span class="si">{group_rank}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">group_world_size=</span><span class="si">{group_world_size}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">rank stride=</span><span class="si">{stride}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">assigned global_ranks=</span><span class="si">{assigned_global_ranks}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">master_addr=</span><span class="si">{master_addr}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">master_port=</span><span class="si">{master_port}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SimpleElasticAgent._initialize_workers"><a class="viewcode-back" href="../../../../agent.html#torchelastic.agent.server.SimpleElasticAgent._initialize_workers">[docs]</a>    <span class="nd">@prof</span>
+    <span class="k">def</span> <span class="nf">_initialize_workers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_group</span><span class="p">:</span> <span class="n">WorkerGroup</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Starts a fresh set of workers for the worker_group.</span>
+<span class="sd">        Essentially a rendezvous followed by a start_workers.</span>
+
+<span class="sd">        The caller should first call ``_stop_workers()`` to stop running workers</span>
+<span class="sd">        prior to calling this method.</span>
+
+<span class="sd">        Optimistically sets the state of the worker group that</span>
+<span class="sd">        just started as ``HEALTHY`` and delegates the actual monitoring</span>
+<span class="sd">        of state to ``_monitor_workers()`` method</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">role</span> <span class="o">=</span> <span class="n">worker_group</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">role</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{role}</span><span class="s2">] Rendezvous&#39;ing worker group&quot;</span><span class="p">)</span>
+
+        <span class="c1"># TODO after stopping workers, wait at least monitor_interval*2 for</span>
+        <span class="c1"># workers on different nodes to fail on a collective op before waiting</span>
+        <span class="c1"># on the rdzv barrier, this way we ensure that nodes enter rdzv</span>
+        <span class="c1"># at around the same time and reduce false positive rdzv timeout errors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rendezvous</span><span class="p">(</span><span class="n">worker_group</span><span class="p">)</span>
+
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{role}</span><span class="s2">] Starting worker group&quot;</span><span class="p">)</span>
+        <span class="n">worker_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start_workers</span><span class="p">(</span><span class="n">worker_group</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">local_rank</span><span class="p">,</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">worker_ids</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">worker</span> <span class="o">=</span> <span class="n">worker_group</span><span class="o">.</span><span class="n">workers</span><span class="p">[</span><span class="n">local_rank</span><span class="p">]</span>
+            <span class="n">worker</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="nb">id</span>
+
+        <span class="n">worker_group</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">WorkerState</span><span class="o">.</span><span class="n">HEALTHY</span></div>
+
+<div class="viewcode-block" id="SimpleElasticAgent._restart_workers"><a class="viewcode-back" href="../../../../agent.html#torchelastic.agent.server.SimpleElasticAgent._restart_workers">[docs]</a>    <span class="nd">@prof</span>
+    <span class="k">def</span> <span class="nf">_restart_workers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_group</span><span class="p">:</span> <span class="n">WorkerGroup</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Restarts (stops, rendezvous, starts) all local workers in the group.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">role</span> <span class="o">=</span> <span class="n">worker_group</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">role</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{role}</span><span class="s2">] Stopping worker group&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stop_workers</span><span class="p">(</span><span class="n">worker_group</span><span class="p">)</span>
+        <span class="n">worker_group</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">WorkerState</span><span class="o">.</span><span class="n">STOPPED</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_workers</span><span class="p">(</span><span class="n">worker_group</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SimpleElasticAgent.run"><a class="viewcode-back" href="../../../../agent.html#torchelastic.agent.server.SimpleElasticAgent.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_ROLE</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="c1"># NOTE: currently only works for a single role</span>
+
+        <span class="n">spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span><span class="o">.</span><span class="n">spec</span>
+        <span class="n">role</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">role</span>
+
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{role}</span><span class="s2">] starting workers for function: </span><span class="si">{spec.fn.__name__}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_workers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span><span class="p">)</span>
+        <span class="n">monitor_interval</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">monitor_interval</span>
+        <span class="n">rdzv_handler</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">rdzv_handler</span>
+
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="n">WorkerState</span><span class="o">.</span><span class="n">INIT</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">monitor_interval</span><span class="p">)</span>
+            <span class="n">monitor_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_monitor_workers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span><span class="p">)</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="n">monitor_result</span><span class="o">.</span><span class="n">state</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">state</span>
+
+            <span class="n">put_metric</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;workers.</span><span class="si">{role}</span><span class="s2">.remaining_restarts&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_remaining_restarts</span><span class="p">)</span>
+            <span class="n">put_metric</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;workers.</span><span class="si">{role}</span><span class="s2">.{state.name.lower()}&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="n">WorkerState</span><span class="o">.</span><span class="n">SUCCEEDED</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{role}</span><span class="s2">] All workers successfully finished.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">monitor_result</span><span class="o">.</span><span class="n">ret_vals</span>
+            <span class="k">elif</span> <span class="n">state</span> <span class="ow">in</span> <span class="p">{</span><span class="n">WorkerState</span><span class="o">.</span><span class="n">UNHEALTHY</span><span class="p">,</span> <span class="n">WorkerState</span><span class="o">.</span><span class="n">FAILED</span><span class="p">}:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_remaining_restarts</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{role}</span><span class="s2">] Worker group </span><span class="si">{state.name}</span><span class="s2">. &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{self._remaining_restarts}</span><span class="s2">/</span><span class="si">{spec.max_restarts}</span><span class="s2"> attempts left;&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot; will restart worker group&quot;</span>
+                    <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_remaining_restarts</span> <span class="o">-=</span> <span class="mi">1</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_restart_workers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_stop_workers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">WorkerState</span><span class="o">.</span><span class="n">FAILED</span>
+                    <span class="k">raise</span> <span class="n">WorkerGroupFailureException</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{role}</span><span class="s2">] exceeded max_restarts=</span><span class="si">{spec.max_restarts}</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="n">monitor_result</span><span class="o">.</span><span class="n">exceptions</span><span class="p">,</span>
+                    <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="n">WorkerState</span><span class="o">.</span><span class="n">HEALTHY</span><span class="p">:</span>
+                <span class="c1"># membership changes do not count as retries</span>
+                <span class="n">num_nodes_waiting</span> <span class="o">=</span> <span class="n">rdzv_handler</span><span class="o">.</span><span class="n">num_nodes_waiting</span><span class="p">()</span>
+                <span class="n">group_rank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span><span class="o">.</span><span class="n">group_rank</span>
+                <span class="k">if</span> <span class="n">num_nodes_waiting</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{role}</span><span class="s2">] Detected </span><span class="si">{num_nodes_waiting}</span><span class="s2"> &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;new nodes from group_rank=</span><span class="si">{group_rank}</span><span class="s2">; &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;will restart worker group&quot;</span>
+                    <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_restart_workers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{role}</span><span class="s2">] Worker group in </span><span class="si">{state.name}</span><span class="s2"> state&quot;</span><span class="p">)</span></div></div>
+</pre></div>
+
+             </article>
+             
+            </div>
+            <footer>
+  
+
+  
+
+    <hr>
+
+  
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, PyTorch Elastic Contributors.
+
+    </p>
+  </div>
+    
+      <div>
+        Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+      </div>
+     
+
+</footer>
+
+          </div>
+        </div>
+
+        <div class="pytorch-content-right" id="pytorch-content-right">
+          <div class="pytorch-right-menu" id="pytorch-right-menu">
+            <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
+              
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  
+
+
+  
+
+     
+       <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+         <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+         <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+         <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+         <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+         <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js"></script>
+         <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js"></script>
+         <script type="text/javascript" src="../../../../_static/katex_autorenderer.js"></script>
+     
+
+  
+
+  <script type="text/javascript" src="../../../../_static/js/vendor/popper.min.js"></script>
+  <script type="text/javascript" src="../../../../_static/js/vendor/bootstrap.min.js"></script>
+  <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+  <!-- Begin Footer -->
+
+  <div class="container-fluid docs-tutorials-resources" id="docs-tutorials-resources">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 text-center">
+          <h2>Docs</h2>
+          <p>Access comprehensive developer documentation for PyTorch</p>
+          <a class="with-right-arrow" href="https://pytorch.org/docs/stable/index.html">View Docs</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Tutorials</h2>
+          <p>Get in-depth tutorials for beginners and advanced developers</p>
+          <a class="with-right-arrow" href="https://pytorch.org/tutorials">View Tutorials</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Resources</h2>
+          <p>Find development resources and get your questions answered</p>
+          <a class="with-right-arrow" href="https://pytorch.org/resources">View Resources</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-logo-wrapper">
+        <a href="https://pytorch.org/" class="footer-logo"></a>
+      </div>
+
+      <div class="footer-links-wrapper">
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/">PyTorch</a></li>
+            <li><a href="https://pytorch.org/get-started">Get Started</a></li>
+            <li><a href="https://pytorch.org/features">Features</a></li>
+            <li><a href="https://pytorch.org/ecosystem">Ecosystem</a></li>
+            <li><a href="https://pytorch.org/blog/">Blog</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/blob/master/CONTRIBUTING.md">Contributing</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/resources">Resources</a></li>
+            <li><a href="https://pytorch.org/tutorials">Tutorials</a></li>
+            <li><a href="https://pytorch.org/docs/stable/index.html">Docs</a></li>
+            <li><a href="https://discuss.pytorch.org" target="_blank">Discuss</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/issues" target="_blank">Github Issues</a></li>
+            <li><a href="https://pytorch.org/assets/brand-guidelines/PyTorch-Brand-Guidelines.pdf" target="_blank">Brand Guidelines</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col follow-us-col">
+          <ul>
+            <li class="list-title">Stay Connected</li>
+            <li>
+              <div id="mc_embed_signup">
+                <form
+                  action="https://twitter.us14.list-manage.com/subscribe/post?u=75419c71fe0a935e53dfa4a3f&id=91d0dccd39"
+                  method="post"
+                  id="mc-embedded-subscribe-form"
+                  name="mc-embedded-subscribe-form"
+                  class="email-subscribe-form validate"
+                  target="_blank"
+                  novalidate>
+                  <div id="mc_embed_signup_scroll" class="email-subscribe-form-fields-wrapper">
+                    <div class="mc-field-group">
+                      <label for="mce-EMAIL" style="display:none;">Email Address</label>
+                      <input type="email" value="" name="EMAIL" class="required email" id="mce-EMAIL" placeholder="Email Address">
+                    </div>
+
+                    <div id="mce-responses" class="clear">
+                      <div class="response" id="mce-error-response" style="display:none"></div>
+                      <div class="response" id="mce-success-response" style="display:none"></div>
+                    </div>    <!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
+
+                    <div style="position: absolute; left: -5000px;" aria-hidden="true"><input type="text" name="b_75419c71fe0a935e53dfa4a3f_91d0dccd39" tabindex="-1" value=""></div>
+
+                    <div class="clear">
+                      <input type="submit" value="" name="subscribe" id="mc-embedded-subscribe" class="button email-subscribe-button">
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+            </li>
+          </ul>
+
+          <div class="footer-social-icons">
+            <a href="https://www.facebook.com/pytorch" target="_blank" class="facebook"></a>
+            <a href="https://twitter.com/pytorch" target="_blank" class="twitter"></a>
+            <a href="https://www.youtube.com/pytorch" target="_blank" class="youtube"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <div class="cookie-banner-wrapper">
+  <div class="container">
+    <p class="gdpr-notice">To analyze traffic and optimize your experience, we serve cookies on this site. By clicking or navigating, you agree to allow our usage of cookies. As the current maintainers of this site, Facebook’s Cookies Policy applies. Learn more, including about available controls: <a href="https://www.facebook.com/policies/cookies/">Cookies Policy</a>.</p>
+    <img class="close-button" src="../../../../_static/images/pytorch-x.svg">
+  </div>
+</div>
+
+  <!-- End Footer -->
+
+  <!-- Begin Mobile Menu -->
+
+  <div class="mobile-main-menu">
+    <div class="container-fluid">
+      <div class="container">
+        <div class="mobile-main-menu-header-container">
+          <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+          <a class="main-menu-close-button" href="#" data-behavior="close-mobile-menu"></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-main-menu-links-container">
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/features">Features</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/hub">PyTorch Hub</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/resources">Resources</a>
+          </li>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">Github</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- End Mobile Menu -->
+
+  <script type="text/javascript" src="../../../../_static/js/vendor/anchor.min.js"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function() {
+      mobileMenu.bind();
+      mobileTOC.bind();
+      pytorchAnchors.bind();
+      sideMenus.bind();
+      scrollToAnchor.bind();
+      highlightNavigation.bind();
+      mainMenuDropdown.bind();
+
+      // Add class to links that have code blocks, since we cannot create links in code blocks
+      $("article.pytorch-article a span.pre").each(function(e) {
+        $(this).closest("a").addClass("has-code");
+      });
+    })
+  </script>
+</body>
+</html>
