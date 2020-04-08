@@ -1,15 +1,15 @@
 # A minimal elastic agent example
 In this example, we show how to use the PyTorch Elastic Trainer launcher to start a distributed application in an elastic and fault tolerant manner. The application is intentionally kept "bare bones" since the objective is to show how to create a `torch.distributed.ProcessGroup` instance. Once a `ProcessGroup` is created, you can use any functionality needed from the `torch.distributed` package.
 
-This application can be run on practically any machine that supports Docker containers and does not require installing additional software or modifying your existing Python environment. 
+This application can be run on practically any machine that supports Docker containers and does not require installing additional software or modifying your existing Python environment.
 
-> The `docker-compose.yml` file is based on the example provided with the [Bitnami ETCD container image](https://hub.docker.com/r/bitnami/etcd/). 
+> The `docker-compose.yml` file is based on the example provided with the [Bitnami ETCD container image](https://hub.docker.com/r/bitnami/etcd/).
 
 ## Prerequisites
 We assume you have a recent version of Docker (version 18.03 or above) and Docker Compose installed on your machine. Verify the version by running
 ```
 docker --version
-``` 
+```
 and
 ```
 docker-compose --version
@@ -17,34 +17,34 @@ docker-compose --version
 which should print something like
 ```
 Docker version 19.03.8, build afacb8b
-``` 
+```
 and
 ```
 docker-compose version 1.25.4, build 8d51620a
 ```
 respectively.
 ## Obtaining the example repo
-Clone the PyTorch Elastic Trainer Git repo using 
+Clone the PyTorch Elastic Trainer Git repo using
 ```
 git clone https://github.com/pytorch/elastic.git
 ```
-and change directory to the folder containing this example:
+make an environment variable that points to the elastic repo, e.g.
 ```
-cd elastic/examples/hello_elastic
+export TORCHELASTIC_HOME=~/elastic
 ```
 
 # Building the samples Docker container
 While you can run the rest of this example using a pre-built Docker image, you can also build one for yourself. This is especially useful if you would like to customize the image. To build the image, run:
 ```
-docker build -t hello_elastic:dev .
+cd $TORCHELASTIC_HOME && docker build -t hello_elastic:dev .
 ```
 
-# Running an existing sample 
-This example uses `docker-compose` to run two containers: one for the ETCD service and one for the sample application itself. Docker compose takes care of all aspects of establishing the network interfaces so the application container can communicate with the ETCD container. 
+# Running an existing sample
+This example uses `docker-compose` to run two containers: one for the ETCD service and one for the sample application itself. Docker compose takes care of all aspects of establishing the network interfaces so the application container can communicate with the ETCD container.
 
 To start the example, run
 ```
-docker-compose up
+cd $TORCHELATIC_HOME/examples/multi_container && docker-compose up
 ```
 You should see two sets of outputs, one from ETCD starting up and one from the application itself. The output from the application looks something like this:
 
@@ -113,4 +113,4 @@ In this simple example, we illustrated the following principles when using PyTor
 2. How to obtain parameters such as the world size, local rank and the master URL within an application to establish the process group.
 3. How to configure parameters for an elastic job such as the number of workers per node and the number of times your application should be restarted in the event of failures.
 
-In the next set of samples, we will cover more advanced topics such as checkpointing state in your application and deploying it to an orchestrator such as Kubernetes. 
+In the next set of samples, we will cover more advanced topics such as checkpointing state in your application and deploying it to an orchestrator such as Kubernetes.
