@@ -130,7 +130,7 @@ kubectl logs -f elastic-job-k8s-controller-6d4884c75b-z22cm -n elastic-job
    etcd-service   ClusterIP   10.100.104.168   <none>        2379/TCP   5m5s
    ```
    
-1. Update `config/samples/<imagenet.yaml|classy_vision.yaml>`:
+1. Update `config/samples/imagenet.yaml`:
     1. set `rdzvEndpoint` (e.g. `10.100.104.168:2379`) to the etcd server you just provisioned.
     1. set `minReplicas` and `maxReplicas` to the desired min and max num nodes
        (max should not exceed your cluster capacity)
@@ -138,10 +138,16 @@ kubectl logs -f elastic-job-k8s-controller-6d4884c75b-z22cm -n elastic-job
        modify this later to scale the job in/out)
     1. set the correct `--nproc_per_node` in `container.args` based on the
        instance you are running on.
-     
-    > **IMPORTANT** A `Worker` in the context of kubernetes refers to `Node` in
+
+    > **NOTE** the `ENTRYPOINT` to `torchelastic/examples` is     
+      `python -m torchelastic.distributed.launch <args...>`. Notice that you
+      do not have to specify certain `launch` options such as `--rdzv_endpoint`,
+      and `--rdzv_id`. These are set automatically by the controller.
+ 
+    > **IMPORTANT** a `Worker` in the context of kubernetes refers to `Node` in
       `torchelastic.distributed.launch`. Each kubernetes `Worker` can run multiple
        trainers processes (a.k.a `worker` in `torchelastic.distributed.launch`).
+
 
 1. Submit the training job.
 
@@ -150,17 +156,12 @@ kubectl logs -f elastic-job-k8s-controller-6d4884c75b-z22cm -n elastic-job
     ```
     
     As you can see, training pod and headless services have been created.
-    ```yaml
+    ```
     $ kubectl get pods -n elastic-job
     NAME                                          READY   STATUS    RESTARTS   AGE
     elastic-job-k8s-controller-6d4884c75b-z22cm   1/1     Running   0          11m
     imagenet-worker-0                             1/1     Running   0          5s
     imagenet-worker-1                             1/1     Running   0          5s
-
-    $ kubectl get svc -n elastic-job
-    NAME                TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)     AGE
-    imagenet-worker-0   ClusterIP   None         <none>        10291/TCP   34s
-    imagenet-worker-1   ClusterIP   None         <none>        10291/TCP   34s
     ```
 
 1. You can scale the number of nodes by adjusting 
@@ -173,57 +174,25 @@ kubectl logs -f elastic-job-k8s-controller-6d4884c75b-z22cm -n elastic-job
       increments of `nproc_per_node` trainers. In our case ``--nproc_per_node=1``
       For better performance consider using an instance with multiple 
       GPUs and setting `--nproc_per_node=$NUM_CUDA_DEVICES`.
-   
+
+    > **WARNING** the name of the job is used as `rdzv_id`, which is used   
+      to uniquely identify a job run instance. Hence to run multiple parallel
+      jobs with the same spec you need to change `.spec.metadata.name` to 
+      give it a unique run id (e.g. `imagenet_run_0`). Otherwise the new nodes
+      will attempt to join the membership of a different run.
+ 
+      
 ### Monitoring jobs
 
 You can describe the job to check job status and job related events.
 In following example, `imagenet` job is created in `elastic-job` namespace, change to use your job name and namespace in your command.
 
 ```
-kubectl describe elasticjob imagenet -n elastic-job
+$ kubectl describe elasticjob imagenet -n elastic-job
 
 Name:         imagenet
 Namespace:    elastic-job
-Labels:       <none>
-Annotations:  kubectl.kubernetes.io/last-applied-configuration:
-                {"apiVersion":"elastic.pytorch.org/v1alpha1","kind":"ElasticJob","metadata":{"annotations":{},"name":"imagenet","namespace":"elastic-job"}...
-API Version:  elastic.pytorch.org/v1alpha1
-Kind:         ElasticJob
-Metadata:
-  Creation Timestamp:  2020-03-19T10:30:55Z
-  Generation:          5
-  Resource Version:    2110451
-  Self Link:           /apis/elastic.pytorch.org/v1alpha1/namespaces/elastic-job/elasticjobs/imagenet
-  UID:                 b6f6b7ae-69cc-11ea-b995-0653198c16be
-Spec:
-  Run Policy:
-  Max Replicas:   5
-  Min Replicas:   1
-  Rdzv Endpoint:  etcd-service:2379
-  Replica Specs:
-    Worker:
-      Replicas:        2
-      Restart Policy:  ExitCode
-      Template:
-        Metadata:
-          Creation Timestamp:  <nil>
-        Spec:
-          Containers:
-            Args:
-              /workspace/examples/imagenet/main.py
-              --input_path
-              /data/tiny-imagenet-200/train
-              --epochs
-              10
-            Image:              seedjeffwan/examples:0.1.0rc1
-            Image Pull Policy:  Always
-            Name:               elasticjob-worker
-            Ports:
-              Container Port:  10291
-              Name:            elasticjob-port
-            Resources:
-              Limits:
-                nvidia.com/gpu:  1
+<... OMITTED ...>
 Status:
   Conditions:
     Last Transition Time:  2020-03-19T10:30:55Z
@@ -232,20 +201,35 @@ Status:
     Reason:                ElasticJobRunning
     Status:                True
     Type:                  Running
-  Replica Statuses:
-    Worker:
-      Active:  3
+<... OMITTED ...>
 Events:
   Type    Reason                   Age   From                    Message
   ----    ------                   ----  ----                    -------
   Normal  SuccessfulCreatePod      13s   elastic-job-controller  Created pod: imagenet-worker-0
-  Normal  SuccessfulCreatePod      13s   elastic-job-controller  Created pod: imagenet-worker-1
-  Normal  SuccessfulCreatePod      13s   elastic-job-controller  Created pod: imagenet-worker-2
-  Normal  SuccessfulCreateService  13s   elastic-job-controller  Created service: imagenet-worker-0
-  Normal  SuccessfulCreateService  13s   elastic-job-controller  Created service: imagenet-worker-1
-  Normal  SuccessfulCreateService  13s   elastic-job-controller  Created service: imagenet-worker-2
+```
+
+Tail the logs of a worker:
 
 ```
+$ kubectl logs -f -n elastic-job imagenet-worker-0
+```
+
+### Next Steps
+
+We have included other sample job specs in the `config/samples`  directory
+(e.g. `config/samples/classy_vision.yaml`), try them out by
+replacing `imagenet.yaml` with the appropariate spec filename in the 
+instructions above.
+
+To use your own script, build a docker image containing your script.
+You can use `torchelastic/examples` as your base image. Then point your 
+job specs to use your container by editing `Worker.template.spec.containers.image`.
+
+Our examples save checkpoints and models in the container hence the trained
+model and checkpoints are not accessible after the job is complete. In your
+scripts use a persistent store like AWS S3 or Azure Blob Storage.
+ 
+
 
 ### Trouble Shooting
 
