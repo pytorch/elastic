@@ -53,9 +53,9 @@ install_dep: &install_dep
         # https://github.com/pytorch/elastic/issues/39
         pip uninstall -y torch
         if [[ -z ${CUDA_VERSION} ]]; then
-          pip install --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+          pip install --progress-bar off torch==1.5.0 -f https://download.pytorch.org/whl/test/cpu/torch_test.html
         else
-          pip install --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cu101/torch_nightly.html
+          pip install --progress-bar off torch==1.5.0 -f https://download.pytorch.org/whl/test/cu101/torch_test.html
         fi
         pip install --progress-bar off -r requirements.txt
         pip list

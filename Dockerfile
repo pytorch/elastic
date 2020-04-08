@@ -5,7 +5,7 @@ WORKDIR /opt/torchelastic
 COPY . .
 # TODO remove torch nightly install when 1.5.0 releases (also update requirements.txt)
 RUN pip uninstall -y -qqq torch
-RUN pip install --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cu101/torch_nightly.html
+RUN pip install --progress-bar off --pre torch -f https://download.pytorch.org/whl/test/cu101/torch_test.html
 RUN pip install -v .
 
 WORKDIR /workspace
