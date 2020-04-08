@@ -403,7 +403,7 @@
 <span class="sd">    |                                            | (default 600s)           |</span>
 <span class="sd">    +--------------------------------------------+--------------------------+</span>
 <span class="sd">    | last_call_timeout                          | additional wait amount   |</span>
-<span class="sd">    |                                            | (?last call?) after min  |</span>
+<span class="sd">    |                                            | (“last call”) after min  |</span>
 <span class="sd">    |                                            | number of workers has    |</span>
 <span class="sd">    |                                            | been reached (defaults   |</span>
 <span class="sd">    |                                            | to 30s)                  |</span>
@@ -423,33 +423,33 @@
         <span class="c1"># TODO: look into using weakref here instead.</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rdzv_impl</span>
 
-<div class="viewcode-block" id="EtcdRendezvousHandler.next_rendezvous"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvousHandler.next_rendezvous">[docs]</a>    <span class="k">def</span> <span class="nf">next_rendezvous</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">next_rendezvous</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">rdzv_version</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="n">world_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rdzv_impl</span><span class="o">.</span><span class="n">rendezvous_barrier</span><span class="p">()</span>
 
         <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Creating EtcdStore as the c10d::Store implementation&quot;</span><span class="p">)</span>
         <span class="n">store</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rdzv_impl</span><span class="o">.</span><span class="n">setup_kv_store</span><span class="p">(</span><span class="n">rdzv_version</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">store</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="n">world_size</span></div>
+        <span class="k">return</span> <span class="n">store</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="n">world_size</span>
 
-<div class="viewcode-block" id="EtcdRendezvousHandler.is_closed"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvousHandler.is_closed">[docs]</a>    <span class="k">def</span> <span class="nf">is_closed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">is_closed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">_</span><span class="p">,</span> <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rdzv_impl</span><span class="o">.</span><span class="n">get_rdzv_state</span><span class="p">()</span>
             <span class="k">return</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;closed&quot;</span>
         <span class="k">except</span> <span class="n">etcd</span><span class="o">.</span><span class="n">EtcdKeyNotFound</span><span class="p">:</span>
             <span class="c1"># No rendezvous state, so it cannot be closed.</span>
-            <span class="k">return</span> <span class="kc">False</span></div>
+            <span class="k">return</span> <span class="kc">False</span>
 
-<div class="viewcode-block" id="EtcdRendezvousHandler.set_closed"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvousHandler.set_closed">[docs]</a>    <span class="k">def</span> <span class="nf">set_closed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_rdzv_impl</span><span class="o">.</span><span class="n">set_closed</span><span class="p">()</span></div>
+    <span class="k">def</span> <span class="nf">set_closed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rdzv_impl</span><span class="o">.</span><span class="n">set_closed</span><span class="p">()</span>
 
-<div class="viewcode-block" id="EtcdRendezvousHandler.num_nodes_waiting"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvousHandler.num_nodes_waiting">[docs]</a>    <span class="k">def</span> <span class="nf">num_nodes_waiting</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">num_nodes_waiting</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">_</span><span class="p">,</span> <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rdzv_impl</span><span class="o">.</span><span class="n">get_rdzv_state</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;final&quot;</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;num_workers_waiting&quot;</span><span class="p">]</span>
         <span class="k">except</span> <span class="n">etcd</span><span class="o">.</span><span class="n">EtcdKeyNotFound</span><span class="p">:</span>
             <span class="k">pass</span>
-        <span class="k">return</span> <span class="mi">0</span></div></div>
+        <span class="k">return</span> <span class="mi">0</span></div>
 
 
 <span class="c1"># TODO: we should probably handle a few additional errors,</span>
@@ -521,11 +521,21 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lease_this_rank_stop</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_lease_this_rank_stop</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
 
-    <span class="c1">#</span>
-    <span class="c1"># Main entry point for next rendezvous.</span>
-    <span class="c1"># This method is blocking until rendezvous succeeds or a timeout occurs.</span>
-    <span class="c1">#</span>
-    <span class="k">def</span> <span class="nf">rendezvous_barrier</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="EtcdRendezvous.rendezvous_barrier"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.rendezvous_barrier">[docs]</a>    <span class="k">def</span> <span class="nf">rendezvous_barrier</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Main entry point for next rendezvous.</span>
+<span class="sd">        This method is blocking until rendezvous succeeds or a timeout occurs.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             ``(rdzv_version, rank, world_size)``</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            RendezvousTimeoutException - timeout waiting for rendezvous</span>
+<span class="sd">            RendezvousNonRetryableError - other persistent errors that</span>
+<span class="sd">             render the rendezvous non-retryable</span>
+<span class="sd">            RendezvousClosedException - rendezvous is or was closed while</span>
+<span class="sd">             waiting</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_rendezvous_deadline</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span>
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rendezvous_deadline</span><span class="p">:</span>
@@ -554,7 +564,7 @@
 
             <span class="k">except</span> <span class="n">RendezvousClosedException</span><span class="p">:</span>
                 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Rendezvous for run_id=</span><span class="si">{self._run_id}</span><span class="s2"> was observed to be closed&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Rendezvous for run_id=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_run_id</span><span class="si">}</span><span class="s2"> was observed to be closed&quot;</span>
                 <span class="p">)</span>
                 <span class="k">raise</span>
 
@@ -567,19 +577,27 @@
                 <span class="c1"># FIXME: there are a few things that fall under this like</span>
                 <span class="c1"># etcd.EtcdKeyNotFound, etc, which could be handled more explicitly.</span>
                 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Rendezvous attempt failed, will retry. Reason: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
-                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></div>
 
-    <span class="c1">#</span>
-    <span class="c1"># Initially, the rendezvous state is expected to be one of:</span>
-    <span class="c1">#  a) empty (non-existent) - in this case we try to create a new one.</span>
-    <span class="c1">#  b) joinable - we try to join it.</span>
-    <span class="c1">#  c) final - we announce ourselves as waiting, and go into monitoring mode</span>
-    <span class="c1">#             for this rendezvous.</span>
-    <span class="c1">#</span>
-    <span class="c1"># Any other state is considered transitional, and will be retried after</span>
-    <span class="c1"># a short delay.</span>
-    <span class="c1">#</span>
-    <span class="k">def</span> <span class="nf">init_phase</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="EtcdRendezvous.init_phase"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.init_phase">[docs]</a>    <span class="k">def</span> <span class="nf">init_phase</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initially, the rendezvous state is expected to be one of:</span>
+
+<span class="sd">        1. empty (non-existent) - in this case we try to create a new one.</span>
+<span class="sd">        2. joinable - we try to join it.</span>
+<span class="sd">        3. final - we announce ourselves as waiting, and go into monitoring mode</span>
+
+<span class="sd">        Any other state is considered transitional, and will be retried after</span>
+<span class="sd">        a short delay.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ``(rdzv_version, rank, world_size)``</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            RendezvousClosedException - current rendezvous was/is closed</span>
+<span class="sd">            EtcdRendezvousRetryableFailure - observed some intermediate</span>
+<span class="sd">             state, which is best handled by retrying later</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">active_version</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">try_create_rendezvous</span><span class="p">()</span>
             <span class="n">state</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">active_version</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
@@ -600,15 +618,15 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">handle_existing_rendezvous</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;version&quot;</span><span class="p">])</span>
             <span class="k">raise</span> <span class="n">EtcdRendezvousRetryImmediately</span><span class="p">()</span>
 
-        <span class="c1"># We observed some intermediate state, which is best handled by retrying later</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">try_wait_for_state_change</span><span class="p">(</span><span class="n">etcd_index</span><span class="o">=</span><span class="n">active_version</span><span class="o">.</span><span class="n">etcd_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">raise</span> <span class="n">EtcdRendezvousRetryableFailure</span><span class="p">()</span>
+        <span class="k">raise</span> <span class="n">EtcdRendezvousRetryableFailure</span><span class="p">()</span></div>
 
-    <span class="c1">#</span>
-    <span class="c1"># We observed a rendezvous state in &#39;joinable&#39; state, and attempt to join this</span>
-    <span class="c1"># particular version, and then wait for all other peers to join.</span>
-    <span class="c1">#</span>
-    <span class="k">def</span> <span class="nf">join_phase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_version</span><span class="p">):</span>
+<div class="viewcode-block" id="EtcdRendezvous.join_phase"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.join_phase">[docs]</a>    <span class="k">def</span> <span class="nf">join_phase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_version</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        We observed a rendezvous state in &#39;joinable&#39; state, and attempt to join this</span>
+<span class="sd">        particular version, and then wait for all other peers to join.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="c1"># Failure to join will propagate an exception, causing a re-entry.</span>
         <span class="n">active_version</span><span class="p">,</span> <span class="n">this_rank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">join_rendezvous</span><span class="p">(</span><span class="n">expected_version</span><span class="p">)</span>
         <span class="n">state</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">active_version</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
@@ -642,15 +660,16 @@
             <span class="n">state</span><span class="p">[</span><span class="s2">&quot;version&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">expected_version</span>
         <span class="p">),</span> <span class="s2">&quot;Logic error: failed to observe version mismatch&quot;</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">confirm_phase</span><span class="p">(</span><span class="n">expected_version</span><span class="p">,</span> <span class="n">this_rank</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">confirm_phase</span><span class="p">(</span><span class="n">expected_version</span><span class="p">,</span> <span class="n">this_rank</span><span class="p">)</span></div>
 
-    <span class="c1">#</span>
-    <span class="c1"># Once the rendezvous state transitiosn from &#39;joinable&#39; to &#39;frozen&#39;,</span>
-    <span class="c1"># we have every participant confirm their membership and setup per-member</span>
-    <span class="c1"># keep-alive TTL keys, and then wait for all other participants to confirm,</span>
-    <span class="c1"># which would then successfully conclude this rendezvous.</span>
-    <span class="c1">#</span>
-    <span class="k">def</span> <span class="nf">confirm_phase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_version</span><span class="p">,</span> <span class="n">this_rank</span><span class="p">):</span>
+<div class="viewcode-block" id="EtcdRendezvous.confirm_phase"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.confirm_phase">[docs]</a>    <span class="k">def</span> <span class="nf">confirm_phase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_version</span><span class="p">,</span> <span class="n">this_rank</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Once the rendezvous state trainsitions from &#39;joinable&#39; to &#39;frozen&#39;,</span>
+<span class="sd">        we have every participant confirm their membership and setup per-member</span>
+<span class="sd">        keep-alive TTL keys, and then wait for all other participants to confirm,</span>
+<span class="sd">        which would then successfully conclude this rendezvous.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;All peers arrived. Confirming membership.&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">confirm_membership</span><span class="p">(</span><span class="n">expected_version</span><span class="p">,</span> <span class="n">this_rank</span><span class="p">)</span>
 
@@ -665,15 +684,16 @@
         <span class="p">)</span>
 
         <span class="c1"># Rendezvous version number; our rank in it; world size</span>
-        <span class="k">return</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;version&quot;</span><span class="p">],</span> <span class="n">this_rank</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;participants&quot;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;version&quot;</span><span class="p">],</span> <span class="n">this_rank</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;participants&quot;</span><span class="p">])</span></div>
 
-    <span class="c1">#</span>
-    <span class="c1"># Handle the case when there&#39;s an existing (state &#39;final) rendezvous already</span>
-    <span class="c1"># in place, and we have to announce ourselves waiting, and wait until</span>
-    <span class="c1"># the next rendezvous opportunity.</span>
-    <span class="c1">#</span>
-    <span class="k">def</span> <span class="nf">handle_existing_rendezvous</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_version</span><span class="p">):</span>
-        <span class="c1"># If statie is &#39;final&#39; -&gt; increment num_workers_waiting</span>
+<div class="viewcode-block" id="EtcdRendezvous.handle_existing_rendezvous"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.handle_existing_rendezvous">[docs]</a>    <span class="k">def</span> <span class="nf">handle_existing_rendezvous</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_version</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Handle the case when there&#39;s an existing (state &#39;final) rendezvous already</span>
+<span class="sd">        in place, and we have to announce ourselves waiting, and wait until</span>
+<span class="sd">        the next rendezvous opportunity.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># If state is &#39;final&#39; -&gt; increment num_workers_waiting</span>
         <span class="c1"># Then, observe state changes:</span>
         <span class="c1">#   1. if it&#39;s no longer final -&gt; bail out and re-try</span>
         <span class="c1">#   2. if keep alives are missing, destroy it and bail out.</span>
@@ -685,10 +705,17 @@
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">wait_for_rendezvous_to_free</span><span class="p">(</span><span class="n">expected_version</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Previously existing rendezvous state changed. Will re-try joining.&quot;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Previously existing rendezvous state changed. Will re-try joining.&quot;</span><span class="p">)</span></div>
 
-    <span class="c1"># Create new rendezvous state, or raise etcd.EtcdAlreadyExist exception.</span>
-    <span class="k">def</span> <span class="nf">try_create_rendezvous</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="EtcdRendezvous.try_create_rendezvous"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.try_create_rendezvous">[docs]</a>    <span class="k">def</span> <span class="nf">try_create_rendezvous</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create new rendezvous state or raise an exception that indicates</span>
+<span class="sd">        an unexpected state (e.g. already exists)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">             RendezvousNonRetryableError - on unexpected state</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="c1"># Initially active_version is ephemeral - this is to handle the</span>
         <span class="c1"># possibility that might fail to complete the setup transaction,</span>
         <span class="c1"># i.e. the transition &quot;setup&quot; -&gt; &quot;joinable&quot;.</span>
@@ -733,10 +760,13 @@
                 <span class="p">}</span>
             <span class="p">),</span>
             <span class="n">prev_value</span><span class="o">=</span><span class="n">active_version</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="p">)</span></div>
 
-    <span class="c1"># Helper method for the join phase.</span>
-    <span class="k">def</span> <span class="nf">join_rendezvous</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_version</span><span class="p">):</span>
+<div class="viewcode-block" id="EtcdRendezvous.join_rendezvous"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.join_rendezvous">[docs]</a>    <span class="k">def</span> <span class="nf">join_rendezvous</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_version</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Helper method for the join phase.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="c1"># Use compare-and-swap to add self to rendezvous state:</span>
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
             <span class="n">cas_delay</span><span class="p">()</span>
@@ -783,10 +813,12 @@
                 <span class="k">return</span> <span class="n">active_version</span><span class="p">,</span> <span class="n">this_rank</span>
 
             <span class="k">except</span> <span class="n">etcd</span><span class="o">.</span><span class="n">EtcdCompareFailed</span><span class="p">:</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Join rendezvous CAS unsuccessful, retrying&quot;</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Join rendezvous CAS unsuccessful, retrying&quot;</span><span class="p">)</span></div>
 
-    <span class="c1"># Helper method for the join phase.</span>
-    <span class="k">def</span> <span class="nf">wait_for_peers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_version</span><span class="p">):</span>
+<div class="viewcode-block" id="EtcdRendezvous.wait_for_peers"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.wait_for_peers">[docs]</a>    <span class="k">def</span> <span class="nf">wait_for_peers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_version</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Helper method for the join phase.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">active_version</span><span class="p">,</span> <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rdzv_state</span><span class="p">()</span>
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;frozen&quot;</span> <span class="ow">and</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;version&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">expected_version</span><span class="p">:</span>
@@ -803,10 +835,13 @@
                 <span class="c1"># No valid transition possible at this point</span>
                 <span class="k">raise</span> <span class="n">EtcdRendezvousRetryableFailure</span><span class="p">(</span>
                     <span class="s2">&quot;Rendezvous state transition no longer possible. Must re-enter.&quot;</span>
-                <span class="p">)</span>
+                <span class="p">)</span></div>
 
-    <span class="c1"># Helper method for the confirm phase</span>
-    <span class="k">def</span> <span class="nf">confirm_membership</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_version</span><span class="p">,</span> <span class="n">this_rank</span><span class="p">):</span>
+<div class="viewcode-block" id="EtcdRendezvous.confirm_membership"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.confirm_membership">[docs]</a>    <span class="k">def</span> <span class="nf">confirm_membership</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_version</span><span class="p">,</span> <span class="n">this_rank</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Helper method for the confirm phase</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="c1"># Compare-and-swap loop</span>
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
             <span class="n">cas_delay</span><span class="p">()</span>
@@ -851,10 +886,12 @@
                 <span class="k">return</span> <span class="n">active_version</span>
 
             <span class="k">except</span> <span class="n">etcd</span><span class="o">.</span><span class="n">EtcdCompareFailed</span><span class="p">:</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Confirm membership CAS unsuccessful, retrying&quot;</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Confirm membership CAS unsuccessful, retrying&quot;</span><span class="p">)</span></div>
 
-    <span class="c1"># Helper method for the confirm phase</span>
-    <span class="k">def</span> <span class="nf">wait_for_final</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_version</span><span class="p">):</span>
+<div class="viewcode-block" id="EtcdRendezvous.wait_for_final"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.wait_for_final">[docs]</a>    <span class="k">def</span> <span class="nf">wait_for_final</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_version</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Helper method for the confirm phase</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">active_version</span><span class="p">,</span> <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rdzv_state</span><span class="p">()</span>
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;final&quot;</span> <span class="ow">and</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;version&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">expected_version</span><span class="p">:</span>
@@ -871,11 +908,14 @@
                 <span class="c1"># No valid transition possible at this point</span>
                 <span class="k">raise</span> <span class="n">EtcdRendezvousRetryableFailure</span><span class="p">(</span>
                     <span class="s2">&quot;Rendezvous state transition no longer possible. Must re-enter.&quot;</span>
-                <span class="p">)</span>
+                <span class="p">)</span></div>
 
-    <span class="c1"># Announce this worker is waiting (via num_workers_waiting counter) to join next</span>
-    <span class="c1"># rendezvous, but only if state and version match.</span>
-    <span class="k">def</span> <span class="nf">announce_self_waiting</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_version</span><span class="p">):</span>
+<div class="viewcode-block" id="EtcdRendezvous.announce_self_waiting"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.announce_self_waiting">[docs]</a>    <span class="k">def</span> <span class="nf">announce_self_waiting</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_version</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Announce this worker is waiting (via num_workers_waiting counter) to join next</span>
+<span class="sd">        rendezvous, but only if state and version match.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
             <span class="n">cas_delay</span><span class="p">()</span>
             <span class="n">active_version</span><span class="p">,</span> <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rdzv_state</span><span class="p">()</span>
@@ -895,18 +935,19 @@
                 <span class="k">return</span> <span class="n">active_version</span>
 
             <span class="k">except</span> <span class="n">etcd</span><span class="o">.</span><span class="n">EtcdCompareFailed</span><span class="p">:</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Announce self as waiting CAS unsuccessful, retrying&quot;</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Announce self as waiting CAS unsuccessful, retrying&quot;</span><span class="p">)</span></div>
 
-    <span class="c1">#</span>
-    <span class="c1"># When there&#39;s an existing valid rendezvous in state &#39;final&#39;, we have to wait until</span>
-    <span class="c1"># the next opportunity to join.</span>
-    <span class="c1">#</span>
-    <span class="c1"># Such opportunity may come from:</span>
-    <span class="c1">#  a) rendezvous state changed by someone else, in which case we unblock and retry.</span>
-    <span class="c1">#  b) rendezvous becomes invalid because at least one member failed to renew their</span>
-    <span class="c1">#     leased keep_alive node. We detect this, and destroy the rendezvous.</span>
-    <span class="c1">#</span>
-    <span class="k">def</span> <span class="nf">wait_for_rendezvous_to_free</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_version</span><span class="p">):</span>
+<div class="viewcode-block" id="EtcdRendezvous.wait_for_rendezvous_to_free"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.wait_for_rendezvous_to_free">[docs]</a>    <span class="k">def</span> <span class="nf">wait_for_rendezvous_to_free</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_version</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        When there&#39;s an existing valid rendezvous in state &#39;final&#39;, we have to</span>
+<span class="sd">        wait until the next opportunity to join.</span>
+
+<span class="sd">        Such opportunity may come from:</span>
+
+<span class="sd">        1. rendezvous state changed by someone else, in which case we unblock and retry.</span>
+<span class="sd">        2. rendezvous becomes invalid because at least one member failed to renew their</span>
+<span class="sd">           leased keep_alive node. We detect this, and destroy the rendezvous.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">active_version</span><span class="p">,</span> <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rdzv_state</span><span class="p">()</span>
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;final&quot;</span> <span class="ow">or</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;version&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">expected_version</span><span class="p">:</span>
@@ -964,21 +1005,24 @@
 
             <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rendezvous_deadline</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">RendezvousTimeoutException</span><span class="p">()</span>
-            <span class="n">active_version</span><span class="p">,</span> <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rdzv_state</span><span class="p">()</span>
+            <span class="n">active_version</span><span class="p">,</span> <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rdzv_state</span><span class="p">()</span></div>
 
-    <span class="c1">#</span>
-    <span class="c1"># After we reach min number of workers, one particular worker takes on the</span>
-    <span class="c1"># responsibility of waiting an additional timeout before closing the join window.</span>
-    <span class="c1"># If the worker responsible for this fails, the rendezvous will be destroyed due</span>
-    <span class="c1"># to expiring TTL, and the other participants will re-rendezvous.</span>
-    <span class="c1">#</span>
-    <span class="k">def</span> <span class="nf">handle_join_last_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_version</span><span class="p">,</span> <span class="n">deadline</span><span class="p">):</span>
-        <span class="c1"># Here we expect to see state &lt;joinable, expected_version&gt;</span>
-        <span class="c1"># Exit gracefully if either:</span>
-        <span class="c1">#  1. state becomes &lt;frozen, expected_version&gt;</span>
-        <span class="c1">#  2. timeout happens (reaching deadline), in which case</span>
-        <span class="c1">#     we try the tranisiton to &lt;frozen, expected_version&gt;</span>
-        <span class="c1"># Exit with exception otherwise.</span>
+<div class="viewcode-block" id="EtcdRendezvous.handle_join_last_call"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.handle_join_last_call">[docs]</a>    <span class="k">def</span> <span class="nf">handle_join_last_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_version</span><span class="p">,</span> <span class="n">deadline</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        After we reach min number of workers, one particular worker takes on the</span>
+<span class="sd">        responsibility of waiting an additional timeout before closing the join window.</span>
+<span class="sd">        If the worker responsible for this fails, the rendezvous will be destroyed due</span>
+<span class="sd">        to expiring TTL, and the other participants will re-rendezvous.</span>
+
+<span class="sd">        Here we expect to see state &lt;joinable, expected_version&gt;</span>
+<span class="sd">        Exit gracefully if either:</span>
+
+<span class="sd">        1. state becomes &lt;frozen, expected_version&gt;</span>
+<span class="sd">        2. timeout happens (reaching deadline), in which case</span>
+<span class="sd">           we try the tranisiton to &lt;frozen, expected_version&gt;</span>
+
+<span class="sd">        Exit with exception otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">active_version</span><span class="p">,</span> <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rdzv_state</span><span class="p">()</span>
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
@@ -1034,12 +1078,14 @@
             <span class="k">except</span> <span class="n">etcd</span><span class="o">.</span><span class="n">EtcdCompareFailed</span><span class="p">:</span>
                 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Join last-call TTL refresh CAS unsuccessful, will retry&quot;</span><span class="p">)</span>
                 <span class="n">cas_delay</span><span class="p">()</span>
-                <span class="n">active_version</span><span class="p">,</span> <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rdzv_state</span><span class="p">()</span>
+                <span class="n">active_version</span><span class="p">,</span> <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rdzv_state</span><span class="p">()</span></div>
 
-    <span class="c1"># Mark rendezvous &#39;closed&#39; for current run_id, which is used to signal other</span>
-    <span class="c1"># participants to not attempt to perform (re-)rendezvous. This is useful</span>
-    <span class="c1"># when one of the workers decides the job is complete.</span>
-    <span class="k">def</span> <span class="nf">set_closed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="EtcdRendezvous.set_closed"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.set_closed">[docs]</a>    <span class="k">def</span> <span class="nf">set_closed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Mark rendezvous &#39;closed&#39; for current run_id, which is used to signal other</span>
+<span class="sd">        participants to not attempt to perform (re-)rendezvous. This is useful</span>
+<span class="sd">        when one of the workers decides the job is complete.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
             <span class="n">active_version</span><span class="p">,</span> <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rdzv_state</span><span class="p">()</span>
 
@@ -1058,7 +1104,7 @@
 
             <span class="k">except</span> <span class="n">etcd</span><span class="o">.</span><span class="n">EtcdCompareFailed</span><span class="p">:</span>
                 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Set closed CAS unsuccessful, retrying&quot;</span><span class="p">)</span>
-                <span class="n">cas_delay</span><span class="p">()</span>
+                <span class="n">cas_delay</span><span class="p">()</span></div>
 
     <span class="k">def</span> <span class="nf">get_rdzv_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">active_version</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;/rdzv/active_version&quot;</span><span class="p">))</span>
@@ -1183,15 +1229,16 @@
                 <span class="k">pass</span>
 
     <span class="k">def</span> <span class="nf">setup_kv_store</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rdzv_version</span><span class="p">):</span>
-        <span class="n">store_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;/rdzv/v_</span><span class="si">{rdzv_version}</span><span class="s2">/kv&quot;</span><span class="p">)</span>
+        <span class="n">store_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;/rdzv/v_</span><span class="si">{</span><span class="n">rdzv_version</span><span class="si">}</span><span class="s2">/kv&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">create_path_if_not_exists</span><span class="p">(</span><span class="n">store_path</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">EtcdStore</span><span class="p">(</span><span class="n">etcd_client</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">,</span> <span class="n">etcd_store_prefix</span><span class="o">=</span><span class="n">store_path</span><span class="p">)</span></div>
 
 
 <span class="c1"># pyre-fixme[11]: Annotation `Store` is not defined as a type.</span>
-<span class="k">class</span> <span class="nc">EtcdStore</span><span class="p">(</span><span class="n">Store</span><span class="p">):</span>
+<div class="viewcode-block" id="EtcdStore"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdStore">[docs]</a><span class="k">class</span> <span class="nc">EtcdStore</span><span class="p">(</span><span class="n">Store</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Implements a c10 Store interface by piggybacking on the rendezvous etcd instance.</span>
+<span class="sd">    Implements a c10 Store interface by piggybacking on the rendezvous etcd</span>
+<span class="sd">    instance. This is the store object returned by ``EtcdRendezvous``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
@@ -1212,38 +1259,45 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">+=</span> <span class="s2">&quot;/&quot;</span>
 
-    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<div class="viewcode-block" id="EtcdStore.set"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdStore.set">[docs]</a>    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Write a key/value pair into EtcdStore.</span>
-<span class="sd">        Both key and value may be either Python str or bytes.</span>
+<span class="sd">        Write a key/value pair into ``EtcdStore``.</span>
+<span class="sd">        Both key and value may be either Python ``str`` or ``bytes``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_encode</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="n">value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_encode</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_encode</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="n">value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_encode</span><span class="p">(</span><span class="n">value</span><span class="p">))</span></div>
 
-    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<div class="viewcode-block" id="EtcdStore.get"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdStore.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get a value by key, possibly doing a blocking wait.</span>
 
 <span class="sd">        If key is not immediately present, will do a blocking wait</span>
-<span class="sd">        for at most `timeout` duration or until the key is published.</span>
-<span class="sd">        If key still not published after timeout, a LookupError is raised.</span>
+<span class="sd">        for at most ``timeout`` duration or until the key is published.</span>
 
-<span class="sd">        Return value is of type bytes.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            value ``(bytes)``</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            LookupError - If key still not published after timeout</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">b64_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_encode</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
         <span class="n">kvs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_try_wait_get</span><span class="p">([</span><span class="n">b64_key</span><span class="p">])</span>
 
         <span class="k">if</span> <span class="n">kvs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">LookupError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Key </span><span class="si">{key}</span><span class="s2"> not found in EtcdStore&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">LookupError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> not found in EtcdStore&quot;</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode</span><span class="p">(</span><span class="n">kvs</span><span class="p">[</span><span class="n">b64_key</span><span class="p">])</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode</span><span class="p">(</span><span class="n">kvs</span><span class="p">[</span><span class="n">b64_key</span><span class="p">])</span></div>
 
-    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">num</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<div class="viewcode-block" id="EtcdStore.add"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdStore.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">num</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Atomically increment a value by an integer amount, returns the new value.</span>
-<span class="sd">        Returned value is of type `int`.</span>
+<span class="sd">        Atomically increment a value by an integer amount. The integer is</span>
+<span class="sd">        represented as a string using base 10. If key is not present,</span>
+<span class="sd">        a default value of ``0`` will be assumed.</span>
 
-<span class="sd">        The integer is represented as a string using base 10.</span>
-<span class="sd">        If key is not present, a default value of &quot;0&quot; will be assumed.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">             the new (incremented) value</span>
+
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">b64_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_encode</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
         <span class="c1"># c10d Store assumes value is an integer represented as a decimal string</span>
@@ -1269,36 +1323,37 @@
                 <span class="p">)</span>
                 <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_decode</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
             <span class="k">except</span> <span class="n">etcd</span><span class="o">.</span><span class="n">EtcdCompareFailed</span><span class="p">:</span>
-                <span class="n">cas_delay</span><span class="p">()</span>
+                <span class="n">cas_delay</span><span class="p">()</span></div>
 
-    <span class="k">def</span> <span class="nf">wait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="p">,</span> <span class="n">override_timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="EtcdStore.wait"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdStore.wait">[docs]</a>    <span class="k">def</span> <span class="nf">wait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="p">,</span> <span class="n">override_timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Waits until all of the keys are published, or until timeout.</span>
-<span class="sd">        If timeout occurs first, a LookupError is raied.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            LookupError - if timeout occurs</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">b64_keys</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_encode</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">]</span>
         <span class="n">kvs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_try_wait_get</span><span class="p">(</span><span class="n">b64_keys</span><span class="p">,</span> <span class="n">override_timeout</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">kvs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">LookupError</span><span class="p">(</span><span class="s2">&quot;Timeout while waiting for keys in EtcdStore&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">LookupError</span><span class="p">(</span><span class="s2">&quot;Timeout while waiting for keys in EtcdStore&quot;</span><span class="p">)</span></div>
         <span class="c1"># No return value on success</span>
 
-    <span class="k">def</span> <span class="nf">check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="EtcdStore.check"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdStore.check">[docs]</a>    <span class="k">def</span> <span class="nf">check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if all of the keys are immediately present (without waiting).</span>
-<span class="sd">        Returns bool.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">b64_keys</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_encode</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">]</span>
         <span class="n">kvs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_try_wait_get</span><span class="p">(</span>
             <span class="n">b64_keys</span><span class="p">,</span>
             <span class="n">override_timeout</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">microseconds</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>  <span class="c1"># as if no wait</span>
         <span class="p">)</span>
-        <span class="k">return</span> <span class="n">kvs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">kvs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span></div>
 
-    <span class="k">def</span> <span class="nf">set_timeout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">):</span>
+<div class="viewcode-block" id="EtcdStore.set_timeout"><a class="viewcode-back" href="../../../rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdStore.set_timeout">[docs]</a>    <span class="k">def</span> <span class="nf">set_timeout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Change the timeout used for all future operations.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span></div>
 
     <span class="c1">#</span>
     <span class="c1"># Encode key/value data in base64, so we can store arbitrary binary data</span>
@@ -1365,7 +1420,7 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">continue</span>
             <span class="k">except</span> <span class="n">etcd</span><span class="o">.</span><span class="n">EtcdEventIndexCleared</span><span class="p">:</span>
-                <span class="k">continue</span>
+                <span class="k">continue</span></div>
 
 
 <span class="k">def</span> <span class="nf">_get_socket_with_port</span><span class="p">():</span>
@@ -1490,7 +1545,6 @@
 
 <span class="c1"># torchelastic.rendezvous.RendezvousHandler using etcd (API v2):</span>
 <span class="n">register_rendezvous_handler</span><span class="p">(</span><span class="s2">&quot;etcd&quot;</span><span class="p">,</span> <span class="n">_etcd_rendezvous_handler</span><span class="p">)</span>
-
 </pre></div>
 
              </article>
@@ -1552,6 +1606,7 @@
 
   <script type="text/javascript" src="../../../_static/js/vendor/popper.min.js"></script>
   <script type="text/javascript" src="../../../_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
   <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
   <script type="text/javascript">
@@ -1742,6 +1797,10 @@
       scrollToAnchor.bind();
       highlightNavigation.bind();
       mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Remove any empty p tags that Sphinx adds
+      $("[data-tags='null']").remove();
 
       // Add class to links that have code blocks, since we cannot create links in code blocks
       $("article.pytorch-article a span.pre").each(function(e) {

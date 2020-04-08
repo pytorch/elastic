@@ -272,7 +272,9 @@
 <ul><li><a href="torchelastic/agent/server/api.html">torchelastic.agent.server.api</a></li>
 <li><a href="torchelastic/agent/server/local_elastic_agent.html">torchelastic.agent.server.local_elastic_agent</a></li>
 <li><a href="torchelastic/metrics/api.html">torchelastic.metrics.api</a></li>
+<li><a href="torchelastic/rendezvous/api.html">torchelastic.rendezvous.api</a></li>
 <li><a href="torchelastic/rendezvous/etcd_rendezvous.html">torchelastic.rendezvous.etcd_rendezvous</a></li>
+<li><a href="torchelastic/rendezvous/etcd_server.html">torchelastic.rendezvous.etcd_server</a></li>
 <li><a href="torchelastic/timer/api.html">torchelastic.timer.api</a></li>
 <li><a href="torchelastic/timer/local_timer.html">torchelastic.timer.local_timer</a></li>
 </ul>
@@ -336,6 +338,7 @@
 
   <script type="text/javascript" src="../_static/js/vendor/popper.min.js"></script>
   <script type="text/javascript" src="../_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
   <script type="text/javascript" src="../_static/js/theme.js"></script>
 
   <script type="text/javascript">
@@ -526,6 +529,10 @@
       scrollToAnchor.bind();
       highlightNavigation.bind();
       mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Remove any empty p tags that Sphinx adds
+      $("[data-tags='null']").remove();
 
       // Add class to links that have code blocks, since we cannot create links in code blocks
       $("article.pytorch-article a span.pre").each(function(e) {

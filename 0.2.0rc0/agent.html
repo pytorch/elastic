@@ -282,13 +282,13 @@
 that launches and manages underlying worker processes. The agent is
 responsible for:</p>
 <ol class="arabic simple">
-<li>Working with distributed torch: the workers are started with all the
+<li><p>Working with distributed torch: the workers are started with all the
 necessary information to successfully and trivially call
-<code class="docutils literal notranslate"><span class="pre">torch.distributed.init_process_group()</span></code>.</li>
-<li>Fault tolerance: monitors workers and upon detecting worker failures
-or unhealthiness, tears down all workers and restarts everyone.</li>
-<li>Elasticity: Reacts to membership changes and restarts workers with the new
-members.</li>
+<code class="docutils literal notranslate"><span class="pre">torch.distributed.init_process_group()</span></code>.</p></li>
+<li><p>Fault tolerance: monitors workers and upon detecting worker failures
+or unhealthiness, tears down all workers and restarts everyone.</p></li>
+<li><p>Elasticity: Reacts to membership changes and restarts workers with the new
+members.</p></li>
 </ol>
 <p>The simplest agents are deployed per node and works with local processes.
 A more advanced agent can launch and manage workers remotely. Agents can
@@ -304,7 +304,7 @@ in the same job) to make a collective decision.</p>
 are relevant to understanding the role of the <code class="docutils literal notranslate"><span class="pre">agent</span></code> in torchelastic.</p>
 <dl class="class">
 <dt id="torchelastic.agent.server.ElasticAgent">
-<em class="property">class </em><code class="descclassname">torchelastic.agent.server.</code><code class="descname">ElasticAgent</code><a class="reference internal" href="_modules/torchelastic/agent/server/api.html#ElasticAgent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.ElasticAgent" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.agent.server.</code><code class="sig-name descname">ElasticAgent</code><a class="reference internal" href="_modules/torchelastic/agent/server/api.html#ElasticAgent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.ElasticAgent" title="Permalink to this definition">¶</a></dt>
 <dd><p>Agent process responsible for managing one or more worker processes.
 The worker processes are assumed to be regular distributed PyTorch scripts.
 When the worker process is created by the agent, the agent provides the
@@ -315,14 +315,14 @@ on the specific implementation of the agent and the user’s job placement
 preferences. For instance, to run a distributed training job on GPU with
 8 trainers (one per GPU) one can:</p>
 <ol class="arabic simple">
-<li>Use 8 x single GPU instances, place an agent per instance, managing
-1 worker per agent.</li>
-<li>Use 4 x double GPU instances, place an agent per instance, managing
-2 workers per agent.</li>
-<li>Use 2 x quad GPU instances, place an agent per instance, managing
-4 workers per agent.</li>
-<li>Use 1 x 8 GPU instance, place an agent per instance, managing
-8 workers per agent.</li>
+<li><p>Use 8 x single GPU instances, place an agent per instance, managing
+1 worker per agent.</p></li>
+<li><p>Use 4 x double GPU instances, place an agent per instance, managing
+2 workers per agent.</p></li>
+<li><p>Use 2 x quad GPU instances, place an agent per instance, managing
+4 workers per agent.</p></li>
+<li><p>Use 1 x 8 GPU instance, place an agent per instance, managing
+8 workers per agent.</p></li>
 </ol>
 <p>Usage</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
@@ -330,56 +330,49 @@ preferences. For instance, to run a distributed training job on GPU with
     <span class="k">return</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># return rank 0&#39;s results</span>
 <span class="k">except</span> <span class="n">WorkerGroupFailureException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="n">exceptions</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">get_worker_exceptions</span><span class="p">()</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;worker 0 failed with: </span><span class="si">{exceptions[0]}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;worker 0 failed with: </span><span class="si">{</span><span class="n">exceptions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;error while running agent&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 <dl class="method">
 <dt id="torchelastic.agent.server.ElasticAgent.get_worker_group">
-<code class="descname">get_worker_group</code><span class="sig-paren">(</span><em>role: str = 'default'</em><span class="sig-paren">)</span> &#x2192; torchelastic.agent.server.api.WorkerGroup<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#ElasticAgent.get_worker_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.ElasticAgent.get_worker_group" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The <code class="docutils literal notranslate"><span class="pre">WorkerGroup</span></code> for the given <code class="docutils literal notranslate"><span class="pre">role</span></code>.
+<em class="property">abstract </em><code class="sig-name descname">get_worker_group</code><span class="sig-paren">(</span><em class="sig-param">role: str = 'default'</em><span class="sig-paren">)</span> &#x2192; torchelastic.agent.server.api.WorkerGroup<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#ElasticAgent.get_worker_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.ElasticAgent.get_worker_group" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The <code class="docutils literal notranslate"><span class="pre">WorkerGroup</span></code> for the given <code class="docutils literal notranslate"><span class="pre">role</span></code>.
 Note that the worker group is a mutable object and hence in a
 multi-threaded/process environment it may change state.
 Implementors are encouraged (but not required) to return
-a defensive read-only copy.</td>
-</tr>
-</tbody>
-</table>
+a defensive read-only copy.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="torchelastic.agent.server.ElasticAgent.run">
-<code class="descname">run</code><span class="sig-paren">(</span><em>role: str = 'default'</em><span class="sig-paren">)</span> &#x2192; Dict[int, Any]<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#ElasticAgent.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.ElasticAgent.run" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param">role: str = 'default'</em><span class="sig-paren">)</span> &#x2192; Dict[int, Any]<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#ElasticAgent.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.ElasticAgent.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Runs the agent, retrying the worker group on failures up to
 <code class="docutils literal notranslate"><span class="pre">max_restarts</span></code>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The return values for each worker mapped by the worker’s global rank.
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The return values for each worker mapped by the worker’s global rank.
 Empty if workers have void signature.</p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
-<li>WorkerGroupFailureException - workers did not successfully run</li>
-<li>Exception - any other failures NOT related to worker process</li>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>WorkerGroupFailureException - workers did not successfully run</strong> – </p></li>
+<li><p><strong>Exception - any other failures NOT related to worker process</strong> – </p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="torchelastic.agent.server.WorkerSpec">
-<em class="property">class </em><code class="descclassname">torchelastic.agent.server.</code><code class="descname">WorkerSpec</code><a class="reference internal" href="_modules/torchelastic/agent/server/api.html#WorkerSpec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.WorkerSpec" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.agent.server.</code><code class="sig-name descname">WorkerSpec</code><span class="sig-paren">(</span><em class="sig-param">role: str</em>, <em class="sig-param">local_world_size: int</em>, <em class="sig-param">fn: Callable</em>, <em class="sig-param">args: Tuple</em>, <em class="sig-param">rdzv_handler: torchelastic.rendezvous.api.RendezvousHandler</em>, <em class="sig-param">max_restarts: int = 100</em>, <em class="sig-param">monitor_interval: float = 5.0</em>, <em class="sig-param">master_port=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/agent/server/api.html#WorkerSpec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.WorkerSpec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Contains blueprint information about a particular type of worker.
 For a given role, there must only exist a single worker spec.
 Worker spec is expected to be homogenous across all nodes (machine),
@@ -388,7 +381,7 @@ that is each node runs the same number of workers for a particular spec.</p>
 
 <dl class="class">
 <dt id="torchelastic.agent.server.WorkerState">
-<em class="property">class </em><code class="descclassname">torchelastic.agent.server.</code><code class="descname">WorkerState</code><a class="reference internal" href="_modules/torchelastic/agent/server/api.html#WorkerState"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.WorkerState" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.agent.server.</code><code class="sig-name descname">WorkerState</code><a class="reference internal" href="_modules/torchelastic/agent/server/api.html#WorkerState"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.WorkerState" title="Permalink to this definition">¶</a></dt>
 <dd><p>State of the <code class="docutils literal notranslate"><span class="pre">WorkerGroup</span></code>. Workers in a worker groupchange state as a unit.
 If a single worker in a worker groupfails the entire set is considered
 failed:</p>
@@ -409,8 +402,8 @@ by the agent. Workers in <code class="docutils literal notranslate"><span class=
 in the near future by the agent. Some examples of workers being put into
 <code class="docutils literal notranslate"><span class="pre">STOPPED</span></code> state are:</p>
 <ol class="arabic simple">
-<li>Worker group failure|unhealthy observed</li>
-<li>Membership change detected</li>
+<li><p>Worker group failure|unhealthy observed</p></li>
+<li><p>Membership change detected</p></li>
 </ol>
 <p>When actions (start, stop, rdzv, retry, etc) on worker group fails
 and results in the action being partially applied to the worker group
@@ -422,7 +415,7 @@ self terminating and allowing the job manager to retry the node.</p>
 
 <dl class="class">
 <dt id="torchelastic.agent.server.Worker">
-<em class="property">class </em><code class="descclassname">torchelastic.agent.server.</code><code class="descname">Worker</code><span class="sig-paren">(</span><em>local_rank: int</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/agent/server/api.html#Worker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.Worker" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.agent.server.</code><code class="sig-name descname">Worker</code><span class="sig-paren">(</span><em class="sig-param">local_rank: int</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/agent/server/api.html#Worker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.Worker" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represents a worker instance. Contrast this with <code class="docutils literal notranslate"><span class="pre">WorkerSpec</span></code> that
 represents the specifications of a worker. A <code class="docutils literal notranslate"><span class="pre">Worker</span></code> is created from
 a <code class="docutils literal notranslate"><span class="pre">WorkerSpec</span></code>. A <code class="docutils literal notranslate"><span class="pre">Worker</span></code> is to a <code class="docutils literal notranslate"><span class="pre">WorkerSpec</span></code> as an object is to
@@ -431,25 +424,21 @@ a class.</p>
 by the specific implementation of <code class="docutils literal notranslate"><span class="pre">ElasticAgent</span></code>. For a local
 agent, it could be the <code class="docutils literal notranslate"><span class="pre">pid</span> <span class="pre">(int)</span></code> of the worker, for a remote
 agent it could be encoded as <code class="docutils literal notranslate"><span class="pre">host:port</span> <span class="pre">(string)</span></code>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>id</strong> (<em>Any</em>) – uniquely identifies a worker (interpreted by the agent)</li>
-<li><strong>local_rank</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – local rank of the worker</li>
-<li><strong>global_rank</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – global rank of the worker</li>
-<li><strong>world_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – number of workers (globally)</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>id</strong> (<em>Any</em>) – uniquely identifies a worker (interpreted by the agent)</p></li>
+<li><p><strong>local_rank</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – local rank of the worker</p></li>
+<li><p><strong>global_rank</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – global rank of the worker</p></li>
+<li><p><strong>world_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – number of workers (globally)</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="class">
 <dt id="torchelastic.agent.server.WorkerGroup">
-<em class="property">class </em><code class="descclassname">torchelastic.agent.server.</code><code class="descname">WorkerGroup</code><span class="sig-paren">(</span><em>spec: torchelastic.agent.server.api.WorkerSpec</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/agent/server/api.html#WorkerGroup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.WorkerGroup" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.agent.server.</code><code class="sig-name descname">WorkerGroup</code><span class="sig-paren">(</span><em class="sig-param">spec: torchelastic.agent.server.api.WorkerSpec</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/agent/server/api.html#WorkerGroup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.WorkerGroup" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represents the set of <code class="docutils literal notranslate"><span class="pre">Worker</span></code> instances for the given <code class="docutils literal notranslate"><span class="pre">WorkerSpec</span></code>
 managed by <code class="docutils literal notranslate"><span class="pre">ElasticAgent</span></code>. Whether the worker groupcontains cross
 instance workers or not depends on the implementation of the agent.</p>
@@ -461,7 +450,7 @@ instance workers or not depends on the implementation of the agent.</p>
 <p>Below are the agent implementations provided by torchelastic.</p>
 <dl class="class">
 <dt id="torchelastic.agent.server.local_elastic_agent.LocalElasticAgent">
-<em class="property">class </em><code class="descclassname">torchelastic.agent.server.local_elastic_agent.</code><code class="descname">LocalElasticAgent</code><span class="sig-paren">(</span><em>spec: torchelastic.agent.server.api.WorkerSpec</em>, <em>start_method='spawn'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/agent/server/local_elastic_agent.html#LocalElasticAgent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.local_elastic_agent.LocalElasticAgent" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.agent.server.local_elastic_agent.</code><code class="sig-name descname">LocalElasticAgent</code><span class="sig-paren">(</span><em class="sig-param">spec: torchelastic.agent.server.api.WorkerSpec</em>, <em class="sig-param">start_method='spawn'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/agent/server/local_elastic_agent.html#LocalElasticAgent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.local_elastic_agent.LocalElasticAgent" title="Permalink to this definition">¶</a></dt>
 <dd><p>An implementation of <a class="reference internal" href="#torchelastic.agent.server.ElasticAgent" title="torchelastic.agent.server.ElasticAgent"><code class="xref py py-class docutils literal notranslate"><span class="pre">torchelastic.agent.server.ElasticAgent</span></code></a>
 that handles host-local workers.
 This agent is deployed per host and is configured to spawn <code class="docutils literal notranslate"><span class="pre">n</span></code> workers.
@@ -502,12 +491,12 @@ most of the scaffolding and leaves you with a few specific abstract methods
 to implement.</p>
 <dl class="class">
 <dt id="torchelastic.agent.server.SimpleElasticAgent">
-<em class="property">class </em><code class="descclassname">torchelastic.agent.server.</code><code class="descname">SimpleElasticAgent</code><span class="sig-paren">(</span><em>spec: torchelastic.agent.server.api.WorkerSpec</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.agent.server.</code><code class="sig-name descname">SimpleElasticAgent</code><span class="sig-paren">(</span><em class="sig-param">spec: torchelastic.agent.server.api.WorkerSpec</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent" title="Permalink to this definition">¶</a></dt>
 <dd><p>An <code class="docutils literal notranslate"><span class="pre">ElasticAgent</span></code> that manages workers (<code class="docutils literal notranslate"><span class="pre">WorkerGroup</span></code>)
 for a single <code class="docutils literal notranslate"><span class="pre">WorkerSpec</span></code> (e.g. one particular type of worker role).</p>
 <dl class="method">
 <dt id="torchelastic.agent.server.SimpleElasticAgent._initialize_workers">
-<code class="descname">_initialize_workers</code><span class="sig-paren">(</span><em>worker_group: torchelastic.agent.server.api.WorkerGroup</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent._initialize_workers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent._initialize_workers" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">_initialize_workers</code><span class="sig-paren">(</span><em class="sig-param">worker_group: torchelastic.agent.server.api.WorkerGroup</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent._initialize_workers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent._initialize_workers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Starts a fresh set of workers for the worker_group.
 Essentially a rendezvous followed by a start_workers.</p>
 <p>The caller should first call <code class="docutils literal notranslate"><span class="pre">_stop_workers()</span></code> to stop running workers
@@ -519,14 +508,14 @@ of state to <code class="docutils literal notranslate"><span class="pre">_monito
 
 <dl class="method">
 <dt id="torchelastic.agent.server.SimpleElasticAgent._monitor_workers">
-<code class="descname">_monitor_workers</code><span class="sig-paren">(</span><em>worker_group: torchelastic.agent.server.api.WorkerGroup</em><span class="sig-paren">)</span> &#x2192; torchelastic.agent.server.api.MonitorResult<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent._monitor_workers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent._monitor_workers" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">_monitor_workers</code><span class="sig-paren">(</span><em class="sig-param">worker_group: torchelastic.agent.server.api.WorkerGroup</em><span class="sig-paren">)</span> &#x2192; torchelastic.agent.server.api.MonitorResult<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent._monitor_workers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent._monitor_workers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks on the workers for the <code class="docutils literal notranslate"><span class="pre">worker_group</span></code> and returns
 the new state of the worker group.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="torchelastic.agent.server.SimpleElasticAgent._rendezvous">
-<code class="descname">_rendezvous</code><span class="sig-paren">(</span><em>worker_group: torchelastic.agent.server.api.WorkerGroup</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent._rendezvous"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent._rendezvous" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">_rendezvous</code><span class="sig-paren">(</span><em class="sig-param">worker_group: torchelastic.agent.server.api.WorkerGroup</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent._rendezvous"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent._rendezvous" title="Permalink to this definition">¶</a></dt>
 <dd><p>Runs rendezvous for the workers specified by worker spec.
 Assigns workers a new global rank and world size.
 Updates the rendezvous store for the worker group.</p>
@@ -534,13 +523,13 @@ Updates the rendezvous store for the worker group.</p>
 
 <dl class="method">
 <dt id="torchelastic.agent.server.SimpleElasticAgent._restart_workers">
-<code class="descname">_restart_workers</code><span class="sig-paren">(</span><em>worker_group: torchelastic.agent.server.api.WorkerGroup</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent._restart_workers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent._restart_workers" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">_restart_workers</code><span class="sig-paren">(</span><em class="sig-param">worker_group: torchelastic.agent.server.api.WorkerGroup</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent._restart_workers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent._restart_workers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Restarts (stops, rendezvous, starts) all local workers in the group.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="torchelastic.agent.server.SimpleElasticAgent._start_workers">
-<code class="descname">_start_workers</code><span class="sig-paren">(</span><em>worker_group: torchelastic.agent.server.api.WorkerGroup</em><span class="sig-paren">)</span> &#x2192; Dict[int, Any]<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent._start_workers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent._start_workers" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">_start_workers</code><span class="sig-paren">(</span><em class="sig-param">worker_group: torchelastic.agent.server.api.WorkerGroup</em><span class="sig-paren">)</span> &#x2192; Dict[int, Any]<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent._start_workers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent._start_workers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Starts <code class="docutils literal notranslate"><span class="pre">worker_group.spec.local_world_size</span></code> number of workers
 according to worker spec for the worker group .</p>
 <p>Returns a map of <code class="docutils literal notranslate"><span class="pre">local_rank</span></code> to worker <code class="docutils literal notranslate"><span class="pre">id</span></code>.</p>
@@ -548,7 +537,7 @@ according to worker spec for the worker group .</p>
 
 <dl class="method">
 <dt id="torchelastic.agent.server.SimpleElasticAgent._stop_workers">
-<code class="descname">_stop_workers</code><span class="sig-paren">(</span><em>worker_group: torchelastic.agent.server.api.WorkerGroup</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent._stop_workers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent._stop_workers" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">_stop_workers</code><span class="sig-paren">(</span><em class="sig-param">worker_group: torchelastic.agent.server.api.WorkerGroup</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent._stop_workers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent._stop_workers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Stops all workers in the given worker group. Implementors
 must deal with workers in all states defined by <code class="docutils literal notranslate"><span class="pre">WorkerState</span></code>.
 That is, it must gracefully handle stopping non-existent workers,
@@ -557,7 +546,7 @@ unhealthy (stuck) workers, etc.</p>
 
 <dl class="method">
 <dt id="torchelastic.agent.server.SimpleElasticAgent.get_worker_group">
-<code class="descname">get_worker_group</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; torchelastic.agent.server.api.WorkerGroup<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent.get_worker_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent.get_worker_group" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_worker_group</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; torchelastic.agent.server.api.WorkerGroup<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent.get_worker_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent.get_worker_group" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns:
 The <code class="docutils literal notranslate"><span class="pre">WorkerGroup</span></code> for the given <code class="docutils literal notranslate"><span class="pre">role</span></code>.
 Note that the worker group is a mutable object and hence in a
@@ -568,32 +557,28 @@ a defensive read-only copy.</p>
 
 <dl class="method">
 <dt id="torchelastic.agent.server.SimpleElasticAgent.run">
-<code class="descname">run</code><span class="sig-paren">(</span><em>role: str = 'default'</em><span class="sig-paren">)</span> &#x2192; Dict[int, Any]<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent.run" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param">role: str = 'default'</em><span class="sig-paren">)</span> &#x2192; Dict[int, Any]<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Runs the agent, retrying the worker group on failures up to
 <code class="docutils literal notranslate"><span class="pre">max_restarts</span></code>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The return values for each worker mapped by the worker’s global rank.
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The return values for each worker mapped by the worker’s global rank.
 Empty if workers have void signature.</p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
-<li>WorkerGroupFailureException - workers did not successfully run</li>
-<li>Exception - any other failures NOT related to worker process</li>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>WorkerGroupFailureException - workers did not successfully run</strong> – </p></li>
+<li><p><strong>Exception - any other failures NOT related to worker process</strong> – </p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="torchelastic.agent.server.api.MonitorResult">
-<em class="property">class </em><code class="descclassname">torchelastic.agent.server.api.</code><code class="descname">MonitorResult</code><span class="sig-paren">(</span><em>state: torchelastic.agent.server.api.WorkerState</em>, <em>ret_vals: Dict[int</em>, <em>Any] = None</em>, <em>exceptions: Dict[int</em>, <em>Exception] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/agent/server/api.html#MonitorResult"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.api.MonitorResult" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.agent.server.api.</code><code class="sig-name descname">MonitorResult</code><span class="sig-paren">(</span><em class="sig-param">state: torchelastic.agent.server.api.WorkerState</em>, <em class="sig-param">ret_vals: Dict[int</em>, <em class="sig-param">Any] = None</em>, <em class="sig-param">exceptions: Dict[int</em>, <em class="sig-param">Exception] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/agent/server/api.html#MonitorResult"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.api.MonitorResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returned by the agent’s <code class="docutils literal notranslate"><span class="pre">_monitor_workers</span></code> API. A holder object
 that holds information about the monitoring results.
 The <code class="docutils literal notranslate"><span class="pre">ret_vals</span></code> and <code class="docutils literal notranslate"><span class="pre">exceptions</span></code> field map each worker’s
@@ -685,6 +670,7 @@ For other states both these fields will be empty.</p>
 
   <script type="text/javascript" src="_static/js/vendor/popper.min.js"></script>
   <script type="text/javascript" src="_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
   <script type="text/javascript" src="_static/js/theme.js"></script>
 
   <script type="text/javascript">
@@ -875,6 +861,10 @@ For other states both these fields will be empty.</p>
       scrollToAnchor.bind();
       highlightNavigation.bind();
       mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Remove any empty p tags that Sphinx adds
+      $("[data-tags='null']").remove();
 
       // Add class to links that have code blocks, since we cannot create links in code blocks
       $("article.pytorch-article a span.pre").each(function(e) {

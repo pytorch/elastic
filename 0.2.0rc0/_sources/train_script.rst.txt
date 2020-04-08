@@ -44,4 +44,3 @@ of training.
 
 For concrete examples of torchelastic-compliant train scripts, visit
 our `examples <examples.html>`_ page.
-

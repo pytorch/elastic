@@ -278,8 +278,8 @@
 <p>Sections below are instructions on running torchelastic on Kubernetes and
 various cloud providers.</p>
 <div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">The instructions below will only work on torchelastic <code class="docutils literal notranslate"><span class="pre">0.1.0rc</span></code>.
+<p class="admonition-title">Warning</p>
+<p>The instructions below will only work on torchelastic <code class="docutils literal notranslate"><span class="pre">0.1.0rc</span></code>.
 We highly encourage you to use our kubernetes
 <a class="reference external" href="kubernetes.html">elastic job controller</a> and use a kubernetes
 cluster setup on your preferred cloud provider.</p>
@@ -368,6 +368,7 @@ cluster setup on your preferred cloud provider.</p>
 
   <script type="text/javascript" src="_static/js/vendor/popper.min.js"></script>
   <script type="text/javascript" src="_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
   <script type="text/javascript" src="_static/js/theme.js"></script>
 
   <script type="text/javascript">
@@ -558,6 +559,10 @@ cluster setup on your preferred cloud provider.</p>
       scrollToAnchor.bind();
       highlightNavigation.bind();
       mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Remove any empty p tags that Sphinx adds
+      $("[data-tags='null']").remove();
 
       // Add class to links that have code blocks, since we cannot create links in code blocks
       $("article.pytorch-article a span.pre").each(function(e) {

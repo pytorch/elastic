@@ -455,7 +455,7 @@
         <span class="n">worker_pids</span> <span class="o">=</span> <span class="p">{</span><span class="n">w</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">worker_group</span><span class="o">.</span><span class="n">workers</span><span class="p">}</span>
         <span class="n">pc_pids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_process_context</span><span class="o">.</span><span class="n">pids</span><span class="p">())</span>
         <span class="k">if</span> <span class="n">worker_pids</span> <span class="o">!=</span> <span class="n">pc_pids</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{role}</span><span class="s2">] worker pids do not match process_context pids&quot;</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">] worker pids do not match process_context pids&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">MonitorResult</span><span class="p">(</span><span class="n">WorkerState</span><span class="o">.</span><span class="n">UNKNOWN</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
@@ -465,7 +465,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">MonitorResult</span><span class="p">(</span><span class="n">WorkerState</span><span class="o">.</span><span class="n">HEALTHY</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{role}</span><span class="s2">] Worker group failed&quot;</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">] Worker group failed&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">MonitorResult</span><span class="p">(</span>
                 <span class="n">WorkerState</span><span class="o">.</span><span class="n">FAILED</span><span class="p">,</span>
                 <span class="n">exceptions</span><span class="o">=</span><span class="p">{</span><span class="n">w</span><span class="o">.</span><span class="n">global_rank</span><span class="p">:</span> <span class="n">e</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">worker_group</span><span class="o">.</span><span class="n">workers</span><span class="p">},</span>
@@ -531,6 +531,7 @@
 
   <script type="text/javascript" src="../../../../_static/js/vendor/popper.min.js"></script>
   <script type="text/javascript" src="../../../../_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
   <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
 
   <script type="text/javascript">
@@ -721,6 +722,10 @@
       scrollToAnchor.bind();
       highlightNavigation.bind();
       mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Remove any empty p tags that Sphinx adds
+      $("[data-tags='null']").remove();
 
       // Add class to links that have code blocks, since we cannot create links in code blocks
       $("article.pytorch-article a span.pre").each(function(e) {

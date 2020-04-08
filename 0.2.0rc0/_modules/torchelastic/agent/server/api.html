@@ -715,15 +715,15 @@
         <span class="n">master_addr</span><span class="p">,</span> <span class="n">master_port</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_master_addr_port</span><span class="p">(</span><span class="n">store</span><span class="p">)</span>
         <span class="n">restart_count</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">max_restarts</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_remaining_restarts</span>
         <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{spec.role}</span><span class="s2">] Rendezvous complete for workers.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">role</span><span class="si">}</span><span class="s2">] Rendezvous complete for workers.</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;Result:</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">restart_count=</span><span class="si">{restart_count}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">group_rank=</span><span class="si">{group_rank}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">group_world_size=</span><span class="si">{group_world_size}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">rank stride=</span><span class="si">{stride}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">assigned global_ranks=</span><span class="si">{assigned_global_ranks}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">master_addr=</span><span class="si">{master_addr}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">master_port=</span><span class="si">{master_port}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">restart_count=</span><span class="si">{</span><span class="n">restart_count</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">group_rank=</span><span class="si">{</span><span class="n">group_rank</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">group_world_size=</span><span class="si">{</span><span class="n">group_world_size</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">rank stride=</span><span class="si">{</span><span class="n">stride</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">assigned global_ranks=</span><span class="si">{</span><span class="n">assigned_global_ranks</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">master_addr=</span><span class="si">{</span><span class="n">master_addr</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">master_port=</span><span class="si">{</span><span class="n">master_port</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="SimpleElasticAgent._initialize_workers"><a class="viewcode-back" href="../../../../agent.html#torchelastic.agent.server.SimpleElasticAgent._initialize_workers">[docs]</a>    <span class="nd">@prof</span>
@@ -740,7 +740,7 @@
 <span class="sd">        of state to ``_monitor_workers()`` method</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">role</span> <span class="o">=</span> <span class="n">worker_group</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">role</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{role}</span><span class="s2">] Rendezvous&#39;ing worker group&quot;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">] Rendezvous&#39;ing worker group&quot;</span><span class="p">)</span>
 
         <span class="c1"># TODO after stopping workers, wait at least monitor_interval*2 for</span>
         <span class="c1"># workers on different nodes to fail on a collective op before waiting</span>
@@ -748,7 +748,7 @@
         <span class="c1"># at around the same time and reduce false positive rdzv timeout errors</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_rendezvous</span><span class="p">(</span><span class="n">worker_group</span><span class="p">)</span>
 
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{role}</span><span class="s2">] Starting worker group&quot;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">] Starting worker group&quot;</span><span class="p">)</span>
         <span class="n">worker_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start_workers</span><span class="p">(</span><span class="n">worker_group</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">local_rank</span><span class="p">,</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">worker_ids</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">worker</span> <span class="o">=</span> <span class="n">worker_group</span><span class="o">.</span><span class="n">workers</span><span class="p">[</span><span class="n">local_rank</span><span class="p">]</span>
@@ -763,7 +763,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">role</span> <span class="o">=</span> <span class="n">worker_group</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">role</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{role}</span><span class="s2">] Stopping worker group&quot;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">] Stopping worker group&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stop_workers</span><span class="p">(</span><span class="n">worker_group</span><span class="p">)</span>
         <span class="n">worker_group</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">WorkerState</span><span class="o">.</span><span class="n">STOPPED</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_workers</span><span class="p">(</span><span class="n">worker_group</span><span class="p">)</span></div>
@@ -774,7 +774,7 @@
         <span class="n">spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span><span class="o">.</span><span class="n">spec</span>
         <span class="n">role</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">role</span>
 
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{role}</span><span class="s2">] starting workers for function: </span><span class="si">{spec.fn.__name__}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">] starting workers for function: </span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">fn</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_workers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span><span class="p">)</span>
         <span class="n">monitor_interval</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">monitor_interval</span>
@@ -787,17 +787,17 @@
             <span class="n">state</span> <span class="o">=</span> <span class="n">monitor_result</span><span class="o">.</span><span class="n">state</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">state</span>
 
-            <span class="n">put_metric</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;workers.</span><span class="si">{role}</span><span class="s2">.remaining_restarts&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_remaining_restarts</span><span class="p">)</span>
-            <span class="n">put_metric</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;workers.</span><span class="si">{role}</span><span class="s2">.{state.name.lower()}&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">put_metric</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;workers.</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">.remaining_restarts&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_remaining_restarts</span><span class="p">)</span>
+            <span class="n">put_metric</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;workers.</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">state</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="n">WorkerState</span><span class="o">.</span><span class="n">SUCCEEDED</span><span class="p">:</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{role}</span><span class="s2">] All workers successfully finished.&quot;</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">] All workers successfully finished.&quot;</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">monitor_result</span><span class="o">.</span><span class="n">ret_vals</span>
             <span class="k">elif</span> <span class="n">state</span> <span class="ow">in</span> <span class="p">{</span><span class="n">WorkerState</span><span class="o">.</span><span class="n">UNHEALTHY</span><span class="p">,</span> <span class="n">WorkerState</span><span class="o">.</span><span class="n">FAILED</span><span class="p">}:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_remaining_restarts</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{role}</span><span class="s2">] Worker group </span><span class="si">{state.name}</span><span class="s2">. &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{self._remaining_restarts}</span><span class="s2">/</span><span class="si">{spec.max_restarts}</span><span class="s2"> attempts left;&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">] Worker group </span><span class="si">{</span><span class="n">state</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">. &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_remaining_restarts</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">max_restarts</span><span class="si">}</span><span class="s2"> attempts left;&quot;</span>
                         <span class="sa">f</span><span class="s2">&quot; will restart worker group&quot;</span>
                     <span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_remaining_restarts</span> <span class="o">-=</span> <span class="mi">1</span>
@@ -806,7 +806,7 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">_stop_workers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">WorkerState</span><span class="o">.</span><span class="n">FAILED</span>
                     <span class="k">raise</span> <span class="n">WorkerGroupFailureException</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{role}</span><span class="s2">] exceeded max_restarts=</span><span class="si">{spec.max_restarts}</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">] exceeded max_restarts=</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">max_restarts</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
                         <span class="n">monitor_result</span><span class="o">.</span><span class="n">exceptions</span><span class="p">,</span>
                     <span class="p">)</span>
             <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="n">WorkerState</span><span class="o">.</span><span class="n">HEALTHY</span><span class="p">:</span>
@@ -815,13 +815,13 @@
                 <span class="n">group_rank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span><span class="o">.</span><span class="n">group_rank</span>
                 <span class="k">if</span> <span class="n">num_nodes_waiting</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{role}</span><span class="s2">] Detected </span><span class="si">{num_nodes_waiting}</span><span class="s2"> &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;new nodes from group_rank=</span><span class="si">{group_rank}</span><span class="s2">; &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">] Detected </span><span class="si">{</span><span class="n">num_nodes_waiting</span><span class="si">}</span><span class="s2"> &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;new nodes from group_rank=</span><span class="si">{</span><span class="n">group_rank</span><span class="si">}</span><span class="s2">; &quot;</span>
                         <span class="sa">f</span><span class="s2">&quot;will restart worker group&quot;</span>
                     <span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_restart_workers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_worker_group</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{role}</span><span class="s2">] Worker group in </span><span class="si">{state.name}</span><span class="s2"> state&quot;</span><span class="p">)</span></div></div>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">] Worker group in </span><span class="si">{</span><span class="n">state</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> state&quot;</span><span class="p">)</span></div></div>
 </pre></div>
 
              </article>
@@ -883,6 +883,7 @@
 
   <script type="text/javascript" src="../../../../_static/js/vendor/popper.min.js"></script>
   <script type="text/javascript" src="../../../../_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
   <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
 
   <script type="text/javascript">
@@ -1073,6 +1074,10 @@
       scrollToAnchor.bind();
       highlightNavigation.bind();
       mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Remove any empty p tags that Sphinx adds
+      $("[data-tags='null']").remove();
 
       // Add class to links that have code blocks, since we cannot create links in code blocks
       $("article.pytorch-article a span.pre").each(function(e) {

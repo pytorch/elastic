@@ -39,6 +39,3 @@ the server and client.
 
 .. autoclass:: TimerClient
    :members:
-
-
-

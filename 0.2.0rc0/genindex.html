@@ -280,7 +280,9 @@
  | <a href="#C"><strong>C</strong></a>
  | <a href="#E"><strong>E</strong></a>
  | <a href="#G"><strong>G</strong></a>
+ | <a href="#H"><strong>H</strong></a>
  | <a href="#I"><strong>I</strong></a>
+ | <a href="#J"><strong>J</strong></a>
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#N"><strong>N</strong></a>
@@ -317,11 +319,19 @@
       <li><a href="timer.html#torchelastic.timer.TimerClient.acquire">acquire() (torchelastic.timer.TimerClient method)</a>
 </li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdStore.add">add() (torchelastic.rendezvous.etcd_rendezvous.EtcdStore method)</a>
+</li>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.announce_self_waiting">announce_self_waiting() (torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous method)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdStore.check">check() (torchelastic.rendezvous.etcd_rendezvous.EtcdStore method)</a>
+</li>
       <li><a href="timer.html#torchelastic.timer.TimerServer.clear_timers">clear_timers() (torchelastic.timer.TimerServer method)</a>
 </li>
       <li><a href="metrics.html#torchelastic.metrics.configure">configure() (in module torchelastic.metrics)</a>
@@ -332,6 +342,10 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.confirm_membership">confirm_membership() (torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous method)</a>
+</li>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.confirm_phase">confirm_phase() (torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous method)</a>
+</li>
       <li><a href="metrics.html#torchelastic.metrics.api.ConsoleMetricHandler">ConsoleMetricHandler (class in torchelastic.metrics.api)</a>
 </li>
   </ul></td>
@@ -344,9 +358,13 @@
 </li>
       <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous">EtcdRendezvous (class in torchelastic.rendezvous.etcd_rendezvous)</a>
 </li>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvousHandler">EtcdRendezvousHandler (class in torchelastic.rendezvous.etcd_rendezvous)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvousHandler">EtcdRendezvousHandler (class in torchelastic.rendezvous.etcd_rendezvous)</a>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_server.EtcdServer">EtcdServer (class in torchelastic.rendezvous.etcd_server)</a>
+</li>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdStore">EtcdStore (class in torchelastic.rendezvous.etcd_rendezvous)</a>
 </li>
       <li><a href="timer.html#torchelastic.timer.expires">expires() (in module torchelastic.timer)</a>
 </li>
@@ -356,6 +374,8 @@
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdStore.get">get() (torchelastic.rendezvous.etcd_rendezvous.EtcdStore method)</a>
+</li>
       <li><a href="timer.html#torchelastic.timer.TimerServer.get_expired_timers">get_expired_timers() (torchelastic.timer.TimerServer method)</a>
 </li>
   </ul></td>
@@ -369,10 +389,38 @@
   </ul></td>
 </tr></table>
 
+<h2 id="H">H</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.handle_existing_rendezvous">handle_existing_rendezvous() (torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.handle_join_last_call">handle_join_last_call() (torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvousHandler.is_closed">is_closed() (torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvousHandler method)</a>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.init_phase">init_phase() (torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.RendezvousHandler.is_closed">is_closed() (torchelastic.rendezvous.RendezvousHandler method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="J">J</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.join_phase">join_phase() (torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.join_rendezvous">join_rendezvous() (torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -406,13 +454,13 @@
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvousHandler.next_rendezvous">next_rendezvous() (torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvousHandler method)</a>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.RendezvousHandler.next_rendezvous">next_rendezvous() (torchelastic.rendezvous.RendezvousHandler method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="metrics.html#torchelastic.metrics.api.NullMetricHandler">NullMetricHandler (class in torchelastic.metrics.api)</a>
 </li>
-      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvousHandler.num_nodes_waiting">num_nodes_waiting() (torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvousHandler method)</a>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.RendezvousHandler.num_nodes_waiting">num_nodes_waiting() (torchelastic.rendezvous.RendezvousHandler method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -436,8 +484,18 @@
 </li>
       <li><a href="timer.html#torchelastic.timer.TimerClient.release">release() (torchelastic.timer.TimerClient method)</a>
 </li>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.rendezvous_barrier">rendezvous_barrier() (torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous method)</a>
+</li>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.RendezvousClosedException">RendezvousClosedException (class in torchelastic.rendezvous)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.RendezvousHandler">RendezvousHandler (class in torchelastic.rendezvous)</a>
+</li>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.RendezvousNonRetryableError">RendezvousNonRetryableError (class in torchelastic.rendezvous)</a>
+</li>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.RendezvousTimeoutException">RendezvousTimeoutException (class in torchelastic.rendezvous)</a>
+</li>
       <li><a href="agent.html#torchelastic.agent.server.ElasticAgent.run">run() (torchelastic.agent.server.ElasticAgent method)</a>
 
       <ul>
@@ -450,10 +508,18 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvousHandler.set_closed">set_closed() (torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvousHandler method)</a>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdStore.set">set() (torchelastic.rendezvous.etcd_rendezvous.EtcdStore method)</a>
 </li>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.set_closed">set_closed() (torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous method)</a>
+
+      <ul>
+        <li><a href="rendezvous.html#torchelastic.rendezvous.RendezvousHandler.set_closed">(torchelastic.rendezvous.RendezvousHandler method)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdStore.set_timeout">set_timeout() (torchelastic.rendezvous.etcd_rendezvous.EtcdStore method)</a>
+</li>
       <li><a href="agent.html#torchelastic.agent.server.SimpleElasticAgent">SimpleElasticAgent (class in torchelastic.agent.server)</a>
 </li>
   </ul></td>
@@ -484,18 +550,28 @@
 </li>
       <li><a href="timer.html#module-torchelastic.timer">torchelastic.timer (module)</a>
 </li>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.try_create_rendezvous">try_create_rendezvous() (torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous method)</a>
+</li>
   </ul></td>
 </tr></table>
 
 <h2 id="W">W</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdStore.wait">wait() (torchelastic.rendezvous.etcd_rendezvous.EtcdStore method)</a>
+</li>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.wait_for_final">wait_for_final() (torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous method)</a>
+</li>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.wait_for_peers">wait_for_peers() (torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous method)</a>
+</li>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.wait_for_rendezvous_to_free">wait_for_rendezvous_to_free() (torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="agent.html#torchelastic.agent.server.Worker">Worker (class in torchelastic.agent.server)</a>
 </li>
       <li><a href="agent.html#torchelastic.agent.server.WorkerGroup">WorkerGroup (class in torchelastic.agent.server)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="agent.html#torchelastic.agent.server.WorkerSpec">WorkerSpec (class in torchelastic.agent.server)</a>
 </li>
       <li><a href="agent.html#torchelastic.agent.server.WorkerState">WorkerState (class in torchelastic.agent.server)</a>
@@ -564,6 +640,7 @@
 
   <script type="text/javascript" src="_static/js/vendor/popper.min.js"></script>
   <script type="text/javascript" src="_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
   <script type="text/javascript" src="_static/js/theme.js"></script>
 
   <script type="text/javascript">
@@ -754,6 +831,10 @@
       scrollToAnchor.bind();
       highlightNavigation.bind();
       mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Remove any empty p tags that Sphinx adds
+      $("[data-tags='null']").remove();
 
       // Add class to links that have code blocks, since we cannot create links in code blocks
       $("article.pytorch-article a span.pre").each(function(e) {

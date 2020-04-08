@@ -279,18 +279,18 @@
 <p>If your train script works with <code class="docutils literal notranslate"><span class="pre">torch.distributed.launch</span></code> it will continue
 working with <code class="docutils literal notranslate"><span class="pre">torchelastic.distributed.launch</span></code> with these differences:</p>
 <ol class="arabic simple">
-<li>No need to manually pass <code class="docutils literal notranslate"><span class="pre">RANK</span></code>, <code class="docutils literal notranslate"><span class="pre">WORLD_SIZE</span></code>,
-<code class="docutils literal notranslate"><span class="pre">MASTER_ADDR</span></code>, and <code class="docutils literal notranslate"><span class="pre">MASTER_PORT</span></code>.</li>
-<li><code class="docutils literal notranslate"><span class="pre">rdzv_backend</span></code> and <code class="docutils literal notranslate"><span class="pre">rdzv_endpoint</span></code> must be provided. For most users
-this will be set to <code class="docutils literal notranslate"><span class="pre">etcd</span></code> (see <a class="reference external" href="rendezvous.html">rendezvous</a>).</li>
-<li>Make sure you have a <code class="docutils literal notranslate"><span class="pre">load_checkpoint(path)</span></code> and
+<li><p>No need to manually pass <code class="docutils literal notranslate"><span class="pre">RANK</span></code>, <code class="docutils literal notranslate"><span class="pre">WORLD_SIZE</span></code>,
+<code class="docutils literal notranslate"><span class="pre">MASTER_ADDR</span></code>, and <code class="docutils literal notranslate"><span class="pre">MASTER_PORT</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rdzv_backend</span></code> and <code class="docutils literal notranslate"><span class="pre">rdzv_endpoint</span></code> must be provided. For most users
+this will be set to <code class="docutils literal notranslate"><span class="pre">etcd</span></code> (see <a class="reference external" href="rendezvous.html">rendezvous</a>).</p></li>
+<li><p>Make sure you have a <code class="docutils literal notranslate"><span class="pre">load_checkpoint(path)</span></code> and
 <code class="docutils literal notranslate"><span class="pre">save_checkpoint(path)</span></code> logic in your script. When workers fail
 we restart all the workers with the same program arguments so you will
 lose progress up to the most recent checkpoint
-(see <a class="reference external" href="distributed.html">elastic launch</a>).</li>
-<li><code class="docutils literal notranslate"><span class="pre">use_env</span></code> flag has been removed. If you were parsing local rank by parsing
+(see <a class="reference external" href="distributed.html">elastic launch</a>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">use_env</span></code> flag has been removed. If you were parsing local rank by parsing
 the <code class="docutils literal notranslate"><span class="pre">--local_rank</span></code> option, you need to now get the local rank from the
-environment variable <code class="docutils literal notranslate"><span class="pre">LOCAL_RANK</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">os.environ[&quot;LOCAL_RANK&quot;]</span></code>).</li>
+environment variable <code class="docutils literal notranslate"><span class="pre">LOCAL_RANK</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">os.environ[&quot;LOCAL_RANK&quot;]</span></code>).</p></li>
 </ol>
 <p>Below is an expository example of a training script that checkpoints on each
 epoch, hence the worst-case progress lost on failure is one full epoch worth
@@ -388,6 +388,7 @@ our <a class="reference external" href="examples.html">examples</a> page.</p>
 
   <script type="text/javascript" src="_static/js/vendor/popper.min.js"></script>
   <script type="text/javascript" src="_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
   <script type="text/javascript" src="_static/js/theme.js"></script>
 
   <script type="text/javascript">
@@ -578,6 +579,10 @@ our <a class="reference external" href="examples.html">examples</a> page.</p>
       scrollToAnchor.bind();
       highlightNavigation.bind();
       mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Remove any empty p tags that Sphinx adds
+      $("[data-tags='null']").remove();
 
       // Add class to links that have code blocks, since we cannot create links in code blocks
       $("article.pytorch-article a span.pre").each(function(e) {

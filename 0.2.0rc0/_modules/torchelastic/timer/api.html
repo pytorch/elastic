@@ -465,15 +465,15 @@
         <span class="n">reaped_worker_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">worker_id</span><span class="p">,</span> <span class="n">expired_timers</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_expired_timers</span><span class="p">(</span><span class="n">now</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Reaping worker_id=[</span><span class="si">{worker_id}</span><span class="s2">].&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot; Expired timers: {self._get_scopes(expired_timers)}&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Reaping worker_id=[</span><span class="si">{</span><span class="n">worker_id</span><span class="si">}</span><span class="s2">].&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot; Expired timers: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_scopes</span><span class="p">(</span><span class="n">expired_timers</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reap_worker_no_throw</span><span class="p">(</span><span class="n">worker_id</span><span class="p">):</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully reaped worker=[</span><span class="si">{worker_id}</span><span class="s2">]&quot;</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully reaped worker=[</span><span class="si">{</span><span class="n">worker_id</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
                 <span class="n">reaped_worker_ids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">worker_id</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Error reaping worker=[</span><span class="si">{worker_id}</span><span class="s2">]. Will retry on next watchdog.&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Error reaping worker=[</span><span class="si">{</span><span class="n">worker_id</span><span class="si">}</span><span class="s2">]. Will retry on next watchdog.&quot;</span>
                 <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">clear_timers</span><span class="p">(</span><span class="n">reaped_worker_ids</span><span class="p">)</span>
 
@@ -482,9 +482,9 @@
 
     <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Starting {type(self).__name__}...&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot; max_interval=</span><span class="si">{self._max_interval}</span><span class="s2">,&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot; daemon=</span><span class="si">{self._daemon}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Starting </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">...&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot; max_interval=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_max_interval</span><span class="si">}</span><span class="s2">,&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot; daemon=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_daemon</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_watchdog_thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span>
             <span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_watchdog_loop</span><span class="p">,</span> <span class="n">daemon</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_daemon</span>
@@ -494,7 +494,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_watchdog_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stopping {type(self).__name__}&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stopping </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stop_signaled</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_watchdog_thread</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stopping watchdog thread...&quot;</span><span class="p">)</span>
@@ -514,7 +514,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">global</span> <span class="n">_timer_client</span>
     <span class="n">_timer_client</span> <span class="o">=</span> <span class="n">timer_client</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Timer client configured to: {type(_timer_client).__name__}&quot;</span><span class="p">)</span></div>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Timer client configured to: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">_timer_client</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="expires"><a class="viewcode-back" href="../../../timer.html#torchelastic.timer.expires">[docs]</a><span class="nd">@contextmanager</span>
@@ -546,7 +546,7 @@
     <span class="k">if</span> <span class="n">scope</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># grab the caller file + lineno</span>
         <span class="n">caller</span> <span class="o">=</span> <span class="n">getframeinfo</span><span class="p">(</span><span class="n">stack</span><span class="p">()[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-        <span class="n">scope</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{caller.filename}</span><span class="s2">#</span><span class="si">{caller.lineno}</span><span class="s2">&quot;</span>
+        <span class="n">scope</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">caller</span><span class="o">.</span><span class="n">filename</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">caller</span><span class="o">.</span><span class="n">lineno</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="n">expiration</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">after</span>
     <span class="n">client</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="n">scope</span><span class="p">,</span> <span class="n">expiration</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
@@ -615,6 +615,7 @@
 
   <script type="text/javascript" src="../../../_static/js/vendor/popper.min.js"></script>
   <script type="text/javascript" src="../../../_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
   <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
   <script type="text/javascript">
@@ -805,6 +806,10 @@
       scrollToAnchor.bind();
       highlightNavigation.bind();
       mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Remove any empty p tags that Sphinx adds
+      $("[data-tags='null']").remove();
 
       // Add class to links that have code blocks, since we cannot create links in code blocks
       $("article.pytorch-article a span.pre").each(function(e) {

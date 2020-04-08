@@ -18,6 +18,7 @@ Use cases:
 
 Documentation
 ---------------
+
 .. toctree::
    :maxdepth: 1
    :caption: Get Started
@@ -42,4 +43,3 @@ Documentation
 
    kubernetes
    runtime
-
