@@ -1,11 +1,11 @@
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)[![CircleCI](https://circleci.com/gh/pytorch/elastic.svg?style=svg&circle-token=9bea46e94adbe2f3e0fb2d4054b1b655f2e208c2)](https://circleci.com/gh/pytorch/elastic)
 
-# PyTorch Elastic
+# TorchElastic
 
-PyTorch Elastic allows you to launch distributed PyTorch jobs in a 
+TorchElastic allows you to launch distributed PyTorch jobs in a
 fault-tolerant and elastic manner.
-For the latest documentation, please refer to our 
-[website](https://pytorch.org/elastic). 
+For the latest documentation, please refer to our
+[website](https://pytorch.org/elastic).
 
 
 ## Requirements

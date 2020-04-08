@@ -2,8 +2,8 @@
 # See https://github.com/pytorch/elastic/issues/39
 # For now you MUST manually install torch-1.5.0 nightly
 #  conda:     conda install pytorch torchvision -c pytorch
-#  pip (cpu): pip install torch -f https://download.pytorch.org/whl/test/cpu/torch_test.html
-#  pip (gpu): pip install torch -f https://download.pytorch.org/whl/test/cu101/torch_test.html
+#  pip (cpu): pip install torch==1.5.0 -f https://download.pytorch.org/whl/test/cpu/torch_test.html
+#  pip (gpu): pip install torch==1.5.0 -f https://download.pytorch.org/whl/test/cu101/torch_test.html
 #  pip (gpu): pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cu101/torch_nightly.html
 # See https://pytorch.org/
 
