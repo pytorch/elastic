@@ -5,6 +5,7 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
+import multiprocessing as mp
 import os
 import shutil
 import tempfile
@@ -192,3 +193,49 @@ class LaunchTest(unittest.TestCase):
         self.assertSetEqual(
             {str(i) for i in range(world_size)}, set(os.listdir(self.test_dir))
         )
+
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
+    def test_launch_elastic_multiple_agents(self):
+        run_id = str(uuid.uuid4().int)
+        min_nodes = 1
+        max_nodes = 2
+        nproc_per_node = 4
+        nnodes = 2
+        world_size = nnodes * nproc_per_node
+        args = [
+            f"--nnodes={min_nodes}:{max_nodes}",
+            f"--nproc_per_node={nproc_per_node}",
+            f"--rdzv_backend=etcd",
+            f"--rdzv_endpoint={self._etcd_endpoint}",
+            f"--rdzv_id={run_id}",
+            f"--monitor_interval=1",
+            f"--start_method=fork",
+            path("bin/test_script.py"),
+            f"--touch_file_dir={self.test_dir}",
+        ]
+        procs = []
+        for _ in range(nnodes - 1):
+            p = mp.Process(target=launch.main, args=[args])
+            procs.append(p)
+            p.start()
+        launch.main(args)
+        for i in range(nnodes - 1):
+            p = procs[i]
+            p.join()
+            self.assertEqual(0, p.exitcode)
+
+        # make sure all the workers ran
+        # each worker touches a file with its global rank as the name
+        self.assertSetEqual(
+            {str(i) for i in range(world_size)}, set(os.listdir(self.test_dir))
+        )
+
+    def test_min_max_nodes_parse(self):
+        min_nodes, max_nodes = launch.parse_min_max_nnodes("1")
+        self.assertTrue(min_nodes, max_nodes)
+        self.assertTrue(1, min_nodes)
+        min_nodes, max_nodes = launch.parse_min_max_nnodes("2:20")
+        self.assertTrue(2, min_nodes)
+        self.assertTrue(20, max_nodes)
+        with self.assertRaises(RuntimeError):
+            launch.parse_min_max_nnodes("2:20:30")

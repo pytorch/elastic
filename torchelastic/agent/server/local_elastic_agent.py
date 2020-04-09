@@ -132,6 +132,7 @@ class LocalElasticAgent(SimpleElasticAgent):
         for proc in self._process_context.processes:
             if proc.is_alive():
                 proc.terminate()
+            proc.join()
 
     @prof
     def _start_workers(self, worker_group: WorkerGroup) -> Dict[int, Any]:
