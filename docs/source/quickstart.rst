@@ -37,7 +37,7 @@ and at most ``MAX_SIZE`` nodes.
             YOUR_TRAINING_SCRIPT.py (--arg1 ... train script args...)
 
 .. note:: Learn more about writing your distributed training script
-          `here <train_script.html>`.
+          `here <train_script.html>`_.
 
 If ``torchelastic.distributed.launch`` does not meet your requirements
 you may use our APIs directly for more powerful customization. Start by

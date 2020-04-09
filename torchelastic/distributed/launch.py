@@ -208,9 +208,9 @@ job is invoking this launcher.
       if should_checkpoint:
         save_checkpoint(checkpoint_path)
 """
-
 import logging
 import os
+import signal
 import subprocess
 import sys
 import uuid
@@ -373,6 +373,19 @@ def wrapper_fn(omp_num_threads, cmd):
         os.environ["OMP_NUM_THREADS"] = str(omp_num_threads)
 
     process = subprocess.Popen(cmd)
+
+    # since we wrap the script process with this function (which runs as a
+    # subprocess of the agent) when the agent terminates this function
+    # due to some exception or membership change event we want the script
+    # to also get killed. If we do not register this exit handler
+    # the script process will get re-parented to the parent of this function
+    # (agent process) and we will end up with multiple copies of the script
+    # this should all go away with D20613415
+    def kill_script_pid(signum, frame):
+        process.terminate()
+
+    signal.signal(signal.SIGTERM, kill_script_pid)
+
     process.wait()
     if process.returncode != 0:
         raise subprocess.CalledProcessError(returncode=process.returncode, cmd=cmd)
@@ -401,7 +414,7 @@ def determine_local_world_size(nproc_per_node: str):
         else:
             raise ValueError(f"Unsupported nproc_per_node value: {nproc_per_node}")
 
-        logging.info(
+        log.info(
             f"Using nproc_per_node={nproc_per_node},"
             f" seting to {num_proc} since the instance "
             f"has {os.cpu_count()} {device_type}"
