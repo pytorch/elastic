@@ -18,7 +18,7 @@ spec:
         spec:
           containers:
             - name: elasticjob-worker
-              image: torchelastic/examples:0.2.0rc0
+              image: torchelastic/examples:0.2.0rc1
               imagePullPolicy: Always
               args:
                 - "--nproc_per_node=1"
