@@ -1,0 +1,876 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Elastic Agent &mdash; PyTorch/Elastic master documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!-- <link rel="stylesheet" href="_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="_static/katex-math.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Expiration Timers" href="timer.html" />
+    <link rel="prev" title="Elastic Launch" href="distributed.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+  <!-- Preload the theme fonts -->
+
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+
+<!-- Preload the katex fonts -->
+
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Math-Italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size1-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size4-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size2-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size3-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Caligraphic-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+</head>
+
+<div class="container-fluid header-holder tutorials-header" id="header-holder">
+  <div class="container">
+    <div class="header-container">
+      <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <div class="ecosystem-dropdown">
+              <a id="dropdownMenuButton" data-toggle="ecosystem-dropdown">
+                Ecosystem
+              </a>
+              <div class="ecosystem-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub"">
+                  <span class=dropdown-title>Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem">
+                  <span class=dropdown-title>Tools & Libraries</span>
+                  <p>Explore the ecosystem of tools and libraries</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+          </li>
+
+          <li>
+            <div class="resources-dropdown">
+              <a id="resourcesDropdownButton" data-toggle="resources-dropdown">
+                Resources
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources"">
+                  <span class=dropdown-title>Developer Resources</span>
+                  <p>Find resources and get questions answered</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class=dropdown-title>About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">Github</a>
+          </li>
+        </ul>
+      </div>
+
+      <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
+    </div>
+
+  </div>
+</div>
+
+
+<body class="pytorch-body">
+
+   
+
+    
+
+    <div class="table-of-contents-link-wrapper">
+      <span>Table of Contents</span>
+      <a href="#" class="toggle-table-of-contents" data-behavior="toggle-table-of-contents"></a>
+    </div>
+
+    <nav data-toggle="wy-nav-shift" class="pytorch-left-menu" id="pytorch-left-menu">
+      <div class="pytorch-side-scroll">
+        <div class="pytorch-menu pytorch-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          <div class="pytorch-left-menu-search">
+            
+
+            
+              
+              
+                <div class="version">
+                  v0.2.0rc1
+                </div>
+              
+            
+
+            
+
+
+  
+
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search Docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+            
+          </div>
+
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Get Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="train_script.html">Train script</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="distributed.html">Elastic Launch</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Elastic Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="timer.html">Expiration Timers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rendezvous.html">Rendezvous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metrics.html">Metrics</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="kubernetes.html">TorchElastic Kubernetes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime.html">Cloud Provider Support (Deprecated)</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <div class="pytorch-container">
+      <div class="pytorch-page-level-bar" id="pytorch-page-level-bar">
+        <div class="pytorch-breadcrumbs-wrapper">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="pytorch-breadcrumbs">
+    
+      <li>
+        <a href="index.html">
+          
+            Docs
+          
+        </a> &gt;
+      </li>
+
+        
+      <li>Elastic Agent</li>
+    
+    
+      <li class="pytorch-breadcrumbs-aside">
+        
+            
+            <a href="_sources/agent.rst.txt" rel="nofollow"><img src="_static/images/view-page-source-icon.svg"></a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+</div>
+        </div>
+
+        <div class="pytorch-shortcuts-wrapper" id="pytorch-shortcuts-wrapper">
+          Shortcuts
+        </div>
+      </div>
+
+      <section data-toggle="wy-nav-shift" id="pytorch-content-wrap" class="pytorch-content-wrap">
+        <div class="pytorch-content-left">
+
+        
+          
+          <div class="rst-content">
+          
+            <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
+             <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
+              
+  <div class="section" id="module-torchelastic.agent">
+<span id="elastic-agent"></span><h1>Elastic Agent<a class="headerlink" href="#module-torchelastic.agent" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-torchelastic.agent.server">
+<span id="server"></span><h2>Server<a class="headerlink" href="#module-torchelastic.agent.server" title="Permalink to this headline">¶</a></h2>
+<p>The elastic agent is the control plane of torchelastic. It is a process
+that launches and manages underlying worker processes. The agent is
+responsible for:</p>
+<ol class="arabic simple">
+<li><p>Working with distributed torch: the workers are started with all the
+necessary information to successfully and trivially call
+<code class="docutils literal notranslate"><span class="pre">torch.distributed.init_process_group()</span></code>.</p></li>
+<li><p>Fault tolerance: monitors workers and upon detecting worker failures
+or unhealthiness, tears down all workers and restarts everyone.</p></li>
+<li><p>Elasticity: Reacts to membership changes and restarts workers with the new
+members.</p></li>
+</ol>
+<p>The simplest agents are deployed per node and works with local processes.
+A more advanced agent can launch and manage workers remotely. Agents can
+be completely decentralized, making decisions based on the workers it manages.
+Or can be coordinated, communicating to other agents (that manage workers
+in the same job) to make a collective decision.</p>
+<p>Below is a diagram of an agent that manages a local group of workers.</p>
+<img alt="_images/agent_diagram.jpg" src="_images/agent_diagram.jpg" />
+</div>
+<div class="section" id="concepts">
+<h2>Concepts<a class="headerlink" href="#concepts" title="Permalink to this headline">¶</a></h2>
+<p>This section describes the high-level classes and concepts that
+are relevant to understanding the role of the <code class="docutils literal notranslate"><span class="pre">agent</span></code> in torchelastic.</p>
+<dl class="class">
+<dt id="torchelastic.agent.server.ElasticAgent">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.agent.server.</code><code class="sig-name descname">ElasticAgent</code><a class="reference internal" href="_modules/torchelastic/agent/server/api.html#ElasticAgent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.ElasticAgent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Agent process responsible for managing one or more worker processes.
+The worker processes are assumed to be regular distributed PyTorch scripts.
+When the worker process is created by the agent, the agent provides the
+necessary information for the worker processes to properly initialize
+a torch process group.</p>
+<p>The exact deployment topology and ratio of of agent-to-worker is dependent
+on the specific implementation of the agent and the user’s job placement
+preferences. For instance, to run a distributed training job on GPU with
+8 trainers (one per GPU) one can:</p>
+<ol class="arabic simple">
+<li><p>Use 8 x single GPU instances, place an agent per instance, managing
+1 worker per agent.</p></li>
+<li><p>Use 4 x double GPU instances, place an agent per instance, managing
+2 workers per agent.</p></li>
+<li><p>Use 2 x quad GPU instances, place an agent per instance, managing
+4 workers per agent.</p></li>
+<li><p>Use 1 x 8 GPU instance, place an agent per instance, managing
+8 workers per agent.</p></li>
+</ol>
+<p>Usage</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># return rank 0&#39;s results</span>
+<span class="k">except</span> <span class="n">WorkerGroupFailureException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="n">exceptions</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">get_worker_exceptions</span><span class="p">()</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;worker 0 failed with: </span><span class="si">{</span><span class="n">exceptions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;error while running agent&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="torchelastic.agent.server.ElasticAgent.get_worker_group">
+<em class="property">abstract </em><code class="sig-name descname">get_worker_group</code><span class="sig-paren">(</span><em class="sig-param">role: str = 'default'</em><span class="sig-paren">)</span> &#x2192; torchelastic.agent.server.api.WorkerGroup<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#ElasticAgent.get_worker_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.ElasticAgent.get_worker_group" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The <code class="docutils literal notranslate"><span class="pre">WorkerGroup</span></code> for the given <code class="docutils literal notranslate"><span class="pre">role</span></code>.
+Note that the worker group is a mutable object and hence in a
+multi-threaded/process environment it may change state.
+Implementors are encouraged (but not required) to return
+a defensive read-only copy.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="torchelastic.agent.server.ElasticAgent.run">
+<em class="property">abstract </em><code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param">role: str = 'default'</em><span class="sig-paren">)</span> &#x2192; Dict[int, Any]<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#ElasticAgent.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.ElasticAgent.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs the agent, retrying the worker group on failures up to
+<code class="docutils literal notranslate"><span class="pre">max_restarts</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The return values for each worker mapped by the worker’s global rank.
+Empty if workers have void signature.</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>WorkerGroupFailureException - workers did not successfully run</strong> – </p></li>
+<li><p><strong>Exception - any other failures NOT related to worker process</strong> – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="torchelastic.agent.server.WorkerSpec">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.agent.server.</code><code class="sig-name descname">WorkerSpec</code><span class="sig-paren">(</span><em class="sig-param">role: str</em>, <em class="sig-param">local_world_size: int</em>, <em class="sig-param">fn: Callable</em>, <em class="sig-param">args: Tuple</em>, <em class="sig-param">rdzv_handler: torchelastic.rendezvous.api.RendezvousHandler</em>, <em class="sig-param">max_restarts: int = 100</em>, <em class="sig-param">monitor_interval: float = 5.0</em>, <em class="sig-param">master_port=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/agent/server/api.html#WorkerSpec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.WorkerSpec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains blueprint information about a particular type of worker.
+For a given role, there must only exist a single worker spec.
+Worker spec is expected to be homogenous across all nodes (machine),
+that is each node runs the same number of workers for a particular spec.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="torchelastic.agent.server.WorkerState">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.agent.server.</code><code class="sig-name descname">WorkerState</code><a class="reference internal" href="_modules/torchelastic/agent/server/api.html#WorkerState"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.WorkerState" title="Permalink to this definition">¶</a></dt>
+<dd><p>State of the <code class="docutils literal notranslate"><span class="pre">WorkerGroup</span></code>. Workers in a worker groupchange state as a unit.
+If a single worker in a worker groupfails the entire set is considered
+failed:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>UNKNOWN - agent lost track of worker group state, unrecoverable
+INIT - worker group object created not yet started
+HEALTHY - workers running and healthy
+UNHEALTHY - workers running and unhealthy
+STOPPED - workers stopped (interruped) by the agent
+SUCCEEDED - workers finished running (exit 0)
+FAILED - workers failed to successfully finish (exit !0)
+</pre></div>
+</div>
+<p>A worker group starts from an initial <code class="docutils literal notranslate"><span class="pre">INIT</span></code> state,
+then progresses to <code class="docutils literal notranslate"><span class="pre">HEALTHY</span></code> or <code class="docutils literal notranslate"><span class="pre">UNHEALTHY</span></code> states,
+and finally reaches a terminal <code class="docutils literal notranslate"><span class="pre">SUCCEEDED</span></code> or <code class="docutils literal notranslate"><span class="pre">FAILED</span></code> state.</p>
+<p>Worker groups can be interrupted and temporarily put into <code class="docutils literal notranslate"><span class="pre">STOPPED</span></code> state
+by the agent. Workers in <code class="docutils literal notranslate"><span class="pre">STOPPED</span></code> state are scheduled to be restarted
+in the near future by the agent. Some examples of workers being put into
+<code class="docutils literal notranslate"><span class="pre">STOPPED</span></code> state are:</p>
+<ol class="arabic simple">
+<li><p>Worker group failure|unhealthy observed</p></li>
+<li><p>Membership change detected</p></li>
+</ol>
+<p>When actions (start, stop, rdzv, retry, etc) on worker group fails
+and results in the action being partially applied to the worker group
+the state will be <code class="docutils literal notranslate"><span class="pre">UNKNOWN</span></code>. Typically this happens on uncaught/unhandled
+exceptions during state change events on the agent. The agent is not
+expected to recover worker groups in <code class="docutils literal notranslate"><span class="pre">UNKNOWN</span></code> state and is better off
+self terminating and allowing the job manager to retry the node.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="torchelastic.agent.server.Worker">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.agent.server.</code><code class="sig-name descname">Worker</code><span class="sig-paren">(</span><em class="sig-param">local_rank: int</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/agent/server/api.html#Worker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.Worker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents a worker instance. Contrast this with <code class="docutils literal notranslate"><span class="pre">WorkerSpec</span></code> that
+represents the specifications of a worker. A <code class="docutils literal notranslate"><span class="pre">Worker</span></code> is created from
+a <code class="docutils literal notranslate"><span class="pre">WorkerSpec</span></code>. A <code class="docutils literal notranslate"><span class="pre">Worker</span></code> is to a <code class="docutils literal notranslate"><span class="pre">WorkerSpec</span></code> as an object is to
+a class.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">id</span></code> of the worker is interpreted
+by the specific implementation of <code class="docutils literal notranslate"><span class="pre">ElasticAgent</span></code>. For a local
+agent, it could be the <code class="docutils literal notranslate"><span class="pre">pid</span> <span class="pre">(int)</span></code> of the worker, for a remote
+agent it could be encoded as <code class="docutils literal notranslate"><span class="pre">host:port</span> <span class="pre">(string)</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>id</strong> (<em>Any</em>) – uniquely identifies a worker (interpreted by the agent)</p></li>
+<li><p><strong>local_rank</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – local rank of the worker</p></li>
+<li><p><strong>global_rank</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – global rank of the worker</p></li>
+<li><p><strong>world_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – number of workers (globally)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="torchelastic.agent.server.WorkerGroup">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.agent.server.</code><code class="sig-name descname">WorkerGroup</code><span class="sig-paren">(</span><em class="sig-param">spec: torchelastic.agent.server.api.WorkerSpec</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/agent/server/api.html#WorkerGroup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.WorkerGroup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents the set of <code class="docutils literal notranslate"><span class="pre">Worker</span></code> instances for the given <code class="docutils literal notranslate"><span class="pre">WorkerSpec</span></code>
+managed by <code class="docutils literal notranslate"><span class="pre">ElasticAgent</span></code>. Whether the worker groupcontains cross
+instance workers or not depends on the implementation of the agent.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="implementations">
+<h2>Implementations<a class="headerlink" href="#implementations" title="Permalink to this headline">¶</a></h2>
+<p>Below are the agent implementations provided by torchelastic.</p>
+<dl class="class">
+<dt id="torchelastic.agent.server.local_elastic_agent.LocalElasticAgent">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.agent.server.local_elastic_agent.</code><code class="sig-name descname">LocalElasticAgent</code><span class="sig-paren">(</span><em class="sig-param">spec: torchelastic.agent.server.api.WorkerSpec</em>, <em class="sig-param">start_method='spawn'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/agent/server/local_elastic_agent.html#LocalElasticAgent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.local_elastic_agent.LocalElasticAgent" title="Permalink to this definition">¶</a></dt>
+<dd><p>An implementation of <a class="reference internal" href="#torchelastic.agent.server.ElasticAgent" title="torchelastic.agent.server.ElasticAgent"><code class="xref py py-class docutils literal notranslate"><span class="pre">torchelastic.agent.server.ElasticAgent</span></code></a>
+that handles host-local workers.
+This agent is deployed per host and is configured to spawn <code class="docutils literal notranslate"><span class="pre">n</span></code> workers.
+When using GPUs, <code class="docutils literal notranslate"><span class="pre">n</span></code> maps to the number of GPUs available on the host.</p>
+<p>The local agent does not communicate to other local agents deployed on
+other hosts, even if the workers may communicate inter-host. The worker id
+is interpreted to be a local process. The agent starts and stops all worker
+processes as a single unit.</p>
+<p>The worker function and argument passed to the worker function must be
+python multiprocessing compatible. To pass multiprocessing data structures
+to the workers you may create the data structure in the same multiprocessing
+context as the specified <code class="docutils literal notranslate"><span class="pre">start_method</span></code> and pass it as a function argument.</p>
+<p>Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">trainer</span><span class="p">(</span><span class="n">shared_queue</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">start_method</span><span class="o">=</span><span class="s2">&quot;spawn&quot;</span>
+    <span class="n">shared_queue</span><span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">get_context</span><span class="p">(</span><span class="n">start_method</span><span class="p">)</span><span class="o">.</span><span class="n">Queue</span><span class="p">()</span>
+    <span class="n">spec</span> <span class="o">=</span> <span class="n">WorkerSpec</span><span class="p">(</span>
+                <span class="n">role</span><span class="o">=</span><span class="s2">&quot;trainer&quot;</span><span class="p">,</span>
+                <span class="n">local_world_size</span><span class="o">=</span><span class="n">nproc_per_process</span><span class="p">,</span>
+                <span class="n">fn</span><span class="o">=</span><span class="n">trainer</span><span class="p">,</span>
+                <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">shared_queue</span><span class="p">,),</span>
+                <span class="o">...&lt;</span><span class="n">OTHER_PARAMS</span><span class="o">...&gt;</span><span class="p">)</span>
+    <span class="n">agent</span> <span class="o">=</span> <span class="n">LocalElasticAgent</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">start_method</span><span class="p">)</span>
+    <span class="n">agent</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="extending-the-agent">
+<h2>Extending the Agent<a class="headerlink" href="#extending-the-agent" title="Permalink to this headline">¶</a></h2>
+<p>To extend the agent you can implement <code class="docutils literal notranslate"><span class="pre">`ElasticAgent</span></code> directly, however
+we recommend you extend <code class="docutils literal notranslate"><span class="pre">SimpleElasticAgent</span></code> instead, which provides
+most of the scaffolding and leaves you with a few specific abstract methods
+to implement.</p>
+<dl class="class">
+<dt id="torchelastic.agent.server.SimpleElasticAgent">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.agent.server.</code><code class="sig-name descname">SimpleElasticAgent</code><span class="sig-paren">(</span><em class="sig-param">spec: torchelastic.agent.server.api.WorkerSpec</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent" title="Permalink to this definition">¶</a></dt>
+<dd><p>An <code class="docutils literal notranslate"><span class="pre">ElasticAgent</span></code> that manages workers (<code class="docutils literal notranslate"><span class="pre">WorkerGroup</span></code>)
+for a single <code class="docutils literal notranslate"><span class="pre">WorkerSpec</span></code> (e.g. one particular type of worker role).</p>
+<dl class="method">
+<dt id="torchelastic.agent.server.SimpleElasticAgent._initialize_workers">
+<code class="sig-name descname">_initialize_workers</code><span class="sig-paren">(</span><em class="sig-param">worker_group: torchelastic.agent.server.api.WorkerGroup</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent._initialize_workers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent._initialize_workers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts a fresh set of workers for the worker_group.
+Essentially a rendezvous followed by a start_workers.</p>
+<p>The caller should first call <code class="docutils literal notranslate"><span class="pre">_stop_workers()</span></code> to stop running workers
+prior to calling this method.</p>
+<p>Optimistically sets the state of the worker group that
+just started as <code class="docutils literal notranslate"><span class="pre">HEALTHY</span></code> and delegates the actual monitoring
+of state to <code class="docutils literal notranslate"><span class="pre">_monitor_workers()</span></code> method</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="torchelastic.agent.server.SimpleElasticAgent._monitor_workers">
+<em class="property">abstract </em><code class="sig-name descname">_monitor_workers</code><span class="sig-paren">(</span><em class="sig-param">worker_group: torchelastic.agent.server.api.WorkerGroup</em><span class="sig-paren">)</span> &#x2192; torchelastic.agent.server.api.MonitorResult<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent._monitor_workers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent._monitor_workers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks on the workers for the <code class="docutils literal notranslate"><span class="pre">worker_group</span></code> and returns
+the new state of the worker group.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="torchelastic.agent.server.SimpleElasticAgent._rendezvous">
+<code class="sig-name descname">_rendezvous</code><span class="sig-paren">(</span><em class="sig-param">worker_group: torchelastic.agent.server.api.WorkerGroup</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent._rendezvous"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent._rendezvous" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs rendezvous for the workers specified by worker spec.
+Assigns workers a new global rank and world size.
+Updates the rendezvous store for the worker group.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="torchelastic.agent.server.SimpleElasticAgent._restart_workers">
+<code class="sig-name descname">_restart_workers</code><span class="sig-paren">(</span><em class="sig-param">worker_group: torchelastic.agent.server.api.WorkerGroup</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent._restart_workers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent._restart_workers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restarts (stops, rendezvous, starts) all local workers in the group.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="torchelastic.agent.server.SimpleElasticAgent._start_workers">
+<em class="property">abstract </em><code class="sig-name descname">_start_workers</code><span class="sig-paren">(</span><em class="sig-param">worker_group: torchelastic.agent.server.api.WorkerGroup</em><span class="sig-paren">)</span> &#x2192; Dict[int, Any]<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent._start_workers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent._start_workers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts <code class="docutils literal notranslate"><span class="pre">worker_group.spec.local_world_size</span></code> number of workers
+according to worker spec for the worker group .</p>
+<p>Returns a map of <code class="docutils literal notranslate"><span class="pre">local_rank</span></code> to worker <code class="docutils literal notranslate"><span class="pre">id</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="torchelastic.agent.server.SimpleElasticAgent._stop_workers">
+<em class="property">abstract </em><code class="sig-name descname">_stop_workers</code><span class="sig-paren">(</span><em class="sig-param">worker_group: torchelastic.agent.server.api.WorkerGroup</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent._stop_workers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent._stop_workers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stops all workers in the given worker group. Implementors
+must deal with workers in all states defined by <code class="docutils literal notranslate"><span class="pre">WorkerState</span></code>.
+That is, it must gracefully handle stopping non-existent workers,
+unhealthy (stuck) workers, etc.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="torchelastic.agent.server.SimpleElasticAgent.get_worker_group">
+<code class="sig-name descname">get_worker_group</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; torchelastic.agent.server.api.WorkerGroup<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent.get_worker_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent.get_worker_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns:
+The <code class="docutils literal notranslate"><span class="pre">WorkerGroup</span></code> for the given <code class="docutils literal notranslate"><span class="pre">role</span></code>.
+Note that the worker group is a mutable object and hence in a
+multi-threaded/process environment it may change state.
+Implementors are encouraged (but not required) to return
+a defensive read-only copy.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="torchelastic.agent.server.SimpleElasticAgent.run">
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param">role: str = 'default'</em><span class="sig-paren">)</span> &#x2192; Dict[int, Any]<a class="reference internal" href="_modules/torchelastic/agent/server/api.html#SimpleElasticAgent.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.SimpleElasticAgent.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs the agent, retrying the worker group on failures up to
+<code class="docutils literal notranslate"><span class="pre">max_restarts</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The return values for each worker mapped by the worker’s global rank.
+Empty if workers have void signature.</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>WorkerGroupFailureException - workers did not successfully run</strong> – </p></li>
+<li><p><strong>Exception - any other failures NOT related to worker process</strong> – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="torchelastic.agent.server.api.MonitorResult">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.agent.server.api.</code><code class="sig-name descname">MonitorResult</code><span class="sig-paren">(</span><em class="sig-param">state: torchelastic.agent.server.api.WorkerState</em>, <em class="sig-param">ret_vals: Dict[int</em>, <em class="sig-param">Any] = None</em>, <em class="sig-param">exceptions: Dict[int</em>, <em class="sig-param">Exception] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/agent/server/api.html#MonitorResult"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.agent.server.api.MonitorResult" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returned by the agent’s <code class="docutils literal notranslate"><span class="pre">_monitor_workers</span></code> API. A holder object
+that holds information about the monitoring results.
+The <code class="docutils literal notranslate"><span class="pre">ret_vals</span></code> and <code class="docutils literal notranslate"><span class="pre">exceptions</span></code> field map each worker’s
+return value (output) and exceptions (if any) accordingly by
+the workers global rank.</p>
+<p><code class="docutils literal notranslate"><span class="pre">state</span> <span class="pre">=</span> <span class="pre">SUCCEEDED</span></code> will have <code class="docutils literal notranslate"><span class="pre">ret_val</span></code>.
+<code class="docutils literal notranslate"><span class="pre">state</span> <span class="pre">=</span> <span class="pre">FAILED</span></code> will have <code class="docutils literal notranslate"><span class="pre">exceptions</span></code>.
+For other states both these fields will be empty.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+             </article>
+             
+            </div>
+            <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="timer.html" class="btn btn-neutral float-right" title="Expiration Timers" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+      
+      
+        <a href="distributed.html" class="btn btn-neutral" title="Elastic Launch" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+      
+    </div>
+  
+
+  
+
+    <hr>
+
+  
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, PyTorch Elastic Contributors.
+
+    </p>
+  </div>
+    
+      <div>
+        Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+      </div>
+     
+
+</footer>
+
+          </div>
+        </div>
+
+        <div class="pytorch-content-right" id="pytorch-content-right">
+          <div class="pytorch-right-menu" id="pytorch-right-menu">
+            <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
+              <ul>
+<li><a class="reference internal" href="#">Elastic Agent</a><ul>
+<li><a class="reference internal" href="#module-torchelastic.agent.server">Server</a></li>
+<li><a class="reference internal" href="#concepts">Concepts</a></li>
+<li><a class="reference internal" href="#implementations">Implementations</a></li>
+<li><a class="reference internal" href="#extending-the-agent">Extending the Agent</a></li>
+</ul>
+</li>
+</ul>
+
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  
+
+
+  
+
+     
+       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+         <script type="text/javascript" src="_static/jquery.js"></script>
+         <script type="text/javascript" src="_static/underscore.js"></script>
+         <script type="text/javascript" src="_static/doctools.js"></script>
+         <script type="text/javascript" src="_static/language_data.js"></script>
+         <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js"></script>
+         <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js"></script>
+         <script type="text/javascript" src="_static/katex_autorenderer.js"></script>
+     
+
+  
+
+  <script type="text/javascript" src="_static/js/vendor/popper.min.js"></script>
+  <script type="text/javascript" src="_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+  <!-- Begin Footer -->
+
+  <div class="container-fluid docs-tutorials-resources" id="docs-tutorials-resources">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 text-center">
+          <h2>Docs</h2>
+          <p>Access comprehensive developer documentation for PyTorch</p>
+          <a class="with-right-arrow" href="https://pytorch.org/docs/stable/index.html">View Docs</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Tutorials</h2>
+          <p>Get in-depth tutorials for beginners and advanced developers</p>
+          <a class="with-right-arrow" href="https://pytorch.org/tutorials">View Tutorials</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Resources</h2>
+          <p>Find development resources and get your questions answered</p>
+          <a class="with-right-arrow" href="https://pytorch.org/resources">View Resources</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-logo-wrapper">
+        <a href="https://pytorch.org/" class="footer-logo"></a>
+      </div>
+
+      <div class="footer-links-wrapper">
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/">PyTorch</a></li>
+            <li><a href="https://pytorch.org/get-started">Get Started</a></li>
+            <li><a href="https://pytorch.org/features">Features</a></li>
+            <li><a href="https://pytorch.org/ecosystem">Ecosystem</a></li>
+            <li><a href="https://pytorch.org/blog/">Blog</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/blob/master/CONTRIBUTING.md">Contributing</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/resources">Resources</a></li>
+            <li><a href="https://pytorch.org/tutorials">Tutorials</a></li>
+            <li><a href="https://pytorch.org/docs/stable/index.html">Docs</a></li>
+            <li><a href="https://discuss.pytorch.org" target="_blank">Discuss</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/issues" target="_blank">Github Issues</a></li>
+            <li><a href="https://pytorch.org/assets/brand-guidelines/PyTorch-Brand-Guidelines.pdf" target="_blank">Brand Guidelines</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col follow-us-col">
+          <ul>
+            <li class="list-title">Stay Connected</li>
+            <li>
+              <div id="mc_embed_signup">
+                <form
+                  action="https://twitter.us14.list-manage.com/subscribe/post?u=75419c71fe0a935e53dfa4a3f&id=91d0dccd39"
+                  method="post"
+                  id="mc-embedded-subscribe-form"
+                  name="mc-embedded-subscribe-form"
+                  class="email-subscribe-form validate"
+                  target="_blank"
+                  novalidate>
+                  <div id="mc_embed_signup_scroll" class="email-subscribe-form-fields-wrapper">
+                    <div class="mc-field-group">
+                      <label for="mce-EMAIL" style="display:none;">Email Address</label>
+                      <input type="email" value="" name="EMAIL" class="required email" id="mce-EMAIL" placeholder="Email Address">
+                    </div>
+
+                    <div id="mce-responses" class="clear">
+                      <div class="response" id="mce-error-response" style="display:none"></div>
+                      <div class="response" id="mce-success-response" style="display:none"></div>
+                    </div>    <!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
+
+                    <div style="position: absolute; left: -5000px;" aria-hidden="true"><input type="text" name="b_75419c71fe0a935e53dfa4a3f_91d0dccd39" tabindex="-1" value=""></div>
+
+                    <div class="clear">
+                      <input type="submit" value="" name="subscribe" id="mc-embedded-subscribe" class="button email-subscribe-button">
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+            </li>
+          </ul>
+
+          <div class="footer-social-icons">
+            <a href="https://www.facebook.com/pytorch" target="_blank" class="facebook"></a>
+            <a href="https://twitter.com/pytorch" target="_blank" class="twitter"></a>
+            <a href="https://www.youtube.com/pytorch" target="_blank" class="youtube"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <div class="cookie-banner-wrapper">
+  <div class="container">
+    <p class="gdpr-notice">To analyze traffic and optimize your experience, we serve cookies on this site. By clicking or navigating, you agree to allow our usage of cookies. As the current maintainers of this site, Facebook’s Cookies Policy applies. Learn more, including about available controls: <a href="https://www.facebook.com/policies/cookies/">Cookies Policy</a>.</p>
+    <img class="close-button" src="_static/images/pytorch-x.svg">
+  </div>
+</div>
+
+  <!-- End Footer -->
+
+  <!-- Begin Mobile Menu -->
+
+  <div class="mobile-main-menu">
+    <div class="container-fluid">
+      <div class="container">
+        <div class="mobile-main-menu-header-container">
+          <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+          <a class="main-menu-close-button" href="#" data-behavior="close-mobile-menu"></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-main-menu-links-container">
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/features">Features</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/hub">PyTorch Hub</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/resources">Resources</a>
+          </li>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">Github</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- End Mobile Menu -->
+
+  <script type="text/javascript" src="_static/js/vendor/anchor.min.js"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function() {
+      mobileMenu.bind();
+      mobileTOC.bind();
+      pytorchAnchors.bind();
+      sideMenus.bind();
+      scrollToAnchor.bind();
+      highlightNavigation.bind();
+      mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Remove any empty p tags that Sphinx adds
+      $("[data-tags='null']").remove();
+
+      // Add class to links that have code blocks, since we cannot create links in code blocks
+      $("article.pytorch-article a span.pre").each(function(e) {
+        $(this).closest("a").addClass("has-code");
+      });
+    })
+  </script>
+</body>
+</html>
