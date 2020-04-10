@@ -44,13 +44,15 @@ Usage
 """
 
 import argparse
+import io
 import os
-import pickle
 import shutil
 import time
 from contextlib import contextmanager
+from datetime import timedelta
 from typing import List, Tuple
 
+import numpy
 import torch
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist
@@ -156,7 +158,9 @@ def main():
     # to enable a watchdog thread that will destroy stale NCCL communicators
     os.environ["NCCL_BLOCKING_WAIT"] = "1"
 
-    dist.init_process_group(backend=args.dist_backend, init_method="env://")
+    dist.init_process_group(
+        backend=args.dist_backend, init_method="env://", timeout=timedelta(seconds=10)
+    )
 
     model, criterion, optimizer = initialize_model(
         args.arch, args.lr, args.momentum, args.weight_decay, device_id
@@ -367,7 +371,11 @@ def load_checkpoint(
         # pickle the snapshot, convert it into a byte-blob tensor
         # then broadcast it, unpickle it and apply the snapshot
         print(f"=> using checkpoint from rank: {max_rank}, max_epoch: {max_epoch}")
-        raw_blob = bytearray(pickle.dumps(state.capture_snapshot()))
+
+        with io.BytesIO() as f:
+            torch.save(state.capture_snapshot(), f)
+            raw_blob = numpy.frombuffer(f.getvalue(), dtype=numpy.uint8)
+
         blob_len = torch.tensor(len(raw_blob))
         dist.broadcast(blob_len, src=max_rank, group=pg)
         print(f"=> checkpoint broadcast size is: {blob_len}")
@@ -375,13 +383,14 @@ def load_checkpoint(
         if rank != max_rank:
             blob = torch.zeros(blob_len.item(), dtype=torch.uint8)
         else:
-            blob = torch.tensor(raw_blob, dtype=torch.uint8)
+            blob = torch.as_tensor(raw_blob, dtype=torch.uint8)
 
         dist.broadcast(blob, src=max_rank, group=pg)
         print(f"=> done broadcasting checkpoint")
 
         if rank != max_rank:
-            snapshot = pickle.loads(blob.numpy())
+            with io.BytesIO(blob.numpy()) as f:
+                snapshot = torch.load(f)
             state.apply_snapshot(snapshot, device_id)
 
         # wait till everyone has loaded the checkpoint
@@ -402,7 +411,7 @@ def tmp_process_group(backend):
 
 def save_checkpoint(state: State, is_best: bool, filename: str):
     checkpoint_dir = os.path.dirname(filename)
-    os.mkdir(checkpoint_dir)
+    os.makedirs(checkpoint_dir, exist_ok=True)
 
     # save to tmp, then commit by moving the file in case the job
     # gets interrupted while writing the checkpoint
