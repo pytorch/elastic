@@ -431,15 +431,19 @@ def main(args=None):
     assert args.max_restarts > 0
 
     if args.with_etcd:
-        assert (
-            min_nodes == max_nodes == 1
-        ), "--with_etcd can only be used with --nodes=1"
-
         etcd_server = EtcdServer()
         etcd_server.start()
         args.rdzv_backend = "etcd"
         args.rdzv_endpoint = etcd_server.get_endpoint()
         args.rdzv_id = str(uuid.uuid4())
+        log.info(
+            f"\n**************************************\n"
+            f"Rendezvous info:\n"
+            f"--rdzv_backend={args.rdzv_backend} "
+            f"--rdzv_endpoint={args.rdzv_endpoint} "
+            f"--rdzv_id={args.rdzv_id}\n"
+            f"**************************************\n"
+        )
 
     rdzv_parameters = parameters.RendezvousParameters(
         args.rdzv_backend,
