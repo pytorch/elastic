@@ -137,6 +137,7 @@ Now all metrics in the group ``my_app`` will be printed to stdout as:
 
 from .api import (  # noqa F401
     ConsoleMetricHandler,
+    MetricData,
     MetricHandler,
     NullMetricHandler,
     configure,

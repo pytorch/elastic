@@ -22,7 +22,7 @@ with the following additional functionalities:
 
 ::
     >>> python -m torchelastic.distributed.launch
-        --with_etcd
+        --standalone
         --nnodes=1
         --nproc_per_node=$NUM_TRAINERS
         YOUR_TRAINING_SCRIPT.py (--arg1 ... train script args...)
@@ -268,12 +268,13 @@ def parse_args(args):
         help="additional rdzv configuration (conf1=v1,conf2=v2,...)",
     )
 
-    # sidecar etcd related arguments
+    # sidecar embed rdzv backend that defults to etcd
     parser.add_argument(
-        "--with_etcd",
+        "--standalone",
         default=False,
         action="store_true",
-        help="starts a local, standalone etcd server on a random free port"
+        help="starts a local, standalone rdzv backend that is represented by"
+        " etcd server on a random free port"
         "using the etcd binary specified in TORCHELASTIC_ETCD_BINARY_PATH"
         " env var or the one found in PATH."
         " Useful when launching single-node, multi-worker job."
@@ -430,7 +431,7 @@ def main(args=None):
     assert 0 < min_nodes <= max_nodes
     assert args.max_restarts > 0
 
-    if args.with_etcd:
+    if args.standalone:
         etcd_server = EtcdServer()
         etcd_server.start()
         args.rdzv_backend = "etcd"
@@ -497,7 +498,7 @@ def main(args=None):
     elastic_agent = LocalElasticAgent(spec, start_method=args.start_method)
     elastic_agent.run(spec.role)
 
-    if args.with_etcd:
+    if args.standalone:
         etcd_server.stop()
 
 

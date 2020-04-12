@@ -34,7 +34,7 @@ Launch two trainers on a single node:
 .. code-block:: bash
 
    docker run --shm-size=2g torchelastic/examples:$VERSION
-              --with_etcd
+              --standalone
               --nnodes=1
               --nproc_per_node=2
               /workspace/classy_vision/classy_train.py
@@ -45,7 +45,7 @@ If you have an instance with GPUs, run a worker on each GPU:
 .. code-block:: bash
 
    docker run --shm-size=2g --gpus=all torchelastic/examples:$VERSION
-              --with_etcd
+              --standalone
               --nnodes=1
               --nproc_per_node=$NUM_CUDA_DEVICES
               /workspace/classy_vision/classy_train.py
@@ -62,7 +62,7 @@ Launch ``$NUM_CUDA_DEVICES`` number of workers on a single node:
 .. code-block:: bash
 
    docker run --shm-size=2g --gpus=all torchelastic/examples:$VERSION
-              --with_etcd
+              --standalone
               --nnodes=1
               --nproc_per_node=$NUM_CUDA_DEVICES
               /workspace/examples/imagenet/main.py
@@ -86,7 +86,7 @@ launches are:
 
 1. Specify ``--nnodes=$MIN_NODE:$MAX_NODE`` instead of ``--nnodes=1``.
 2. An etcd server must be setup before starting the worker containers.
-3. Remove ``--with_etcd`` and specify ``--rdzv_backend``, ``--rdzv_endpoint`` and ``--rdzv_id``.
+3. Remove ``--standalone`` and specify ``--rdzv_backend``, ``--rdzv_endpoint`` and ``--rdzv_id``.
 
 For more information see `elastic launch <distributed.html>`_.
 

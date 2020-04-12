@@ -235,14 +235,14 @@ class LaunchTest(unittest.TestCase):
         )
 
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
-    def test_launch_with_etcd(self):
+    def test_launch_standalone(self):
         nnodes = 1
         nproc_per_node = 4
         world_size = nnodes * nproc_per_node
         args = [
             f"--nnodes={nnodes}",
             f"--nproc_per_node={nproc_per_node}",
-            f"--with_etcd",
+            f"--standalone",
             f"--monitor_interval=1",
             f"--start_method=fork",
             path("bin/test_script.py"),
