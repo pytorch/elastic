@@ -36,6 +36,13 @@ Documentation
    timer
    rendezvous
    metrics
+   advanced
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Advanced
+
+   customization
 
 .. toctree::
    :maxdepth: 1

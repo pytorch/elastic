@@ -1,3 +1,5 @@
+.. _launcher-api:
+
 Elastic Launch
 ============================
 
