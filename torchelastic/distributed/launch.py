@@ -51,7 +51,7 @@ with the following additional functionalities:
         --rdzv_endpoint=$ETCD_HOST:$ETCD_PORT
         YOUR_TRAINING_SCRIPT.py (--arg1 ... train script args...)
 
-**Note on etcd**:
+**Note on rendezvous backend**:
 
 For multi-node training you need to specify:
 
@@ -73,7 +73,7 @@ To use ``etcd``, setup an etcd server with the ``v2`` api enabled
 
 2. ``Worker`` - A worker in the context of distributed training.
 
-3. ``Worker Group`` - Workers with the same function (e.g. trainers)
+3. ``Worker Group`` - Workers that execute the same function (e.g. trainers)
 
 4. ``Local Worker Group`` - Subset of the workers in the
     worker group running on the same Node
@@ -134,15 +134,15 @@ script:
 2. Single-node multi-worker - start the launcher on the host to start
    the agent process which creates and monitors a local worker group.
 
-3.Multi-node multi-worker - Start the launcher with the same arguments
-  on all the nodes participating in training.
+3. Multi-node multi-worker - Start the launcher with the same arguments
+   on all the nodes participating in training.
 
 When using a job/cluster manager the entry point command to the multi-node
 job is invoking this launcher.
 
 **Failure Modes:**
 
-1. Worker failure - For a training job with ``n`` workers, if ``k < n`` workers fail
+1. Worker failure - For a training job with ``n`` workers, if ``k <= n`` workers fail
    all workers are stopped and restarted up to ``max_restarts``.
 
 2. Agent failure - An agent failure results in local worker group failure,
@@ -189,7 +189,7 @@ job is invoking this launcher.
    ``RANK`` and ``LOCAL_RANK``.
 
 6. When using elasticity (``min_size != max_size``) DO NOT hard code
-   assumptions about ``WORLD_SIZE`` as the world size can change due as
+   assumptions about ``WORLD_SIZE`` as the world size can change as
    nodes are allowed to leave and join.
 
 7. It is recommended your script have the following structure

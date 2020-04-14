@@ -126,8 +126,8 @@ class Worker:
 
 class WorkerState(Enum):
     """
-    State of the ``WorkerGroup``. Workers in a worker groupchange state as a unit.
-    If a single worker in a worker groupfails the entire set is considered
+    State of the ``WorkerGroup``. Workers in a worker group change state as a unit.
+    If a single worker in a worker group fails the entire set is considered
     failed::
 
       UNKNOWN - agent lost track of worker group state, unrecoverable
@@ -180,7 +180,7 @@ class WorkerState(Enum):
 class WorkerGroup:
     """
     Represents the set of ``Worker`` instances for the given ``WorkerSpec``
-    managed by ``ElasticAgent``. Whether the worker groupcontains cross
+    managed by ``ElasticAgent``. Whether the worker group contains cross
     instance workers or not depends on the implementation of the agent.
     """
 
@@ -293,7 +293,7 @@ class ElasticAgent(abc.ABC):
     necessary information for the worker processes to properly initialize
     a torch process group.
 
-    The exact deployment topology and ratio of of agent-to-worker is dependent
+    The exact deployment topology and ratio of agent-to-worker is dependent
     on the specific implementation of the agent and the user's job placement
     preferences. For instance, to run a distributed training job on GPU with
     8 trainers (one per GPU) one can:
