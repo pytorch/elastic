@@ -44,12 +44,17 @@ CHANGED_FILES="$(git diff --diff-filter=ACMRT --name-only upstream/master | grep
 
 if [ "$CHANGED_FILES" != "" ]
 then
-    echo "Running isort..."
-    isort "$CHANGED_FILES" --recursive --multi-line 3 --trailing-comma --force-grid-wrap 0 \
-    --line-width 88 --lines-after-imports 2 --combine-as --section-default THIRDPARTY
+    # Processing files one by one since passing directly $CHANGED_FILES will
+    # treat the whole variable as a single file.
+    echo "Running isort and black ..."
+    for file in $CHANGED_FILES
+    do
+        echo "Checking $file"
+        set -e isort "$file" --recursive --multi-line 3 --trailing-comma --force-grid-wrap 0 \
+                --line-width 88 --lines-after-imports 2 --combine-as --section-default THIRDPARTY
 
-    echo "Running black..."
-    black "$CHANGED_FILES"
+        set -e black "$file"
+    done
 else
     echo "No changes made to any Python files. Nothing to do."
     exit 0
