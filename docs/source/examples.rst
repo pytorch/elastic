@@ -73,13 +73,73 @@ Launch ``$NUM_CUDA_DEVICES`` number of workers on a single node:
 
 Multi-container
 ----------------
+We now show how to use the PyTorch Elastic Trainer launcher
+to start a distributed application spanning more than one container. The
+application is intentionally kept "bare bones" since the
+objective is to show how to create a ``torch.distributed.ProcessGroup``
+instance. Once a ``ProcessGroup`` is created, you can use any
+functionality needed from the ``torch.distributed`` package.
 
-In this example we will launch multiple containers on a single node.
-Please follow the instructions in the multi-container example
-`README <https://github.com/pytorch/elastic/tree/master/examples/multi_container/README.md>`_.
+The ``docker-compose.yml`` file is based on the example provided with
+the `Bitnami ETCD container image`_.
 
-Each container runs multiple workers. This demonstrates how a multi-node launch
-would work (each node runs a container occupying the whole node).
+
+Obtaining the example repo
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Clone the PyTorch Elastic Trainer Git repo using
+
+::
+
+   git clone https://github.com/pytorch/elastic.git
+
+make an environment variable that points to the elastic repo, e.g.
+
+::
+
+   export TORCHELASTIC_HOME=~/elastic
+
+Building the samples Docker container
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+While you can run the rest of this example using a pre-built Docker
+image, you can also build one for yourself. This is especially useful if
+you would like to customize the image. To build the image, run:
+
+::
+
+   cd $TORCHELASTIC_HOME && docker build -t hello_elastic:dev .
+
+Running an existing sample
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This example uses ``docker-compose`` to run two containers: one for the
+ETCD service and one for the sample application itself. Docker compose
+takes care of all aspects of establishing the network interfaces so the
+application container can communicate with the ETCD container.
+
+To start the example, run
+
+::
+
+   cd $TORCHELATIC_HOME/examples/multi_container && docker-compose up
+
+You should see two sets of outputs, one from ETCD starting up and one
+from the application itself. The output from the application looks
+something like this:
+
+::
+
+   example_1      | INFO 2020-04-03 17:36:31,582 Etcd machines: ['http://etcd-server:2379']
+   example_1      | *****************************************
+   example_1      | Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed.
+   example_1      | *****************************************
+   example_1      | INFO 2020-04-03 17:36:31,922 Attempting to join next rendezvous
+   example_1      | INFO 2020-04-03 17:36:31,929 New rendezvous state created: {'status': 'joinable', 'version': '1', 'participants': []}
+   example_1      | INFO 2020-04-03 17:36:32,032 Joined rendezvous version 1
+
+.. _Bitnami ETCD container image: https://hub.docker.com/r/bitnami/etcd/
+
 
 The high-level differences between a single-container vs multi-container
 launches are:
