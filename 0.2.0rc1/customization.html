@@ -280,79 +280,49 @@
               
   <div class="section" id="customization">
 <h1>Customization<a class="headerlink" href="#customization" title="Permalink to this headline">¶</a></h1>
-<p>Torchelastic provides abilities to extend or customize different components of the system. Currently,
-the following components can be customized: agent launcher, rendezvous handler and metrics handler.
-Below we describe the general principles how to customize each component. You can find API description
-in the corresponding API section.</p>
-<div class="section" id="agent-launcher-extension">
-<h2>Agent Launcher Extension<a class="headerlink" href="#agent-launcher-extension" title="Permalink to this headline">¶</a></h2>
-<p>The main responsibility of the launcher is to instantiate and run agents. The launcher serves
-as a start point for the workflow and if you need to customize any components, you would need
-to implement your own launcher. The detailed documentation can be found here <a class="reference internal" href="distributed.html#launcher-api"><span class="std std-ref">Elastic Launch</span></a>.</p>
-<p>In order to setup the agent one needs to configure WorkerSpec and RendezvousHandler.
-You can learn more about Rendezvous here <a class="reference internal" href="rendezvous.html#rendezvous-api"><span class="std std-ref">Rendezvous</span></a>,
-and about custom Rendezvous implementation in the section below.
-The example of the custom launcher is provided below:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># mylauncher.py</span>
+<p>This section describes how to customize TorchElastic to fit your needs.</p>
+<div class="section" id="launcher">
+<h2>Launcher<a class="headerlink" href="#launcher" title="Permalink to this headline">¶</a></h2>
+<p>The launcher program that ships with TorchElastic
+should be sufficient for most use-cases (see <a class="reference internal" href="distributed.html#launcher-api"><span class="std std-ref">Elastic Launch</span></a>).
+You can implement a custom launcher by
+programmatically creating an agent and passing it specs for your workers as
+shown below.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># my_launcher.py</span>
 
-<span class="n">spec</span> <span class="o">=</span> <span class="n">WorkerSpec</span><span class="p">(</span>
-    <span class="n">local_world_size</span><span class="o">=</span><span class="n">nproc_per_node</span><span class="p">,</span>
-    <span class="n">fn</span><span class="o">=</span><span class="n">trainer_entrypoint_fn</span><span class="p">,</span>
-    <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">trainer_entrypoint_fn</span> <span class="n">args</span><span class="p">,</span><span class="o">...</span><span class="p">),</span>
-    <span class="n">rdzv_handler</span><span class="o">=</span><span class="n">rdzv_handler</span><span class="p">,</span>
-    <span class="n">max_restarts</span><span class="o">=</span><span class="n">max_restarts</span><span class="p">,</span>
-    <span class="n">monitor_interval</span><span class="o">=</span><span class="n">monitor_interval</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="n">metrics</span><span class="o">.</span><span class="n">initialize_metrics</span><span class="p">()</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+  <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+  <span class="n">rdzv_handler</span> <span class="o">=</span> <span class="n">RendezvousHandler</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+  <span class="n">spec</span> <span class="o">=</span> <span class="n">WorkerSpec</span><span class="p">(</span>
+      <span class="n">local_world_size</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">nproc_per_node</span><span class="p">,</span>
+      <span class="n">fn</span><span class="o">=</span><span class="n">trainer_entrypoint_fn</span><span class="p">,</span>
+      <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">trainer_entrypoint_fn</span> <span class="n">args</span><span class="o">.</span><span class="n">fn_args</span><span class="p">,</span><span class="o">...</span><span class="p">),</span>
+      <span class="n">rdzv_handler</span><span class="o">=</span><span class="n">rdzv_handler</span><span class="p">,</span>
+      <span class="n">max_restarts</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">max_restarts</span><span class="p">,</span>
+      <span class="n">monitor_interval</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">monitor_interval</span><span class="p">,</span>
+  <span class="p">)</span>
 
-<span class="n">elastic_agent</span> <span class="o">=</span> <span class="n">LocalElasticAgent</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">start_method</span><span class="o">=</span><span class="n">start_method</span><span class="p">)</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">elastic_agent</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">role</span><span class="p">)</span>
-<span class="k">except</span> <span class="ne">Exception</span> <span class="n">ex</span><span class="p">:</span>
-    <span class="c1"># handle exception</span>
+  <span class="n">agent</span> <span class="o">=</span> <span class="n">LocalElasticAgent</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">start_method</span><span class="o">=</span><span class="s2">&quot;spawn&quot;</span><span class="p">)</span>
+  <span class="k">try</span><span class="p">:</span>
+      <span class="n">results</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+      <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;worker 0 return value is: results[0]&quot;</span><span class="p">)</span>
+  <span class="k">except</span> <span class="ne">Exception</span> <span class="n">ex</span><span class="p">:</span>
+      <span class="c1"># handle exception</span>
 </pre></div>
 </div>
-<p>After that, you can run training jobs via:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt; python -m mylauncher ...
-</pre></div>
-</div>
-</div>
-<div class="section" id="rendezvous-extension">
-<h2>Rendezvous Extension<a class="headerlink" href="#rendezvous-extension" title="Permalink to this headline">¶</a></h2>
-<p>One of the main concepts of torchelastic is Rendezvous. You can read more about it here <a class="reference internal" href="rendezvous.html#rendezvous-api"><span class="std std-ref">Rendezvous</span></a>.
-This section describes the main components to write your own Rendezvous.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Writing rendezvous handlers can be very difficult
-and error-prone due to the complexity of the operation.</p>
-</div>
-<p>The rendezvous consists of two main components: rendezvous handler and store. The rendezvous handler
-needs to implement the RendezvousHandler interface described here <a class="reference internal" href="rendezvous.html#rendezvous-api"><span class="std std-ref">Rendezvous</span></a>.
-The rendezvous store is the implementation of the torch.distributed.Store interface.</p>
 </div>
 <div class="section" id="rendezvous-handler">
 <h2>Rendezvous Handler<a class="headerlink" href="#rendezvous-handler" title="Permalink to this headline">¶</a></h2>
-<p>The responsibility of rendezvous handler is to synchronize state between nodes and agree on the rank
-of the agents for the current run. It is executed by each agent. The implementation of the handler
-can be found here <a class="reference internal" href="rendezvous.html#rendezvous-api"><span class="std std-ref">Rendezvous</span></a>.
-This class implements rendezvous handler using etcd as underlying storage for communications between agents.</p>
-<p>In order to implement rendezvous handler one must implement the <em>RendezvousHandler</em> interface.
-The main method that needs to be implemented is the <em>next_rendezvous</em> method. It is executed by each agent.
-Agent implements a monitoring procedure to capture events of new instances joining the run.
-This is done by implementing <em>num_nodes_waiting</em> method. The agent will be constantly invoking
-this method to determine whether new instances have joined the run or not. The example below shows the
-skeleton of custom rendezvous handler implementation:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># filename: myrdzv.py</span>
-
-<span class="k">class</span> <span class="nc">MyRendezvousHandler</span><span class="p">(</span><span class="n">RendezvousHandler</span><span class="p">):</span>
-
-    <span class="k">def</span> <span class="nf">next_rendezvous</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="s2">&quot;torch.distributed.Store&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-        <span class="c1"># Using the synchronization procedure that is common among all the agents</span>
-        <span class="c1"># agree on the ranks and return the common storage</span>
-    <span class="o">...</span>
-</pre></div>
+<p>To implement your own rendezvous, extend <code class="docutils literal notranslate"><span class="pre">torchelastic.rendezvous.RendezvousHandler</span></code>
+and implement its methods.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Rendezvous handlers are tricky to implement. Before you begin
+make sure you completely understand the properties of rendezvous.
+Please refer to <a class="reference internal" href="rendezvous.html#rendezvous-api"><span class="std std-ref">Rendezvous</span></a> for more information.</p>
 </div>
-<p>The custom rendezvous handler can be integrated with the custom launcher in the following manner:</p>
+<p>Once implemented you can pass your custom rendezvous handler to the worker
+spec when creating the agent.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">spec</span> <span class="o">=</span> <span class="n">WorkerSpec</span><span class="p">(</span>
     <span class="n">rdzv_handler</span><span class="o">=</span><span class="n">MyRendezvousHandler</span><span class="p">(</span><span class="n">params</span><span class="p">),</span>
     <span class="o">...</span>
@@ -362,35 +332,27 @@ skeleton of custom rendezvous handler implementation:</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="rendezvous-store">
-<h2>Rendezvous Store<a class="headerlink" href="#rendezvous-store" title="Permalink to this headline">¶</a></h2>
-<p>One of the outputs that Rendezvous Handler provides is the store. Store is a shared repository that can be used
-to exchange data between agents.</p>
-</div>
-<div class="section" id="metrics-handler-extension">
-<h2>Metrics Handler Extension<a class="headerlink" href="#metrics-handler-extension" title="Permalink to this headline">¶</a></h2>
-<p>Torchelastic supports the ability to emit and record metrics. The metrics documentation
-can be found at <a class="reference internal" href="metrics.html#metrics-api"><span class="std std-ref">Metrics</span></a>. This section shows how to implement a custom metrics handler.
-The implementation of the metrics handler consists of several things: handler implementation and
-configuration.</p>
-<p>The first thing that needs to be done is to implement the MetricsHandler interface. The
-code below implements a simple metrics handler that stores metrics in memory
-and allows to retrieve metrics. Lets create file mem_metrics.py with the following content:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># filename mymetrics.py</span>
+<div class="section" id="metric-handler">
+<h2>Metric Handler<a class="headerlink" href="#metric-handler" title="Permalink to this headline">¶</a></h2>
+<p>TorchElastic emits platform level metrics (see <a class="reference internal" href="metrics.html#metrics-api"><span class="std std-ref">Metrics</span></a>).
+By default metrics are emitted to <cite>/dev/null</cite> so you will not see them.
+To have the metrics pushed to a metric handling service in your infrastructure,
+implement a <cite>torchelastic.metrics.MetricHandler</cite> and <cite>configure</cite> it in your
+custom launcher.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># my_launcher.py</span>
 
 <span class="kn">import</span> <span class="nn">torchelastic.metrics</span> <span class="k">as</span> <span class="nn">metrics</span>
 
-
 <span class="k">class</span> <span class="nc">MyMetricHandler</span><span class="p">(</span><span class="n">metrics</span><span class="o">.</span><span class="n">MetricHandler</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">emit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metric_data</span><span class="p">:</span> <span class="n">metrics</span><span class="o">.</span><span class="n">MetricData</span><span class="p">):</span>
-        <span class="c1"># Emit metrics</span>
-</pre></div>
-</div>
-<p>After the metrics handler is implemented, it can be integrated with the custom launcher in the following manner:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">spec</span> <span class="o">=</span> <span class="c1"># init spec</span>
-<span class="n">metrics</span><span class="o">.</span><span class="n">initialize_metrics</span><span class="p">()</span>
-<span class="n">metrics</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">mymetrics</span><span class="o">.</span><span class="n">MyMetricHandler</span><span class="p">())</span>
-<span class="c1"># run elastic agent</span>
+        <span class="c1"># push metric_data to your metric sink</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+  <span class="n">metrics</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">MyMetricHandler</span><span class="p">())</span>
+
+  <span class="n">spec</span> <span class="o">=</span> <span class="n">WorkerSpec</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+  <span class="n">agent</span> <span class="o">=</span> <span class="n">LocalElasticAgent</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+  <span class="n">agent</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -440,11 +402,9 @@ and allows to retrieve metrics. Lets create file mem_metrics.py with the followi
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
 <li><a class="reference internal" href="#">Customization</a><ul>
-<li><a class="reference internal" href="#agent-launcher-extension">Agent Launcher Extension</a></li>
-<li><a class="reference internal" href="#rendezvous-extension">Rendezvous Extension</a></li>
+<li><a class="reference internal" href="#launcher">Launcher</a></li>
 <li><a class="reference internal" href="#rendezvous-handler">Rendezvous Handler</a></li>
-<li><a class="reference internal" href="#rendezvous-store">Rendezvous Store</a></li>
-<li><a class="reference internal" href="#metrics-handler-extension">Metrics Handler Extension</a></li>
+<li><a class="reference internal" href="#metric-handler">Metric Handler</a></li>
 </ul>
 </li>
 </ul>
