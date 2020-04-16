@@ -198,6 +198,10 @@
 <li class="toctree-l1"><a class="reference internal" href="rendezvous.html">Rendezvous</a></li>
 <li class="toctree-l1"><a class="reference internal" href="metrics.html">Metrics</a></li>
 </ul>
+<p class="caption"><span class="caption-text">Advanced</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="customization.html">Customization</a></li>
+</ul>
 <p class="caption"><span class="caption-text">Plugins</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="kubernetes.html">TorchElastic Kubernetes</a></li>
@@ -311,13 +315,13 @@ complete, then the worker process is killed and the agent retries the worker gro
 <h2>Client Methods<a class="headerlink" href="#client-methods" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="torchelastic.timer.configure">
-<code class="sig-prename descclassname">torchelastic.timer.</code><code class="sig-name descname">configure</code><span class="sig-paren">(</span><em class="sig-param">timer_client: torchelastic.timer.api.TimerClient</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/timer/api.html#configure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.configure" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">torchelastic.timer.</code><code class="descname">configure</code><span class="sig-paren">(</span><em>timer_client: torchelastic.timer.api.TimerClient</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/timer/api.html#configure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.configure" title="Permalink to this definition">¶</a></dt>
 <dd><p>Configures a timer client. Must be called before using <code class="docutils literal notranslate"><span class="pre">expires</span></code>.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="torchelastic.timer.expires">
-<code class="sig-prename descclassname">torchelastic.timer.</code><code class="sig-name descname">expires</code><span class="sig-paren">(</span><em class="sig-param">after: float</em>, <em class="sig-param">scope: str = None</em>, <em class="sig-param">client: torchelastic.timer.api.TimerClient = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/timer/api.html#expires"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.expires" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">torchelastic.timer.</code><code class="descname">expires</code><span class="sig-paren">(</span><em>after: float</em>, <em>scope: str = None</em>, <em>client: torchelastic.timer.api.TimerClient = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/timer/api.html#expires"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.expires" title="Permalink to this definition">¶</a></dt>
 <dd><p>Acquires a countdown timer that expires in <code class="docutils literal notranslate"><span class="pre">after</span></code> seconds from now,
 unless the code-block that it wraps is finished within the timeframe.
 When the timer expires, this worker is eligible to be reaped. The
@@ -340,14 +344,14 @@ make the decision when and how to reap the workers with expired timers.</p>
 <h2>Server/Client Implementations<a class="headerlink" href="#server-client-implementations" title="Permalink to this headline">¶</a></h2>
 <p>Below are the timer server and client pairs that are provided by torchelastic.</p>
 <div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Timer server and clients always have to be implemented and used
+<p class="first admonition-title">Note</p>
+<p class="last">Timer server and clients always have to be implemented and used
 in pairs since there is a messaging protocol between the server
 and client.</p>
 </div>
 <dl class="class">
 <dt id="torchelastic.timer.LocalTimerServer">
-<em class="property">class </em><code class="sig-prename descclassname">torchelastic.timer.</code><code class="sig-name descname">LocalTimerServer</code><span class="sig-paren">(</span><em class="sig-param">mp_queue: multiprocessing.context.BaseContext.Queue</em>, <em class="sig-param">max_interval: float = 60</em>, <em class="sig-param">daemon: bool = True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/timer/local_timer.html#LocalTimerServer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.LocalTimerServer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">torchelastic.timer.</code><code class="descname">LocalTimerServer</code><span class="sig-paren">(</span><em>mp_queue: multiprocessing.context.BaseContext.Queue</em>, <em>max_interval: float = 60</em>, <em>daemon: bool = True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/timer/local_timer.html#LocalTimerServer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.LocalTimerServer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Server that works with <code class="docutils literal notranslate"><span class="pre">LocalTimerClient</span></code>. Clients are expected to be
 subprocesses to the parent process that is running this server. Each host
 in the job is expected to start its own timer server locally and each
@@ -357,7 +361,7 @@ on the same host).</p>
 
 <dl class="class">
 <dt id="torchelastic.timer.LocalTimerClient">
-<em class="property">class </em><code class="sig-prename descclassname">torchelastic.timer.</code><code class="sig-name descname">LocalTimerClient</code><span class="sig-paren">(</span><em class="sig-param">mp_queue</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/timer/local_timer.html#LocalTimerClient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.LocalTimerClient" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">torchelastic.timer.</code><code class="descname">LocalTimerClient</code><span class="sig-paren">(</span><em>mp_queue</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/timer/local_timer.html#LocalTimerClient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.LocalTimerClient" title="Permalink to this definition">¶</a></dt>
 <dd><p>Client side of <code class="docutils literal notranslate"><span class="pre">LocalTimerServer</span></code>. This client is meant to be used
 on the same host that the <code class="docutils literal notranslate"><span class="pre">LocalTimerServer</span></code> is running on and uses
 pid to uniquely identify a worker. This is particularly useful in situations
@@ -375,14 +379,14 @@ GPU devices.</p>
 the server and client.</p>
 <dl class="class">
 <dt id="torchelastic.timer.TimerRequest">
-<em class="property">class </em><code class="sig-prename descclassname">torchelastic.timer.</code><code class="sig-name descname">TimerRequest</code><span class="sig-paren">(</span><em class="sig-param">worker_id: Any</em>, <em class="sig-param">scope_id: str</em>, <em class="sig-param">expiration_time: float</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerRequest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerRequest" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">torchelastic.timer.</code><code class="descname">TimerRequest</code><span class="sig-paren">(</span><em>worker_id: Any</em>, <em>scope_id: str</em>, <em>expiration_time: float</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerRequest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerRequest" title="Permalink to this definition">¶</a></dt>
 <dd><p>Data object representing a countdown timer acquisition and release
 that is used between the <code class="docutils literal notranslate"><span class="pre">TimerClient</span></code> and <code class="docutils literal notranslate"><span class="pre">TimerServer</span></code>.
 A negative <code class="docutils literal notranslate"><span class="pre">expiration_time</span></code> should be interpreted as a “release”
 request.</p>
 <div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>the type of <code class="docutils literal notranslate"><span class="pre">worker_id</span></code> is implementation specific.
+<p class="first admonition-title">Note</p>
+<p class="last">the type of <code class="docutils literal notranslate"><span class="pre">worker_id</span></code> is implementation specific.
 It is whatever the TimerServer and TimerClient implementations
 have on to uniquely identify a worker.</p>
 </div>
@@ -390,19 +394,19 @@ have on to uniquely identify a worker.</p>
 
 <dl class="class">
 <dt id="torchelastic.timer.TimerServer">
-<em class="property">class </em><code class="sig-prename descclassname">torchelastic.timer.</code><code class="sig-name descname">TimerServer</code><span class="sig-paren">(</span><em class="sig-param">request_queue: torchelastic.timer.api.RequestQueue</em>, <em class="sig-param">max_interval: float</em>, <em class="sig-param">daemon: bool = True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerServer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerServer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">torchelastic.timer.</code><code class="descname">TimerServer</code><span class="sig-paren">(</span><em>request_queue: torchelastic.timer.api.RequestQueue</em>, <em>max_interval: float</em>, <em>daemon: bool = True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerServer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerServer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Entity that monitors active timers and expires them
 in a timely fashion. This server is responsible for
 reaping workers that have expired timers.</p>
 <dl class="method">
 <dt id="torchelastic.timer.TimerServer.clear_timers">
-<em class="property">abstract </em><code class="sig-name descname">clear_timers</code><span class="sig-paren">(</span><em class="sig-param">worker_ids: Set[Any]</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerServer.clear_timers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerServer.clear_timers" title="Permalink to this definition">¶</a></dt>
+<code class="descname">clear_timers</code><span class="sig-paren">(</span><em>worker_ids: Set[Any]</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerServer.clear_timers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerServer.clear_timers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Clears all timers for the given <code class="docutils literal notranslate"><span class="pre">worker_ids</span></code>.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="torchelastic.timer.TimerServer.get_expired_timers">
-<em class="property">abstract </em><code class="sig-name descname">get_expired_timers</code><span class="sig-paren">(</span><em class="sig-param">deadline: float</em><span class="sig-paren">)</span> &#x2192; Dict[str, List[torchelastic.timer.api.TimerRequest]]<a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerServer.get_expired_timers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerServer.get_expired_timers" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_expired_timers</code><span class="sig-paren">(</span><em>deadline: float</em><span class="sig-paren">)</span> &#x2192; Dict[str, List[torchelastic.timer.api.TimerRequest]]<a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerServer.get_expired_timers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerServer.get_expired_timers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns all expired timers for each worker_id. An expired timer
 is a timer for which the expiration_time is less than or equal to
 the provided deadline.</p>
@@ -410,7 +414,7 @@ the provided deadline.</p>
 
 <dl class="method">
 <dt id="torchelastic.timer.TimerServer.register_timers">
-<em class="property">abstract </em><code class="sig-name descname">register_timers</code><span class="sig-paren">(</span><em class="sig-param">timer_requests: List[torchelastic.timer.api.TimerRequest]</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerServer.register_timers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerServer.register_timers" title="Permalink to this definition">¶</a></dt>
+<code class="descname">register_timers</code><span class="sig-paren">(</span><em>timer_requests: List[torchelastic.timer.api.TimerRequest]</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerServer.register_timers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerServer.register_timers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Processes the incoming timer requests and registers them with the server.
 The timer request can either be a acquire-timer or release-timer request.
 Timer requests with a negative expiration_time should be interpreted
@@ -421,12 +425,12 @@ as a release-timer request.</p>
 
 <dl class="class">
 <dt id="torchelastic.timer.TimerClient">
-<em class="property">class </em><code class="sig-prename descclassname">torchelastic.timer.</code><code class="sig-name descname">TimerClient</code><a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerClient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerClient" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">torchelastic.timer.</code><code class="descname">TimerClient</code><a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerClient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerClient" title="Permalink to this definition">¶</a></dt>
 <dd><p>Client library to acquire and release countdown timers by communicating
 with the TimerServer.</p>
 <dl class="method">
 <dt id="torchelastic.timer.TimerClient.acquire">
-<em class="property">abstract </em><code class="sig-name descname">acquire</code><span class="sig-paren">(</span><em class="sig-param">scope_id: str</em>, <em class="sig-param">expiration_time: float</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerClient.acquire"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerClient.acquire" title="Permalink to this definition">¶</a></dt>
+<code class="descname">acquire</code><span class="sig-paren">(</span><em>scope_id: str</em>, <em>expiration_time: float</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerClient.acquire"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerClient.acquire" title="Permalink to this definition">¶</a></dt>
 <dd><p>Acquires a timer for the worker that holds this client object
 given the scope_id and expiration_time. Typically registers
 the timer with the TimerServer.</p>
@@ -434,7 +438,7 @@ the timer with the TimerServer.</p>
 
 <dl class="method">
 <dt id="torchelastic.timer.TimerClient.release">
-<em class="property">abstract </em><code class="sig-name descname">release</code><span class="sig-paren">(</span><em class="sig-param">scope_id: str</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerClient.release"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerClient.release" title="Permalink to this definition">¶</a></dt>
+<code class="descname">release</code><span class="sig-paren">(</span><em>scope_id: str</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/timer/api.html#TimerClient.release"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.timer.TimerClient.release" title="Permalink to this definition">¶</a></dt>
 <dd><p>Releases the timer for the <code class="docutils literal notranslate"><span class="pre">scope_id</span></code> on the worker this
 client represents. After this method is
 called, the countdown timer on the scope is no longer in effect.</p>

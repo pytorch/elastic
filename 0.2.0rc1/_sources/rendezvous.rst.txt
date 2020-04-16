@@ -1,3 +1,5 @@
+.. _rendezvous-api:
+
 Rendezvous
 ==========
 

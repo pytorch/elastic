@@ -198,6 +198,10 @@
 <li class="toctree-l1"><a class="reference internal" href="rendezvous.html">Rendezvous</a></li>
 <li class="toctree-l1"><a class="reference internal" href="metrics.html">Metrics</a></li>
 </ul>
+<p class="caption"><span class="caption-text">Advanced</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="customization.html">Customization</a></li>
+</ul>
 <p class="caption"><span class="caption-text">Plugins</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="kubernetes.html">TorchElastic Kubernetes</a></li>
@@ -306,8 +310,14 @@ and at most <code class="docutils literal notranslate"><span class="pre">MAX_SIZ
 </pre></div>
 </div>
 <div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Learn more about writing your distributed training script
+<p class="first admonition-title">Note</p>
+<p class="last">The <cite>–standalone</cite> option can be passed to launch a single node job with
+a sidecar rendezvous server. You don’t have to pass —rdzv_id, —rdzv_endpoint,
+and —rdzv_backend when the —standalone option is used</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Learn more about writing your distributed training script
 <a class="reference external" href="train_script.html">here</a>.</p>
 </div>
 <p>If <code class="docutils literal notranslate"><span class="pre">torchelastic.distributed.launch</span></code> does not meet your requirements

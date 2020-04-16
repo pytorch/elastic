@@ -36,6 +36,12 @@ and at most ``MAX_SIZE`` nodes.
             --rdzv_endpoint=ETCD_HOST:ETCD_PORT
             YOUR_TRAINING_SCRIPT.py (--arg1 ... train script args...)
 
+
+.. note:: The `--standalone` option can be passed to launch a single node job with
+          a sidecar rendezvous server. You don’t have to pass —rdzv_id, —rdzv_endpoint,
+          and —rdzv_backend when the —standalone option is used
+
+
 .. note:: Learn more about writing your distributed training script
           `here <train_script.html>`_.
 

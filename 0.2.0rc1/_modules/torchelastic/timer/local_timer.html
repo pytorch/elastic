@@ -196,6 +196,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../rendezvous.html">Rendezvous</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../metrics.html">Metrics</a></li>
 </ul>
+<p class="caption"><span class="caption-text">Advanced</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../customization.html">Customization</a></li>
+</ul>
 <p class="caption"><span class="caption-text">Plugins</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../kubernetes.html">TorchElastic Kubernetes</a></li>
@@ -391,10 +395,10 @@
             <span class="n">os</span><span class="o">.</span><span class="n">kill</span><span class="p">(</span><span class="n">worker_id</span><span class="p">,</span> <span class="n">signal</span><span class="o">.</span><span class="n">SIGKILL</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">except</span> <span class="ne">ProcessLookupError</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Process with pid=</span><span class="si">{</span><span class="n">worker_id</span><span class="si">}</span><span class="s2"> does not exist. Skipping&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Process with pid=</span><span class="si">{worker_id}</span><span class="s2"> does not exist. Skipping&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error terminating pid=</span><span class="si">{</span><span class="n">worker_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="n">e</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error terminating pid=</span><span class="si">{worker_id}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="n">e</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">False</span></div>
 </pre></div>
 

@@ -198,6 +198,10 @@
 <li class="toctree-l1"><a class="reference internal" href="rendezvous.html">Rendezvous</a></li>
 <li class="toctree-l1"><a class="reference internal" href="metrics.html">Metrics</a></li>
 </ul>
+<p class="caption"><span class="caption-text">Advanced</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="customization.html">Customization</a></li>
+</ul>
 <p class="caption"><span class="caption-text">Plugins</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="kubernetes.html">TorchElastic Kubernetes</a></li>
@@ -279,22 +283,22 @@
 <p>The examples below run on the <a class="reference external" href="https://hub.docker.com/r/torchelastic/examples">torchelastic/examples</a>
 Docker image, built from the <a class="reference external" href="https://github.com/pytorch/elastic/blob/master/examples/Dockerfile">examples/Dockerfile</a>.</p>
 <div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">$VERSION</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">0.2.0rc1</span></code>) variable is used throughout this page,
+<p class="first admonition-title">Note</p>
+<p class="last">The <code class="docutils literal notranslate"><span class="pre">$VERSION</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">0.2.0rc1</span></code>) variable is used throughout this page,
 this should be substituted with the version of torchelastic you are using.
 The examples below only work on torchelastic <code class="docutils literal notranslate"><span class="pre">&gt;0.2.0rc1</span></code>.</p>
 </div>
 <div class="section" id="prerequisite">
 <h2>Prerequisite<a class="headerlink" href="#prerequisite" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
-<li><p>(recommended) Instance with GPU(s)</p></li>
-<li><p><a class="reference external" href="https://docs.docker.com/install/">Docker</a></p></li>
-<li><p><a class="reference external" href="https://github.com/NVIDIA/nvidia-docker">NVIDIA Container Toolkit</a></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">VERSION=&lt;torchelastic</span> <span class="pre">version&gt;</span></code></p></li>
+<li>(recommended) Instance with GPU(s)</li>
+<li><a class="reference external" href="https://docs.docker.com/install/">Docker</a></li>
+<li><a class="reference external" href="https://github.com/NVIDIA/nvidia-docker">NVIDIA Container Toolkit</a></li>
+<li><code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">VERSION=&lt;torchelastic</span> <span class="pre">version&gt;</span></code></li>
 </ol>
 <div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>PyTorch data loaders use <code class="docutils literal notranslate"><span class="pre">shm</span></code>. The default docker <code class="docutils literal notranslate"><span class="pre">shm-size</span></code> is not
+<p class="first admonition-title">Note</p>
+<p class="last">PyTorch data loaders use <code class="docutils literal notranslate"><span class="pre">shm</span></code>. The default docker <code class="docutils literal notranslate"><span class="pre">shm-size</span></code> is not
 large enough and will OOM when using multiple data loader workers.
 You must pass <code class="docutils literal notranslate"><span class="pre">--shm-size</span></code> to the <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">run</span></code> command or set the
 number of data loader workers to <code class="docutils literal notranslate"><span class="pre">0</span></code> (run on the same process)
@@ -309,7 +313,7 @@ for image and video classification built on PyTorch. It works out-of-the-box
 with torchelastic’s launcher.</p>
 <p>Launch two trainers on a single node:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker run --shm-size<span class="o">=</span>2g torchelastic/examples:<span class="nv">$VERSION</span>
-           --with_etcd
+           --standalone
            --nnodes<span class="o">=</span><span class="m">1</span>
            --nproc_per_node<span class="o">=</span><span class="m">2</span>
            /workspace/classy_vision/classy_train.py
@@ -318,7 +322,7 @@ with torchelastic’s launcher.</p>
 </div>
 <p>If you have an instance with GPUs, run a worker on each GPU:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker run --shm-size<span class="o">=</span>2g --gpus<span class="o">=</span>all torchelastic/examples:<span class="nv">$VERSION</span>
-           --with_etcd
+           --standalone
            --nnodes<span class="o">=</span><span class="m">1</span>
            --nproc_per_node<span class="o">=</span><span class="nv">$NUM_CUDA_DEVICES</span>
            /workspace/classy_vision/classy_train.py
@@ -330,12 +334,12 @@ with torchelastic’s launcher.</p>
 <div class="section" id="imagenet">
 <h2>Imagenet<a class="headerlink" href="#imagenet" title="Permalink to this headline">¶</a></h2>
 <div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>an instance with at least one GPU is required for this example</p>
+<p class="first admonition-title">Note</p>
+<p class="last">an instance with at least one GPU is required for this example</p>
 </div>
 <p>Launch <code class="docutils literal notranslate"><span class="pre">$NUM_CUDA_DEVICES</span></code> number of workers on a single node:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker run --shm-size<span class="o">=</span>2g --gpus<span class="o">=</span>all torchelastic/examples:<span class="nv">$VERSION</span>
-           --with_etcd
+           --standalone
            --nnodes<span class="o">=</span><span class="m">1</span>
            --nproc_per_node<span class="o">=</span><span class="nv">$NUM_CUDA_DEVICES</span>
            /workspace/examples/imagenet/main.py
@@ -348,19 +352,65 @@ with torchelastic’s launcher.</p>
 </div>
 <div class="section" id="multi-container">
 <h2>Multi-container<a class="headerlink" href="#multi-container" title="Permalink to this headline">¶</a></h2>
-<p>In this example we will launch multiple containers on a single node.
-Please follow the instructions in the multi-container example
-<a class="reference external" href="https://github.com/pytorch/elastic/tree/master/examples/multi_container/README.md">README</a>.</p>
-<p>Each container runs multiple workers. This demonstrates how a multi-node launch
-would work (each node runs a container occupying the whole node).</p>
+<p>We now show how to use the PyTorch Elastic Trainer launcher
+to start a distributed application spanning more than one container. The
+application is intentionally kept “bare bones” since the
+objective is to show how to create a <code class="docutils literal notranslate"><span class="pre">torch.distributed.ProcessGroup</span></code>
+instance. Once a <code class="docutils literal notranslate"><span class="pre">ProcessGroup</span></code> is created, you can use any
+functionality needed from the <code class="docutils literal notranslate"><span class="pre">torch.distributed</span></code> package.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">docker-compose.yml</span></code> file is based on the example provided with
+the <a class="reference external" href="https://hub.docker.com/r/bitnami/etcd/">Bitnami ETCD container image</a>.</p>
+<div class="section" id="obtaining-the-example-repo">
+<h3>Obtaining the example repo<a class="headerlink" href="#obtaining-the-example-repo" title="Permalink to this headline">¶</a></h3>
+<p>Clone the PyTorch Elastic Trainer Git repo using</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">pytorch</span><span class="o">/</span><span class="n">elastic</span><span class="o">.</span><span class="n">git</span>
+</pre></div>
+</div>
+<p>make an environment variable that points to the elastic repo, e.g.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">export</span> <span class="n">TORCHELASTIC_HOME</span><span class="o">=~/</span><span class="n">elastic</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="building-the-samples-docker-container">
+<h3>Building the samples Docker container<a class="headerlink" href="#building-the-samples-docker-container" title="Permalink to this headline">¶</a></h3>
+<p>While you can run the rest of this example using a pre-built Docker
+image, you can also build one for yourself. This is especially useful if
+you would like to customize the image. To build the image, run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>cd $TORCHELASTIC_HOME &amp;&amp; docker build -t hello_elastic:dev .
+</pre></div>
+</div>
+</div>
+<div class="section" id="running-an-existing-sample">
+<h3>Running an existing sample<a class="headerlink" href="#running-an-existing-sample" title="Permalink to this headline">¶</a></h3>
+<p>This example uses <code class="docutils literal notranslate"><span class="pre">docker-compose</span></code> to run two containers: one for the
+ETCD service and one for the sample application itself. Docker compose
+takes care of all aspects of establishing the network interfaces so the
+application container can communicate with the ETCD container.</p>
+<p>To start the example, run</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>cd $TORCHELATIC_HOME/examples/multi_container &amp;&amp; docker-compose up
+</pre></div>
+</div>
+<p>You should see two sets of outputs, one from ETCD starting up and one
+from the application itself. The output from the application looks
+something like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">example_1</span>      <span class="o">|</span> <span class="n">INFO</span> <span class="mi">2020</span><span class="o">-</span><span class="mi">04</span><span class="o">-</span><span class="mi">03</span> <span class="mi">17</span><span class="p">:</span><span class="mi">36</span><span class="p">:</span><span class="mi">31</span><span class="p">,</span><span class="mi">582</span> <span class="n">Etcd</span> <span class="n">machines</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;http://etcd-server:2379&#39;</span><span class="p">]</span>
+<span class="n">example_1</span>      <span class="o">|</span> <span class="o">*****************************************</span>
+<span class="n">example_1</span>      <span class="o">|</span> <span class="n">Setting</span> <span class="n">OMP_NUM_THREADS</span> <span class="n">environment</span> <span class="n">variable</span> <span class="k">for</span> <span class="n">each</span> <span class="n">process</span> <span class="n">to</span> <span class="n">be</span> <span class="mi">1</span> <span class="ow">in</span> <span class="n">default</span><span class="p">,</span> <span class="n">to</span> <span class="n">avoid</span> <span class="n">your</span> <span class="n">system</span> <span class="n">being</span> <span class="n">overloaded</span><span class="p">,</span> <span class="n">please</span> <span class="n">further</span> <span class="n">tune</span> <span class="n">the</span> <span class="n">variable</span> <span class="k">for</span> <span class="n">optimal</span> <span class="n">performance</span> <span class="ow">in</span> <span class="n">your</span> <span class="n">application</span> <span class="k">as</span> <span class="n">needed</span><span class="o">.</span>
+<span class="n">example_1</span>      <span class="o">|</span> <span class="o">*****************************************</span>
+<span class="n">example_1</span>      <span class="o">|</span> <span class="n">INFO</span> <span class="mi">2020</span><span class="o">-</span><span class="mi">04</span><span class="o">-</span><span class="mi">03</span> <span class="mi">17</span><span class="p">:</span><span class="mi">36</span><span class="p">:</span><span class="mi">31</span><span class="p">,</span><span class="mi">922</span> <span class="n">Attempting</span> <span class="n">to</span> <span class="n">join</span> <span class="nb">next</span> <span class="n">rendezvous</span>
+<span class="n">example_1</span>      <span class="o">|</span> <span class="n">INFO</span> <span class="mi">2020</span><span class="o">-</span><span class="mi">04</span><span class="o">-</span><span class="mi">03</span> <span class="mi">17</span><span class="p">:</span><span class="mi">36</span><span class="p">:</span><span class="mi">31</span><span class="p">,</span><span class="mi">929</span> <span class="n">New</span> <span class="n">rendezvous</span> <span class="n">state</span> <span class="n">created</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;joinable&#39;</span><span class="p">,</span> <span class="s1">&#39;version&#39;</span><span class="p">:</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;participants&#39;</span><span class="p">:</span> <span class="p">[]}</span>
+<span class="n">example_1</span>      <span class="o">|</span> <span class="n">INFO</span> <span class="mi">2020</span><span class="o">-</span><span class="mi">04</span><span class="o">-</span><span class="mi">03</span> <span class="mi">17</span><span class="p">:</span><span class="mi">36</span><span class="p">:</span><span class="mi">32</span><span class="p">,</span><span class="mi">032</span> <span class="n">Joined</span> <span class="n">rendezvous</span> <span class="n">version</span> <span class="mi">1</span>
+</pre></div>
+</div>
 <p>The high-level differences between a single-container vs multi-container
 launches are:</p>
 <ol class="arabic simple">
-<li><p>Specify <code class="docutils literal notranslate"><span class="pre">--nnodes=$MIN_NODE:$MAX_NODE</span></code> instead of <code class="docutils literal notranslate"><span class="pre">--nnodes=1</span></code>.</p></li>
-<li><p>An etcd server must be setup before starting the worker containers.</p></li>
-<li><p>Remove <code class="docutils literal notranslate"><span class="pre">--with_etcd</span></code> and specify <code class="docutils literal notranslate"><span class="pre">--rdzv_backend</span></code>, <code class="docutils literal notranslate"><span class="pre">--rdzv_endpoint</span></code> and <code class="docutils literal notranslate"><span class="pre">--rdzv_id</span></code>.</p></li>
+<li>Specify <code class="docutils literal notranslate"><span class="pre">--nnodes=$MIN_NODE:$MAX_NODE</span></code> instead of <code class="docutils literal notranslate"><span class="pre">--nnodes=1</span></code>.</li>
+<li>An etcd server must be setup before starting the worker containers.</li>
+<li>Remove <code class="docutils literal notranslate"><span class="pre">--standalone</span></code> and specify <code class="docutils literal notranslate"><span class="pre">--rdzv_backend</span></code>, <code class="docutils literal notranslate"><span class="pre">--rdzv_endpoint</span></code> and <code class="docutils literal notranslate"><span class="pre">--rdzv_id</span></code>.</li>
 </ol>
 <p>For more information see <a class="reference external" href="distributed.html">elastic launch</a>.</p>
+</div>
 </div>
 <div class="section" id="multi-node">
 <h2>Multi-node<a class="headerlink" href="#multi-node" title="Permalink to this headline">¶</a></h2>
@@ -369,8 +419,8 @@ Simply run each container on a separate node, occupying the entire node.
 Alternatively, you can use our kubernetes
 <a class="reference external" href="kubernetes.html">elastic job controller</a> to launch a multi-node job.</p>
 <div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>We recommend you setup a highly available etcd server when
+<p class="first admonition-title">Warning</p>
+<p class="last">We recommend you setup a highly available etcd server when
 deploying multi-node jobs in production as this is the single
 point of failure for your jobs. Depending on your usecase
 you can either sidecar an etcd server with each job or setup
@@ -428,7 +478,12 @@ APIs to create a custom launcher.</p>
 <li><a class="reference internal" href="#prerequisite">Prerequisite</a></li>
 <li><a class="reference internal" href="#classy-vision">Classy Vision</a></li>
 <li><a class="reference internal" href="#imagenet">Imagenet</a></li>
-<li><a class="reference internal" href="#multi-container">Multi-container</a></li>
+<li><a class="reference internal" href="#multi-container">Multi-container</a><ul>
+<li><a class="reference internal" href="#obtaining-the-example-repo">Obtaining the example repo</a></li>
+<li><a class="reference internal" href="#building-the-samples-docker-container">Building the samples Docker container</a></li>
+<li><a class="reference internal" href="#running-an-existing-sample">Running an existing sample</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#multi-node">Multi-node</a></li>
 </ul>
 </li>

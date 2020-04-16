@@ -196,6 +196,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../rendezvous.html">Rendezvous</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../metrics.html">Metrics</a></li>
 </ul>
+<p class="caption"><span class="caption-text">Advanced</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../customization.html">Customization</a></li>
+</ul>
 <p class="caption"><span class="caption-text">Plugins</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../kubernetes.html">TorchElastic Kubernetes</a></li>
@@ -564,7 +568,7 @@
 
             <span class="k">except</span> <span class="n">RendezvousClosedException</span><span class="p">:</span>
                 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Rendezvous for run_id=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_run_id</span><span class="si">}</span><span class="s2"> was observed to be closed&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Rendezvous for run_id=</span><span class="si">{self._run_id}</span><span class="s2"> was observed to be closed&quot;</span>
                 <span class="p">)</span>
                 <span class="k">raise</span>
 
@@ -1229,7 +1233,7 @@
                 <span class="k">pass</span>
 
     <span class="k">def</span> <span class="nf">setup_kv_store</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rdzv_version</span><span class="p">):</span>
-        <span class="n">store_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;/rdzv/v_</span><span class="si">{</span><span class="n">rdzv_version</span><span class="si">}</span><span class="s2">/kv&quot;</span><span class="p">)</span>
+        <span class="n">store_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;/rdzv/v_</span><span class="si">{rdzv_version}</span><span class="s2">/kv&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">create_path_if_not_exists</span><span class="p">(</span><span class="n">store_path</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">EtcdStore</span><span class="p">(</span><span class="n">etcd_client</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">,</span> <span class="n">etcd_store_prefix</span><span class="o">=</span><span class="n">store_path</span><span class="p">)</span></div>
 
@@ -1284,7 +1288,7 @@
         <span class="n">kvs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_try_wait_get</span><span class="p">([</span><span class="n">b64_key</span><span class="p">])</span>
 
         <span class="k">if</span> <span class="n">kvs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">LookupError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> not found in EtcdStore&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">LookupError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Key </span><span class="si">{key}</span><span class="s2"> not found in EtcdStore&quot;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode</span><span class="p">(</span><span class="n">kvs</span><span class="p">[</span><span class="n">b64_key</span><span class="p">])</span></div>
 

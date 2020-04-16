@@ -17,7 +17,7 @@ working with ``torchelastic.distributed.launch`` with these differences:
    (see `elastic launch <distributed.html>`_).
 
 4. ``use_env`` flag has been removed. If you were parsing local rank by parsing
-   the ``--local_rank`` option, you need to now get the local rank from the
+   the ``--local_rank`` option, you need to get the local rank from the
    environment variable ``LOCAL_RANK`` (e.g. ``os.environ["LOCAL_RANK"]``).
 
 Below is an expository example of a training script that checkpoints on each

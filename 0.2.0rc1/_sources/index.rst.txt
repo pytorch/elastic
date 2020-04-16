@@ -39,6 +39,12 @@ Documentation
 
 .. toctree::
    :maxdepth: 1
+   :caption: Advanced
+
+   customization
+
+.. toctree::
+   :maxdepth: 1
    :caption: Plugins
 
    kubernetes
