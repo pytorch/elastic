@@ -141,7 +141,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--checkpoint-file",
-    default="checkpoint.pth.tar",
+    default="/tmp/checkpoint.pth.tar",
     type=str,
     help="checkpoint file path, to load and save to",
 )
