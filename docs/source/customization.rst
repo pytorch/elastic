@@ -84,3 +84,29 @@ custom launcher.
     spec = WorkerSpec(...)
     agent = LocalElasticAgent(spec)
     agent.run()
+
+Events Handler
+-----------------------------
+
+TorchElastic supports events recording (see :ref:`events-api`).
+By default it uses `torchelastic.events.NullEventHandler` that ignores
+events. To configure custom events handler you need to implement
+`torchelastic.events.EventHandler` interface and `configure` it
+in your custom launcher.
+
+.. code-block:: python
+
+  # my_launcher.py
+
+  import torchelastic.events as events
+
+  class MyEventHandler(events.EventHandler):
+      def record(self, event: events.Event):
+          # process event
+
+  def main():
+    events.configure(MyEventHandler())
+
+    spec = WorkerSpec(...)
+    agent = LocalElasticAgent(spec)
+    agent.run()

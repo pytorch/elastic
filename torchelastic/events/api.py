@@ -42,8 +42,8 @@ class Event:
 
 class EventHandler(abc.ABC):
     """
-    Event handler is responsible for capturing and recording events to the different
-    destinations, e.g. stdout, file, etc.
+    Event handler interface is responsible for capturing and recording events
+    to the different destinations, e.g. stdout, file, etc.
     """
 
     @abc.abstractmethod
@@ -62,7 +62,7 @@ class ConsoleEventHandler(EventHandler):
 
 class NullEventHandler(EventHandler):
     """
-    The default event handler that does nothing.
+    The default event handler that is a no-op.
     """
 
     def record(self, event: Event):
@@ -80,6 +80,14 @@ def _getEventHandler(event_type: str):
 
 
 def configure(handler: EventHandler, event_type: str = ""):
+    r"""
+    Sets the relation between event_type and handler. After the relation is set
+    all events that have type `event_type` will be processed by the handler.
+
+    Args:
+        handler: Event handler that will process the events.
+        event_type: Type of event.
+    """
     if not event_type:
         global _default_event_handler
         _default_event_handler = handler
@@ -89,7 +97,7 @@ def configure(handler: EventHandler, event_type: str = ""):
 
 def record_event(event: Event):
     r"""
-    Records the event to the destination configured by the event.type parameter.
+    Records the event to the destination configured by the ``event.type`` parameter.
 
     Args:
         event (Event): Event to be recorded

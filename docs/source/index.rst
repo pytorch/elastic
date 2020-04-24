@@ -36,6 +36,7 @@ Documentation
    timer
    rendezvous
    metrics
+   events
 
 .. toctree::
    :maxdepth: 1

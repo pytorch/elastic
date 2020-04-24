@@ -25,7 +25,8 @@ about an occurrence during the execution of the program.
 The event module resembles python's logging framework in terms
 of usage and consists of two parts: handler configuration and event publishing.
 
-The example below shows the simple event publishing mechanism.
+The example below shows the simple event publishing mechanism
+via :py:meth:`torchelastic.events.record_record` method.
 
 ::
 
