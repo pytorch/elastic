@@ -195,6 +195,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../timer.html">Expiration Timers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../rendezvous.html">Rendezvous</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../events.html">Events</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Advanced</span></p>
 <ul>
@@ -391,12 +392,12 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
                 <span class="n">result</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-                <span class="n">put_metric</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{key}</span><span class="s2">.success&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">group</span><span class="p">)</span>
+                <span class="n">put_metric</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">.success&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">group</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                <span class="n">put_metric</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{key}</span><span class="s2">.failure&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">group</span><span class="p">)</span>
+                <span class="n">put_metric</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">.failure&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">group</span><span class="p">)</span>
                 <span class="k">raise</span>
             <span class="k">finally</span><span class="p">:</span>
-                <span class="n">put_metric</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{key}</span><span class="s2">.duration.ms&quot;</span><span class="p">,</span> <span class="n">get_elapsed_time_ms</span><span class="p">(</span><span class="n">start</span><span class="p">),</span> <span class="n">group</span><span class="p">)</span>
+                <span class="n">put_metric</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">.duration.ms&quot;</span><span class="p">,</span> <span class="n">get_elapsed_time_ms</span><span class="p">(</span><span class="n">start</span><span class="p">),</span> <span class="n">group</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">result</span>
 
         <span class="k">return</span> <span class="n">wrapper</span>

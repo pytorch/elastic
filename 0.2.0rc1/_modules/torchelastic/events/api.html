@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchelastic.timer.local_timer &mdash; PyTorch/Elastic master documentation</title>
+  <title>torchelastic.events.api &mdash; PyTorch/Elastic master documentation</title>
   
 
   
@@ -247,7 +247,7 @@
         
           <li><a href="../../index.html">Module code</a> &gt;</li>
         
-      <li>torchelastic.timer.local_timer</li>
+      <li>torchelastic.events.api</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
@@ -275,7 +275,7 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <h1>Source code for torchelastic.timer.local_timer</h1><div class="highlight"><pre>
+  <h1>Source code for torchelastic.events.api</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python3</span>
 
 <span class="c1"># Copyright (c) Facebook, Inc. and its affiliates.</span>
@@ -284,123 +284,131 @@
 <span class="c1"># This source code is licensed under the BSD-style license found in the</span>
 <span class="c1"># LICENSE file in the root directory of this source tree.</span>
 
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">import</span> <span class="nn">multiprocessing</span> <span class="k">as</span> <span class="nn">mp</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">signal</span>
+<span class="kn">import</span> <span class="nn">abc</span>
 <span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">from</span> <span class="nn">queue</span> <span class="kn">import</span> <span class="n">Empty</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Set</span>
-
-<span class="kn">from</span> <span class="nn">.api</span> <span class="kn">import</span> <span class="n">RequestQueue</span><span class="p">,</span> <span class="n">TimerClient</span><span class="p">,</span> <span class="n">TimerRequest</span><span class="p">,</span> <span class="n">TimerServer</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
 
 
-<div class="viewcode-block" id="LocalTimerClient"><a class="viewcode-back" href="../../../timer.html#torchelastic.timer.LocalTimerClient">[docs]</a><span class="k">class</span> <span class="nc">LocalTimerClient</span><span class="p">(</span><span class="n">TimerClient</span><span class="p">):</span>
+<div class="viewcode-block" id="Event"><a class="viewcode-back" href="../../../events.html#torchelastic.events.api.Event">[docs]</a><span class="k">class</span> <span class="nc">Event</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Client side of ``LocalTimerServer``. This client is meant to be used</span>
-<span class="sd">    on the same host that the ``LocalTimerServer`` is running on and uses</span>
-<span class="sd">    pid to uniquely identify a worker. This is particularly useful in situations</span>
-<span class="sd">    where one spawns a subprocess (trainer) per GPU on a host with multiple</span>
-<span class="sd">    GPU devices.</span>
+<span class="sd">    The class represents the generic event that occurs during the torchelastic</span>
+<span class="sd">    job execution. The event can be any kind of meaningful action.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: event name.</span>
+<span class="sd">        type: type of event, determines what handler will process the event.</span>
+<span class="sd">        metadata: additional data that is associated with the event.</span>
+<span class="sd">        timestamp: timestamp in milliseconds when event occured.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mp_queue</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_mp_queue</span> <span class="o">=</span> <span class="n">mp_queue</span>
-
-    <span class="k">def</span> <span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope_id</span><span class="p">,</span> <span class="n">expiration_time</span><span class="p">):</span>
-        <span class="n">pid</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">()</span>
-        <span class="n">acquire_request</span> <span class="o">=</span> <span class="n">TimerRequest</span><span class="p">(</span><span class="n">pid</span><span class="p">,</span> <span class="n">scope_id</span><span class="p">,</span> <span class="n">expiration_time</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_mp_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">acquire_request</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">release</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope_id</span><span class="p">):</span>
-        <span class="n">pid</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">()</span>
-        <span class="n">release_request</span> <span class="o">=</span> <span class="n">TimerRequest</span><span class="p">(</span><span class="n">pid</span><span class="p">,</span> <span class="n">scope_id</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_mp_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">release_request</span><span class="p">)</span></div>
-
-
-<span class="k">class</span> <span class="nc">MultiprocessingRequestQueue</span><span class="p">(</span><span class="n">RequestQueue</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A ``RequestQueue`` backed by python ``multiprocessing.Queue``</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mp_queue</span><span class="p">:</span> <span class="n">mp</span><span class="o">.</span><span class="n">Queue</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_mp_queue</span> <span class="o">=</span> <span class="n">mp_queue</span>
-
-    <span class="k">def</span> <span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mp_queue</span><span class="o">.</span><span class="n">qsize</span><span class="p">()</span>
-
-    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">TimerRequest</span><span class="p">]:</span>
-        <span class="n">requests</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">wait</span> <span class="o">=</span> <span class="n">timeout</span>
-        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
-            <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mp_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">wait</span><span class="p">)</span>
-            <span class="k">except</span> <span class="n">Empty</span><span class="p">:</span>
-                <span class="k">break</span>
-
-            <span class="n">requests</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
-            <span class="n">wait</span> <span class="o">=</span> <span class="n">wait</span> <span class="o">-</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">wait</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">break</span>
-
-        <span class="k">return</span> <span class="n">requests</span>
-
-
-<div class="viewcode-block" id="LocalTimerServer"><a class="viewcode-back" href="../../../timer.html#torchelastic.timer.LocalTimerServer">[docs]</a><span class="k">class</span> <span class="nc">LocalTimerServer</span><span class="p">(</span><span class="n">TimerServer</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Server that works with ``LocalTimerClient``. Clients are expected to be</span>
-<span class="sd">    subprocesses to the parent process that is running this server. Each host</span>
-<span class="sd">    in the job is expected to start its own timer server locally and each</span>
-<span class="sd">    server instance manages timers for local workers (running on processes</span>
-<span class="sd">    on the same host).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="s2">&quot;metadata&quot;</span><span class="p">,</span> <span class="s2">&quot;timestamp&quot;</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">mp_queue</span><span class="p">:</span> <span class="n">mp</span><span class="o">.</span><span class="n">Queue</span><span class="p">,</span> <span class="n">max_interval</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">60</span><span class="p">,</span> <span class="n">daemon</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torchelastic&quot;</span><span class="p">,</span>
+        <span class="c1"># Cannot use optional due to https://github.com/facebook/pyre-check/issues/197</span>
+        <span class="c1"># pyre-fixme[9]: metadata has type `Dict[str, Any]`; used as `None`.</span>
+        <span class="n">metadata</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">timestamp</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">MultiprocessingRequestQueue</span><span class="p">(</span><span class="n">mp_queue</span><span class="p">),</span> <span class="n">max_interval</span><span class="p">,</span> <span class="n">daemon</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_timers</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">metadata</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">=</span> <span class="n">timestamp</span></div>
 
-    <span class="k">def</span> <span class="nf">register_timers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timer_requests</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">TimerRequest</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">request</span> <span class="ow">in</span> <span class="n">timer_requests</span><span class="p">:</span>
-            <span class="n">pid</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">worker_id</span>
-            <span class="n">scope_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">scope_id</span>
-            <span class="n">expiration_time</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">expiration_time</span>
 
-            <span class="c1"># negative expiration is a proxy for a release call</span>
-            <span class="k">if</span> <span class="n">expiration_time</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_timers</span><span class="o">.</span><span class="n">pop</span><span class="p">((</span><span class="n">pid</span><span class="p">,</span> <span class="n">scope_id</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_timers</span><span class="p">[(</span><span class="n">pid</span><span class="p">,</span> <span class="n">scope_id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">request</span>
+<div class="viewcode-block" id="EventHandler"><a class="viewcode-back" href="../../../events.html#torchelastic.events.api.EventHandler">[docs]</a><span class="k">class</span> <span class="nc">EventHandler</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Event handler interface is responsible for capturing and recording events</span>
+<span class="sd">    to the different destinations, e.g. stdout, file, etc.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">clear_timers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_ids</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">for</span> <span class="p">(</span><span class="n">pid</span><span class="p">,</span> <span class="n">scope_id</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_timers</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
-            <span class="k">if</span> <span class="n">pid</span> <span class="ow">in</span> <span class="n">worker_ids</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_timers</span><span class="o">.</span><span class="n">pop</span><span class="p">((</span><span class="n">pid</span><span class="p">,</span> <span class="n">scope_id</span><span class="p">))</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">record</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="k">def</span> <span class="nf">get_expired_timers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deadline</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">TimerRequest</span><span class="p">]]:</span>
-        <span class="c1"># pid -&gt; [timer_requests...]</span>
-        <span class="n">expired_timers</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">request</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timers</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">expiration_time</span> <span class="o">&lt;=</span> <span class="n">deadline</span><span class="p">:</span>
-                <span class="n">expired_scopes</span> <span class="o">=</span> <span class="n">expired_timers</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">worker_id</span><span class="p">,</span> <span class="p">[])</span>
-                <span class="n">expired_scopes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">expired_timers</span>
 
-    <span class="k">def</span> <span class="nf">_reap_worker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">kill</span><span class="p">(</span><span class="n">worker_id</span><span class="p">,</span> <span class="n">signal</span><span class="o">.</span><span class="n">SIGKILL</span><span class="p">)</span>
-            <span class="k">return</span> <span class="kc">True</span>
-        <span class="k">except</span> <span class="ne">ProcessLookupError</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Process with pid=</span><span class="si">{</span><span class="n">worker_id</span><span class="si">}</span><span class="s2"> does not exist. Skipping&quot;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="kc">True</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error terminating pid=</span><span class="si">{</span><span class="n">worker_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="n">e</span><span class="p">)</span>
-        <span class="k">return</span> <span class="kc">False</span></div>
+<div class="viewcode-block" id="ConsoleEventHandler"><a class="viewcode-back" href="../../../events.html#torchelastic.events.api.ConsoleEventHandler">[docs]</a><span class="k">class</span> <span class="nc">ConsoleEventHandler</span><span class="p">(</span><span class="n">EventHandler</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The event handler that prints the captured events to the console.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">record</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">event</span><span class="o">.</span><span class="n">timestamp</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">event</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">event</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NullEventHandler"><a class="viewcode-back" href="../../../events.html#torchelastic.events.api.NullEventHandler">[docs]</a><span class="k">class</span> <span class="nc">NullEventHandler</span><span class="p">(</span><span class="n">EventHandler</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The default event handler that is a no-op.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">record</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<span class="n">_events_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">EventHandler</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">_default_event_handler</span><span class="p">:</span> <span class="n">EventHandler</span> <span class="o">=</span> <span class="n">NullEventHandler</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">_getEventHandler</span><span class="p">(</span><span class="n">event_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">event_type</span> <span class="ow">in</span> <span class="n">_events_map</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_events_map</span><span class="p">[</span><span class="n">event_type</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">_default_event_handler</span>
+
+
+<div class="viewcode-block" id="configure"><a class="viewcode-back" href="../../../events.html#torchelastic.events.api.configure">[docs]</a><span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="n">handler</span><span class="p">:</span> <span class="n">EventHandler</span><span class="p">,</span> <span class="n">event_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets the relation between event_type and handler. After the relation is set</span>
+<span class="sd">    all events that have type `event_type` will be processed by the handler.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        handler: Event handler that will process the events.</span>
+<span class="sd">        event_type: Type of event.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">event_type</span><span class="p">:</span>
+        <span class="k">global</span> <span class="n">_default_event_handler</span>
+        <span class="n">_default_event_handler</span> <span class="o">=</span> <span class="n">handler</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">_events_map</span><span class="p">[</span><span class="n">event_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">handler</span></div>
+
+
+<div class="viewcode-block" id="record_event"><a class="viewcode-back" href="../../../events.html#torchelastic.events.api.record_event">[docs]</a><span class="k">def</span> <span class="nf">record_event</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Records the event to the destination configured by the ``event.type`` parameter.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        event (Event): Event to be recorded</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">metadata</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">_getEventHandler</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">type</span><span class="p">)</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">event</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="record"><a class="viewcode-back" href="../../../events.html#torchelastic.events.api.record">[docs]</a><span class="k">def</span> <span class="nf">record</span><span class="p">(</span>
+    <span class="n">event_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">event_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torchelastic&quot;</span><span class="p">,</span>
+    <span class="c1"># Cannot use optional due to https://github.com/facebook/pyre-check/issues/197</span>
+    <span class="c1"># pyre-fixme[9]: metadata has type `Dict[str, Any]`; used as `None`.</span>
+    <span class="n">metadata</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Constructs and  records the event to the destination</span>
+<span class="sd">    configured by the event.type parameter.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        event_name: The name of the event</span>
+<span class="sd">        event_type: The type of the event. Is used to determine what handler</span>
+<span class="sd">            will process the event</span>
+<span class="sd">        metadata: Arbitrary data that is associated with the event.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">metadata</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">metadata</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">event</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span>
+        <span class="n">event_name</span><span class="p">,</span> <span class="n">event_type</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">timestamp</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">))</span>
+    <span class="p">)</span>
+    <span class="n">record_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span></div>
 </pre></div>
 
              </article>

@@ -33,7 +33,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="TorchElastic Kubernetes" href="kubernetes.html" />
-    <link rel="prev" title="Metrics" href="metrics.html" /> 
+    <link rel="prev" title="Events" href="events.html" /> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -197,6 +197,7 @@
 <li class="toctree-l1"><a class="reference internal" href="timer.html">Expiration Timers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="rendezvous.html">Rendezvous</a></li>
 <li class="toctree-l1"><a class="reference internal" href="metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="events.html">Events</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Advanced</span></p>
 <ul class="current">
@@ -316,8 +317,8 @@ shown below.</p>
 <p>To implement your own rendezvous, extend <code class="docutils literal notranslate"><span class="pre">torchelastic.rendezvous.RendezvousHandler</span></code>
 and implement its methods.</p>
 <div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">Rendezvous handlers are tricky to implement. Before you begin
+<p class="admonition-title">Warning</p>
+<p>Rendezvous handlers are tricky to implement. Before you begin
 make sure you completely understand the properties of rendezvous.
 Please refer to <a class="reference internal" href="rendezvous.html#rendezvous-api"><span class="std std-ref">Rendezvous</span></a> for more information.</p>
 </div>
@@ -356,6 +357,30 @@ custom launcher.</p>
 </pre></div>
 </div>
 </div>
+<div class="section" id="events-handler">
+<h2>Events Handler<a class="headerlink" href="#events-handler" title="Permalink to this headline">¶</a></h2>
+<p>TorchElastic supports events recording (see <a class="reference internal" href="events.html#events-api"><span class="std std-ref">Events</span></a>).
+By default it uses <cite>torchelastic.events.NullEventHandler</cite> that ignores
+events. To configure custom events handler you need to implement
+<cite>torchelastic.events.EventHandler</cite> interface and <cite>configure</cite> it
+in your custom launcher.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># my_launcher.py</span>
+
+<span class="kn">import</span> <span class="nn">torchelastic.events</span> <span class="k">as</span> <span class="nn">events</span>
+
+<span class="k">class</span> <span class="nc">MyEventHandler</span><span class="p">(</span><span class="n">events</span><span class="o">.</span><span class="n">EventHandler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">record</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">events</span><span class="o">.</span><span class="n">Event</span><span class="p">):</span>
+        <span class="c1"># process event</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+  <span class="n">events</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">MyEventHandler</span><span class="p">())</span>
+
+  <span class="n">spec</span> <span class="o">=</span> <span class="n">WorkerSpec</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+  <span class="n">agent</span> <span class="o">=</span> <span class="n">LocalElasticAgent</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+  <span class="n">agent</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
 </div>
 
 
@@ -369,7 +394,7 @@ custom launcher.</p>
         <a href="kubernetes.html" class="btn btn-neutral float-right" title="TorchElastic Kubernetes" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="metrics.html" class="btn btn-neutral" title="Metrics" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="events.html" class="btn btn-neutral" title="Events" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
@@ -405,6 +430,7 @@ custom launcher.</p>
 <li><a class="reference internal" href="#launcher">Launcher</a></li>
 <li><a class="reference internal" href="#rendezvous-handler">Rendezvous Handler</a></li>
 <li><a class="reference internal" href="#metric-handler">Metric Handler</a></li>
+<li><a class="reference internal" href="#events-handler">Events Handler</a></li>
 </ul>
 </li>
 </ul>

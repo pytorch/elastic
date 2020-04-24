@@ -196,6 +196,7 @@
 <li class="toctree-l1"><a class="reference internal" href="timer.html">Expiration Timers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="rendezvous.html">Rendezvous</a></li>
 <li class="toctree-l1"><a class="reference internal" href="metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="events.html">Events</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Advanced</span></p>
 <ul>
@@ -338,9 +339,11 @@
 </li>
       <li><a href="timer.html#torchelastic.timer.TimerServer.clear_timers">clear_timers() (torchelastic.timer.TimerServer method)</a>
 </li>
-      <li><a href="metrics.html#torchelastic.metrics.configure">configure() (in module torchelastic.metrics)</a>
+      <li><a href="events.html#torchelastic.events.configure">configure() (in module torchelastic.events)</a>
 
       <ul>
+        <li><a href="metrics.html#torchelastic.metrics.configure">(in module torchelastic.metrics)</a>
+</li>
         <li><a href="timer.html#torchelastic.timer.configure">(in module torchelastic.timer)</a>
 </li>
       </ul></li>
@@ -349,6 +352,8 @@
       <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.confirm_membership">confirm_membership() (torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous method)</a>
 </li>
       <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.confirm_phase">confirm_phase() (torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous method)</a>
+</li>
+      <li><a href="events.html#torchelastic.events.api.ConsoleEventHandler">ConsoleEventHandler (class in torchelastic.events.api)</a>
 </li>
       <li><a href="metrics.html#torchelastic.metrics.api.ConsoleMetricHandler">ConsoleMetricHandler (class in torchelastic.metrics.api)</a>
 </li>
@@ -364,11 +369,15 @@
 </li>
       <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvousHandler">EtcdRendezvousHandler (class in torchelastic.rendezvous.etcd_rendezvous)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_server.EtcdServer">EtcdServer (class in torchelastic.rendezvous.etcd_server)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdStore">EtcdStore (class in torchelastic.rendezvous.etcd_rendezvous)</a>
+</li>
+      <li><a href="events.html#torchelastic.events.api.Event">Event (class in torchelastic.events.api)</a>
+</li>
+      <li><a href="events.html#torchelastic.events.api.EventHandler">EventHandler (class in torchelastic.events.api)</a>
 </li>
       <li><a href="timer.html#torchelastic.timer.expires">expires() (in module torchelastic.timer)</a>
 </li>
@@ -460,6 +469,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="rendezvous.html#torchelastic.rendezvous.RendezvousHandler.next_rendezvous">next_rendezvous() (torchelastic.rendezvous.RendezvousHandler method)</a>
 </li>
+      <li><a href="events.html#torchelastic.events.api.NullEventHandler">NullEventHandler (class in torchelastic.events.api)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="metrics.html#torchelastic.metrics.api.NullMetricHandler">NullMetricHandler (class in torchelastic.metrics.api)</a>
@@ -484,16 +495,20 @@
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="events.html#torchelastic.events.record">record() (in module torchelastic.events)</a>
+</li>
+      <li><a href="events.html#torchelastic.events.record_event">record_event() (in module torchelastic.events)</a>
+</li>
       <li><a href="timer.html#torchelastic.timer.TimerServer.register_timers">register_timers() (torchelastic.timer.TimerServer method)</a>
 </li>
       <li><a href="timer.html#torchelastic.timer.TimerClient.release">release() (torchelastic.timer.TimerClient method)</a>
 </li>
       <li><a href="rendezvous.html#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.rendezvous_barrier">rendezvous_barrier() (torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous method)</a>
 </li>
-      <li><a href="rendezvous.html#torchelastic.rendezvous.RendezvousClosedException">RendezvousClosedException (class in torchelastic.rendezvous)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="rendezvous.html#torchelastic.rendezvous.RendezvousClosedException">RendezvousClosedException (class in torchelastic.rendezvous)</a>
+</li>
       <li><a href="rendezvous.html#torchelastic.rendezvous.RendezvousHandler">RendezvousHandler (class in torchelastic.rendezvous)</a>
 </li>
       <li><a href="rendezvous.html#torchelastic.rendezvous.RendezvousNonRetryableError">RendezvousNonRetryableError (class in torchelastic.rendezvous)</a>
@@ -542,11 +557,13 @@
 </li>
       <li><a href="agent.html#module-torchelastic.agent.server">torchelastic.agent.server (module)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="distributed.html#module-torchelastic.distributed">torchelastic.distributed (module)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="distributed.html#module-torchelastic.distributed.launch">torchelastic.distributed.launch (module)</a>
+</li>
+      <li><a href="events.html#module-torchelastic.events">torchelastic.events (module)</a>
 </li>
       <li><a href="metrics.html#module-torchelastic.metrics">torchelastic.metrics (module)</a>
 </li>
