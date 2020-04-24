@@ -217,7 +217,6 @@ class TimerServer(abc.ABC):
             target=self._watchdog_loop, daemon=self._daemon
         )
         logging.info(f"Starting watchdog thread...")
-        # pyre-fixme[16]: Optional type has no attribute `start`.
         self._watchdog_thread.start()
 
     def stop(self) -> None:
@@ -225,7 +224,6 @@ class TimerServer(abc.ABC):
         self._stop_signaled = True
         if self._watchdog_thread:
             logging.info(f"Stopping watchdog thread...")
-            # pyre-fixme[16]: Optional type has no attribute `join`.
             self._watchdog_thread.join(self._max_interval)
             self._watchdog_thread = None
         else:
@@ -268,7 +266,6 @@ def expires(after: float, scope: str = None, client: TimerClient = None) -> None
     if client is None:
         if _timer_client is None:
             raise RuntimeError("Configure timer client before using coundown timers.")
-        # pyre-fixme[9]: client has type `TimerClient`; used as `None`.
         client = _timer_client
     if scope is None:
         # grab the caller file + lineno

@@ -222,7 +222,6 @@ class MonitorResult:
         exceptions: Dict[int, Exception] = None,
     ):
         self.state = state
-        # pyre-fixme[8]: Attribute has type `Dict[int, typing.Any]`; used as `None`.
         self.ret_vals = ret_vals
         self.exceptions = exceptions
 
@@ -264,7 +263,6 @@ def _get_socket_with_port() -> socket.socket:
         func(port)
     """
 
-    # pyre-fixme[28]: Unexpected keyword argument `type`.
     addrs = socket.getaddrinfo(
         host="localhost", port=None, family=socket.AF_UNSPEC, type=socket.SOCK_STREAM
     )
