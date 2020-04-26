@@ -89,6 +89,9 @@ Events Handler
 -----------------------------
 
 TorchElastic supports events recording (see :ref:`events-api`).
+The events module defines API that allows you to record events and
+implement custom EventHandler. EventHandler is used for publishing events
+produced during torchelastic execution to different sources, e.g.  AWS CloudWatch.
 By default it uses `torchelastic.events.NullEventHandler` that ignores
 events. To configure custom events handler you need to implement
 `torchelastic.events.EventHandler` interface and `configure` it

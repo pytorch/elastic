@@ -13,7 +13,8 @@
 The event API is used to publish and process events. The module can be used
 to capture state transitions to debug or give insight into the execution
 flow. The :py:class:`torchelastic.events.Event` is an object containing information
-about an occurrence during the execution of the program.
+about an occurrence during the execution of the program. The destination handler
+for events can be configured by the event type parameter.
 
 
 .. note:: The event type ``torchelastic`` is reserved by torchelastic for
@@ -26,7 +27,7 @@ The event module resembles python's logging framework in terms
 of usage and consists of two parts: handler configuration and event publishing.
 
 The example below shows the simple event publishing mechanism
-via :py:meth:`torchelastic.events.record_record` method.
+via :py:meth:`torchelastic.events.record_event` method.
 
 ::
 
