@@ -286,7 +286,8 @@
 <p>The event API is used to publish and process events. The module can be used
 to capture state transitions to debug or give insight into the execution
 flow. The <code class="xref py py-class docutils literal notranslate"><span class="pre">torchelastic.events.Event</span></code> is an object containing information
-about an occurrence during the execution of the program.</p>
+about an occurrence during the execution of the program. The destination handler
+for events can be configured by the event type parameter.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>The event type <code class="docutils literal notranslate"><span class="pre">torchelastic</span></code> is reserved by torchelastic for
@@ -296,7 +297,7 @@ platform level events that can be produced by the agent or worker.</p>
 <p>The event module resembles python’s logging framework in terms
 of usage and consists of two parts: handler configuration and event publishing.</p>
 <p>The example below shows the simple event publishing mechanism
-via <code class="xref py py-meth docutils literal notranslate"><span class="pre">torchelastic.events.record_record()</span></code> method.</p>
+via <a class="reference internal" href="#torchelastic.events.record_event" title="torchelastic.events.record_event"><code class="xref py py-meth docutils literal notranslate"><span class="pre">torchelastic.events.record_event()</span></code></a> method.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchelastic.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">record_event</span>
 
 <span class="n">event</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">NullEventHandler</span><span class="p">())</span> <span class="c1"># uses event_type = &quot;torchelastic&quot;</span>

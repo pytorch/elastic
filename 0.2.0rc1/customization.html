@@ -360,6 +360,9 @@ custom launcher.</p>
 <div class="section" id="events-handler">
 <h2>Events Handler<a class="headerlink" href="#events-handler" title="Permalink to this headline">¶</a></h2>
 <p>TorchElastic supports events recording (see <a class="reference internal" href="events.html#events-api"><span class="std std-ref">Events</span></a>).
+The events module defines API that allows you to record events and
+implement custom EventHandler. EventHandler is used for publishing events
+produced during torchelastic execution to different sources, e.g.  AWS CloudWatch.
 By default it uses <cite>torchelastic.events.NullEventHandler</cite> that ignores
 events. To configure custom events handler you need to implement
 <cite>torchelastic.events.EventHandler</cite> interface and <cite>configure</cite> it
