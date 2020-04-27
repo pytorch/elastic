@@ -81,6 +81,7 @@ func (r *ElasticJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 
 	if elasticJob.DeletionTimestamp != nil {
 		log.Info("reconcile skipped, job has been deleted.")
+		return ctrl.Result{}, nil
 	}
 
 	// Set default priorities for elastic job
