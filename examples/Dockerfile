@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=pytorch/elastic:0.2.0rc1
+ARG BASE_IMAGE=pytorch/elastic:0.2.0
 FROM $BASE_IMAGE
 
 # install utilities and dependencies

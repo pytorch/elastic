@@ -4,9 +4,9 @@ Examples
 The examples below run on the `torchelastic/examples <https://hub.docker.com/r/torchelastic/examples>`_
 Docker image, built from the `examples/Dockerfile <https://github.com/pytorch/elastic/blob/master/examples/Dockerfile>`_.
 
-.. note:: The ``$VERSION`` (e.g. ``0.2.0rc1``) variable is used throughout this page,
+.. note:: The ``$VERSION`` (e.g. ``0.2.0``) variable is used throughout this page,
           this should be substituted with the version of torchelastic you are using.
-          The examples below only work on torchelastic ``>0.2.0rc1``.
+          The examples below only work on torchelastic ``>=0.2.0``.
 
 Prerequisite
 --------------
