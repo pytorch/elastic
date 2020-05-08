@@ -19,7 +19,7 @@
 #           |- 0.1.0rc2
 #           |- 0.1.0rc3
 #           |- <versions...>
-#           |- master (redirects to the most recent ver in trunk)
+#           |- master (redirects to the most recent ver in trunk, including release)
 #           |- latest (redirects to the most recent release)
 # If the most recent  release is 0.1.0 and master is at 0.1.1rc1 then,
 # https://pytorch.org/elastic/master -> https://pytorch.org/elastic/0.1.1rc1
@@ -36,11 +36,11 @@ commit_id=$(git rev-parse --short HEAD)
 
 if ! release_tag=$(git describe --tags --exact-match HEAD 2>/dev/null); then
     echo "No release tag found, building docs for master..."
-    redirect=master
+    redirects=(master)
     release_tag="master"
 else
     echo "Release tag $release_tag found, building docs for release..."
-    redirect=latest
+    redirects=(latest master)
 fi
 
 echo "Installing torchelastic from $repo_root..."
@@ -68,11 +68,13 @@ echo "Copying doc pages for $torchelastic_ver into $gh_pages_dir..."
 rm -rf "${gh_pages_dir:?}/${torchelastic_ver:?}"
 cp -R "$build_dir/$torchelastic_ver/html" "$gh_pages_dir/$torchelastic_ver"
 
-echo "Copying redirects for $redirect -> $torchelastic_ver..."
-rm -rf "${gh_pages_dir:?}/${redirect:?}"
-cp -R "$build_dir/redirects" "$gh_pages_dir/$redirect"
+for redirect in "${redirects[@]}"; do
+  echo "Copying redirects for $redirect -> $torchelastic_ver..."
+  rm -rf "${gh_pages_dir:?}/${redirect:?}"
+  cp -R "$build_dir/redirects" "$gh_pages_dir/$redirect"
+done
 
 cd $gh_pages_dir || exit
 git add .
-git commit --quiet -m "[doc_push][$release_tag] built from $commit_id ($branch). Redirect: $redirect -> $torchelastic_ver."
+git commit --quiet -m "[doc_push][$release_tag] built from $commit_id ($branch). Redirects: ${redirects[*]} -> $torchelastic_ver."
 git push
