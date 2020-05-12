@@ -13,8 +13,10 @@ import uuid
 
 import torch
 import torch.distributed as dist
+import torch.distributed.rpc as rpc
 import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
 from test_utils import is_tsan
+from torch.distributed.rpc.backend_registry import BackendType
 from torchelastic.agent.server.api import (
     WorkerGroupFailureException,
     WorkerSpec,
@@ -53,6 +55,10 @@ def _distributed_sum(wait):
     actual = t.item()
     if expected != actual:
         raise RuntimeError(f"Expected rank sum {expected}, got {actual}")
+
+
+def echo(msg):
+    return msg
 
 
 def _return_rank_times(a):
@@ -255,3 +261,79 @@ class LocalElasticAgentTest(unittest.TestCase):
                 p = procs[i]
                 p.join()
                 self.assertEqual(0, p.exitcode)
+
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
+    def test_torch_rpc(self):
+        """
+        Simple torch rpc example with torchelastic.
+        Creates two agents (to simulate two node job),
+        each agent runs a single worker. worker0 calls an rpc_sync on
+        worker1.
+        """
+
+        # TODO upstream this to torch.distributed.rpc so that users do not have
+        # to redundantly set rank as part of name (e.g. worker0) AND also pass
+        # it explicitly as an argument to rpc.init_rpc
+        def init_rpc(name_prefix, backend):
+            rank = int(os.environ["RANK"])
+            world_size = int(os.environ["WORLD_SIZE"])
+            rpc.init_rpc(
+                name=f"{name_prefix}{rank}",
+                backend=backend,
+                rank=rank,
+                world_size=world_size,
+            )
+
+        def worker_0(queue, msg):
+            init_rpc("worker", BackendType.PROCESS_GROUP)
+            ret = rpc.rpc_sync(to="worker1", func=echo, args=(msg,))
+            queue.put(ret)
+            rpc.shutdown()
+
+        def worker_1():
+            init_rpc("worker", BackendType.PROCESS_GROUP)
+            rpc.shutdown()
+
+        def run_agent(
+            run_id, etcd_host, etcd_port, start_method, worker_fn, worker_args=()
+        ):
+            rdzv_handler = dist.rendezvous(
+                f"etcd://{etcd_host}:{etcd_port}/{run_id}"
+                f"?min_workers=2"
+                f"&max_workers=2"
+            )
+            spec = WorkerSpec(
+                role="test_trainer",
+                local_world_size=1,
+                fn=worker_fn,
+                args=worker_args,
+                rdzv_handler=rdzv_handler,
+                max_restarts=3,
+                monitor_interval=1,
+            )
+
+            agent = LocalElasticAgent(spec, start_method)
+            agent.run()
+
+        run_id = str(uuid.uuid4().int)
+        host = self._etcd_server.get_host()
+        port = self._etcd_server.get_port()
+        start_method = "fork"
+        msg = "hello world"
+        mp_queue = multiprocessing.get_context(start_method).Queue()
+
+        agent0 = multiprocessing.Process(
+            target=run_agent,
+            args=(run_id, host, port, start_method, worker_0, (mp_queue, msg)),
+        )
+        agent1 = multiprocessing.Process(
+            target=run_agent, args=(run_id, host, port, start_method, worker_1, ())
+        )
+
+        agent0.start()
+        agent1.start()
+
+        agent0.join()
+        agent1.join()
+
+        self.assertEqual(msg, mp_queue.get())
