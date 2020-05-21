@@ -6,6 +6,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+set -e
+
 usage() { echo "Usage: $0 [-v <etcd ver>] [-d <install bin dir>]"; exit 2; }
 
 ETCD_VER="v3.4.3"
@@ -22,14 +24,15 @@ done
 echo "Installing etcd ${ETCD_VER} to ${BIN_DIR}"
 
 BASE_DOWNLOAD_URL=https://github.com/etcd-io/etcd/releases/download
-DOWNLOAD_URL="${BASE_DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz"
+ETCD_TAR_NAME="etcd-${ETCD_VER}-linux-amd64.tar.gz"
+DOWNLOAD_URL="${BASE_DOWNLOAD_URL}/${ETCD_VER}/${ETCD_TAR_NAME}"
 
 TMP_DIR="/tmp/etcd-${ETCD_VER}"
 rm -rf "${TMP_DIR}" && mkdir -p "${TMP_DIR}"
 
 echo "Downloading pre-built binary from ${DOWNLOAD_URL}"
-curl -L "${DOWNLOAD_URL}" -o "${TMP_DIR}/etcd-${ETCD_VER}-linux-amd64.tar.gz"
-tar xzf "${TMP_DIR}/etcd-${ETCD_VER}-linux-amd64.tar.gz" -C "${TMP_DIR}" --strip-components=1
+wget "${DOWNLOAD_URL}" -O "${TMP_DIR}/${ETCD_TAR_NAME}"
+tar xzf "${TMP_DIR}/${ETCD_TAR_NAME}" -C "${TMP_DIR}" --strip-components=1
 
 mkdir -p "${BIN_DIR}"
 cp -p "${TMP_DIR}/etcd" "${BIN_DIR}"
