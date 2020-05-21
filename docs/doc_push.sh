@@ -74,6 +74,11 @@ for redirect in "${redirects[@]}"; do
   cp -R "$build_dir/redirects" "$gh_pages_dir/$redirect"
 done
 
+if [ "$release_tag" != "master" ]; then
+    echo "Copying redirects for default(latest) -> $torchelastic_ver..."
+    cp -R "$build_dir/redirects/." "$gh_pages_dir"
+fi
+
 cd $gh_pages_dir || exit
 git add .
 git commit --quiet -m "[doc_push][$release_tag] built from $commit_id ($branch). Redirects: ${redirects[*]} -> $torchelastic_ver."
