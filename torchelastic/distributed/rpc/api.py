@@ -9,7 +9,6 @@
 from typing import Any, Dict, Iterable
 
 import torch.distributed.rpc as torch_rpc
-from torch.distributed.rpc.constants import UNSET_RPC_TIMEOUT
 
 
 class WorkerInfo:
@@ -110,7 +109,7 @@ def wait_all(futures):
 
 
 def rpc_sync_on_role(
-    role: str, func, args=None, kwargs=None, timeout=UNSET_RPC_TIMEOUT
+    role: str, func, args=None, kwargs=None, timeout=None
 ) -> Dict[str, Any]:
     # TODO placeholder; implement
     futs = rpc_async_on_role(role, func, args, kwargs, timeout)
@@ -118,8 +117,14 @@ def rpc_sync_on_role(
 
 
 def rpc_async_on_role(
-    role: str, func, args=None, kwargs=None, timeout=UNSET_RPC_TIMEOUT
+    role: str, func, args=None, kwargs=None, timeout=None
 ) -> Dict[str, torch_rpc.Future]:
+    # can't use rpc.UNSET_RPC_TIMEOUT (only available in torch 1.6.0+)
+    # reproduce the same behavior by getting the timeout if one is not passed
+    if timeout is None:
+        # pyre-fixme[16]: Module `torch_rpc` has no attribute `get_rpc_timeout`.
+        timeout = torch_rpc.get_rpc_timeout()
+
     futures = {}
     for name in get_worker_names(role):
         fut = torch_rpc.rpc_async(name, func, args, kwargs, timeout)
