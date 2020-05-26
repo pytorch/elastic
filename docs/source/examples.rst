@@ -122,7 +122,7 @@ To start the example, run
 
 ::
 
-   cd $TORCHELATIC_HOME/examples/multi_container && docker-compose up
+   cd $TORCHELASTIC_HOME/examples/multi_container && docker-compose up
 
 You should see two sets of outputs, one from ETCD starting up and one
 from the application itself. The output from the application looks
