@@ -8,13 +8,13 @@
 
 import unittest
 
-import torchelastic.distributed.rpc as rpc
+import torchelastic.distributed.app as app
 from torch.distributed.rpc.backend_registry import BackendType
 
 
 class TestRpc(unittest.TestCase):
     def test_init_app(self):
-        rpc.init_app(
+        app.init_app(
             role="trainer", backend=BackendType.PROCESS_GROUP, backend_options=None
         )
         pass
