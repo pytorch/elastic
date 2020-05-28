@@ -12,6 +12,7 @@ from .api import (  # noqa F401
     get_worker_names,
     init_app,
     init_process_group,
+    init_rpc,
     remote_on_role,
     rpc_async_on_role,
     rpc_sync_on_role,

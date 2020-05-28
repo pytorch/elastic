@@ -5,10 +5,12 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
-
 from typing import Any, Dict, Iterable
 
+import torch.distributed.autograd as dist_autograd
 import torch.distributed.rpc as torch_rpc
+import torchelastic.utils as utils
+from torch.distributed.rpc import api, backend_registry
 
 
 class WorkerInfo:
@@ -46,11 +48,36 @@ class RoleInfo:
 ###########################
 
 
-def init_app(
-    role: str,
+def init_rpc(
+    name: str,
     # pyre-fixme[11]: Annotation `BackendType` is not defined as a type.
     backend: torch_rpc.backend_registry.BackendType,
     # pyre-fixme[11]: Annotation `RpcBackendOptions` is not defined as a type.
+    backend_options: torch_rpc.RpcBackendOptions,
+    store,
+):
+    if not backend_options:
+        # default construct a set of RPC backend options.
+        backend_options = backend_registry.construct_rpc_backend_options(backend)
+    rank = int(utils.get_env_variable_or_raise("RANK"))
+    world_size = int(utils.get_env_variable_or_raise("WORLD_SIZE"))
+
+    # Initialize autograd before RPC since _init_rpc_backend guarantees all
+    # processes sync via the store. If we initialize autograd after RPC,
+    # there could be a race where some nodes might have initialized autograd
+    # and others might not have. As a result, a node calling
+    # torch.distributed.autograd.backward() would run into errors since
+    # other nodes might not have been initialized.
+    # pyre-fixme[16]: Module `dist_autograd` has no attribute `_init`.
+    dist_autograd._init(rank)
+
+    # Initialize RPC.
+    api._init_rpc_backend(backend, store, name, rank, world_size, backend_options)
+
+
+def init_app(
+    role: str,
+    backend: torch_rpc.backend_registry.BackendType,
     backend_options: torch_rpc.RpcBackendOptions,
 ):
     # TODO placeholder; implement
