@@ -36,7 +36,9 @@ class _DistInfo:
     __slots__ = [
         "rank",
         "group_rank",
+        "role_rank",
         "local_world_size",
+        "role_world_size",
         "world_size",
         "master_addr",
         "master_port",
@@ -48,7 +50,9 @@ class _DistInfo:
         self,
         rank: int,
         group_rank: int,
+        role_rank: int,
         local_world_size: int,
+        role_world_size: int,
         world_size: int,
         master_addr: str,
         master_port: int,
@@ -58,7 +62,9 @@ class _DistInfo:
         self.rank = rank
         self.group_rank = group_rank
         self.local_world_size = local_world_size
+        self.role_rank = role_rank
         self.world_size = world_size
+        self.role_world_size = role_world_size
         self.master_addr = master_addr
         self.master_port = master_port
         self.restart_count = restart_count
@@ -70,8 +76,10 @@ def _wrap(local_rank, ret_vals, dist_infos, fn, args):
     os.environ["LOCAL_RANK"] = str(local_rank)
     os.environ["RANK"] = str(info.rank)
     os.environ["GROUP_RANK"] = str(info.group_rank)
+    os.environ["ROLE_RANK"] = str(info.role_rank)
     os.environ["LOCAL_WORLD_SIZE"] = str(info.local_world_size)
     os.environ["WORLD_SIZE"] = str(info.world_size)
+    os.environ["ROLE_WORLD_SIZE"] = str(info.role_world_size)
     os.environ["MASTER_ADDR"] = info.master_addr
     os.environ["MASTER_PORT"] = str(info.master_port)
     os.environ["TORCHELASTIC_RESTART_COUNT"] = str(info.restart_count)
@@ -147,7 +155,9 @@ class LocalElasticAgent(SimpleElasticAgent):
             dist_infos[local_rank] = _DistInfo(
                 worker.global_rank,
                 worker_group.group_rank,
+                worker.role_rank,
                 worker_group.spec.local_world_size,
+                worker.role_world_size,
                 worker.world_size,
                 master_addr,
                 master_port,

@@ -111,20 +111,26 @@ script:
 3. ``GROUP_RANK`` - rank of the worker group. A number between 0 - ``max_nnodes``.
         When running a single worker group per node, this is the rank of the node.
 
-4. ``LOCAL_WORLD_SIZE`` - local world size (e.g. number of workers running locally).
+4. ``ROLE_RANK`` -  the rank of the worker across all the workers tha have the same
+        role. The role of the worker is specified in the ``WorkerSpec``.
+
+5. ``LOCAL_WORLD_SIZE`` - local world size (e.g. number of workers running locally).
        Equal to ``--nproc_per_node`` specified on ``torchelastic.distributed.launch``.
 
-5. ``WORLD_SIZE`` - world size (total number of workers in the job).
+6. ``WORLD_SIZE`` - world size (total number of workers in the job).
 
-6. ``MASTER_ADDR`` - fqdn of the host that is running worker with rank 0.
+7. ``ROLE_WORLD_SIZE`` - the total number of workers that was launched with the same
+        role specified in ``WorkerSpec``.
+
+8. ``MASTER_ADDR`` - fqdn of the host that is running worker with rank 0.
    Used to initialize torch distributed backend.
 
-7. ``MASTER_PORT`` - port on the ``MASTER_ADDR`` that can be used to
+9. ``MASTER_PORT`` - port on the ``MASTER_ADDR`` that can be used to
    host the tcp ``c10d`` store.
 
-8. ``TORCHELASTIC_RESTART_COUNT`` - number of worker group restarts so far.
+10. ``TORCHELASTIC_RESTART_COUNT`` - number of worker group restarts so far.
 
-9. ``TORCHELASTIC_MAX_RESTARTS`` - configured max number of restarts.
+11. ``TORCHELASTIC_MAX_RESTARTS`` - configured max number of restarts.
 
 **Deployment:**
 

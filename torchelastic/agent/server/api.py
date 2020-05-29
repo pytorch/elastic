@@ -7,14 +7,17 @@
 # LICENSE file in the root directory of this source tree.
 
 import abc
+import functools
+import json
 import logging
 import socket
 import time
 from contextlib import closing
 from enum import Enum
-from typing import Any, Callable, Dict, Tuple
+from typing import Any, Callable, Dict, List, Tuple
 
 import torchelastic.rendezvous as rdzv
+import torchelastic.utils.store as store_util
 from torchelastic.metrics import prof, put_metric
 
 
@@ -99,12 +102,28 @@ class Worker:
         id (Any): uniquely identifies a worker (interpreted by the agent)
         local_rank (int): local rank of the worker
         global_rank (int): global rank of the worker
+        role_rank (int): rank of the worker across all workers that have the same role
         world_size (int): number of workers (globally)
+        role_world_size (int): number of workers that have the same role
     """
 
-    __slots__ = ["id", "local_rank", "global_rank", "world_size"]
+    __slots__ = [
+        "id",
+        "local_rank",
+        "global_rank",
+        "role_rank",
+        "world_size",
+        "role_world_size",
+    ]
 
-    def __init__(self, local_rank: int):
+    def __init__(
+        self,
+        local_rank: int,
+        global_rank: int = -1,
+        role_rank: int = -1,
+        world_size: int = -1,
+        role_world_size: int = -1,
+    ):
         # unique identifier for this worker
         self.id: Any = None
 
@@ -112,16 +131,33 @@ class Worker:
         # by the same ``agent`` instance.
         self.local_rank: int = local_rank
 
+        #  rank of the worker among all the workers across all roles
+        #  across all ``agent`` instances.
+        #  Global rank is not stable between re-rendezvous.
+        self.global_rank: int = global_rank
+
         #  rank of the worker among all the workers with the same role
         #  across all ``agent`` instances.
         #  Global rank is not stable between re-rendezvous.
-        # pyre-fixme[8]: Attribute has type `int`; used as `None`.
-        self.global_rank: int = None
+        self.role_rank: int = role_rank
 
         # total number of workers (globally). Due to elasticity
         # the world size may change between re-rendezvous.
-        # pyre-fixme[8]: Attribute has type `int`; used as `None`.
-        self.world_size: int = None
+        self.world_size: int = world_size
+
+        # total number of workers that share the same role. Due to elasticity
+        # the role world size may change between re-rendezvous.
+        self.role_world_size: int = role_world_size
+
+    def __str__(self):
+        return (
+            f"local_rank={self.local_rank},global_rank={self.global_rank}"
+            f",role_rank={self.role_rank},world_size={self.world_size}"
+            f",role_world_size={self.role_world_size}"
+        )
+
+    def __repr__(self):
+        return str(self)
 
 
 class WorkerState(Enum):
@@ -196,6 +232,64 @@ class WorkerGroup:
         self.group_world_size = None
 
         self.state = WorkerState.INIT
+
+
+class _RoleInstanceInfo:
+    """
+    The class is used by the agent to exchange the information with other agents.
+    The information is used to determine the rank of the workers that agent
+    manages in heterogeneous environments, where different agents can have
+    different number of workers.
+    """
+
+    __slots__ = ["role", "rank", "local_world_size"]
+
+    def __init__(self, role: str, rank: int, local_world_size: int):
+        r"""
+
+        Arguments:
+            role (str): user-defined role for the workers with this spec
+            rank (int): the rank of the agent
+            local_world_size (int): number of local workers to run
+        """
+
+        self.role = role
+        self.rank = rank
+        self.local_world_size = local_world_size
+
+    def serialize(self) -> bytes:
+        dict_data = {
+            "role": self.role,
+            "rank": self.rank,
+            "local_world_size": self.local_world_size,
+        }
+        return json.dumps(dict_data).encode(encoding="UTF-8")
+
+    @staticmethod
+    def deserialize(data: bytes):
+        dict_data = json.loads(data.decode(encoding="UTF-8"))
+        return _RoleInstanceInfo(
+            dict_data["role"], dict_data["rank"], dict_data["local_world_size"]
+        )
+
+    @staticmethod
+    def compare(obj1, obj2) -> int:
+        if obj1.role == obj2.role:
+            return obj1.rank - obj2.rank
+        elif obj1.role > obj2.role:
+            return 1
+        else:
+            return -1
+
+    @staticmethod
+    def find_role_boundaries(roles_infos: List, role: str) -> Tuple[int, int]:
+        start_idx, end_idx = -1, -1
+        for idx, role_info in enumerate(roles_infos):
+            if role_info.role == role:
+                if start_idx == -1:
+                    start_idx = idx
+                end_idx = idx
+        return (start_idx, end_idx)
 
 
 class MonitorResult:
@@ -418,38 +512,122 @@ class SimpleElasticAgent(ElasticAgent):
         """
 
         spec = worker_group.spec
-        stride = spec.local_world_size
 
         store, group_rank, group_world_size = spec.rdzv_handler.next_rendezvous()
-        world_size = group_world_size * spec.local_world_size
 
+        workers = self._assign_worker_ranks(store, group_rank, group_world_size, spec)
+        worker_group.workers = workers
         worker_group.store = store
         worker_group.group_rank = group_rank
         worker_group.group_world_size = group_world_size
 
         if group_rank == 0:
             self._set_master_addr_port(store, spec.master_port)
-
-        assigned_global_ranks = []
-        for worker in worker_group.workers:
-            global_rank = (group_rank * stride) + worker.local_rank
-            worker.global_rank = global_rank
-            worker.world_size = world_size
-            assigned_global_ranks.append(global_rank)
-
         master_addr, master_port = self._get_master_addr_port(store)
         restart_count = spec.max_restarts - self._remaining_restarts
+        workers_info = {
+            "local_ranks": [worker.local_rank for worker in workers],
+            "global_ranks": [worker.global_rank for worker in workers],
+            "role_ranks": [worker.role_rank for worker in workers],
+            "world_size": workers[0].world_size,
+            "role_world_size": workers[0].role_world_size,
+        }
         log.info(
             f"[{spec.role}] Rendezvous complete for workers.\n"
             f"Result:\n"
             f"\trestart_count={restart_count}\n"
             f"\tgroup_rank={group_rank}\n"
             f"\tgroup_world_size={group_world_size}\n"
-            f"\trank stride={stride}\n"
-            f"\tassigned global_ranks={assigned_global_ranks}\n"
             f"\tmaster_addr={master_addr}\n"
             f"\tmaster_port={master_port}\n"
+            f"\tworkers={workers_info}\n"
         )
+
+    def _get_ranks(
+        self,
+        role_infos: List[_RoleInstanceInfo],
+        role_idx: int,
+        start_idx: int = 0,
+        end_idx: int = -1,
+    ) -> Tuple[int, List[int]]:
+        if end_idx == -1:
+            end_idx = len(role_infos)
+        prefix_sum = 0
+        total_sum = 0
+        for idx in range(start_idx, end_idx):
+            if role_idx > idx:
+                prefix_sum += role_infos[idx].local_world_size
+            total_sum += role_infos[idx].local_world_size
+        return (
+            total_sum,
+            list(range(prefix_sum, prefix_sum + role_infos[role_idx].local_world_size)),
+        )
+
+    @prof
+    def _assign_worker_ranks(
+        self, store, group_rank: int, group_world_size: int, spec: WorkerSpec
+    ) -> List[Worker]:
+        """
+        Determines proper ranks for worker processes. The rank assignment
+        is done according to the following algorithm:
+
+        1. Each agent writes its configuration(group_rank, group_world_size
+           , num_workers) to the common store.
+        2. Each agent retrieves configuration for all agents
+           and performs two level sort using role and rank.
+        3. Determine the global rank: the global rank of the workers for the current
+           agent is the offset of the infos array up to group_rank of the agent.
+           The offset is computed as a sum of local_world_size of all agents that
+           have rank less than the group_rank. The workers would have the ranks:
+           [offset, offset+local_world_size)
+        4. Determine the role rank: The role rank is determined using the algorithms
+           in the point 3 with the exception that the offset is done from the first
+           agent that has the same role as current one and has the minimum group rank.
+        """
+
+        role_infos = self._share_and_gather(store, group_rank, group_world_size, spec)
+        my_role_info = role_infos[group_rank]
+        worker_world_size, worker_global_ranks = self._get_ranks(role_infos, group_rank)
+        role_infos = sorted(
+            role_infos, key=functools.cmp_to_key(_RoleInstanceInfo.compare)
+        )
+        role_start_idx, role_end_idx = _RoleInstanceInfo.find_role_boundaries(
+            role_infos, my_role_info.role
+        )
+        role_pos = next(
+            idx
+            for idx, role_info in enumerate(role_infos)
+            if _RoleInstanceInfo.compare(role_info, my_role_info) == 0
+        )
+        role_world_size, role_ranks = self._get_ranks(
+            role_infos, role_pos, role_start_idx, role_end_idx + 1
+        )
+        workers = []
+        for ind in range(spec.local_world_size):
+            worker = Worker(
+                local_rank=ind,
+                global_rank=worker_global_ranks[ind],
+                role_rank=role_ranks[ind],
+                world_size=worker_world_size,
+                role_world_size=role_world_size,
+            )
+            workers.append(worker)
+        return workers
+
+    def _share_and_gather(
+        self, store, group_rank: int, group_world_size: int, spec: WorkerSpec
+    ) -> List:
+        agent_role_info = _RoleInstanceInfo(
+            spec.role, group_rank, spec.local_world_size
+        )
+        agent_config_enc = agent_role_info.serialize()
+        key_prefix = "torchelastic/role_info"
+        store.set(f"{key_prefix}{group_rank}", agent_config_enc)
+        role_infos = store_util.get_all(store, key_prefix, group_world_size)
+        role_infos = [
+            _RoleInstanceInfo.deserialize(role_info) for role_info in role_infos
+        ]
+        return role_infos
 
     @prof
     def _initialize_workers(self, worker_group: WorkerGroup) -> None:

@@ -51,10 +51,19 @@ def _distributed_sum(wait):
     time.sleep(wait)
     dist.all_reduce(t, op=dist.reduce_op.SUM)
 
-    expected = sum(range(world_size))
+    expected_sum = sum(range(world_size))
     actual = t.item()
-    if expected != actual:
-        raise RuntimeError(f"Expected rank sum {expected}, got {actual}")
+    if expected_sum != actual:
+        raise RuntimeError(f"Expected rank sum {expected_sum}, got {actual}")
+
+
+def _check_rank_assignment():
+    group_rank = int(os.environ["GROUP_RANK"])
+    rank = int(os.environ["RANK"])
+    world_size = int(os.environ["WORLD_SIZE"])
+    role_rank = int(os.environ["ROLE_RANK"])
+    role_world_size = int(os.environ["ROLE_WORLD_SIZE"])
+    return (group_rank, rank, world_size, role_rank, role_world_size)
 
 
 def echo(msg):
@@ -70,8 +79,10 @@ def _check_env_function():
     # if the variable does not exist
     os.environ["RANK"]
     os.environ["LOCAL_RANK"]
+    os.environ["ROLE_RANK"]
     os.environ["GROUP_RANK"]
     os.environ["LOCAL_WORLD_SIZE"]
+    os.environ["ROLE_WORLD_SIZE"]
     os.environ["WORLD_SIZE"]
     os.environ["MASTER_ADDR"]
     os.environ["MASTER_PORT"]
@@ -79,24 +90,38 @@ def _check_env_function():
     os.environ["TORCHELASTIC_MAX_RESTARTS"]
 
 
-def _run_agent(run_id, etcd_host, etcd_port, min_size, max_size, wait=0):
+def _run_agent(
+    run_id,
+    etcd_host,
+    etcd_port,
+    min_size,
+    max_size,
+    func_to_run,
+    args,
+    local_world_size=8,
+    role="test_trainer",
+    output_dict=None,
+):
     rdzv_handler = dist.rendezvous(
         f"etcd://{etcd_host}:{etcd_port}/{run_id}"
         f"?min_workers={min_size}"
         f"&max_workers={max_size}"
     )
     spec = WorkerSpec(
-        role="test_trainer",
-        local_world_size=8,
-        fn=_distributed_sum,
-        args=(wait,),
+        role=role,
+        local_world_size=local_world_size,
+        fn=func_to_run,
+        args=args,
         rdzv_handler=rdzv_handler,
         max_restarts=2,
         monitor_interval=1,
     )
 
     agent = LocalElasticAgent(spec, start_method="fork")
-    agent.run()
+    res = agent.run()
+    if output_dict is not None:
+        key = str(uuid.uuid4().int)
+        output_dict[key] = (role, res)
 
 
 class LocalElasticAgentTest(unittest.TestCase):
@@ -112,7 +137,13 @@ class LocalElasticAgentTest(unittest.TestCase):
         cls._etcd_server.stop()
 
     def _get_worker_spec(
-        self, fn, args=(), max_restarts=1, num_agents=1, monitor_interval=0.1
+        self,
+        fn,
+        args=(),
+        max_restarts=1,
+        num_agents=1,
+        monitor_interval=0.1,
+        local_world_size=8,
     ):
         run_id = str(uuid.uuid4().int)
         rdzv_handler = dist.rendezvous(
@@ -122,7 +153,7 @@ class LocalElasticAgentTest(unittest.TestCase):
         )
         spec = WorkerSpec(
             role="test_trainer",
-            local_world_size=8,
+            local_world_size=local_world_size,
             fn=fn,
             args=args,
             rdzv_handler=rdzv_handler,
@@ -142,6 +173,134 @@ class LocalElasticAgentTest(unittest.TestCase):
         spec = self._get_worker_spec(fn=_distributed_sum, args=(0,))
         agent = LocalElasticAgent(spec, start_method="fork")
         agent.run()
+
+    class RoleConfig:
+        __slots__ = ["role", "workers", "num_agents", "workers_num", "role_size"]
+
+        def __init__(
+            self, role: str, workers=None, num_agents: int = 0, workers_num: int = 0
+        ):
+            self.role = role
+            self.workers = workers
+            if workers_num != 0 and num_agents != 0:
+                self.workers = [workers_num] * num_agents
+            self.role_size = sum(self.workers)
+
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
+    def test_correct_rank_assignment_heterogeneous(self):
+        roles_config = [
+            self.RoleConfig("trainer", workers=[1, 2, 3, 4]),
+            self.RoleConfig("ps", workers=[5, 2]),
+            # split configuration to run the last one on the main process
+            self.RoleConfig("master", workers=[8]),
+        ]
+        self.run_configuration(roles_config, 25)
+
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
+    def test_correct_rank_assignment_homogeneous(self):
+        num_workers = 4
+        roles_config = [
+            self.RoleConfig("trainer", num_agents=4, workers_num=num_workers),
+            self.RoleConfig("ps", num_agents=2, workers_num=num_workers),
+            # split configuration to run the last one on the main process
+            self.RoleConfig("master", num_agents=1, workers_num=num_workers),
+        ]
+        self.run_configuration(roles_config, 28)
+
+    def run_configuration(self, roles_config, expected_world_size):
+        host = self._etcd_server.get_host()
+        port = self._etcd_server.get_port()
+        nnodes = sum(len(cfg.workers) for cfg in roles_config)
+        run_id = str(uuid.uuid4().int)
+
+        procs = []
+        manager = multiprocessing.Manager()
+        return_dict = manager.dict()
+        default_args = (run_id, host, port, nnodes, nnodes, _check_rank_assignment, ())
+        for ind in range(len(roles_config) - 1):
+            config = roles_config[ind]
+            for num_workers in config.workers:
+                p = multiprocessing.Process(
+                    target=_run_agent,
+                    args=(*default_args, num_workers, config.role, return_dict),
+                )
+                procs.append(p)
+                p.start()
+
+        # run one on the main process for debugging
+        config = roles_config[len(roles_config) - 1]
+        _run_agent(*default_args, config.workers[0], config.role, return_dict)
+
+        for i in range(nnodes - 1):
+            p = procs[i]
+            p.join()
+            self.assertEqual(0, p.exitcode)
+        role_info_dict = {role_info.role: role_info for role_info in roles_config}
+        self.verify_rank_consistency(return_dict, role_info_dict, expected_world_size)
+
+    def verify_rank_consistency(self, return_dict, role_info_dict, expected_world_size):
+        role_ranks = {}
+        global_ranks = []
+        grouped_ranks = {}
+        for role, res in return_dict.values():
+            for (
+                group_rank,
+                rank,
+                world_size,
+                role_rank,
+                role_world_size,
+            ) in res.values():
+                role_info_config = role_info_dict[role]
+                self.assertEqual(expected_world_size, world_size)
+                self.assertEqual(role_info_config.role_size, role_world_size)
+                if group_rank not in grouped_ranks:
+                    grouped_ranks[group_rank] = []
+                grouped_ranks[group_rank].append((rank, role_rank))
+                global_ranks.append(rank)
+                if role not in role_ranks:
+                    role_ranks[role] = []
+                role_ranks[role].append(role_rank)
+        global_ranks = sorted(global_ranks)
+        self.assertEqual(list(range(0, expected_world_size)), global_ranks)
+        for role, role_config_info in role_info_dict.items():
+            self.assertEqual(
+                list(range(0, role_config_info.role_size)), sorted(role_ranks[role])
+            )
+        # Make sure that each agent assignes consecutive ranks to workes
+        # The first argument is the global_rank and the second argument
+        # is role_rank
+        for ranks_lst in grouped_ranks.values():
+            self.verify_ranks_sequential(ranks_lst, 0)
+            self.verify_ranks_sequential(ranks_lst, 1)
+
+    def verify_ranks_sequential(self, ranks_pairs, rank_idx):
+        ranks = sorted(rank_pair[rank_idx] for rank_pair in ranks_pairs)
+        start_rank, end_rank = ranks[0], ranks[-1]
+        self.assertEqual(list(range(start_rank, end_rank + 1)), ranks)
+
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
+    def test_run_distributed_sum_heterogenous(self):
+        host = self._etcd_server.get_host()
+        port = self._etcd_server.get_port()
+        nnodes = 4
+        run_id = str(uuid.uuid4().int)
+
+        procs = []
+        default_args = (run_id, host, port, nnodes, nnodes, _distributed_sum, (0,))
+        for ind in range(nnodes - 1):
+            p = multiprocessing.Process(
+                target=_run_agent, args=(*default_args, ind + 1)
+            )
+            procs.append(p)
+            p.start()
+
+        # run one on the main process for debugging
+        _run_agent(*default_args, 8)
+
+        for i in range(nnodes - 1):
+            p = procs[i]
+            p.join()
+            self.assertEqual(0, p.exitcode)
 
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_run_sad_function(self):
@@ -192,13 +351,14 @@ class LocalElasticAgentTest(unittest.TestCase):
         procs = []
         for _ in range(nnodes - 1):
             p = multiprocessing.Process(
-                target=_run_agent, args=(run_id, host, port, nnodes, nnodes)
+                target=_run_agent,
+                args=(run_id, host, port, nnodes, nnodes, _distributed_sum, (0,)),
             )
             procs.append(p)
             p.start()
 
         # run one on the main process for debugging
-        _run_agent(run_id, host, port, nnodes, nnodes)
+        _run_agent(run_id, host, port, nnodes, nnodes, _distributed_sum, (0,))
 
         for i in range(nnodes - 1):
             p = procs[i]
@@ -215,7 +375,8 @@ class LocalElasticAgentTest(unittest.TestCase):
         procs = []
         for _ in range(nnodes):
             p = multiprocessing.Process(
-                target=_run_agent, args=(run_id, host, port, nnodes, nnodes)
+                target=_run_agent,
+                args=(run_id, host, port, nnodes, nnodes, _distributed_sum, (0,)),
             )
             procs.append(p)
             p.start()
@@ -225,7 +386,8 @@ class LocalElasticAgentTest(unittest.TestCase):
             if i % 2 != 0:
                 procs[i].kill()
                 p = multiprocessing.Process(
-                    target=_run_agent, args=(run_id, host, port, nnodes, nnodes)
+                    target=_run_agent,
+                    args=(run_id, host, port, nnodes, nnodes, _distributed_sum, (0,)),
                 )
                 procs[i] = p
                 p.start()
@@ -246,7 +408,8 @@ class LocalElasticAgentTest(unittest.TestCase):
         procs = []
         for _ in range(max_size):
             p = multiprocessing.Process(
-                target=_run_agent, args=(run_id, host, port, min_size, max_size)
+                target=_run_agent,
+                args=(run_id, host, port, min_size, max_size, _distributed_sum, (0,)),
             )
             procs.append(p)
             p.start()
