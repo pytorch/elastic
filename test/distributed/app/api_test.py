@@ -14,7 +14,7 @@ from unittest.mock import patch
 import torch.distributed as dist
 import torch.distributed.rpc as rpc
 import torchelastic.distributed.app as app
-from test_utils import is_tsan
+from test_utils import find_free_port, is_tsan
 from torch.distributed.rpc.backend_registry import BackendType
 
 
@@ -54,11 +54,11 @@ class TestRpc(unittest.TestCase):
 
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_custom_init_rpc(self):
-        def init_rpc(rank, world_size, name):
+        def init_rpc(rank, world_size, port, name):
             os.environ["RANK"] = str(rank)
             os.environ["WORLD_SIZE"] = str(world_size)
             os.environ["MASTER_ADDR"] = "localhost"
-            os.environ["MASTER_PORT"] = "24500"
+            os.environ["MASTER_PORT"] = str(port)
             rendezvous_iterator = dist.rendezvous(
                 "env://", rank=rank, world_size=world_size
             )
@@ -70,20 +70,25 @@ class TestRpc(unittest.TestCase):
                 store=store,
             )
 
-        def master(msg):
-            init_rpc(0, 2, "master")
+        def master(msg, port):
+            init_rpc(rank=0, world_size=2, port=port, name="master")
             ret = rpc.rpc_sync(to="worker", func=echo, args=(msg,))
             rpc.shutdown()
             return ret
 
-        def worker():
-            init_rpc(1, 2, "worker")
+        def worker(port):
+            init_rpc(rank=1, world_size=2, port=port, name="worker")
             rpc.shutdown()
 
-        worker_proc = multiprocessing.Process(target=worker, args=())
+        sock = find_free_port()
+        port = sock.getsockname()[1]
+        sock.close()
+
+        worker_proc = multiprocessing.Process(target=worker, args=(port,))
         worker_proc.start()
         expected_msg = "test_message_on_worker"
-        actual_msg = master(expected_msg)
+
+        actual_msg = master(expected_msg, port)
         worker_proc.join()
         self.assertEqual(expected_msg, actual_msg)
 
