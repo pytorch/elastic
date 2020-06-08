@@ -435,7 +435,7 @@ def main(args=None):
 
     min_nodes, max_nodes = parse_min_max_nnodes(args.nnodes)
     assert 0 < min_nodes <= max_nodes
-    assert args.max_restarts > 0
+    assert args.max_restarts >= 0
 
     if args.standalone:
         etcd_server = EtcdServer()

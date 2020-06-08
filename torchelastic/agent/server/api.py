@@ -71,7 +71,7 @@ class WorkerSpec:
         """
 
         assert local_world_size > 0
-        assert max_restarts > 0
+        assert max_restarts >= 0
         assert monitor_interval > 0
 
         # Note: role is not used for data parallel, every worker has the same role
