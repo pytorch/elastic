@@ -10,7 +10,7 @@
 import unittest
 import uuid
 from typing import Any, Dict
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 import torch.distributed as dist
 import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
@@ -18,6 +18,7 @@ from torchelastic.agent.server.api import (
     MonitorResult,
     SimpleElasticAgent,
     WorkerGroup,
+    WorkerGroupFailureException,
     WorkerSpec,
     WorkerState,
     _get_fq_hostname,
@@ -186,6 +187,99 @@ class SimpleElasticAgentTest(unittest.TestCase):
         worker_group = agent.get_worker_group()
         self.assertEquals(WorkerState.INIT, worker_group.state)
         self.assertEquals(spec.max_restarts, agent._remaining_restarts)
+
+    @patch("torchelastic.agent.server.api.put_metric")
+    def test_record_flakiness_metric(self, put_metric_mock):
+        spec = self._get_worker_spec(max_restarts=1)
+        agent = TestAgent(spec)
+        agent._record_flakiness_metric()
+        put_metric_mock.assert_called_with(f"workers.test_trainer.flakiness", 0)
+        agent._worker_group.spec.max_restarts = 10
+        agent._remaining_restarts = 3
+        agent._record_flakiness_metric()
+        put_metric_mock.assert_called_with(f"workers.test_trainer.flakiness", 63)
+
+    @patch("torchelastic.agent.server.api.put_metric")
+    def test_record_flakiness_metric_zero_restarts(self, put_metric_mock):
+        spec = self._get_worker_spec(max_restarts=1)
+        spec.max_restarts = 0
+        agent = TestAgent(spec)
+        agent._record_flakiness_metric()
+        put_metric_mock.assert_called_with(f"workers.test_trainer.flakiness", 0)
+
+    @patch("torchelastic.agent.server.api.put_metric")
+    def test_record_flakiness_metric_user_exception(self, put_metric_mock):
+        spec = self._get_worker_spec(max_restarts=1)
+        agent = TestAgent(spec)
+        error = WorkerGroupFailureException("test error", {})
+        agent._record_flakiness_metric(error)
+        put_metric_mock.assert_called_with("workers.test_trainer.flakiness", 100)
+
+    @patch("torchelastic.agent.server.api.put_metric")
+    def test_record_flakiness_metric_exception(self, put_metric_mock):
+        spec = self._get_worker_spec(max_restarts=1)
+        agent = TestAgent(spec)
+        error = ValueError("test error")
+        agent._record_flakiness_metric(error)
+        put_metric_mock.assert_not_called()
+
+    @patch.object(TestAgent, "_invoke_run")
+    @patch.object(TestAgent, "_record_metrics")
+    def test_invoke_run(self, record_metrics_mock, invoke_run_mock):
+        spec = self._get_worker_spec(max_restarts=1)
+        agent = TestAgent(spec)
+        agent.run()
+        invoke_run_mock.assert_called_once()
+        record_metrics_mock.assert_called_once()
+
+    @patch("torchelastic.agent.server.api.put_metric")
+    def test_record_metrics_success_no_retries(self, put_metric_mock):
+        spec = self._get_worker_spec(max_restarts=1)
+        agent = TestAgent(spec)
+        agent._record_metrics(False)
+        calls = self._get_record_metrics_test_calls(success_no_retries=1)
+        put_metric_mock.assert_has_calls(calls, any_order=True)
+
+    @patch("torchelastic.agent.server.api.put_metric")
+    def test_record_metrics_success_with_retries(self, put_metric_mock):
+        spec = self._get_worker_spec(max_restarts=10)
+        agent = TestAgent(spec)
+        agent._remaining_restarts = 2
+        agent._record_metrics(False)
+        calls = self._get_record_metrics_test_calls(success_with_retries=1)
+        put_metric_mock.assert_has_calls(calls, any_order=True)
+
+    @patch("torchelastic.agent.server.api.put_metric")
+    def test_record_metrics_failed_with_retries(self, put_metric_mock):
+        spec = self._get_worker_spec(max_restarts=10)
+        agent = TestAgent(spec)
+        agent._remaining_restarts = 2
+        agent._record_metrics(True)
+        calls = self._get_record_metrics_test_calls(failed_with_retries=1)
+        put_metric_mock.assert_has_calls(calls, any_order=True)
+
+    @patch("torchelastic.agent.server.api.put_metric")
+    def test_record_metrics_failed_no_retries(self, put_metric_mock):
+        spec = self._get_worker_spec(max_restarts=10)
+        agent = TestAgent(spec)
+        agent._record_metrics(True)
+        calls = self._get_record_metrics_test_calls(failed_no_retries=1)
+        put_metric_mock.assert_has_calls(calls, any_order=True)
+
+    def _get_record_metrics_test_calls(
+        self,
+        success_with_retries=0,
+        success_no_retries=0,
+        failed_with_retries=0,
+        failed_no_retries=0,
+    ):
+        calls = [
+            call("workers.test_trainer.run_success_with_retries", success_with_retries),
+            call("workers.test_trainer.run_success_no_retries", success_no_retries),
+            call("workers.test_trainer.run_failed_with_retries", failed_with_retries),
+            call("workers.test_trainer.run_failed_no_retries", failed_no_retries),
+        ]
+        return calls
 
     def test_rendezvous(self):
         spec = self._get_worker_spec(max_restarts=1)

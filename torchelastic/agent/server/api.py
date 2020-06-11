@@ -672,6 +672,55 @@ class SimpleElasticAgent(ElasticAgent):
         self._initialize_workers(worker_group)
 
     def run(self, role: str = DEFAULT_ROLE) -> Dict[int, Any]:
+        is_failed = False
+        try:
+            return self._invoke_run(role)
+        except Exception as e:
+            is_failed = True
+            raise e
+        finally:
+            self._record_metrics(is_failed)
+
+    def _record_metrics(self, is_failed: bool = False):
+        self._record_flakiness_metric(is_failed)
+        spec = self._worker_group.spec
+        restarts_happened = self._remaining_restarts != spec.max_restarts
+        put_metric(f"workers.{spec.role}.run_total", 1)
+        self._record_metric_with_condition(
+            "run_success_with_retries", not is_failed and restarts_happened
+        )
+        self._record_metric_with_condition(
+            "run_success_no_retries", not is_failed and not restarts_happened
+        )
+        self._record_metric_with_condition(
+            "run_failed_with_retries", is_failed and restarts_happened
+        )
+        self._record_metric_with_condition(
+            "run_failed_no_retries", is_failed and not restarts_happened
+        )
+
+    def _record_metric_with_condition(self, metric_name, condition):
+        spec = self._worker_group.spec
+        if condition:
+            put_metric(f"workers.{spec.role}.{metric_name}", 1)
+        else:
+            put_metric(f"workers.{spec.role}.{metric_name}", 0)
+
+    def _record_flakiness_metric(self, is_failed: bool = False):
+        if is_failed:
+            if not isinstance(is_failed, WorkerGroupFailureException):
+                # Only user code can contribute into flakiness score
+                return
+            flakiness = 100.0
+        else:
+            spec = self._worker_group.spec
+            flakiness = 100.0 - 100.0 * (self._remaining_restarts + 1) / (
+                spec.max_restarts + 1
+            )
+        spec = self._worker_group.spec
+        put_metric(f"workers.{spec.role}.flakiness", int(flakiness))
+
+    def _invoke_run(self, role: str = DEFAULT_ROLE) -> Dict[int, Any]:
         # NOTE: currently only works for a single role
 
         spec = self._worker_group.spec
