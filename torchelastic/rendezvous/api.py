@@ -106,3 +106,13 @@ class RendezvousHandler(abc.ABC):
         calling ``next_rendezvous()`` (re-rendezvous).
         """
         pass
+
+    @abc.abstractmethod
+    def get_run_id(self) -> str:
+        """
+        Returns the run_id of this rendezvous handler. The run_id is a user-defined
+        id that uniquely identifies an instance of a distributed application.
+        It typically maps to a job id and is used to allow workers to join the
+        correct distributed application.
+        """
+        pass

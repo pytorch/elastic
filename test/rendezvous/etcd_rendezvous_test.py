@@ -38,8 +38,9 @@ class EtcdRendezvousTest(unittest.TestCase):
         self.assertIsNotNone(handler)
 
     def test_parse_url(self):
+        run_id = str(uuid.uuid4())
         handler = _etcd_rendezvous_handler(
-            f"etcd://{self._etcd_server.get_endpoint()}/{uuid.uuid4()}"
+            f"etcd://{self._etcd_server.get_endpoint()}/{run_id}"
             f"?min_workers=1"
             f"&max_workers=1"
             f"&timeout=60"
@@ -48,3 +49,4 @@ class EtcdRendezvousTest(unittest.TestCase):
         )
 
         self.assertIsNotNone(handler)
+        self.assertEqual(run_id, handler.get_run_id())

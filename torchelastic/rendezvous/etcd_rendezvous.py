@@ -178,6 +178,9 @@ class EtcdRendezvousHandler(RendezvousHandler):
             pass
         return 0
 
+    def get_run_id(self) -> str:
+        return self._rdzv_impl._run_id
+
 
 # TODO: we should probably handle a few additional errors,
 # like EtcdLeaderElectionInProgress and EtcdWatcherCleared. These are
