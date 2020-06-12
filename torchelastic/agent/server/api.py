@@ -671,6 +671,7 @@ class SimpleElasticAgent(ElasticAgent):
         worker_group.state = WorkerState.STOPPED
         self._initialize_workers(worker_group)
 
+    @prof
     def run(self, role: str = DEFAULT_ROLE) -> Dict[int, Any]:
         is_failed = False
         try:
