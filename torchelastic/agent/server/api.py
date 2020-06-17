@@ -52,8 +52,8 @@ class WorkerSpec:
         fn: Callable,
         args: Tuple,
         rdzv_handler: rdzv.RendezvousHandler,
-        max_restarts: int = 100,
-        monitor_interval: float = 5.0,
+        max_restarts: int = 3,
+        monitor_interval: float = 30.0,
         master_port=None,
     ):
         r"""
