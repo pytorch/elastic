@@ -132,6 +132,8 @@ script:
 
 11. ``TORCHELASTIC_MAX_RESTARTS`` - configured max number of restarts.
 
+12. ``TORCHELASTIC_RUN_ID`` - equal to rdzv run_id (e.g. unique job id).
+
 **Deployment:**
 
 1. Start the rdzv backend server and get the endpoint
