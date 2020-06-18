@@ -7,6 +7,7 @@
 # LICENSE file in the root directory of this source tree.
 from typing import Any, Dict, Iterable
 
+import torch
 import torch.distributed.autograd as dist_autograd
 import torch.distributed.rpc as torch_rpc
 import torchelastic.utils as utils
@@ -145,7 +146,7 @@ def rpc_sync_on_role(
 
 def rpc_async_on_role(
     role: str, func, args=None, kwargs=None, timeout=None
-) -> Dict[str, torch_rpc.Future]:
+) -> Dict[str, torch.futures.Future]:
     # can't use rpc.UNSET_RPC_TIMEOUT (only available in torch 1.6.0+)
     # reproduce the same behavior by getting the timeout if one is not passed
     if timeout is None:
