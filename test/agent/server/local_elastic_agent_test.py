@@ -88,6 +88,7 @@ def _check_env_function():
     os.environ["MASTER_PORT"]
     os.environ["TORCHELASTIC_RESTART_COUNT"]
     os.environ["TORCHELASTIC_MAX_RESTARTS"]
+    os.environ["TORCHELASTIC_RUN_ID"]
 
 
 def _run_agent(
@@ -136,6 +137,12 @@ class LocalElasticAgentTest(unittest.TestCase):
         # stop the standalone etcd server
         cls._etcd_server.stop()
 
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
+    def test_run_happy_function(self):
+        spec = self._get_worker_spec(fn=_happy_function)
+        agent = LocalElasticAgent(spec, start_method="fork")
+        agent.run()
+
     def _get_worker_spec(
         self,
         fn,
@@ -161,12 +168,6 @@ class LocalElasticAgentTest(unittest.TestCase):
             monitor_interval=monitor_interval,
         )
         return spec
-
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
-    def test_run_happy_function(self):
-        spec = self._get_worker_spec(fn=_happy_function)
-        agent = LocalElasticAgent(spec, start_method="fork")
-        agent.run()
 
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_run_distributed_sum(self):
@@ -330,6 +331,18 @@ class LocalElasticAgentTest(unittest.TestCase):
         spec = self._get_worker_spec(fn=_check_env_function, max_restarts=2)
         agent = LocalElasticAgent(spec, start_method="fork")
         agent.run()
+
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
+    def test_run_check_run_id(self):
+        def return_run_id():
+            return os.environ["TORCHELASTIC_RUN_ID"]
+
+        spec = self._get_worker_spec(fn=return_run_id, max_restarts=0)
+        agent = LocalElasticAgent(spec, start_method="fork")
+        ret = agent.run()
+
+        for i in range(spec.local_world_size):
+            self.assertEqual(spec.rdzv_handler.get_run_id(), ret[i])
 
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_get_worker_return_values(self):

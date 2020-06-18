@@ -44,6 +44,7 @@ class _DistInfo:
         "master_port",
         "restart_count",
         "max_restarts",
+        "run_id",
     ]
 
     def __init__(
@@ -58,6 +59,7 @@ class _DistInfo:
         master_port: int,
         restart_count: int,
         max_restarts: int,
+        run_id: str,
     ):
         self.rank = rank
         self.group_rank = group_rank
@@ -69,6 +71,7 @@ class _DistInfo:
         self.master_port = master_port
         self.restart_count = restart_count
         self.max_restarts = max_restarts
+        self.run_id = run_id
 
 
 def _wrap(local_rank, ret_vals, dist_infos, fn, args):
@@ -84,6 +87,7 @@ def _wrap(local_rank, ret_vals, dist_infos, fn, args):
     os.environ["MASTER_PORT"] = str(info.master_port)
     os.environ["TORCHELASTIC_RESTART_COUNT"] = str(info.restart_count)
     os.environ["TORCHELASTIC_MAX_RESTARTS"] = str(info.max_restarts)
+    os.environ["TORCHELASTIC_RUN_ID"] = info.run_id
     ret = fn(*args)
     ret_vals[info.rank] = ret
 
@@ -163,6 +167,7 @@ class LocalElasticAgent(SimpleElasticAgent):
                 master_port,
                 restart_count,
                 spec.max_restarts,
+                spec.rdzv_handler.get_run_id(),
             )
 
         self._ret_vals.clear()
