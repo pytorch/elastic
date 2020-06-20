@@ -109,6 +109,13 @@ class LocalElasticAgent(SimpleElasticAgent):
     to the workers you may create the data structure in the same multiprocessing
     context as the specified ``start_method`` and pass it as a function argument.
 
+    The exit_barrier_timeout specifies the amount of time (in seconds) to wait
+    for other agents to finish. This acts as a safety net to handle cases where
+    workers finish at different times, to prevent agents from viewing workers
+    that finished early as a scale-down event. It is strongly advised that the
+    user code deal with ensuring that workers are terminated in a synchronous
+    manner rather than relying on the exit_barrier_timeout.
+
     Example
 
     ::
@@ -129,8 +136,10 @@ class LocalElasticAgent(SimpleElasticAgent):
             agent.run()
     """
 
-    def __init__(self, spec: WorkerSpec, start_method="spawn"):
-        super().__init__(spec)
+    def __init__(
+        self, spec: WorkerSpec, start_method="spawn", exit_barrier_timeout: float = 300
+    ):
+        super().__init__(spec, exit_barrier_timeout)
         self._start_method = start_method
         # pyre-fixme[8]: Attribute has type `ProcessContext`; used as `None`.
         self._process_context: mp.ProcessContext = None

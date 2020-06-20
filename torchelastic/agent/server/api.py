@@ -21,8 +21,9 @@ import torchelastic.utils.store as store_util
 from torchelastic.metrics import prof, put_metric
 
 
-DEFAULT_ROLE = "default"
+_TERMINAL_STATE_SYNC_ID = "torchelastic/agent/terminal_state"
 
+DEFAULT_ROLE = "default"
 log = logging.getLogger(__name__)
 
 
@@ -448,9 +449,11 @@ class SimpleElasticAgent(ElasticAgent):
     for a single ``WorkerSpec`` (e.g. one particular type of worker role).
     """
 
-    def __init__(self, spec: WorkerSpec):
+    def __init__(self, spec: WorkerSpec, exit_barrier_timeout: float = 300):
         self._worker_group = WorkerGroup(spec)
         self._remaining_restarts = self._worker_group.spec.max_restarts
+        self._store = None
+        self._exit_barrier_timeout = exit_barrier_timeout
 
     # pyre-fixme[14]: `get_worker_group` overrides method defined in `ElasticAgent`
     #  inconsistently.
@@ -514,6 +517,7 @@ class SimpleElasticAgent(ElasticAgent):
         spec = worker_group.spec
 
         store, group_rank, group_world_size = spec.rdzv_handler.next_rendezvous()
+        self._store = store
 
         workers = self._assign_worker_ranks(store, group_rank, group_world_size, spec)
         worker_group.workers = workers
@@ -620,12 +624,14 @@ class SimpleElasticAgent(ElasticAgent):
         agent_role_info = _RoleInstanceInfo(
             spec.role, group_rank, spec.local_world_size
         )
-        agent_config_enc = agent_role_info.serialize()
         key_prefix = "torchelastic/role_info"
-        store.set(f"{key_prefix}{group_rank}", agent_config_enc)
-        role_infos = store_util.get_all(store, key_prefix, group_world_size)
+        agent_config_enc = agent_role_info.serialize()
+        role_infos_bytes = store_util.synchronize(
+            store, agent_config_enc, group_rank, group_world_size, key_prefix
+        )
         role_infos = [
-            _RoleInstanceInfo.deserialize(role_info) for role_info in role_infos
+            _RoleInstanceInfo.deserialize(role_info_bytes)
+            for role_info_bytes in role_infos_bytes
         ]
         return role_infos
 
@@ -744,7 +750,17 @@ class SimpleElasticAgent(ElasticAgent):
             put_metric(f"workers.{role}.{state.name.lower()}", 1)
 
             if state == WorkerState.SUCCEEDED:
-                log.info(f"[{role}] All workers successfully finished.")
+                log.info(
+                    f"[{role}] worker group successfully finished."
+                    f" Waiting {self._exit_barrier_timeout} seconds for other agents to finish."
+                )
+                store_util.barrier(
+                    self._store,
+                    self._worker_group.group_rank,
+                    self._worker_group.group_world_size,
+                    key_prefix=_TERMINAL_STATE_SYNC_ID,
+                    barrier_timeout=self._exit_barrier_timeout,
+                )
                 return monitor_result.ret_vals
             elif state in {WorkerState.UNHEALTHY, WorkerState.FAILED}:
                 if self._remaining_restarts > 0:
@@ -758,10 +774,18 @@ class SimpleElasticAgent(ElasticAgent):
                 else:
                     self._stop_workers(self._worker_group)
                     self._worker_group.state = WorkerState.FAILED
-                    raise WorkerGroupFailureException(
-                        f"[{role}] exceeded max_restarts={spec.max_restarts}",
-                        monitor_result.exceptions,
+                    msg = f"[{role}] exceeded max_restarts={spec.max_restarts}"
+                    log.error(
+                        f"{msg}. Waiting {self._exit_barrier_timeout} seconds for other agents to finish."
                     )
+                    store_util.barrier(
+                        self._store,
+                        self._worker_group.group_rank,
+                        self._worker_group.group_world_size,
+                        key_prefix=_TERMINAL_STATE_SYNC_ID,
+                        barrier_timeout=self._exit_barrier_timeout,
+                    )
+                    raise WorkerGroupFailureException(msg, monitor_result.exceptions)
             elif state == WorkerState.HEALTHY:
                 # membership changes do not count as retries
                 num_nodes_waiting = rdzv_handler.num_nodes_waiting()

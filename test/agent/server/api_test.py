@@ -508,9 +508,12 @@ class SimpleElasticAgentTest(unittest.TestCase):
                 self.key = key
                 self.value = value
 
+            def set_timeout(self, timeout):
+                pass
+
         store = DummyStore()
         agent._share_and_gather(store, 1, 3, spec)
-        self.assertEquals(f"torchelastic/role_info{1}", store.key)
+        self.assertEquals("torchelastic/role_info1", store.key)
         expected_info = _RoleInstanceInfo(spec.role, 1, spec.local_world_size)
         self.assertEquals(expected_info.serialize(), store.value)
         store_mock.assert_called_once()

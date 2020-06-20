@@ -57,6 +57,12 @@ def _distributed_sum(wait):
         raise RuntimeError(f"Expected rank sum {expected_sum}, got {actual}")
 
 
+def _simulate_work(wait):
+    time.sleep(wait)
+    rank = int(os.environ["RANK"])
+    return rank
+
+
 def _check_rank_assignment():
     group_rank = int(os.environ["GROUP_RANK"])
     rank = int(os.environ["RANK"])
@@ -102,6 +108,7 @@ def _run_agent(
     local_world_size=8,
     role="test_trainer",
     output_dict=None,
+    agent_barrier_timeout=300,
 ):
     rdzv_handler = dist.rendezvous(
         f"etcd://{etcd_host}:{etcd_port}/{run_id}"
@@ -118,7 +125,9 @@ def _run_agent(
         monitor_interval=1,
     )
 
-    agent = LocalElasticAgent(spec, start_method="fork")
+    agent = LocalElasticAgent(
+        spec, start_method="fork", exit_barrier_timeout=agent_barrier_timeout
+    )
     res = agent.run()
     if output_dict is not None:
         key = str(uuid.uuid4().int)
@@ -513,3 +522,50 @@ class LocalElasticAgentTest(unittest.TestCase):
         agent1.join()
 
         self.assertEqual(msg, mp_queue.get())
+
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
+    def test_workers_drift_success(self):
+
+        host = self._etcd_server.get_host()
+        port = self._etcd_server.get_port()
+        nnodes = 2
+        run_id = str(uuid.uuid4().int)
+
+        procs = []
+        default_args = (run_id, host, port, nnodes, nnodes, _simulate_work)
+        for _ in range(nnodes - 1):
+            p = multiprocessing.Process(
+                target=_run_agent,
+                args=(*default_args, (10,), 2, "test_trainer", {}, 30),
+            )
+            procs.append(p)
+            p.start()
+
+        _run_agent(*default_args, (1,), 2, "test_trainer", {}, 30)
+
+        for i in range(nnodes - 1):
+            p = procs[i]
+            p.join()
+            self.assertEqual(0, p.exitcode)
+
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
+    def test_workers_drift_fail(self):
+
+        host = self._etcd_server.get_host()
+        port = self._etcd_server.get_port()
+        nnodes = 2
+        run_id = str(uuid.uuid4().int)
+
+        procs = []
+        default_args = (run_id, host, port, nnodes, nnodes, _simulate_work)
+        for _ in range(nnodes - 1):
+            p = multiprocessing.Process(
+                target=_run_agent,
+                args=(*default_args, (60,), 2, "test_trainer", {}, 10),
+            )
+            procs.append(p)
+            p.start()
+
+        # TODO(aivanou): standardize error between different rendezvous stores
+        with self.assertRaises(LookupError):
+            _run_agent(*default_args, (1,), 2, "test_trainer", {}, 10)

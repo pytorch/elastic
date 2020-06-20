@@ -22,3 +22,29 @@ class StoreUtilTest(unittest.TestCase):
         data = store_util.get_all(store, "test/store", 10)
         for idx in range(0, 10):
             self.assertEqual(f"retrieved:test/store{idx}", data[idx])
+
+    def test_synchronize(self):
+        class DummyStore:
+            def __init__(self):
+                self._data = {
+                    "torchelastic/test0": "data0".encode(encoding="UTF-8"),
+                    "torchelastic/test1": "data1".encode(encoding="UTF-8"),
+                    "torchelastic/test2": "data2".encode(encoding="UTF-8"),
+                }
+
+            def set(self, key, value):
+                self._data[key] = value
+
+            def get(self, key):
+                return self._data[key]
+
+            def set_timeout(self, timeout):
+                pass
+
+        data = "data0".encode(encoding="UTF-8")
+        store = DummyStore()
+        res = store_util.synchronize(store, data, 0, 3, key_prefix="torchelastic/test")
+        self.assertEqual(3, len(res))
+        for idx, res_data in enumerate(res):
+            actual_str = res_data.decode(encoding="UTF-8")
+            self.assertEqual(f"data{idx}", actual_str)
