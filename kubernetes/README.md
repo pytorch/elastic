@@ -24,14 +24,15 @@ run Torch Elastic workloads on Kubernetes.
 
 ### (Optional) Setup
 
-Here we provide the instructions to create an Amazon EKS cluster. If you
-are not using AWS please refer to your cloud/infrastructure provider's manual
+Here we provide the instructions to create an Amazon EKS cluster or a Microsoft AKS cluster. If you
+are not using AWS or Azure, please refer to your cloud/infrastructure provider's manual
 to setup a kubernetes cluster.
 
-> **NOTE**: EKS is not required to run this controller,
+> **NOTE**: EKS/AKS is not required to run this controller,
 >  you can use other Kubernetes clusters.
 
-Use `eksctl` to create an Amazon EKS cluster. This process takes ~15 minutes.
+#### Create your cluster
+1. Use `eksctl` to create an Amazon EKS cluster. This process takes ~15 minutes.
 
 ```shell
 eksctl create cluster \
@@ -44,9 +45,8 @@ eksctl create cluster \
     --nodes=2
 ```
 
-Use `az aks` to create a Microsoft AKS cluster. This process takes ~4 minutes.
+2. Use `az aks` to create a Microsoft AKS cluster. This process takes ~4 minutes.
 
-> **NOTE**: you can create a new resource group or use a existing resource group
 ```shell
 az aks create
     --resource-group myResourceGroup \
@@ -54,10 +54,11 @@ az aks create
     --node-vm-size Standard_NC6 \
     --node-count 3 \
     --location westus2 \
-    --generate-ssh-keys \
+    --kubernetes-version 1.15
+    --generate-ssh-keys
 ```
 
-Install Nvidia device plugin to enable GPU support on your cluster.
+#### Install Nvidia device plugin to enable GPU support on your cluster.
 Deploy the following Daemonset:
 
 ```shell
