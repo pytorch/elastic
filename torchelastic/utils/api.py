@@ -11,7 +11,7 @@ import os
 
 def get_env_variable_or_raise(env_name: str) -> str:
     r"""
-    Tries to retrieve environmen variable. Raises ``ValueError``
+    Tries to retrieve environment variable. Raises ``ValueError``
     if no environment variable found.
 
     Arguments:
