@@ -32,7 +32,8 @@ to setup a kubernetes cluster.
 >  you can use other Kubernetes clusters.
 
 #### Create your cluster
-1. Use `eksctl` to create an Amazon EKS cluster. This process takes ~15 minutes.
+##### Ceate Amazon EKS
+Use `eksctl` to create an Amazon EKS cluster. This process takes ~15 minutes.
 
 ```shell
 eksctl create cluster \
@@ -45,7 +46,8 @@ eksctl create cluster \
     --nodes=2
 ```
 
-2. Use `az aks` to create a Microsoft AKS cluster. This process takes ~4 minutes.
+##### Create Microsot AKS
+Use `az aks` to create a Microsoft AKS cluster. This process takes ~4 minutes.
 
 ```shell
 az aks create
