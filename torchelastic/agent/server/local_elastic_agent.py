@@ -6,7 +6,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-import logging
 import os
 from typing import Any, Dict
 
@@ -20,9 +19,10 @@ from torchelastic.agent.server.api import (
     WorkerState,
 )
 from torchelastic.metrics.api import prof
+from torchelastic.utils.logging import get_logger
 
 
-log = logging.getLogger(__name__)
+log = get_logger()
 
 
 class _DistInfo:

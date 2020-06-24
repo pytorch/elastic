@@ -9,7 +9,6 @@
 import abc
 import functools
 import json
-import logging
 import socket
 import time
 from contextlib import closing
@@ -19,12 +18,13 @@ from typing import Any, Callable, Dict, List, Tuple
 import torchelastic.rendezvous as rdzv
 import torchelastic.utils.store as store_util
 from torchelastic.metrics import prof, put_metric
+from torchelastic.utils.logging import get_logger
 
 
 _TERMINAL_STATE_SYNC_ID = "torchelastic/agent/terminal_state"
 
 DEFAULT_ROLE = "default"
-log = logging.getLogger(__name__)
+log = get_logger()
 
 
 class WorkerSpec:
@@ -725,6 +725,7 @@ class SimpleElasticAgent(ElasticAgent):
                 spec.max_restarts + 1
             )
         spec = self._worker_group.spec
+
         put_metric(f"workers.{spec.role}.flakiness", int(flakiness))
 
     def _invoke_run(self, role: str = DEFAULT_ROLE) -> Dict[int, Any]:

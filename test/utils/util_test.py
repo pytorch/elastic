@@ -9,6 +9,7 @@
 import unittest
 
 import torchelastic.utils.store as store_util
+from torchelastic.utils.logging import get_logger
 
 
 class TestStore:
@@ -48,3 +49,28 @@ class StoreUtilTest(unittest.TestCase):
         for idx, res_data in enumerate(res):
             actual_str = res_data.decode(encoding="UTF-8")
             self.assertEqual(f"data{idx}", actual_str)
+
+
+class UtilTest(unittest.TestCase):
+    def test_get_logger_same(self):
+        logger1 = get_logger(__name__)
+        logger2 = get_logger(__name__)
+        self.assertEqual(1, len(logger1.handlers))
+        self.assertEqual(logger1, logger2)
+
+    def test_get_logger_different(self):
+        logger1 = get_logger("name1")
+        logger2 = get_logger("name2")
+        self.assertNotEqual(logger1.name, logger2.name)
+
+    def test_get_logger(self):
+        logger1 = get_logger()
+        self.assertEqual("pytorch.elastic.test.utils.util_test", logger1.name)
+
+    def test_get_logger_none(self):
+        logger1 = get_logger(None)
+        self.assertEqual("pytorch.elastic.test.utils.util_test", logger1.name)
+
+    def test_get_logger_custom_name(self):
+        logger1 = get_logger("test.module")
+        self.assertEqual("test.module", logger1.name)

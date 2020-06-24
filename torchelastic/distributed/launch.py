@@ -231,9 +231,10 @@ from torchelastic import metrics
 from torchelastic.agent.server.api import WorkerSpec
 from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
 from torchelastic.rendezvous.etcd_server import EtcdServer
+from torchelastic.utils.logging import get_logger
 
 
-log = logging.getLogger(__name__)
+log = get_logger()
 
 
 def parse_args(args):

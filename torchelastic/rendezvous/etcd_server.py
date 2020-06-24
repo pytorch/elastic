@@ -6,7 +6,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 import atexit
-import logging
 import os
 import shlex
 import shutil
@@ -16,9 +15,10 @@ import tempfile
 import time
 
 import etcd
+from torchelastic.utils.logging import get_logger
 
 
-log = logging.getLogger(__name__)
+log = get_logger()
 
 
 def find_free_port():
