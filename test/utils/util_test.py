@@ -69,7 +69,7 @@ class UtilTest(unittest.TestCase):
 
     def test_get_logger_none(self):
         logger1 = get_logger(None)
-        self.assertEqual("pytorch.elastic.test.utils.util_test", logger1.name)
+        self.assertEqual(__name__, logger1.name)
 
     def test_get_logger_custom_name(self):
         logger1 = get_logger("test.module")
