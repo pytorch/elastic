@@ -3,7 +3,7 @@
 ## Overview
 
 TorchElastic Controller for Kubernetes manages a Kubernetes custom resource `ElasticJob` and makes it easy to
-run Torch Elastic workloads on Kubernetes.   
+run Torch Elastic workloads on Kubernetes.
 
 ### Prerequisites
 
@@ -11,27 +11,29 @@ run Torch Elastic workloads on Kubernetes.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl)
 - [kustomize](https://github.com/kubernetes-sigs/kustomize/blob/master/docs/INSTALL.md)
 
-> **NOTE**: 
+> **NOTE**:
 >
 >  1. (recommended) create a cluster with GPU instances as some examples
 >     (e.g. imagenet) only work on GPU.
 >  2. If you provision instances with a single GPU you will only be able to run
 >     a single worker per node.
->  3. Our examples assume 1 GPU per node so you will have to adjust 
+>  3. Our examples assume 1 GPU per node so you will have to adjust
 >     `--nproc_per_node` to be equal to the number of CUDA devices
->     on the instance you are using if you want to run multiple workers per 
+>     on the instance you are using if you want to run multiple workers per
 >     container
 
 ### (Optional) Setup
 
-Here we provide the instructions to create an Amazon EKS cluster. If you 
-are not using AWS please refer to your cloud/infrastructure provider's manual
-to setup a kubernetes cluster. 
+Here we provide the instructions to create an Amazon EKS cluster or a Microsoft AKS cluster. If you
+are not using AWS or Azure, please refer to your cloud/infrastructure provider's manual
+to setup a kubernetes cluster.
 
-> **NOTE**: EKS is not required to run this controller, 
+> **NOTE**: EKS/AKS is not required to run this controller,
 >  you can use other Kubernetes clusters.
 
-Use `eksctl` to create an Amazon EKS cluster. This process takes ~15 minutes. 
+#### Create your Kubernetes Cluster
+##### AWS: EKS
+Use `eksctl` to create an Amazon EKS cluster. This process takes ~15 minutes.
 
 ```shell
 eksctl create cluster \
@@ -44,14 +46,28 @@ eksctl create cluster \
     --nodes=2
 ```
 
-Install Nvidia device plugin to enable GPU support on your cluster.
+##### Azure: AKS
+Use `az aks` to create a Microsoft AKS cluster. This process takes ~4 minutes.
+
+```shell
+az aks create
+    --resource-group myResourceGroup \
+    --name torchelastic \
+    --node-vm-size Standard_NC6 \
+    --node-count 3 \
+    --location westus2 \
+    --kubernetes-version 1.15
+    --generate-ssh-keys
+```
+
+#### Install Nvidia device plugin to enable GPU support on your cluster.
 Deploy the following Daemonset:
 
 ```shell
 kubectl create -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta4/nvidia-device-plugin.yml
 ```
 
-### Install `ElasticJob` controller and CRD 
+### Install `ElasticJob` controller and CRD
 
 
 ```shell
@@ -59,7 +75,7 @@ kubectl create -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0
 git clone https://github.com/pytorch/elastic.git
 cd elastic/kubernetes
 
-kubectl apply -k config/default 
+kubectl apply -k config/default
 # or
 # kustomize build config/default  | kubectl apply -f -
 ```
@@ -91,7 +107,7 @@ elasticjobs.elastic.pytorch.org                   2020-03-18T07:40:53Z
 ...
 ```
 
-Verify controller is ready 
+Verify controller is ready
 
 ```shell
 kubectl get pods -n elastic-job
@@ -129,21 +145,21 @@ kubectl logs -f elastic-job-k8s-controller-6d4884c75b-z22cm -n elastic-job
    NAME           TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
    etcd-service   ClusterIP   10.100.104.168   <none>        2379/TCP   5m5s
    ```
-   
+
 1. Update `config/samples/imagenet.yaml`:
     1. set `rdzvEndpoint` (e.g. `10.100.104.168:2379`) to the etcd server you just provisioned.
     1. set `minReplicas` and `maxReplicas` to the desired min and max num nodes
        (max should not exceed your cluster capacity)
-    1. set `Worker.replicas` to the number of nodes to start with (you may 
+    1. set `Worker.replicas` to the number of nodes to start with (you may
        modify this later to scale the job in/out)
     1. set the correct `--nproc_per_node` in `container.args` based on the
        instance you are running on.
 
-    > **NOTE** the `ENTRYPOINT` to `torchelastic/examples` is     
+    > **NOTE** the `ENTRYPOINT` to `torchelastic/examples` is
       `python -m torchelastic.distributed.launch <args...>`. Notice that you
       do not have to specify certain `launch` options such as `--rdzv_endpoint`,
       and `--rdzv_id`. These are set automatically by the controller.
- 
+
     > **IMPORTANT** a `Worker` in the context of kubernetes refers to `Node` in
       `torchelastic.distributed.launch`. Each kubernetes `Worker` can run multiple
        trainers processes (a.k.a `worker` in `torchelastic.distributed.launch`).
@@ -154,7 +170,7 @@ kubectl logs -f elastic-job-k8s-controller-6d4884c75b-z22cm -n elastic-job
     ```
     kubectl apply -f config/samples/imagenet.yaml
     ```
-    
+
     As you can see, training pod and headless services have been created.
     ```
     $ kubectl get pods -n elastic-job
@@ -164,24 +180,24 @@ kubectl logs -f elastic-job-k8s-controller-6d4884c75b-z22cm -n elastic-job
     imagenet-worker-1                             1/1     Running   0          5s
     ```
 
-1. You can scale the number of nodes by adjusting 
+1. You can scale the number of nodes by adjusting
    `.spec.replicaSpecs[Worker].replicas` and applying the change.
     ```
     kubectl apply -f config/samples/imagenet.yaml
     ```
-    
-    > **NOTE** since you are scaling the containers, you will be scaling in 
+
+    > **NOTE** since you are scaling the containers, you will be scaling in
       increments of `nproc_per_node` trainers. In our case ``--nproc_per_node=1``
-      For better performance consider using an instance with multiple 
+      For better performance consider using an instance with multiple
       GPUs and setting `--nproc_per_node=$NUM_CUDA_DEVICES`.
 
-    > **WARNING** the name of the job is used as `rdzv_id`, which is used   
+    > **WARNING** the name of the job is used as `rdzv_id`, which is used
       to uniquely identify a job run instance. Hence to run multiple parallel
-      jobs with the same spec you need to change `.spec.metadata.name` to 
+      jobs with the same spec you need to change `.spec.metadata.name` to
       give it a unique run id (e.g. `imagenet_run_0`). Otherwise the new nodes
       will attempt to join the membership of a different run.
- 
-      
+
+
 ### Monitoring jobs
 
 You can describe the job to check job status and job related events.
@@ -218,17 +234,17 @@ $ kubectl logs -f -n elastic-job imagenet-worker-0
 
 We have included other sample job specs in the `config/samples`  directory
 (e.g. `config/samples/classy_vision.yaml`), try them out by
-replacing `imagenet.yaml` with the appropariate spec filename in the 
+replacing `imagenet.yaml` with the appropariate spec filename in the
 instructions above.
 
 To use your own script, build a docker image containing your script.
-You can use `torchelastic/examples` as your base image. Then point your 
+You can use `torchelastic/examples` as your base image. Then point your
 job specs to use your container by editing `Worker.template.spec.containers.image`.
 
 Our examples save checkpoints and models in the container hence the trained
 model and checkpoints are not accessible after the job is complete. In your
 scripts use a persistent store like AWS S3 or Azure Blob Storage.
- 
+
 
 
 ### Trouble Shooting
