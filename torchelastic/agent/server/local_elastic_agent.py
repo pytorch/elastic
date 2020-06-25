@@ -75,6 +75,10 @@ class _DistInfo:
 
 
 def _wrap(local_rank, ret_vals, dist_infos, fn, args):
+    import faulthandler
+
+    faulthandler.enable(all_threads=True)
+
     info = dist_infos[local_rank]
     os.environ["LOCAL_RANK"] = str(local_rank)
     os.environ["RANK"] = str(info.rank)
