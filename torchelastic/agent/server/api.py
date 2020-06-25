@@ -755,13 +755,18 @@ class SimpleElasticAgent(ElasticAgent):
                     f"[{role}] worker group successfully finished."
                     f" Waiting {self._exit_barrier_timeout} seconds for other agents to finish."
                 )
-                store_util.barrier(
-                    self._store,
-                    self._worker_group.group_rank,
-                    self._worker_group.group_world_size,
-                    key_prefix=_TERMINAL_STATE_SYNC_ID,
-                    barrier_timeout=self._exit_barrier_timeout,
-                )
+                try:
+                    store_util.barrier(
+                        self._store,
+                        self._worker_group.group_rank,
+                        self._worker_group.group_world_size,
+                        key_prefix=_TERMINAL_STATE_SYNC_ID,
+                        barrier_timeout=self._exit_barrier_timeout,
+                    )
+                except Exception:
+                    log.exception(
+                        "Local worker group succeeded, but exit barrier failed while waiting for other nodes"
+                    )
                 return monitor_result.ret_vals
             elif state in {WorkerState.UNHEALTHY, WorkerState.FAILED}:
                 if self._remaining_restarts > 0:
@@ -779,13 +784,18 @@ class SimpleElasticAgent(ElasticAgent):
                     log.error(
                         f"{msg}. Waiting {self._exit_barrier_timeout} seconds for other agents to finish."
                     )
-                    store_util.barrier(
-                        self._store,
-                        self._worker_group.group_rank,
-                        self._worker_group.group_world_size,
-                        key_prefix=_TERMINAL_STATE_SYNC_ID,
-                        barrier_timeout=self._exit_barrier_timeout,
-                    )
+                    try:
+                        store_util.barrier(
+                            self._store,
+                            self._worker_group.group_rank,
+                            self._worker_group.group_world_size,
+                            key_prefix=_TERMINAL_STATE_SYNC_ID,
+                            barrier_timeout=self._exit_barrier_timeout,
+                        )
+                    except Exception:
+                        log.exception(
+                            "Local worker group failed waiting for other nodes."
+                        )
                     raise WorkerGroupFailureException(msg, monitor_result.exceptions)
             elif state == WorkerState.HEALTHY:
                 # membership changes do not count as retries

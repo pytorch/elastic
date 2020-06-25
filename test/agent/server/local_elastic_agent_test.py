@@ -10,6 +10,7 @@ import os
 import time
 import unittest
 import uuid
+from unittest.mock import patch
 
 import torch
 import torch.distributed as dist
@@ -548,8 +549,9 @@ class LocalElasticAgentTest(unittest.TestCase):
             p.join()
             self.assertEqual(0, p.exitcode)
 
+    @patch("torchelastic.utils.store.barrier")
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
-    def test_workers_drift_fail(self):
+    def test_workers_drift_fail(self, barrier_mock):
 
         host = self._etcd_server.get_host()
         port = self._etcd_server.get_port()
@@ -566,6 +568,13 @@ class LocalElasticAgentTest(unittest.TestCase):
             procs.append(p)
             p.start()
 
-        # TODO(aivanou): standardize error between different rendezvous stores
-        with self.assertRaises(LookupError):
-            _run_agent(*default_args, (1,), 2, "test_trainer", {}, 10)
+        _run_agent(*default_args, (1,), 2, "test_trainer", {}, 10)
+        barrier_mock.assert_called_once()
+
+    @patch("torchelastic.utils.store.barrier")
+    def test_barrier_failed(self, barrier_mock):
+        barrier_mock.side_effect = RuntimeError("test error")
+        spec = self._get_worker_spec(fn=_happy_function)
+        agent = LocalElasticAgent(spec, start_method="fork")
+        agent.run()
+        barrier_mock.assert_called_once()
