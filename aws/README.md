@@ -70,7 +70,7 @@ you have downloaded the imagenet dataset to `/mnt/efs/fs1/data/imagenet/train`.
 To run the script we'll use `petctl`,
 
 ``` bash
-python3 aws/petctl.py run_job --size 2 --min_size 1 --max_size 3 --name ${USER}-job examples/imagenet/main.py -- --input_path /mnt/efs/fs1/data/imagenet/train
+python3 petctl.py run_job --size 2 --min_size 1 --max_size 3 --name ${USER}-job examples/imagenet/main.py -- --input_path /mnt/efs/fs1/data/imagenet/train
 ```
 
 In the example above, the named arguments, such as, `--size` , `--min_size`, and
@@ -148,7 +148,7 @@ Session Manager instead of the ec2 key pair. [Install](https://docs.aws.amazon.c
 
 ``` bash
 # get the instance ids of the workers
-python3 petctl.py list_hosts <job_name>
+python3 petctl.py list_hosts ${USER}-job
 
 # ssh onto one of the workers
 awscli ssm start-session --target <instance_id>
