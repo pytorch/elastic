@@ -755,18 +755,7 @@ class SimpleElasticAgent(ElasticAgent):
                     f"[{role}] worker group successfully finished."
                     f" Waiting {self._exit_barrier_timeout} seconds for other agents to finish."
                 )
-                try:
-                    store_util.barrier(
-                        self._store,
-                        self._worker_group.group_rank,
-                        self._worker_group.group_world_size,
-                        key_prefix=_TERMINAL_STATE_SYNC_ID,
-                        barrier_timeout=self._exit_barrier_timeout,
-                    )
-                except Exception:
-                    log.exception(
-                        "Local worker group succeeded, but exit barrier failed while waiting for other nodes"
-                    )
+                self._exit_barrier()
                 return monitor_result.ret_vals
             elif state in {WorkerState.UNHEALTHY, WorkerState.FAILED}:
                 if self._remaining_restarts > 0:
@@ -780,23 +769,11 @@ class SimpleElasticAgent(ElasticAgent):
                 else:
                     self._stop_workers(self._worker_group)
                     self._worker_group.state = WorkerState.FAILED
-                    msg = f"[{role}] exceeded max_restarts={spec.max_restarts}"
-                    log.error(
-                        f"{msg}. Waiting {self._exit_barrier_timeout} seconds for other agents to finish."
+                    self._exit_barrier()
+                    raise WorkerGroupFailureException(
+                        f"[{role}] exceeded max_restarts={spec.max_restarts}",
+                        monitor_result.exceptions,
                     )
-                    try:
-                        store_util.barrier(
-                            self._store,
-                            self._worker_group.group_rank,
-                            self._worker_group.group_world_size,
-                            key_prefix=_TERMINAL_STATE_SYNC_ID,
-                            barrier_timeout=self._exit_barrier_timeout,
-                        )
-                    except Exception:
-                        log.exception(
-                            "Local worker group failed waiting for other nodes."
-                        )
-                    raise WorkerGroupFailureException(msg, monitor_result.exceptions)
             elif state == WorkerState.HEALTHY:
                 # membership changes do not count as retries
                 num_nodes_waiting = rdzv_handler.num_nodes_waiting()
@@ -810,3 +787,31 @@ class SimpleElasticAgent(ElasticAgent):
                     self._restart_workers(self._worker_group)
             else:
                 raise Exception(f"[{role}] Worker group in {state.name} state")
+
+    def _exit_barrier(self):
+        """
+        Wait for ``exit_barrier_timeout`` seconds for all agents to finish
+        executing their local workers (either successfully or not). This
+        acts as a safety guard against user scripts that terminate at different
+        times. This barrier keeps the agent process alive until all workers finish.
+        """
+        log.info(
+            f"Local worker group finished ({self._worker_group.state}). "
+            f"Waiting {self._exit_barrier_timeout} seconds for other agents to finish"
+        )
+        start = time.time()
+        try:
+            store_util.barrier(
+                self._store,
+                self._worker_group.group_rank,
+                self._worker_group.group_world_size,
+                key_prefix=_TERMINAL_STATE_SYNC_ID,
+                barrier_timeout=self._exit_barrier_timeout,
+            )
+            log.info(
+                f"Done waiting for other agents. Elapsed: {time.time() - start} seconds"
+            )
+        except Exception:
+            log.exception(
+                f"Error waiting on exit barrier. Elapsed: {time.time() - start} seconds"
+            )
