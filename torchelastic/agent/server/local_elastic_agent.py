@@ -77,7 +77,13 @@ class _DistInfo:
 def _wrap(local_rank, ret_vals, dist_infos, fn, args):
     import faulthandler
 
-    faulthandler.enable(all_threads=True)
+    try:
+        faulthandler.enable(all_threads=True)
+    except Exception as e:
+        log.warn(
+            "Unable to enable fault handler. Failure signals on worker process will not dump tracebacks",
+            exc_info=e,
+        )
 
     info = dist_infos[local_rank]
     os.environ["LOCAL_RANK"] = str(local_rank)
