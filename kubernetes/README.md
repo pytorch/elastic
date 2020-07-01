@@ -60,6 +60,20 @@ az aks create
     --generate-ssh-keys
 ```
 
+##### Google Cloud: GKE
+Use `gcloud` to create a Google GKE cluster. This process takes ~3 minutes.
+
+```shell
+gcloud container clusters create torchelastic \
+    --accelerator type=nvidia-tesla-v100,count=1\
+    --machine-type=n1-standard-4 \
+    --zone=us-west1-b \
+    --cluster-version=1.15 \
+    --num-nodes=2
+```
+
+Add `--preemptible` to use [pre-emptive](https://cloud.google.com/kubernetes-engine/docs/how-to/preemptible-vms) instances.
+
 #### Install Nvidia device plugin to enable GPU support on your cluster.
 Deploy the following Daemonset:
 
