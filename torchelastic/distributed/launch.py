@@ -455,16 +455,6 @@ def main(args=None):
             f"**************************************\n"
         )
 
-    rdzv_parameters = parameters.RendezvousParameters(
-        args.rdzv_backend,
-        args.rdzv_endpoint,
-        args.rdzv_id,
-        min_nodes,
-        max_nodes,
-        args.rdzv_conf,
-    )
-
-    rdzv_handler = parameters.get_rendezvous(rdzv_parameters)
     nproc_per_node = determine_local_world_size(args.nproc_per_node)
     omp_num_threads = None
     if "OMP_NUM_THREADS" not in os.environ and nproc_per_node > 1:
@@ -494,18 +484,32 @@ def main(args=None):
     cmd.append(args.training_script)
     cmd.extend(args.training_script_args)
 
-    spec = WorkerSpec(
-        role="default",
-        local_world_size=nproc_per_node,
-        fn=wrapper_fn,
-        args=(omp_num_threads, cmd),
-        rdzv_handler=rdzv_handler,
-        max_restarts=args.max_restarts,
-        monitor_interval=args.monitor_interval,
+    rdzv_parameters = parameters.RendezvousParameters(
+        args.rdzv_backend,
+        args.rdzv_endpoint,
+        args.rdzv_id,
+        min_nodes,
+        max_nodes,
+        args.rdzv_conf,
     )
-    metrics.initialize_metrics()
-    elastic_agent = LocalElasticAgent(spec, start_method=args.start_method)
-    elastic_agent.run(spec.role)
+
+    rdzv_handler = parameters.get_rendezvous(rdzv_parameters)
+
+    try:
+        spec = WorkerSpec(
+            role="default",
+            local_world_size=nproc_per_node,
+            fn=wrapper_fn,
+            args=(omp_num_threads, cmd),
+            rdzv_handler=rdzv_handler,
+            max_restarts=args.max_restarts,
+            monitor_interval=args.monitor_interval,
+        )
+        metrics.initialize_metrics()
+        elastic_agent = LocalElasticAgent(spec, start_method=args.start_method)
+        elastic_agent.run(spec.role)
+    finally:
+        rdzv_handler.shutdown()
 
     if args.standalone:
         etcd_server.stop()

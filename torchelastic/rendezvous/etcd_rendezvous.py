@@ -181,6 +181,14 @@ class EtcdRendezvousHandler(RendezvousHandler):
     def get_run_id(self) -> str:
         return self._rdzv_impl._run_id
 
+    def shutdown(self) -> bool:
+        try:
+            self.set_closed()
+            return True
+        except BaseException as e:
+            log.warning(f"Shutdown failed. Error occurred: {str(e)}")
+            return False
+
 
 # TODO: we should probably handle a few additional errors,
 # like EtcdLeaderElectionInProgress and EtcdWatcherCleared. These are

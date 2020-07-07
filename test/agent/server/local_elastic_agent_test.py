@@ -15,6 +15,7 @@ from unittest.mock import patch
 import torch
 import torch.distributed as dist
 import torch.distributed.rpc as rpc
+import torchelastic.rendezvous  # noqa F401
 import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
 from test_utils import is_tsan
 from torch.distributed.rpc.backend_registry import BackendType
@@ -25,6 +26,7 @@ from torchelastic.agent.server.api import (
 )
 from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
 from torchelastic.rendezvous.etcd_server import EtcdServer
+from zeus.testutil.py.ZeusServerFixture import ZeusServerFixture
 
 
 def _happy_function():
@@ -129,6 +131,7 @@ def _run_agent(
     agent = LocalElasticAgent(
         spec, start_method="fork", exit_barrier_timeout=agent_barrier_timeout
     )
+
     res = agent.run()
     if output_dict is not None:
         key = str(uuid.uuid4().int)
@@ -578,3 +581,62 @@ class LocalElasticAgentTest(unittest.TestCase):
         agent = LocalElasticAgent(spec, start_method="fork")
         agent.run()
         barrier_mock.assert_called_once()
+
+
+class LocalElasticAgentZeusTest(unittest.TestCase):
+    """
+    Sets up and tears down a local zeus server for testing
+    Tests should connect to localhost:self._mock_zeus_port
+    """
+
+    def setUp(self):
+        self._mock_zeus = ZeusServerFixture()
+        self._mock_zeus.wait_for_ready(max_secs=10)
+        self._mock_zeus_port = self._mock_zeus.get_client_port()
+
+    def tearDown(self):
+        self._mock_zeus.kill()
+        self._mock_zeus_port = None
+
+    def _get_worker_spec(
+        self,
+        fn,
+        args=(),
+        max_restarts=1,
+        num_agents=1,
+        monitor_interval=0.1,
+        local_world_size=8,
+    ):
+        run_id = str(uuid.uuid4().int)
+        rdzv_handler = dist.rendezvous(
+            f"zeus-adapter://localhost:{self._mock_zeus_port}/{run_id}"
+            f"?min_size={num_agents}"
+            f"&max_size={num_agents}"
+        )
+        spec = WorkerSpec(
+            role="test_trainer",
+            local_world_size=local_world_size,
+            fn=fn,
+            args=args,
+            rdzv_handler=rdzv_handler,
+            max_restarts=max_restarts,
+            monitor_interval=monitor_interval,
+        )
+        return spec
+
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
+    def test_run_sad_function(self):
+        spec = self._get_worker_spec(fn=_sad_function, max_restarts=2)
+        try:
+            agent = LocalElasticAgent(spec, start_method="spawn")
+            with self.assertRaises(WorkerGroupFailureException) as cm:
+                agent.run()
+        finally:
+            spec.rdzv_handler.shutdown()
+
+        excs = cm.exception.get_worker_exceptions()
+        for i in range(spec.local_world_size):
+            self.assertTrue(isinstance(excs[i], Exception))
+
+        self.assertEqual(WorkerState.FAILED, agent.get_worker_group().state)
+        self.assertEqual(0, agent._remaining_restarts)

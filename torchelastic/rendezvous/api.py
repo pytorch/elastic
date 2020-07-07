@@ -53,9 +53,11 @@ class RendezvousHandler(abc.ABC):
     """
 
     @abc.abstractmethod
-    # pyre-fixme[11]: Annotation `Store` is not defined as a type.
-    # pyre-fixme[10]: Name `torch` is used but not defined.
-    def next_rendezvous(self) -> Tuple["torch.distributed.Store", int, int]:
+    def next_rendezvous(
+        self,
+        # pyre-fixme[11]: Annotation `Store` is not defined as a type.
+        # pyre-fixme[10]: Name `torch` is used but not defined.
+    ) -> Tuple["torch.distributed.Store", int, int]:  # noqa: F821
         """
         Main entry-point into the rendezvous barrier.
         Blocks until the rendezvous is complete (and the current
@@ -114,5 +116,23 @@ class RendezvousHandler(abc.ABC):
         id that uniquely identifies an instance of a distributed application.
         It typically maps to a job id and is used to allow workers to join the
         correct distributed application.
+        """
+        pass
+
+    def shutdown(self) -> bool:
+        """
+        Closes all resources that were open for rendezvous run.
+
+        Usage
+
+            ::
+
+            def main():
+                rdzv_handler = ..
+                try:
+                    rank, world_size, store = rdzv_handler.next_rendezvous()
+                finally:
+                    rdzv_handler.shutdown()
+
         """
         pass

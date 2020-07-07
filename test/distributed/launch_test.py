@@ -12,7 +12,7 @@ import subprocess
 import tempfile
 import unittest
 import uuid
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import torchelastic.distributed.launch as launch
 import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
@@ -301,3 +301,21 @@ class LaunchTest(unittest.TestCase):
         self.assertTrue(20, max_nodes)
         with self.assertRaises(RuntimeError):
             launch.parse_min_max_nnodes("2:20:30")
+
+    @patch("torchelastic.distributed.launch.LocalElasticAgent")
+    def test_launch_rdzv_shutdown(self, _):
+        nnodes = 1
+        nproc_per_node = 4
+        args = [
+            f"--nnodes={nnodes}",
+            f"--nproc_per_node={nproc_per_node}",
+            "--monitor_interval=1",
+            "--start_method=fork",
+            path("bin/test_script.py"),
+            f"--touch_file_dir={self.test_dir}",
+        ]
+        rdzv_handler_mock = Mock()
+        with patch("torchelastic.rendezvous.parameters.get_rendezvous") as param_mock:
+            param_mock.return_value = rdzv_handler_mock
+            launch.main(args)
+            rdzv_handler_mock.shutdown.assert_called_once()
