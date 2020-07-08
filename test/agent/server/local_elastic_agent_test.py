@@ -575,6 +575,7 @@ class LocalElasticAgentTest(unittest.TestCase):
         barrier_mock.assert_called_once()
 
     @patch("torchelastic.utils.store.barrier")
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_barrier_failed(self, barrier_mock):
         barrier_mock.side_effect = RuntimeError("test error")
         spec = self._get_worker_spec(fn=_happy_function)
