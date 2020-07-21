@@ -8,6 +8,9 @@
 import unittest
 
 import torchelastic.rendezvous.parameters as parameters
+
+# pyre-fixme[21]: Could not find name `register_rendezvous_handler` in
+#  `torch.distributed`.
 from torch.distributed import register_rendezvous_handler
 
 

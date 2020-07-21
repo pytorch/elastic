@@ -17,6 +17,11 @@ from base64 import b64decode, b64encode
 from typing import Optional
 
 import etcd
+
+# pyre-fixme[21]: Could not find name `Store` in `torch.distributed`.
+# pyre-fixme[21]: Could not find name `TCPStore` in `torch.distributed`.
+# pyre-fixme[21]: Could not find name `register_rendezvous_handler` in
+#  `torch.distributed`.
 from torch.distributed import Store, TCPStore, register_rendezvous_handler
 from torchelastic.rendezvous import (
     RendezvousClosedException,
