@@ -135,10 +135,13 @@ Now all metrics in the group ``my_app`` will be printed to stdout as:
 
 """
 
+from typing import Optional
+
 from .api import (  # noqa F401
     ConsoleMetricHandler,
     MetricData,
     MetricHandler,
+    MetricsConfig,
     NullMetricHandler,
     configure,
     get_elapsed_time_ms,
@@ -150,7 +153,7 @@ from .api import (  # noqa F401
 )
 
 
-def initialize_metrics():
+def initialize_metrics(cfg: Optional[MetricsConfig] = None):
     pass
 
 
