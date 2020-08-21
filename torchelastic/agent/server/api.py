@@ -684,7 +684,7 @@ class SimpleElasticAgent(ElasticAgent):
             return self._invoke_run(role)
         except Exception as e:
             is_failed = True
-            raise e
+            raise
         finally:
             self._record_metrics(is_failed)
 
