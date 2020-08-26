@@ -210,7 +210,7 @@ class LocalElasticAgentTest(unittest.TestCase):
         ]
         self.run_configuration(roles_config, 25)
 
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
+    # @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_correct_rank_assignment_homogeneous(self):
         num_workers = 4
         roles_config = [

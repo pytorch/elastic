@@ -74,7 +74,7 @@ class _DistInfo:
         self.run_id = run_id
 
 
-def _wrap(local_rank, ret_vals, dist_infos, fn, args):
+def _wrap(local_rank, ret_val_queue, dist_infos, fn, args):
     import faulthandler
 
     try:
@@ -99,7 +99,7 @@ def _wrap(local_rank, ret_vals, dist_infos, fn, args):
     os.environ["TORCHELASTIC_MAX_RESTARTS"] = str(info.max_restarts)
     os.environ["TORCHELASTIC_RUN_ID"] = info.run_id
     ret = fn(*args)
-    ret_vals[info.rank] = ret
+    ret_val_queue.put((info.rank, ret))
 
 
 class LocalElasticAgent(SimpleElasticAgent):
@@ -151,12 +151,11 @@ class LocalElasticAgent(SimpleElasticAgent):
     ):
         super().__init__(spec, exit_barrier_timeout)
         self._start_method = start_method
-        # pyre-fixme[8]: Attribute has type `ProcessContext`; used as `None`.
+        # pyre-ignore[8]: Attribute has type `ProcessContext`; used as `None`.
         self._process_context: mp.ProcessContext = None
-        # a map that holds return values for each worker fn
-        # ret_val[0] holds the return value for worker_0 (global rank 0)
-        self._manager = mp.get_context(start_method).Manager()
-        self._ret_vals = self._manager.dict()
+        # a queue that holds return values for each worker fn
+        # each element of the queue is a tuple (rank, ret_val)
+        self._ret_val_queue = None
 
     @prof
     def _stop_workers(self, worker_group: WorkerGroup) -> None:
@@ -189,10 +188,10 @@ class LocalElasticAgent(SimpleElasticAgent):
                 spec.rdzv_handler.get_run_id(),
             )
 
-        self._ret_vals.clear()
+        self._ret_val_queue = mp.get_context(self._start_method).Queue()
         self._process_context = mp.start_processes(
             fn=_wrap,
-            args=(self._ret_vals, dist_infos, spec.fn, spec.args),
+            args=(self._ret_val_queue, dist_infos, spec.fn, spec.args),
             nprocs=spec.local_world_size,
             join=False,
             daemon=False,
@@ -222,8 +221,14 @@ class LocalElasticAgent(SimpleElasticAgent):
 
         try:
             if self._process_context.join(timeout=-1):
-                # copy ret_vals since we do not want to return an mp map
-                return MonitorResult(WorkerState.SUCCEEDED, dict(self._ret_vals))
+                # copy ret_val_queue into a map
+                ret_vals = {}
+                assert worker_group.spec.local_world_size == self._ret_val_queue.qsize()
+                for _ in range(self._ret_val_queue.qsize()):
+                    (rank, out) = self._ret_val_queue.get()
+                    ret_vals[rank] = out
+                self._ret_val_queue = None
+                return MonitorResult(WorkerState.SUCCEEDED, ret_vals)
             else:
                 return MonitorResult(WorkerState.HEALTHY)
         except Exception as e:
