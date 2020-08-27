@@ -9,7 +9,8 @@
 import unittest
 import uuid
 
-from torchelastic.rendezvous.etcd_rendezvous import _etcd_rendezvous_handler
+from torchelastic.rendezvous import RendezvousParameters
+from torchelastic.rendezvous.etcd_rendezvous import create_rdzv_handler
 from torchelastic.rendezvous.etcd_server import EtcdServer
 
 
@@ -30,23 +31,30 @@ class EtcdRendezvousTest(unittest.TestCase):
         Check that we can create the handler with a minimum set of
         params
         """
-        handler = _etcd_rendezvous_handler(
-            f"etcd://{self._etcd_server.get_endpoint()}/{uuid.uuid4()}"
-            f"?min_workers=1"
-            f"&max_workers=1"
+        rdzv_params = RendezvousParameters(
+            backend="etcd",
+            endpoint=f"{self._etcd_server.get_endpoint()}",
+            run_id=f"{uuid.uuid4()}",
+            min_nodes=1,
+            max_nodes=1,
         )
-        self.assertIsNotNone(handler)
+        etcd_rdzv = create_rdzv_handler(rdzv_params)
+        self.assertIsNotNone(etcd_rdzv)
 
     def test_parse_url(self):
         run_id = str(uuid.uuid4())
-        handler = _etcd_rendezvous_handler(
-            f"etcd://{self._etcd_server.get_endpoint()}/{run_id}"
-            f"?min_workers=1"
-            f"&max_workers=1"
-            f"&timeout=60"
-            f"&last_call_timeout=30"
-            f"&protocol=http"
+        rdzv_params = RendezvousParameters(
+            backend="etcd",
+            endpoint=f"{self._etcd_server.get_endpoint()}",
+            run_id=run_id,
+            min_nodes=1,
+            max_nodes=1,
+            timeout=60,
+            last_call_timeout=30,
+            protocol="http",
         )
 
-        self.assertIsNotNone(handler)
-        self.assertEqual(run_id, handler.get_run_id())
+        etcd_rdzv = create_rdzv_handler(rdzv_params)
+
+        self.assertIsNotNone(etcd_rdzv)
+        self.assertEqual(run_id, etcd_rdzv.get_run_id())
