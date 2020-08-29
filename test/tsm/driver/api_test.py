@@ -31,6 +31,23 @@ class ApplicationStatusTest(unittest.TestCase):
                 self.assertFalse(is_terminal)
 
 
+class ResourcesTest(unittest.TestCase):
+    def test_copy_resources(self):
+        old_capabilities = {"test_key": "test_value", "old_key": "old_value"}
+        resources = Resources(1, 2, 3, old_capabilities)
+        new_resources = Resources.copy(
+            resources, test_key="test_value_new", new_key="new_value"
+        )
+        self.assertEqual(new_resources.cpu, 1)
+        self.assertEqual(new_resources.gpu, 2)
+        self.assertEqual(new_resources.memMB, 3)
+        self.assertEqual(len(new_resources.capabilities), 3)
+        self.assertEqual(new_resources.capabilities["old_key"], "old_value")
+        self.assertEqual(new_resources.capabilities["test_key"], "test_value_new")
+        self.assertEqual(new_resources.capabilities["new_key"], "new_value")
+        self.assertEqual(resources.capabilities["test_key"], "test_value")
+
+
 class RoleBuilderTest(unittest.TestCase):
     def test_build_role(self):
         # runs: ENV_VAR_1=FOOBAR /bin/echo hello world

@@ -52,6 +52,25 @@ class Resources(BaseObject):
         self.memMB: int = memMB
         self.capabilities: Optional[Dict[str, Any]] = capabilities
 
+    @staticmethod
+    def copy(original: "Resources", **capabilities):
+        """
+        Copies a resource and applies new capabilities. If the same capabilities
+        are present in the original resource and as parameter, the one from parameter
+        will be used.
+        """
+        res_capabilities = {}
+        if original.capabilities:
+            # pyre-fixme[6]: Expected `typing.Mapping[typing.Any, typing.Any]`.
+            res_capabilities.update(original.capabilities)
+        res_capabilities.update(capabilities)
+        return Resources(
+            cpu=original.cpu,
+            gpu=original.gpu,
+            memMB=original.memMB,
+            capabilities=res_capabilities,
+        )
+
 
 # used for cases when resource does not matter (e.g. ignored)
 NULL_RESOURCE: Resources = Resources(cpu=-1, gpu=-1, memMB=-1)
