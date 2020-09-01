@@ -315,7 +315,9 @@ class LaunchTest(unittest.TestCase):
             f"--touch_file_dir={self.test_dir}",
         ]
         rdzv_handler_mock = Mock()
-        with patch("torchelastic.rendezvous.parameters.get_rendezvous") as param_mock:
+        with patch(
+            "torchelastic.rendezvous.registry.get_rendezvous_handler"
+        ) as param_mock:
             param_mock.return_value = rdzv_handler_mock
             launch.main(args)
             rdzv_handler_mock.shutdown.assert_called_once()

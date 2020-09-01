@@ -7,7 +7,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import abc
-from typing import Tuple
+from typing import Any, Callable, Dict, Tuple
 
 
 class RendezvousClosedException(Exception):
@@ -55,8 +55,8 @@ class RendezvousHandler(abc.ABC):
     @abc.abstractmethod
     def next_rendezvous(
         self,
-        # pyre-fixme[11]: Annotation `Store` is not defined as a type.
-        # pyre-fixme[10]: Name `torch` is used but not defined.
+        # pyre-ignore[11]: Annotation `Store` is not defined as a type.
+        # pyre-ignore[10]: Name `torch` is used but not defined.
     ) -> Tuple["torch.distributed.Store", int, int]:  # noqa: F821
         """
         Main entry-point into the rendezvous barrier.
@@ -136,3 +136,105 @@ class RendezvousHandler(abc.ABC):
 
         """
         pass
+
+
+class RendezvousParameters(object):
+    """
+    Data object holding necessary and sufficient configuration parameters to
+    construct a ``RendezvousHandler`` specified by the ``rdzv_backend``.
+    """
+
+    __slots__ = ("backend", "endpoint", "run_id", "min_nodes", "max_nodes", "configs")
+
+    def __init__(
+        self,
+        backend: str,
+        endpoint: str,
+        run_id: str,
+        min_nodes: int,
+        max_nodes: int,
+        **kwargs,
+    ):
+        """
+        backend: The rdzv_backend that is used to register rendezvous, e.g. etcd
+        endpoint: The rdzv_endpoint of the rendezvous. Usually it is a string
+                    in the format host:port
+        run_id: The unique job id that is used in rendezvous.
+        min_nodes: The min number of nodes required to complete rendezvous.
+        max_nodes: The max amount of nodes that are allowed to join the rendezvous.
+        **kwargs: Additional configurations for the particular rdzv backend as key, value pairs
+        """
+        self.backend = backend
+        self.endpoint = endpoint
+        self.run_id = run_id
+        self.min_nodes = min_nodes
+        self.max_nodes = max_nodes
+
+        self.configs = {}
+        for (key, val) in kwargs.items():
+            self.configs[key] = val
+
+        assert 0 < min_nodes <= max_nodes
+        assert backend is not None
+
+    def get(self, config_key: str, default_value: Any = None) -> Any:
+        """
+        Returns the the config value from the configs map
+        if one exits or the ``default_value``. Checks for ``None`` values,
+        so if the config key exists in ``configs``, but maps to ``None``, then
+        the ``default_value`` is returned.
+
+        If the default_value is not specified (or is ``None``) then this method
+        interprets the config key as a required config and will raise a ``KeyError``
+        if the config key is either not found or maps to ``None``
+        """
+        if config_key not in self.configs:
+            if default_value is None:
+                raise KeyError(
+                    f"required config: {config_key} not found, and a default was not provided"
+                )
+            else:
+                return default_value
+
+        val = self.configs[config_key]
+        if val is None:
+            if default_value is not None:
+                return default_value
+            else:
+                raise KeyError(
+                    f"required config: {config_key} maps to None, and a default was not provided"
+                )
+        else:
+            return val
+
+
+class RendezvousHandlerFactory:
+    def __init__(self):
+        self._factory_method_registry: Dict[
+            str, Callable[[RendezvousParameters], RendezvousHandler]
+        ] = {}
+
+    def register(
+        self,
+        rdzv_backend: str,
+        factory_method: Callable[[RendezvousParameters], RendezvousHandler],
+    ):
+        if rdzv_backend in self._factory_method_registry:
+            fn = self._factory_method_registry[rdzv_backend]
+            raise ValueError(
+                f"cannot double register rdzv_backend: {rdzv_backend} "
+                f"to {factory_method.__module__}.{factory_method.__name__},"
+                f" already registered with: {fn.__module__}.{fn.__name__}"
+            )
+
+        self._factory_method_registry[rdzv_backend] = factory_method
+
+    def create_rdzv_handler(self, rdzv_params: RendezvousParameters):
+        backend = rdzv_params.backend
+        if backend not in self._factory_method_registry:
+            raise ValueError(
+                f"no factory method found for rdzv_backend: {backend},"
+                f" did you forget to call {self.register.__name__}?"
+            )
+
+        return self._factory_method_registry[backend](rdzv_params)

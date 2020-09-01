@@ -225,11 +225,11 @@ import uuid
 from argparse import REMAINDER, ArgumentParser
 
 import torch
-import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
-import torchelastic.rendezvous.parameters as parameters
+import torchelastic.rendezvous.registry as rdzv_registry
 from torchelastic import metrics
 from torchelastic.agent.server.api import WorkerSpec
 from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
+from torchelastic.rendezvous import RendezvousParameters
 from torchelastic.rendezvous.etcd_server import EtcdServer
 from torchelastic.utils.logging import get_logger
 
@@ -484,16 +484,16 @@ def main(args=None):
     cmd.append(args.training_script)
     cmd.extend(args.training_script_args)
 
-    rdzv_parameters = parameters.RendezvousParameters(
-        args.rdzv_backend,
-        args.rdzv_endpoint,
-        args.rdzv_id,
-        min_nodes,
-        max_nodes,
-        args.rdzv_conf,
+    rdzv_parameters = RendezvousParameters(
+        backend=args.rdzv_backend,
+        endpoint=args.rdzv_endpoint,
+        run_id=args.rdzv_id,
+        min_nodes=min_nodes,
+        max_nodes=max_nodes,
+        **_parse_rdzv_conf(args.rdzv_conf),
     )
 
-    rdzv_handler = parameters.get_rendezvous(rdzv_parameters)
+    rdzv_handler = rdzv_registry.get_rendezvous_handler(rdzv_parameters)
 
     try:
         spec = WorkerSpec(
@@ -513,6 +513,16 @@ def main(args=None):
 
     if args.standalone:
         etcd_server.stop()
+
+
+def _parse_rdzv_conf(conf_str: str):
+    rdzv_conf = {}
+    confs = conf_str.split(",")
+    for kvs in confs:
+        key = kvs.split("=")[0]
+        value = kvs.split("=")[1:]
+        rdzv_conf[key] = value
+    return rdzv_conf
 
 
 if __name__ == "__main__":

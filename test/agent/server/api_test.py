@@ -12,8 +12,7 @@ import uuid
 from typing import Any, Dict
 from unittest.mock import call, patch
 
-import torch.distributed as dist
-import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
+import torchelastic.rendezvous.registry as rdzv_registry
 from torchelastic.agent.server.api import (
     MonitorResult,
     SimpleElasticAgent,
@@ -24,7 +23,7 @@ from torchelastic.agent.server.api import (
     _get_fq_hostname,
     _RoleInstanceInfo,
 )
-from torchelastic.rendezvous import RendezvousHandler
+from torchelastic.rendezvous import RendezvousHandler, RendezvousParameters
 from torchelastic.rendezvous.etcd_server import EtcdServer
 
 
@@ -167,9 +166,11 @@ class SimpleElasticAgentTest(unittest.TestCase):
     ):
         run_id = str(uuid.uuid4().int)
         endpoint = self._etcd_server.get_endpoint()
-        rdzv_handler = dist.rendezvous(
-            f"etcd://{endpoint}/{run_id}?min_workers=1&max_workers=1"
+
+        rdzv_params = RendezvousParameters(
+            backend="etcd", endpoint=endpoint, run_id=run_id, min_nodes=1, max_nodes=1
         )
+        rdzv_handler = rdzv_registry.get_rendezvous_handler(rdzv_params)
         spec = WorkerSpec(
             role=role,
             local_world_size=local_world_size,

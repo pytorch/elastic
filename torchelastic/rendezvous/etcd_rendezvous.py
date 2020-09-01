@@ -18,15 +18,13 @@ from typing import Optional
 
 import etcd
 
-# pyre-fixme[21]: Could not find name `Store` in `torch.distributed`.
-# pyre-fixme[21]: Could not find name `TCPStore` in `torch.distributed`.
-# pyre-fixme[21]: Could not find name `register_rendezvous_handler` in
-#  `torch.distributed`.
-from torch.distributed import Store, TCPStore, register_rendezvous_handler
+# pyre-ignore[21]: Could not find name `Store` in `torch.distributed`.
+from torch.distributed import Store
 from torchelastic.rendezvous import (
     RendezvousClosedException,
     RendezvousHandler,
     RendezvousNonRetryableError,
+    RendezvousParameters,
     RendezvousTimeoutException,
 )
 
@@ -1166,26 +1164,6 @@ class EtcdStore(Store):
                 continue
 
 
-def _get_socket_with_port():
-    import socket
-
-    addrs = socket.getaddrinfo(
-        host="localhost", port=None, family=socket.AF_UNSPEC, type=socket.SOCK_STREAM
-    )
-    for addr in addrs:
-        family, type, proto, _, _ = addr
-        try:
-            s = socket.socket(family, type, proto)
-            s.bind(("localhost", 0))
-            s.listen(0)
-            return s
-        except OSError as e:
-            s.close()
-            log.info("Socket creation attempt failed: " + e)
-
-    raise RuntimeError("Failed to create a socket")
-
-
 # Helper for _etcd_rendezvous_handler(url)
 def _parse_etcd_client_params(params):
     kwargs = {}
@@ -1205,19 +1183,42 @@ def _parse_etcd_client_params(params):
 
 
 # Handler for torch.distributed "static" registration
-def _etcd_rendezvous_handler(url):
+def create_rdzv_handler(rdzv_params: RendezvousParameters):
     """
-    Example URLs:
-        etcd://localhost:2379/123?min_workers=4&max_workers=8&timeout=300
-        etcd://192.168.0.42/123?etcd_prefix=/custom_prefix/foo&min_workers=4
-        etcd://localhost:2379/123?min_workers=4&protocol=https&cacert=/etc/kubernetes/certs/ca.crt&cert=/etc/kubernetes/certs/client.crt&key=/etc/kubernetes/certs/client.key
+    Usage:
+
+    ::
+
+    rdzv_params = RendezvousParameters(
+                        backend="etcd",
+                        endpoint="192.168.0.42:2379",
+                        run_id="123",
+                        min_nodes=4,
+                        max_nodes=8,
+                        timeout=300,
+                        last_call_timeout=30,
+                        etcd_prefix="custom_prefix",
+                        protocol="https",
+                        cacert="/etc/kubernetes/certs/ca.crt",
+                        cert="/etc/kubernetes/certs/client.crt",
+                        key="/etc/kubernetes/certs/client.key")
+    # -- or --
+    rdzv_params = RendezvousParameters(
+                        backend="etcd",
+                        endpoint="192.168.0.42:2379",
+                        run_id="123",
+                        min_nodes=4,
+                        max_nodes=8)
+
+    etcd_rdzv_handler = create_etcd_rendezvous_handler(rdzv_params)
+
 
     Where:
-        123 - the run_id (unique id for this training job instance),
-        min_workers=4 - min number of workers expected to join the rendezvous,
-        max_workers=8 - max number of workers allowed to join the rendezvous,
+        run_id - unique id for this training job instance,
+        min_nodes - min number of workers expected to join the rendezvous,
+        max_nodes - max number of workers allowed to join the rendezvous,
                         defaults to min_workers is not specified.
-        timeout=300 - total timeout within which next_rendezvous is expected to
+        timeout - total timeout within which next_rendezvous is expected to
                       succeed; a RendezvousTimeoutException is raised otherwise;
                       Defaults is 600 (10 minutes).
         last_call_timeout - additional wait amount ("last call") after
@@ -1226,23 +1227,15 @@ def _etcd_rendezvous_handler(url):
         etcd_prefix - path prefix (from etcd root), inside which all
                       etcd nodes will be created.
                       Default is "/torchelastic/p2p".
-        protocol=https - http (default) or https to access etcd.
-        cacert=/etc/kubernetes/certs/ca.crt - CA cert to access etcd,
-                    only makes sense with https.
-        cert=/etc/kubernetes/certs/client.crt - client cert to access etcd,
-                    only makes sense with https.
-        key=/etc/kubernetes/certs/client.key - client key to access etcd,
-                    only makes sense with https.
-
+        protocol - http (default) or https to access etcd.
+        cacert - CA cert to access etcd, only makes sense with https.
+        cert - client cert to access etcd, only makes sense with https.
+        key - client key to access etcd, only makes sense with https.
     """
     import re
-    from urllib.parse import urlparse
-
-    url = urlparse(url)
-    assert url.scheme == "etcd"
 
     # Etcd endpoints. (Current url format only allows a single host)
-    endpoint = url.netloc
+    endpoint = rdzv_params.endpoint
     match = re.match(r"(.+):(\d+)$", endpoint)  # check if port was provided
     if match:
         etcd_endpoints = ((match.group(1), int(match.group(2))),)
@@ -1252,39 +1245,34 @@ def _etcd_rendezvous_handler(url):
 
     # Run ID value -> unique identifier of this training job instance:
     # typically a job_id or name assigned by the scheduler or user
-    run_id = url.path.strip("/")
+    run_id = rdzv_params.run_id
 
     # Parse all of query parameters:
-    params = dict(pair.split("=") for pair in filter(None, url.query.split("&")))
+    etcd_prefix = rdzv_params.get("etcd_prefix", "/torchelastic/p2p")
+    min_workers = rdzv_params.min_nodes
+    max_workers = rdzv_params.max_nodes
 
-    etcd_prefix = params.get("etcd_prefix", "/torchelastic/p2p")
-    num_min_workers = int(params["min_workers"])
-    num_max_workers = int(params.get("max_workers", num_min_workers))
-    assert num_min_workers >= 1, "Min number of workers should be at least 1"
+    assert min_workers >= 1, "Min number of workers should be at least 1"
     assert (
-        num_max_workers >= num_min_workers
+        max_workers >= min_workers
     ), "Max number of workers cannot be less than min number of workers"
 
-    timeout = int(params.get("timeout", CONST_DEFAULT_OVERALL_TIMEOUT))
-    last_call_timeout = int(
-        params.get("last_call_timeout", CONST_DEFAULT_LAST_CALL_TIMEOUT)
+    timeout = rdzv_params.get("timeout", CONST_DEFAULT_OVERALL_TIMEOUT)
+    last_call_timeout = rdzv_params.get(
+        "last_call_timeout", CONST_DEFAULT_LAST_CALL_TIMEOUT
     )
 
-    kwargs = _parse_etcd_client_params(params)
+    kwargs = _parse_etcd_client_params(rdzv_params.configs)
 
     # Etcd rendezvous implementation
     etcd_rdzv = EtcdRendezvous(
         endpoints=etcd_endpoints,
         prefix=etcd_prefix,
         run_id=run_id,
-        num_min_workers=num_min_workers,
-        num_max_workers=num_max_workers,
+        num_min_workers=min_workers,
+        num_max_workers=max_workers,
         timeout=timeout,
         last_call_timeout=last_call_timeout,
         **kwargs,
     )
     return EtcdRendezvousHandler(rdzv_impl=etcd_rdzv)
-
-
-# torchelastic.rendezvous.RendezvousHandler using etcd (API v2):
-register_rendezvous_handler("etcd", _etcd_rendezvous_handler)
