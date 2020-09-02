@@ -10,7 +10,7 @@ For the latest documentation, please refer to our
 
 ## Requirements
 torchelastic requires
-* python3 (3.6+)
+* python3 (3.8+)
 * torch
 * etcd
 

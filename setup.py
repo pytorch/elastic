@@ -24,8 +24,8 @@ def get_version():
 
 
 if __name__ == "__main__":
-    if sys.version_info < (3, 6):
-        sys.exit("python >= 3.6 required for torchelastic")
+    if sys.version_info < (3, 8):
+        sys.exit("python >= 3.8 required for torchelastic")
 
     with open("README.md", encoding="utf8") as f:
         readme = f.read()
@@ -60,7 +60,7 @@ if __name__ == "__main__":
             "Intended Audience :: Science/Research",
             "License :: OSI Approved :: BSD License",
             "Programming Language :: Python :: 3",
-            "Programming Language :: Python :: 3.6",
+            "Programming Language :: Python :: 3.8",
             "Topic :: System :: Distributed Computing",
             "Topic :: Scientific/Engineering :: Artificial Intelligence",
         ],

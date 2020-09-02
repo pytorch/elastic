@@ -8,68 +8,71 @@ version: 2
 # Test envs
 # ------------------------------------------------------------------------------
 cpu: &cpu
-  docker:
   machine:
-    image: default
+    image: ubuntu-1604:201903-01
   resource_class: medium
 
 gpu: &gpu
   environment:
     CUDA_VERSION: "10.1"
   machine:
-    image: default
-  resource_class: gpu.medium  # Tesla M60
+    image: ubuntu-1604-cuda-10.1:201909-23
+  resource_class: gpu.nvidia.medium  # turing (https://circleci.com/docs/2.0/configuration-reference/#gpu-executor-linux)
 
 # ------------------------------------------------------------------------------
 # test setup commands
 # ------------------------------------------------------------------------------
-setup_venv: &setup_venv
+install_pyenv: &install_pyenv
   - run:
-      name: Activate Venv
+      name: Install pyenv
+      working_directory: ~/
       command: |
-        python -m venv ~/venv
-        echo ". ~/venv/bin/activate" >> $BASH_ENV
-        . ~/venv/bin/activate
-        python --version
-        which python
-        which pip
+        rm -rf $(pyenv root)
+        curl https://pyenv.run | bash
+        export PATH="$HOME/.pyenv/bin:$PATH"
+        pyenv update
+        eval "$(pyenv init -)"
+        eval "$(pyenv virtualenv-init -)"
 
 install_python: &install_python
   - run:
       name: Install Python
-      working_directory: ~/
       command: |
-        pyenv install 3.6.1
-        pyenv global 3.6.1
+        pyenv install -s 3.8.4
+        pyenv global 3.8.4
+
+setup_venv: &setup_venv
+  - run:
+      name: Setup Python Virtual Environment
+      command: |
+        pyenv virtualenv -f 3.8.4 venv38
+        pyenv local venv38
+        pip install --upgrade pip
 
 install_dep: &install_dep
   - run:
       name: Install Dependencies
       command: |
-        which python
-        which pip
-        pip install --upgrade pip
+        echo "In venv: $(pyenv local) - $(python --version), $(pip --version)"
+        python --version
+        pip --version
         pip install --progress-bar off -r requirements.txt
+        pip install --progress-bar off black isort
         pip list
 
-install_cuda: &install_cuda
+check_cuda: &check_cuda
   - run:
-      name: Install CUDA
+      name: Check CUDA
       working_directory: ~/
       command: |
-        # download and install nvidia drivers, cuda, etc
-        wget -q 'https://s3.amazonaws.com/ossci-linux/nvidia_driver/NVIDIA-Linux-x86_64-430.40.run'
-        sudo /bin/bash ./NVIDIA-Linux-x86_64-430.40.run -s --no-drm
-        wget -q https://developer.download.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda-repo-ubuntu1404-10-1-local-10.1.243-418.87.00_1.0-1_amd64.deb
-        sudo dpkg -i cuda-repo-ubuntu1404-10-1-local-10.1.243-418.87.00_1.0-1_amd64.deb
-        sudo apt-key add /var/cuda-repo-10-1-local-10.1.243-418.87.00/7fa2af80.pub
+        # CUDA installed with machine image
         nvidia-smi
 
 install_etcd: &install_etcd
   - run:
       name: Install etcd
       command: |
-        # pulls etcd server binary for spinning up a standalong etcd server for unittests
+        # pulls etcd server binary for spinning up a standalone etcd server for unittests
         # see test/p2p/etcd_server_fixture.py
         # needs to run AFTER checkout since it uses the install_etcd script in the repo
         echo "current directory is $(pwd)"
@@ -94,25 +97,31 @@ jobs:
     steps:
       - checkout
 
+      - <<: *install_pyenv
+
+      # Download and cache python virtual environments (python + deps)
+      # Share cache with cpu_tests (only restore from)
+      - restore_cache:
+          keys:
+            - v1-cpu-venvs-{{ arch }}-{{ checksum "requirements.txt" }}-
+
       - <<: *install_python
 
-      - run:
-            name: setup lint
-            command: |
-                pip install --upgrade pip
-                pip install --progress-bar off black isort
+      - <<: *setup_venv
+
+      - <<: *install_dep
 
       - run:
-            name: run isort and black
-            command: |
-              bash ./scripts/formatter_python.sh
+          name: run isort and black
+          command: |
+            bash ./scripts/formatter_python.sh
 
   cpu_tests:
     <<: *cpu
 
     environment:
-        ETCD_INSTALL_DIR: /tmp/etcd
-        TORCHELASTIC_ETCD_BINARY_PATH: /tmp/etcd/etcd
+      ETCD_INSTALL_DIR: /tmp/etcd
+      TORCHELASTIC_ETCD_BINARY_PATH: /tmp/etcd/etcd
 
     working_directory: ~/torchelastic
 
@@ -121,23 +130,24 @@ jobs:
 
       - <<: *install_etcd
 
+      - <<: *install_pyenv
+
+      # Download and cache python virtual environments (python + deps)
+      - restore_cache:
+          keys:
+            - v1-cpu-venvs-{{ arch }}-{{ checksum "requirements.txt" }}-
+
       - <<: *install_python
 
       - <<: *setup_venv
 
-      # Download and cache dependencies
-      - restore_cache:
-          keys:
-            - v2-cpu-dependencies-{{ checksum "requirements.txt" }}
-            # fallback to using the latest cache if no exact match is found
-            - v2-cpu-dependencies-
-
       - <<: *install_dep
 
       - save_cache:
+          key: v1-cpu-venvs-{{ arch }}-{{ checksum "requirements.txt" }}-{{ epoch }}
           paths:
-            - ~/venv
-          key: v2-cpu-dependencies-{{ checksum "requirements.txt" }}
+            - /opt/circleci/.pyenv/versions
+
 
       - <<: *run_tests
 
@@ -150,18 +160,18 @@ jobs:
     steps:
       - checkout
 
-      - <<: *install_cuda
+      - <<: *check_cuda
+
+      - <<: *install_pyenv
+
+      # Download and cache python virtual environments (python + deps)
+      - restore_cache:
+          keys:
+            - v1-gpu-venvs-{{ arch }}-{{ checksum "requirements.txt" }}-
 
       - <<: *install_python
 
       - <<: *setup_venv
-
-      # Download and cache dependencies
-      - restore_cache:
-          keys:
-            - v1-gpu-dependencies-{{ checksum "requirements.txt" }}
-            # fallback to using the latest cache if no exact match is found
-            - v1-gpu-dependencies-
 
       - <<: *install_dep
 
@@ -171,8 +181,8 @@ jobs:
 
       - save_cache:
           paths:
-            - ~/venv
-          key: v1-gpu-dependencies-{{ checksum "requirements.txt" }}
+            - /opt/circleci/.pyenv/versions
+          key: v1-gpu-venvs-{{ arch }}-{{ checksum "requirements.txt" }}-{{ epoch }}
 
       - <<: *run_tests
 
