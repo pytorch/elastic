@@ -6,10 +6,11 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import multiprocessing
 import os
 from typing import Any, Dict
 
-import torch.multiprocessing as mp
+import torchelastic.multiprocessing.spawn as torchelastic_spawn
 from torchelastic.agent.server.api import (
     MonitorResult,
     SimpleElasticAgent,
@@ -152,7 +153,7 @@ class LocalElasticAgent(SimpleElasticAgent):
         super().__init__(spec, exit_barrier_timeout)
         self._start_method = start_method
         # pyre-ignore[8]: Attribute has type `ProcessContext`; used as `None`.
-        self._process_context: mp.ProcessContext = None
+        self._process_context: torchelastic_spawn.ProcessContext = None
         # a queue that holds return values for each worker fn
         # each element of the queue is a tuple (rank, ret_val)
         self._ret_val_queue = None
@@ -188,8 +189,8 @@ class LocalElasticAgent(SimpleElasticAgent):
                 spec.rdzv_handler.get_run_id(),
             )
 
-        self._ret_val_queue = mp.get_context(self._start_method).Queue()
-        self._process_context = mp.start_processes(
+        self._ret_val_queue = multiprocessing.get_context(self._start_method).Queue()
+        self._process_context = torchelastic_spawn.start_processes(
             fn=_wrap,
             args=(self._ret_val_queue, dist_infos, spec.fn, spec.args),
             nprocs=spec.local_world_size,
