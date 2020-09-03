@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+# Copyright (c) Facebook, Inc. and its affiliates.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 import multiprocessing
 import os
 import random
@@ -10,7 +16,7 @@ import unittest
 from unittest.mock import patch
 
 import torch.multiprocessing as torch_mp
-from test_utils import is_asan
+from test_utils import is_asan_or_tsan
 from torchelastic.multiprocessing.spawn import (
     WorkerExitedException,
     WorkerSignaledException,
@@ -55,11 +61,11 @@ def test_success_first_then_exception_func(i, arg):
 
 
 class TorchElasticSpawnTest(unittest.TestCase):
-    @unittest.skipIf(is_asan(), "test incompatible with asan")
+    @unittest.skipIf(is_asan_or_tsan(), "test incompatible with asan or tsan")
     def test_success(self):
         spawn(test_success_func, nprocs=2)
 
-    @unittest.skipIf(is_asan(), "test incompatible with asan")
+    @unittest.skipIf(is_asan_or_tsan(), "test incompatible with asan or tsan")
     def test_success_non_blocking(self):
         spawn_context = spawn(test_success_func, nprocs=2, join=False)
 
@@ -68,14 +74,14 @@ class TorchElasticSpawnTest(unittest.TestCase):
         spawn_context.join(timeout=None)
         self.assertTrue(spawn_context.join(timeout=None))
 
-    @unittest.skipIf(is_asan(), "test incompatible with asan")
+    @unittest.skipIf(is_asan_or_tsan(), "test incompatible with asan or tsan")
     def test_first_argument_index(self):
         mp = multiprocessing.get_context("spawn")
         queue = mp.SimpleQueue()
         spawn(test_success_func, (queue,), nprocs=2)
         self.assertEqual([0, 1], sorted([queue.get(), queue.get()]))
 
-    @unittest.skipIf(is_asan(), "test incompatible with asan")
+    @unittest.skipIf(is_asan_or_tsan(), "test incompatible with asan or tsan")
     def test_exception_single(self):
         nprocs = 2
         for i in range(nprocs):
@@ -84,14 +90,14 @@ class TorchElasticSpawnTest(unittest.TestCase):
             ):
                 spawn(test_exception_single_func, (i,), nprocs=nprocs)
 
-    @unittest.skipIf(is_asan(), "test incompatible with asan")
+    @unittest.skipIf(is_asan_or_tsan(), "test incompatible with asan or tsan")
     def test_exception_all(self):
         with self.assertRaisesRegex(
             Exception, "\nValueError: legitimate exception from process (0|1)$"
         ):
             spawn(test_exception_all_func, (), nprocs=2)
 
-    @unittest.skipIf(is_asan(), "test incompatible with asan")
+    @unittest.skipIf(is_asan_or_tsan(), "test incompatible with asan or tsan")
     @patch("torchelastic.multiprocessing.error_reporter.get_error")
     def test_terminate_signal(self, mock_get_error):
         subprocess_error_msg = (
@@ -109,7 +115,7 @@ class TorchElasticSpawnTest(unittest.TestCase):
         self.assertEqual(0, cm.exception.error_index)
         self.assertEqual(subprocess_error_msg, str(cm.exception))
 
-    @unittest.skipIf(is_asan(), "test incompatible with asan")
+    @unittest.skipIf(is_asan_or_tsan(), "test incompatible with asan or tsan")
     @patch("torchelastic.multiprocessing.error_reporter.get_error")
     def test_terminate_exit(self, mock_get_error):
         exitcode = 123
@@ -121,7 +127,7 @@ class TorchElasticSpawnTest(unittest.TestCase):
         self.assertEqual(0, cm.exception.error_index)
         self.assertEqual(subprocess_error_msg, str(cm.exception))
 
-    @unittest.skipIf(is_asan(), "test incompatible with asan")
+    @unittest.skipIf(is_asan_or_tsan(), "test incompatible with asan or tsan")
     def test_success_first_then_exception(self):
         exitcode = 123
         with self.assertRaisesRegex(Exception, "ValueError: legitimate exception"):
@@ -135,11 +141,11 @@ does not interfere with torch.multiprocessing.spawn
 
 
 class TorchSpawnTest(unittest.TestCase):
-    @unittest.skipIf(is_asan(), "test incompatible with asan")
+    @unittest.skipIf(is_asan_or_tsan(), "test incompatible with asan or tsan")
     def test_success(self):
         torch_mp.spawn(test_success_func, nprocs=2)
 
-    @unittest.skipIf(is_asan(), "test incompatible with asan")
+    @unittest.skipIf(is_asan_or_tsan(), "test incompatible with asan or tsan")
     def test_success_non_blocking(self):
         spawn_context = torch_mp.spawn(test_success_func, nprocs=2, join=False)
 
@@ -148,14 +154,14 @@ class TorchSpawnTest(unittest.TestCase):
         spawn_context.join(timeout=None)
         self.assertTrue(spawn_context.join(timeout=None))
 
-    @unittest.skipIf(is_asan(), "test incompatible with asan")
+    @unittest.skipIf(is_asan_or_tsan(), "test incompatible with asan or tsan")
     def test_first_argument_index(self):
         mp = multiprocessing.get_context("spawn")
         queue = mp.SimpleQueue()
         torch_mp.spawn(test_success_func, (queue,), nprocs=2)
         self.assertEqual([0, 1], sorted([queue.get(), queue.get()]))
 
-    @unittest.skipIf(is_asan(), "test incompatible with asan")
+    @unittest.skipIf(is_asan_or_tsan(), "test incompatible with asan or tsan")
     def test_exception_single(self):
         nprocs = 2
         for i in range(nprocs):
@@ -164,21 +170,21 @@ class TorchSpawnTest(unittest.TestCase):
             ):
                 torch_mp.spawn(test_exception_single_func, (i,), nprocs=nprocs)
 
-    @unittest.skipIf(is_asan(), "test incompatible with asan")
+    @unittest.skipIf(is_asan_or_tsan(), "test incompatible with asan or tsan")
     def test_exception_all(self):
         with self.assertRaisesRegex(
             Exception, "\nValueError: legitimate exception from process (0|1)$"
         ):
             torch_mp.spawn(test_exception_all_func, (), nprocs=2)
 
-    @unittest.skipIf(is_asan(), "test incompatible with asan")
+    @unittest.skipIf(is_asan_or_tsan(), "test incompatible with asan or tsan")
     def test_terminate_signal(self):
         with self.assertRaisesRegex(
             Exception, r"process 0 terminated with signal SIGABRT"
         ):
             torch_mp.spawn(test_terminate_signal_func, (), nprocs=2)
 
-    @unittest.skipIf(is_asan(), "test incompatible with asan")
+    @unittest.skipIf(is_asan_or_tsan(), "test incompatible with asan or tsan")
     def test_terminate_exit(self):
         exitcode = 123
         with self.assertRaisesRegex(
@@ -186,7 +192,7 @@ class TorchSpawnTest(unittest.TestCase):
         ):
             torch_mp.spawn(test_terminate_exit_func, (exitcode,), nprocs=2)
 
-    @unittest.skipIf(is_asan(), "test incompatible with asan")
+    @unittest.skipIf(is_asan_or_tsan(), "test incompatible with asan or tsan")
     def test_success_first_then_exception(self):
         exitcode = 123
         with self.assertRaisesRegex(Exception, r"ValueError: legitimate exception"):
