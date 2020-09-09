@@ -17,7 +17,6 @@ import torch
 import torch.distributed as dist
 import torch.distributed.rpc as rpc
 import torchelastic.rendezvous.registry as rdzv_registry
-from test_utils import is_asan_or_tsan, is_tsan
 from torch.distributed.rpc.backend_registry import BackendType
 from torchelastic.agent.server.api import (
     WorkerGroupFailureException,
@@ -31,6 +30,7 @@ from torchelastic.multiprocessing.spawn import (
 )
 from torchelastic.rendezvous import RendezvousParameters
 from torchelastic.rendezvous.etcd_server import EtcdServer
+from torchelastic.test.test_utils import is_asan_or_tsan, is_tsan
 
 
 def _happy_function():

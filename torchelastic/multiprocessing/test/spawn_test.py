@@ -16,12 +16,12 @@ import unittest
 from unittest.mock import patch
 
 import torch.multiprocessing as torch_mp
-from test_utils import is_asan_or_tsan
 from torchelastic.multiprocessing.spawn import (
     WorkerExitedException,
     WorkerSignaledException,
     spawn,
 )
+from torchelastic.test.test_utils import is_asan_or_tsan
 
 
 def test_success_func(i, arg=None):

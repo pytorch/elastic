@@ -48,11 +48,11 @@ if __name__ == "__main__":
         url="https://github.com/pytorch/elastic",
         license="BSD-3",
         keywords=["pytorch", "machine learning", "elastic", "distributed"],
-        python_requires=">=3.6",
+        python_requires=">=3.8",
         install_requires=reqs.strip().split("\n"),
         include_package_data=True,
-        packages=find_packages(exclude=("test", "test.*")),
-        test_suite="test.suites.unittests",
+        packages=find_packages(exclude=("*.test", "aws*", "*.fb")),
+        test_suite="torchelastic.test.suites.unittests",
         # PyPI package information.
         classifiers=[
             "Development Status :: 4 - Beta",

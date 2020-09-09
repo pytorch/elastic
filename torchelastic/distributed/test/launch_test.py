@@ -16,9 +16,9 @@ from unittest.mock import Mock, patch
 
 import torchelastic.distributed.launch as launch
 import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
-from test_utils import is_tsan
 from torch.multiprocessing import start_processes
 from torchelastic.rendezvous.etcd_server import EtcdServer
+from torchelastic.test.test_utils import is_tsan
 
 
 def path(script):
@@ -72,11 +72,11 @@ class LaunchTest(unittest.TestCase):
         args = [
             f"--nnodes={nnodes}",
             f"--nproc_per_node={nproc_per_node}",
-            f"--rdzv_backend=etcd",
+            "--rdzv_backend=etcd",
             f"--rdzv_endpoint={self._etcd_endpoint}",
             f"--rdzv_id={run_id}",
-            f"--monitor_interval=1",
-            f"--start_method=fork",
+            "--monitor_interval=1",
+            "--start_method=fork",
             path("bin/test_script.py"),
             f"--touch_file_dir={self.test_dir}",
         ]
@@ -98,12 +98,12 @@ class LaunchTest(unittest.TestCase):
         args = [
             f"--nnodes={nnodes}",
             f"--nproc_per_node={nproc_per_node}",
-            f"--rdzv_backend=etcd",
+            "--rdzv_backend=etcd",
             f"--rdzv_endpoint={self._etcd_endpoint}",
             f"--rdzv_id={run_id}",
-            f"--monitor_interval=1",
-            f"--start_method=fork",
-            f"--no_python",
+            "--monitor_interval=1",
+            "--start_method=fork",
+            "--no_python",
         ]
 
         script_args = [path("bin/test_script.sh"), f"{self.test_dir}"]
@@ -168,12 +168,12 @@ class LaunchTest(unittest.TestCase):
         args = [
             f"--nnodes={nnodes}",
             f"--nproc_per_node={nproc_type}",
-            f"--rdzv_backend=etcd",
+            "--rdzv_backend=etcd",
             f"--rdzv_endpoint={self._etcd_endpoint}",
             f"--rdzv_id={run_id}",
-            f"--monitor_interval=1",
-            f"--start_method=fork",
-            f"--no_python",
+            "--monitor_interval=1",
+            "--start_method=fork",
+            "--no_python",
         ]
 
         script_args = [path("bin/test_script.sh"), f"{self.test_dir}"]
@@ -218,11 +218,11 @@ class LaunchTest(unittest.TestCase):
         args = [
             f"--nnodes={min_nodes}:{max_nodes}",
             f"--nproc_per_node={nproc_per_node}",
-            f"--rdzv_backend=etcd",
+            "--rdzv_backend=etcd",
             f"--rdzv_endpoint={self._etcd_endpoint}",
             f"--rdzv_id={run_id}",
-            f"--monitor_interval=1",
-            f"--start_method=fork",
+            "--monitor_interval=1",
+            "--start_method=fork",
             path("bin/test_script.py"),
             f"--touch_file_dir={self.test_dir}",
         ]
@@ -242,9 +242,9 @@ class LaunchTest(unittest.TestCase):
         args = [
             f"--nnodes={nnodes}",
             f"--nproc_per_node={nproc_per_node}",
-            f"--standalone",
-            f"--monitor_interval=1",
-            f"--start_method=fork",
+            "--standalone",
+            "--monitor_interval=1",
+            "--start_method=fork",
             path("bin/test_script.py"),
             f"--touch_file_dir={self.test_dir}",
         ]
@@ -267,11 +267,11 @@ class LaunchTest(unittest.TestCase):
         args = [
             f"--nnodes={min_nodes}:{max_nodes}",
             f"--nproc_per_node={nproc_per_node}",
-            f"--rdzv_backend=etcd",
+            "--rdzv_backend=etcd",
             f"--rdzv_endpoint={self._etcd_endpoint}",
             f"--rdzv_id={run_id}",
-            f"--monitor_interval=1",
-            f"--start_method=fork",
+            "--monitor_interval=1",
+            "--start_method=fork",
             path("bin/test_script.py"),
             f"--touch_file_dir={self.test_dir}",
         ]

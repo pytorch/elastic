@@ -194,11 +194,11 @@ class SimpleElasticAgentTest(unittest.TestCase):
         spec = self._get_worker_spec(max_restarts=1)
         agent = TestAgent(spec)
         agent._record_flakiness_metric()
-        put_metric_mock.assert_called_with(f"workers.test_trainer.flakiness", 0)
+        put_metric_mock.assert_called_with("workers.test_trainer.flakiness", 0)
         agent._worker_group.spec.max_restarts = 10
         agent._remaining_restarts = 3
         agent._record_flakiness_metric()
-        put_metric_mock.assert_called_with(f"workers.test_trainer.flakiness", 63)
+        put_metric_mock.assert_called_with("workers.test_trainer.flakiness", 63)
 
     @patch("torchelastic.agent.server.api.put_metric")
     def test_record_flakiness_metric_zero_restarts(self, put_metric_mock):
@@ -206,7 +206,7 @@ class SimpleElasticAgentTest(unittest.TestCase):
         spec.max_restarts = 0
         agent = TestAgent(spec)
         agent._record_flakiness_metric()
-        put_metric_mock.assert_called_with(f"workers.test_trainer.flakiness", 0)
+        put_metric_mock.assert_called_with("workers.test_trainer.flakiness", 0)
 
     @patch("torchelastic.agent.server.api.put_metric")
     def test_record_flakiness_metric_user_exception(self, put_metric_mock):

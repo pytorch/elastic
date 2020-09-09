@@ -13,7 +13,7 @@ import unittest
 
 import torch.multiprocessing as torch_mp
 import torchelastic.timer as timer
-from test_utils import is_asan_or_tsan, is_tsan
+from torchelastic.test.test_utils import is_asan_or_tsan, is_tsan
 
 
 logging.basicConfig(
