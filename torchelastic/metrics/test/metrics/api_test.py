@@ -14,7 +14,6 @@ from torchelastic.metrics.api import (
     MetricHandler,
     MetricStream,
     _get_metric_name,
-    configure,
     prof,
 )
 

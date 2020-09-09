@@ -12,7 +12,7 @@ import unittest
 import unittest.mock as mock
 
 import torchelastic.timer as timer
-from test_utils import is_tsan
+from torchelastic.test.test_utils import is_tsan
 from torchelastic.timer.api import TimerRequest
 from torchelastic.timer.local_timer import MultiprocessingRequestQueue
 

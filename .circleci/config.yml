@@ -85,7 +85,7 @@ run_tests: &run_tests
   - run:
       name: Run Tests
       command: |
-        python setup.py test -s test.suites.unittests -v
+        python setup.py test -s torchelastic.test.suites.unittests -v
 
 # ------------------------------------------------------------------------------
 # tests

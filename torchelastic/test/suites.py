@@ -38,7 +38,9 @@ def unittests():
     Runs on CircleCI on every commit. Returns everything in the tests root directory.
     """
     test_loader = unittest.TestLoader()
-    test_suite = test_loader.discover("test", pattern="*_test.py")
+    test_suite = test_loader.discover(
+        "torchelastic", pattern="*_test.py", top_level_dir="."
+    )
     test_suite = _circleci_parallelism(test_suite)
     return test_suite
 
