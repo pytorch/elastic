@@ -85,6 +85,10 @@ def _check_rank_assignment():
     return (group_rank, rank, world_size, role_rank, role_world_size)
 
 
+def _get_env_var(env_var: str):
+    return os.environ[env_var]
+
+
 def echo(msg):
     return msg
 
@@ -99,6 +103,7 @@ def _check_env_function():
     os.environ["RANK"]
     os.environ["LOCAL_RANK"]
     os.environ["ROLE_RANK"]
+    os.environ["ROLE_NAME"]
     os.environ["GROUP_RANK"]
     os.environ["LOCAL_WORLD_SIZE"]
     os.environ["ROLE_WORLD_SIZE"]
@@ -199,6 +204,14 @@ class LocalElasticAgentTest(unittest.TestCase):
             monitor_interval=monitor_interval,
         )
         return spec
+
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
+    def test_check_role_name(self):
+        spec = self._get_worker_spec(fn=_get_env_var, args=("ROLE_NAME",))
+        agent = LocalElasticAgent(spec, start_method="fork")
+        res = agent.run()
+        for role_name in res.values():
+            self.assertEquals(spec.role, role_name)
 
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_run_distributed_sum(self):

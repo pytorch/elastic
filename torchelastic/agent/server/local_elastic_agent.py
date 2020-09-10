@@ -46,6 +46,7 @@ class _DistInfo:
         "restart_count",
         "max_restarts",
         "run_id",
+        "role_name",
     ]
 
     def __init__(
@@ -61,6 +62,7 @@ class _DistInfo:
         restart_count: int,
         max_restarts: int,
         run_id: str,
+        role_name: str,
     ):
         self.rank = rank
         self.group_rank = group_rank
@@ -73,6 +75,7 @@ class _DistInfo:
         self.restart_count = restart_count
         self.max_restarts = max_restarts
         self.run_id = run_id
+        self.role_name = role_name
 
 
 def _wrap(local_rank, ret_val_queue, dist_infos, fn, args):
@@ -91,6 +94,7 @@ def _wrap(local_rank, ret_val_queue, dist_infos, fn, args):
     os.environ["RANK"] = str(info.rank)
     os.environ["GROUP_RANK"] = str(info.group_rank)
     os.environ["ROLE_RANK"] = str(info.role_rank)
+    os.environ["ROLE_NAME"] = info.role_name
     os.environ["LOCAL_WORLD_SIZE"] = str(info.local_world_size)
     os.environ["WORLD_SIZE"] = str(info.world_size)
     os.environ["ROLE_WORLD_SIZE"] = str(info.role_world_size)
@@ -179,7 +183,7 @@ class LocalElasticAgent(SimpleElasticAgent):
                 worker.global_rank,
                 worker_group.group_rank,
                 worker.role_rank,
-                worker_group.spec.local_world_size,
+                spec.local_world_size,
                 worker.role_world_size,
                 worker.world_size,
                 master_addr,
@@ -187,6 +191,7 @@ class LocalElasticAgent(SimpleElasticAgent):
                 restart_count,
                 spec.max_restarts,
                 spec.rdzv_handler.get_run_id(),
+                spec.role,
             )
 
         self._ret_val_queue = multiprocessing.get_context(self._start_method).Queue()
