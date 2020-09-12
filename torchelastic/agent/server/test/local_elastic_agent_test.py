@@ -24,10 +24,6 @@ from torchelastic.agent.server.api import (
     WorkerState,
 )
 from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
-from torchelastic.multiprocessing.spawn import (
-    WorkerRaisedException,
-    WorkerSignaledException,
-)
 from torchelastic.rendezvous import RendezvousParameters
 from torchelastic.rendezvous.etcd_server import EtcdServer
 from torchelastic.test.test_utils import is_asan_or_tsan, is_tsan
@@ -356,7 +352,7 @@ class LocalElasticAgentTest(unittest.TestCase):
 
         excs = cm.exception.get_worker_exceptions()
         for i in range(spec.local_world_size):
-            self.assertTrue(isinstance(excs[i], WorkerRaisedException))
+            self.assertTrue(isinstance(excs[i], Exception))
 
         self.assertEqual(WorkerState.FAILED, agent.get_worker_group().state)
         self.assertEqual(0, agent._remaining_restarts)
@@ -617,27 +613,3 @@ class LocalElasticAgentTest(unittest.TestCase):
         agent = LocalElasticAgent(spec, start_method="fork")
         agent.run()
         barrier_mock.assert_called_once()
-
-    @unittest.skipIf(is_asan_or_tsan(), "test incompatible with asan or tsan")
-    def test_run_segv_function(self):
-        expected_error_index = 0
-        expected_failure = signal.SIGSEGV
-        spec = self._get_worker_spec(
-            fn=_fatal_signal_function,
-            max_restarts=2,
-            args=(expected_error_index, expected_failure),
-        )
-        try:
-            agent = LocalElasticAgent(spec, start_method="spawn")
-            with self.assertRaises(WorkerGroupFailureException) as cm:
-                agent.run()
-        finally:
-            spec.rdzv_handler.shutdown()
-
-        excs = cm.exception.get_worker_exceptions()
-        for i in range(spec.local_world_size):
-            self.assertTrue(isinstance(excs[i], WorkerSignaledException))
-            self.assertEqual(expected_failure.name, excs[i].signal_name)
-
-        self.assertEqual(WorkerState.FAILED, agent.get_worker_group().state)
-        self.assertEqual(0, agent._remaining_restarts)
