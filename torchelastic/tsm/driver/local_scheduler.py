@@ -308,3 +308,9 @@ class LocalScheduler(Scheduler):
             if app.run_mode == RunMode.MANAGED:
                 log.info(f"Terminating managed app: {app_id}")
                 self._cancel_existing(app_id)
+
+
+def create_scheduler(**kwargs) -> LocalScheduler:
+    image_fetcher = LocalDirectoryImageFetcher()
+    cache_size = kwargs.get("cache_size",100)
+    return LocalScheduler(image_fetcher, cache_size=cache_size)
