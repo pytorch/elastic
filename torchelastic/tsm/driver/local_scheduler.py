@@ -21,6 +21,7 @@ from torchelastic.tsm.driver.api import (
     RunMode,
     Scheduler,
     is_terminal,
+    macros,
 )
 from torchelastic.utils.logging import get_logger
 
@@ -213,7 +214,8 @@ class LocalScheduler(Scheduler):
             img_root = self._image_fetcher.fetch(container.image)
             cmd = os.path.join(img_root, role.entrypoint)
             for _ in range(role.num_replicas):
-                args = [cmd] + role.args
+                args = [cmd] + macros.substitute(role.args, img_root, app_id)
+                log.info(f"Running {args} with env: {role.env}")
                 proc = subprocess.Popen(args, env=role.env)
                 local_app.add_process(role.name, proc)
 
@@ -312,5 +314,5 @@ class LocalScheduler(Scheduler):
 
 def create_scheduler(**kwargs) -> LocalScheduler:
     image_fetcher = LocalDirectoryImageFetcher()
-    cache_size = kwargs.get("cache_size",100)
+    cache_size = kwargs.get("cache_size", 100)
     return LocalScheduler(image_fetcher, cache_size=cache_size)

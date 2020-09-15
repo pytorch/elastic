@@ -8,6 +8,7 @@
 
 import abc
 from enum import Enum
+from string import Template
 from typing import Any, Dict, List, Optional
 
 
@@ -123,6 +124,40 @@ class Container(BaseObject):
 NULL_CONTAINER: Container = Container(image="<NULL_IMAGE>")
 
 
+class macros:
+    """
+    Defines macros that can be used with ``Role.entrypoint`` and ``Role.args``.
+    The macros will be substituted at runtime to their actual values.
+
+    Available macros:
+
+    1. ``img_root`` - root directory of the pulled image on the container
+    2. ``app_id`` - application id (same as the return value of ``session.run(app)``)
+    3. ``session_name`` - name of the session from which the app was run
+
+    Example:
+
+    ::
+
+    trainer = Role(name="trainer").runs("hello_world.py", "--app_id", macros.app_id)
+    app = Application("train_app").of(trainer)
+    app_id = session.run(app)
+
+    # runs: hello_world.py --app_id ${app_id}
+    """
+
+    img_root = "${img_root}"
+    app_id = "${app_id}"
+
+    @staticmethod
+    def substitute(args: List[str], img_root: str, app_id: str):
+        args_sub = []
+        for arg in args:
+            sub = Template(arg).safe_substitute(img_root=img_root, app_id=app_id)
+            args_sub.append(sub)
+        return args_sub
+
+
 class Role(BaseObject):
     """
     A set of nodes that perform a specific duty within the ``Application``.
@@ -172,6 +207,74 @@ class Role(BaseObject):
     def replicas(self, replicas: int) -> "Role":
         self.num_replicas = replicas
         return self
+
+
+class ElasticRole(Role):
+    """
+    A ``Role`` for which the user provided ``entrypoint`` is executed with the
+    torchelastic agent (in the container). Note that the torchelastic agent
+    invokes multiple copies of ``entrypoint``.
+
+    For more information about torchelastic see
+    `torchelastic quickstart docs <http://pytorch.org/elastic/0.2.0/quickstart.html>`__.
+
+    .. important:: It is the responsibility of the user to ensure that the
+                   container's image includes torchelastic. Since TSM has no
+                   control over the build process of the image, it cannot
+                   automatically include torchelastic in the container's image.
+
+    The following example launches 2 ``replicas`` (nodes) of an elastic ``my_train_script.py``
+    that is allowed to scale between 2 to 4 nodes. Each node runs 8 workers which are allowed
+    to fail and restart a maximum of 3 times.
+
+    .. warning:: ``replicas`` MUST BE an integer between (inclusive) ``nnodes``. That is,
+                   ``ElasticRole("trainer", nnodes="2:4").replicas(5)`` is invalid and will
+                   result in undefined behavior.
+    ::
+
+    # effectively runs:
+    #    python -m torchelastic.distributed.launch
+    #        --nproc_per_node 8
+    #        --nnodes 2:4
+    #        --max_restarts 3
+    #        my_train_script.py --script_arg foo --another_arg bar
+
+    elastic_trainer = ElasticRole("trainer", nproc_per_node=8, nnodes="2:4", max_restarts=3)
+                      .runs("my_train_script.py", "--script_arg", "foo", "--another_arg", "bar")
+                      .on(container)
+                      .replicas(2)
+
+    """
+
+    def __init__(self, name: str, **launch_kwargs):
+        super().__init__(name)
+        launch_kwargs.setdefault("rdzv_backend", "etcd")
+        launch_kwargs.setdefault("rdzv_id", macros.app_id)
+
+        self.torchelastic_launch_args = []
+        for (arg, val) in launch_kwargs.items():
+            if isinstance(val, bool):
+                # treat boolean kwarg as a flag
+                if val:
+                    self.torchelastic_launch_args += [f"--{arg}"]
+            else:
+                self.torchelastic_launch_args += [f"--{arg}", str(val)]
+
+    def runs(self, entrypoint: str, *args: str, **kwargs: str) -> "ElasticRole":
+        self._setup_torchelastic_launcher()
+        self.args += self.torchelastic_launch_args
+        self.args += [entrypoint, *args]
+        self.env.update({**kwargs})
+        return self
+
+    def _setup_torchelastic_launcher(self):
+        """
+        Sets up torchelastic launcher so that it wraps the user provided entrypoint.
+        If a custom elastic launch CLI is to be used, extend this class and override
+        this method.
+        """
+        self.entrypoint = "python"
+        self.args = ["-m", "torchelastic.distributed.launch"]
 
 
 class RunMode(Enum):
@@ -391,11 +494,6 @@ class Session(abc.ABC):
 
     def __init__(self, name: str):
         self._name: str = name
-
-        # object APIs
-        self.app = Application
-        self.role = Role
-        self.container = Container
 
     def name(self) -> str:
         """

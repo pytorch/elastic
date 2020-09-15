@@ -14,10 +14,12 @@ from torchelastic.tsm.driver.api import (
     AppState,
     AppStatus,
     Container,
+    ElasticRole,
     Resources,
     Role,
     RunMode,
     Session,
+    macros,
 )
 
 
@@ -66,6 +68,85 @@ class RoleBuilderTest(unittest.TestCase):
         self.assertEqual(["hello", "world"], trainer.args)
         self.assertEqual(container, trainer.container)
         self.assertEqual(2, trainer.num_replicas)
+
+
+class ElasticRoleBuilderTest(unittest.TestCase):
+    def test_build_elastic_role(self):
+        # runs: python -m torchelastic.distributed.launch
+        #                    --nnodes 2:4
+        #                    --max_restarts 3
+        #                    --no_python True
+        #                    --rdzv_backend etcd
+        #                    --rdzv_id ${app_id}
+        #                    /bin/echo hello world
+        container = Container(image="test_image")
+        container.ports(foo=8080)
+        elastic_trainer = (
+            ElasticRole("elastic_trainer", nnodes="2:4", max_restarts=3, no_python=True)
+            .runs("/bin/echo", "hello", "world", ENV_VAR_1="FOOBAR")
+            .on(container)
+            .replicas(2)
+        )
+        self.assertEqual("elastic_trainer", elastic_trainer.name)
+        self.assertEqual("python", elastic_trainer.entrypoint)
+        self.assertEqual(
+            [
+                "-m",
+                "torchelastic.distributed.launch",
+                "--nnodes",
+                "2:4",
+                "--max_restarts",
+                "3",
+                "--no_python",
+                "--rdzv_backend",
+                "etcd",
+                "--rdzv_id",
+                macros.app_id,
+                "/bin/echo",
+                "hello",
+                "world",
+            ],
+            elastic_trainer.args,
+        )
+        self.assertEqual({"ENV_VAR_1": "FOOBAR"}, elastic_trainer.env)
+        self.assertEqual(container, elastic_trainer.container)
+        self.assertEqual(2, elastic_trainer.num_replicas)
+
+    def test_build_elastic_role_override_rdzv_params(self):
+        role = ElasticRole(
+            "test_role", nnodes="2:4", rdzv_backend="zeus", rdzv_id="foobar"
+        ).runs("user_script.py", "--script_arg", "foo")
+        self.assertEqual(
+            [
+                "-m",
+                "torchelastic.distributed.launch",
+                "--nnodes",
+                "2:4",
+                "--rdzv_backend",
+                "zeus",
+                "--rdzv_id",
+                "foobar",
+                "user_script.py",
+                "--script_arg",
+                "foo",
+            ],
+            role.args,
+        )
+
+    def test_build_elastic_role_flag_args(self):
+        role = ElasticRole("test_role", no_python=False).runs("user_script.py")
+        self.assertEqual(
+            [
+                "-m",
+                "torchelastic.distributed.launch",
+                "--rdzv_backend",
+                "etcd",
+                "--rdzv_id",
+                macros.app_id,
+                "user_script.py",
+            ],
+            role.args,
+        )
 
 
 class ApplicationTest(unittest.TestCase):
