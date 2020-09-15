@@ -11,7 +11,14 @@ import shutil
 import tempfile
 import unittest
 
-from torchelastic.tsm.driver.api import Application, AppState, Container, Role, RunMode
+from torchelastic.tsm.driver.api import (
+    Application,
+    AppState,
+    Container,
+    Role,
+    RunMode,
+    macros,
+)
 from torchelastic.tsm.driver.local_scheduler import (
     LocalDirectoryImageFetcher,
     LocalScheduler,
@@ -60,10 +67,11 @@ class LocalSchedulerTest(unittest.TestCase):
         shutil.rmtree(self.test_dir)
 
     def test_submit(self):
-        test_file = os.path.join(self.test_dir, "test_file")
+        # make sure the macro substitution works
+        # touch a file called {app_id} in the img_root directory (self.test_dir)
         role = (
             Role("role1")
-            .runs("touch.sh", test_file)
+            .runs("touch.sh", f"{macros.img_root}/{macros.app_id}")
             .on(self.test_container)
             .replicas(2)
         )
@@ -73,7 +81,8 @@ class LocalSchedulerTest(unittest.TestCase):
 
         self.assertEqual("test_app_0", app_id)
         self.assertEqual(AppState.SUCCEEDED, self.scheduler.wait(app_id).state)
-        self.assertTrue(os.path.isfile(test_file))
+        # time.sleep(10000)
+        self.assertTrue(os.path.isfile(os.path.join(self.test_dir, app_id)))
 
         role = Role("role1").runs("fail.sh").on(self.test_container).replicas(2)
         app = Application(name="test_app").of(role)

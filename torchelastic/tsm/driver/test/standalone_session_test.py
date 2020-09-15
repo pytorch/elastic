@@ -11,10 +11,12 @@ import tempfile
 import unittest
 
 from torchelastic.tsm.driver.api import (
+    Application,
     AppNotReRunnableException,
     AppState,
     Container,
     Resources,
+    Role,
     RunMode,
     UnknownAppException,
 )
@@ -55,22 +57,16 @@ class StandaloneSessionTest(unittest.TestCase):
         session = StandaloneSession(
             name="test_session", scheduler=self.scheduler, wait_interval=1
         )
-        role = (
-            session.role(name="touch")
-            .runs("touch.sh", test_file)
-            .on(self.test_container)
-        )
-        app = session.app("name").of(role)
+        role = Role(name="touch").runs("touch.sh", test_file).on(self.test_container)
+        app = Application("name").of(role)
 
         app_id = session.run(app)
         self.assertEqual(AppState.SUCCEEDED, session.wait(app_id).state)
 
     def test_attach(self):
         session1 = StandaloneSession(name="test_session1", scheduler=self.scheduler)
-        role = (
-            session1.role(name="sleep").runs("sleep.sh", "60").on(self.test_container)
-        )
-        app = session1.app("sleeper").of(role)
+        role = Role(name="sleep").runs("sleep.sh", "60").on(self.test_container)
+        app = Application("sleeper").of(role)
 
         app_id = session1.run(app)
 
@@ -84,12 +80,8 @@ class StandaloneSessionTest(unittest.TestCase):
     def test_attach_and_run(self):
         session1 = StandaloneSession(name="test_session1", scheduler=self.scheduler)
         test_file = os.path.join(self.test_dir, "test_file")
-        role = (
-            session1.role(name="touch")
-            .runs("touch.sh", test_file)
-            .on(self.test_container)
-        )
-        app = session1.app("touch_test_file").of(role)
+        role = Role(name="touch").runs("touch.sh", test_file).on(self.test_container)
+        app = Application("touch_test_file").of(role)
         app_id = session1.run(app)
 
         session2 = StandaloneSession(name="test_session2", scheduler=self.scheduler)
@@ -101,8 +93,8 @@ class StandaloneSessionTest(unittest.TestCase):
         session = StandaloneSession(
             name="test_session", scheduler=self.scheduler, wait_interval=1
         )
-        role = session.role(name="touch").runs("sleep.sh", "1").on(self.test_container)
-        app = session.app("sleeper").of(role)
+        role = Role(name="touch").runs("sleep.sh", "1").on(self.test_container)
+        app = Application("sleeper").of(role)
 
         num_apps = 4
 
@@ -125,12 +117,8 @@ class StandaloneSessionTest(unittest.TestCase):
             name="test_session", scheduler=scheduler, wait_interval=1
         )
         test_file = os.path.join(self.test_dir, "test_file")
-        role = (
-            session.role(name="touch")
-            .runs("touch.sh", test_file)
-            .on(self.test_container)
-        )
-        app = session.app("touch_test_file").of(role)
+        role = Role(name="touch").runs("touch.sh", test_file).on(self.test_container)
+        app = Application("touch_test_file").of(role)
 
         # local scheduler was setup with a cache size of 1
         # run the same app twice (the first will be removed from the scheduler's cache)
@@ -151,8 +139,8 @@ class StandaloneSessionTest(unittest.TestCase):
         session = StandaloneSession(
             name="test_session", scheduler=self.scheduler, wait_interval=1
         )
-        role = session.role(name="sleep").runs("sleep.sh", "60").on(self.test_container)
-        app = session.app("sleeper").of(role)
+        role = Role(name="sleep").runs("sleep.sh", "60").on(self.test_container)
+        app = Application("sleeper").of(role)
         app_id = session.run(app)
         self.assertEqual(AppState.RUNNING, session.status(app_id).state)
         session.stop(app_id)

@@ -14,11 +14,16 @@ from torchelastic.tsm.driver.api import (  # noqa: F401 F403
     Role,
     RunMode,
     Session,
+    macros,
 )
 from torchelastic.tsm.driver.schedulers import get_scheduler
-from torchelastic.tsm.driver.standalone_session import (  # noqa: F401 F403
-    StandaloneSession,
-)
+from torchelastic.tsm.driver.standalone_session import StandaloneSession
+
+
+try:
+    from torchelastic.tsm.driver.api_extended import *  # noqa: F401 F403
+except ModuleNotFoundError:
+    pass
 
 
 def session(
