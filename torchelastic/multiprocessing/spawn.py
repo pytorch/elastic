@@ -18,6 +18,10 @@ from typing import List, Optional
 from torchelastic.multiprocessing import error_reporter
 
 
+def get_worker_id(rank, pid) -> str:
+    return f"[Rank:{rank}, pid:{pid}]"
+
+
 class SubprocessException(Exception):
     __slots__ = ["error_index", "error_pid"]
 
@@ -35,9 +39,13 @@ class WorkerRaisedException(SubprocessException):
         msg: str,
         error_report_msg: Optional[str] = None,
     ):
-        if error_report_msg:
-            msg = "".join([msg, "\n**Captured errors**\n", error_report_msg])
-        super().__init__(error_index, error_pid, msg)
+        worker_id = get_worker_id(error_index, error_pid)
+        error_msg = (
+            f"{worker_id} failed due to: \n"
+            f"{msg}\n"
+            f"Additional information: {error_report_msg}"
+        )
+        super().__init__(error_index, error_pid, error_msg)
 
 
 class WorkerSignaledException(SubprocessException):
@@ -46,7 +54,14 @@ class WorkerSignaledException(SubprocessException):
     def __init__(
         self, error_index: int, error_pid: int, signal_name: str, signal_trace_msg: str
     ):
-        super().__init__(error_index, error_pid, signal_trace_msg)
+        signal_msg = (
+            signal_trace_msg
+            if signal_trace_msg
+            else "Unable to retrieve the signal stack. Check logs for more information"
+        )
+        worker_id = get_worker_id(error_index, error_pid)
+        error_msg = f"{worker_id} failed with signal: {signal_name}. \n {signal_msg}"
+        super().__init__(error_index, error_pid, error_msg)
         self.signal_name = signal_name
 
 
@@ -56,7 +71,14 @@ class WorkerExitedException(SubprocessException):
     def __init__(
         self, error_index: int, error_pid: int, exit_code: int, exit_trace_msg: str
     ):
-        super().__init__(error_index, error_pid, exit_trace_msg)
+        exit_msg = (
+            exit_trace_msg
+            if exit_trace_msg
+            else "Unable to retrieve the exit stack. Check logs for more information"
+        )
+        worker_id = get_worker_id(error_index, error_pid)
+        error_msg = f"{worker_id} exited with code: {exit_code}. \n Trace: {exit_msg}"
+        super().__init__(error_index, error_pid, error_msg)
         self.exit_code = exit_code
 
 
@@ -206,8 +228,7 @@ def start_processes(
     fn, args=(), nprocs=1, join=True, daemon=False, start_method="spawn"
 ):
     _python_version_check()
-    timestamp_str_ms = str(int(time.monotonic() * 1000))
-    error_reporter.configure(timestamp_str_ms)
+    error_reporter.configure()
     mp = multiprocessing.get_context(start_method)
     error_queues = []
     processes = []

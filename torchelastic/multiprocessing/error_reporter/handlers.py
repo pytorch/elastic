@@ -8,4 +8,11 @@
 # Multiprocessing error-reporting module
 
 
-from .api import configure, exec_fn, get_error  # noqa F401
+from torchelastic.multiprocessing.error_reporter.signal_handler import (
+    LocalSignalHandler,
+    SignalHandler,
+)
+
+
+def get_signal_handler() -> SignalHandler:
+    return LocalSignalHandler()
