@@ -213,8 +213,10 @@ class LocalScheduler(Scheduler):
 
             img_root = self._image_fetcher.fetch(container.image)
             cmd = os.path.join(img_root, role.entrypoint)
-            for _ in range(role.num_replicas):
-                args = [cmd] + macros.substitute(role.args, img_root, app_id)
+            for replica_id in range(role.num_replicas):
+                args = [cmd] + macros.substitute(
+                    role.args, img_root, app_id, str(replica_id)
+                )
                 log.info(f"Running {args} with env: {role.env}")
                 proc = subprocess.Popen(args, env=role.env)
                 local_app.add_process(role.name, proc)
