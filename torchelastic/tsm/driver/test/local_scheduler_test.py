@@ -68,12 +68,14 @@ class LocalSchedulerTest(unittest.TestCase):
 
     def test_submit(self):
         # make sure the macro substitution works
-        # touch a file called {app_id} in the img_root directory (self.test_dir)
+        # touch a file called {app_id}_{replica_id} in the img_root directory (self.test_dir)
+        test_file_name = f"{macros.app_id}_{macros.replica_id}"
+        num_replicas = 2
         role = (
             Role("role1")
-            .runs("touch.sh", f"{macros.img_root}/{macros.app_id}")
+            .runs("touch.sh", os.path.join(f"{macros.img_root}", test_file_name))
             .on(self.test_container)
-            .replicas(2)
+            .replicas(num_replicas)
         )
         app = Application(name="test_app").of(role)
 
@@ -81,8 +83,11 @@ class LocalSchedulerTest(unittest.TestCase):
 
         self.assertEqual("test_app_0", app_id)
         self.assertEqual(AppState.SUCCEEDED, self.scheduler.wait(app_id).state)
-        # time.sleep(10000)
-        self.assertTrue(os.path.isfile(os.path.join(self.test_dir, app_id)))
+
+        for i in range(num_replicas):
+            self.assertTrue(
+                os.path.isfile(os.path.join(self.test_dir, f"{app_id}_{i}"))
+            )
 
         role = Role("role1").runs("fail.sh").on(self.test_container).replicas(2)
         app = Application(name="test_app").of(role)

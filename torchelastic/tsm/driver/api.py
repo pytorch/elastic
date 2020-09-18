@@ -7,6 +7,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import abc
+import os
 from enum import Enum
 from string import Template
 from typing import Any, Dict, List, Optional
@@ -133,7 +134,13 @@ class macros:
 
     1. ``img_root`` - root directory of the pulled image on the container
     2. ``app_id`` - application id (same as the return value of ``session.run(app)``)
-    3. ``session_name`` - name of the session from which the app was run
+    3. ``replica_id`` - unique id for each instance of a replica of a Role,
+                        for instance a role with 3 replicas could have the 0, 1, 2
+                        as replica ids. Note that when the container fails and is
+                        replaced, the new container will have the same ``replica_id``
+                        as the one it is replacing. For instance if node 1 failed and
+                        was replaced by the scheduler the replacing node will also
+                        have ``replica_id=1``.
 
     Example:
 
@@ -148,12 +155,15 @@ class macros:
 
     img_root = "${img_root}"
     app_id = "${app_id}"
+    replica_id = "${replica_id}"
 
     @staticmethod
-    def substitute(args: List[str], img_root: str, app_id: str):
+    def substitute(args: List[str], img_root: str, app_id: str, replica_id: str):
         args_sub = []
         for arg in args:
-            sub = Template(arg).safe_substitute(img_root=img_root, app_id=app_id)
+            sub = Template(arg).safe_substitute(
+                img_root=img_root, app_id=app_id, replica_id=replica_id
+            )
             args_sub.append(sub)
         return args_sub
 
@@ -250,6 +260,7 @@ class ElasticRole(Role):
         super().__init__(name)
         launch_kwargs.setdefault("rdzv_backend", "etcd")
         launch_kwargs.setdefault("rdzv_id", macros.app_id)
+        launch_kwargs.setdefault("role", name)
 
         self.torchelastic_launch_args = []
         for (arg, val) in launch_kwargs.items():
@@ -262,6 +273,10 @@ class ElasticRole(Role):
 
     def runs(self, entrypoint: str, *args: str, **kwargs: str) -> "ElasticRole":
         self._setup_torchelastic_launcher()
+        if not os.path.isabs(entrypoint) and not entrypoint.startswith(macros.img_root):
+            # make entrypoint relative to {img_root} ONLY if it is not an absolute path
+            entrypoint = os.path.join(macros.img_root, entrypoint)
+
         self.args += self.torchelastic_launch_args
         self.args += [entrypoint, *args]
         self.env.update({**kwargs})

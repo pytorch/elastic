@@ -5,6 +5,7 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
+import os
 import unittest
 from typing import Dict, Optional
 
@@ -102,6 +103,8 @@ class ElasticRoleBuilderTest(unittest.TestCase):
                 "etcd",
                 "--rdzv_id",
                 macros.app_id,
+                "--role",
+                "elastic_trainer",
                 "/bin/echo",
                 "hello",
                 "world",
@@ -126,7 +129,9 @@ class ElasticRoleBuilderTest(unittest.TestCase):
                 "zeus",
                 "--rdzv_id",
                 "foobar",
-                "user_script.py",
+                "--role",
+                "test_role",
+                os.path.join(macros.img_root, "user_script.py"),
                 "--script_arg",
                 "foo",
             ],
@@ -143,7 +148,28 @@ class ElasticRoleBuilderTest(unittest.TestCase):
                 "etcd",
                 "--rdzv_id",
                 macros.app_id,
-                "user_script.py",
+                "--role",
+                "test_role",
+                os.path.join(macros.img_root, "user_script.py"),
+            ],
+            role.args,
+        )
+
+    def test_build_elastic_role_img_root_already_in_entrypoint(self):
+        role = ElasticRole("test_role", no_python=False).runs(
+            os.path.join(macros.img_root, "user_script.py")
+        )
+        self.assertEqual(
+            [
+                "-m",
+                "torchelastic.distributed.launch",
+                "--rdzv_backend",
+                "etcd",
+                "--rdzv_id",
+                macros.app_id,
+                "--role",
+                "test_role",
+                os.path.join(macros.img_root, "user_script.py"),
             ],
             role.args,
         )
