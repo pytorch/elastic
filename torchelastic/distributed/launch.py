@@ -312,6 +312,9 @@ def parse_args(args):
         help="multiprocessing start_method to use when creating workers",
     )
     parser.add_argument(
+        "--role", type=str, default="default", help="user-defined role for the workers"
+    )
+    parser.add_argument(
         "-m",
         "--module",
         default=False,
@@ -497,7 +500,7 @@ def main(args=None):
 
     try:
         spec = WorkerSpec(
-            role="default",
+            role=args.role,
             local_world_size=nproc_per_node,
             fn=wrapper_fn,
             args=(omp_num_threads, cmd),
