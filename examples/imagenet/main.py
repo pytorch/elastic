@@ -282,11 +282,7 @@ def initialize_data_loader(
         traindir,
         transforms.Compose(
             [
-                # pyre-fixme[16]: Module `transforms` has no attribute
-                #  `RandomResizedCrop`.
                 transforms.RandomResizedCrop(224),
-                # pyre-fixme[16]: Module `transforms` has no attribute
-                #  `RandomHorizontalFlip`.
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 normalize,
