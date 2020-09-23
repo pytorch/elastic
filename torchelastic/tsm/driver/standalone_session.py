@@ -51,7 +51,9 @@ class StandaloneSession(Session):
             del self._apps[app_id]
             return None
 
-        return AppStatus(desc.state, desc.num_restarts, desc.msg)
+        app_status = AppStatus(desc.state, desc.num_restarts, desc.msg)
+        app_status.ui_url = desc.ui_url
+        return app_status
 
     def wait(self, app_id: str) -> Optional[AppStatus]:
         while True:

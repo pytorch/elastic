@@ -370,6 +370,7 @@ class AppStatus:
         self.state: AppState = state
         self.num_restarts: int = num_restarts
         self.msg: str = msg
+        self.ui_url: Optional[str] = None
 
     def is_terminal(self) -> bool:
         return is_terminal(self.state)
@@ -395,6 +396,8 @@ class DescribeAppResponse:
         self.state: AppState = AppState.UNSUBMITTED
         self.num_restarts: int = -1
         self.msg: str = ""
+        self.ui_url: Optional[str] = None
+
         # TODO T72035216 add other fields that come back from the scheduler's describe
         # API. Typically this includes some type of JobDefinition which
         # contains all the data to recreate the Application object. Store them

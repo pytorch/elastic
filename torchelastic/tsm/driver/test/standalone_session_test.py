@@ -9,12 +9,14 @@ import os
 import shutil
 import tempfile
 import unittest
+from unittest.mock import MagicMock
 
 from torchelastic.tsm.driver.api import (
     Application,
     AppNotReRunnableException,
     AppState,
     Container,
+    DescribeAppResponse,
     Resources,
     Role,
     RunMode,
@@ -152,6 +154,22 @@ class StandaloneSessionTest(unittest.TestCase):
         )
         with self.assertRaises(UnknownAppException):
             session.status("unknown_app_id")
+
+    def test_status_ui_url(self):
+        app_id = "test_app"
+        mock_scheduler = MagicMock()
+        resp = DescribeAppResponse()
+        resp.ui_url = "https://foobar"
+        mock_scheduler.submit.return_value = app_id
+        mock_scheduler.describe.return_value = resp
+
+        session = StandaloneSession(
+            name="test_ui_url_session", scheduler=mock_scheduler
+        )
+        role = Role("ignored").runs("/bin/echo").on(self.test_container)
+        session.run(Application(app_id).of(role))
+        status = session.status(app_id)
+        self.assertEquals(resp.ui_url, status.ui_url)
 
     def test_wait_unknown_app(self):
         session = StandaloneSession(
