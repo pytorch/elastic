@@ -51,8 +51,7 @@ class StandaloneSession(Session):
             del self._apps[app_id]
             return None
 
-        msg = "TODO return a message"
-        return AppStatus(desc.state, desc.num_restarts, msg)
+        return AppStatus(desc.state, desc.num_restarts, desc.msg)
 
     def wait(self, app_id: str) -> Optional[AppStatus]:
         while True:

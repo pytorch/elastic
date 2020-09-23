@@ -52,7 +52,7 @@ class Resources(BaseObject):
         self.cpu: int = cpu
         self.gpu: int = gpu
         self.memMB: int = memMB
-        self.capabilities: Optional[Dict[str, Any]] = capabilities
+        self.capabilities: Dict[str, Any] = capabilities if capabilities else {}
 
     @staticmethod
     def copy(original: "Resources", **capabilities):
@@ -61,10 +61,7 @@ class Resources(BaseObject):
         are present in the original resource and as parameter, the one from parameter
         will be used.
         """
-        res_capabilities = {}
-        if original.capabilities:
-            # pyre-fixme[6]: Expected `typing.Mapping[typing.Any, typing.Any]`.
-            res_capabilities.update(original.capabilities)
+        res_capabilities = dict(original.capabilities)
         res_capabilities.update(capabilities)
         return Resources(
             cpu=original.cpu,
@@ -397,6 +394,7 @@ class DescribeAppResponse:
         self.app_id: str = "<NOT_SET>"
         self.state: AppState = AppState.UNSUBMITTED
         self.num_restarts: int = -1
+        self.msg: str = ""
         # TODO T72035216 add other fields that come back from the scheduler's describe
         # API. Typically this includes some type of JobDefinition which
         # contains all the data to recreate the Application object. Store them
