@@ -44,7 +44,7 @@ class Resources(BaseObject):
     ):
         """
         Arguments:
-            cpu: number of cpus
+            cpu: number of cpu cores (note: not hyper threads)
             gpu: number of gpus
             memMB: MB of ram
             metadata: additional hardware specs (interpreted by scheduler)
