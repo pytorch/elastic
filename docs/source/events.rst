@@ -5,7 +5,7 @@ Events
 
 .. automodule:: torchelastic.events
 
-Classes
+Event Handlers
 -----------------
 
 .. currentmodule:: torchelastic.events.api
@@ -19,7 +19,7 @@ Classes
 .. autoclass:: NullEventHandler
 
 
-Methods
+API Methods
 ------------
 
 .. autofunction:: torchelastic.events.configure

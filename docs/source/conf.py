@@ -49,7 +49,6 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinxcontrib.katex",
     "sphinx.ext.autosectionlabel",
-    "m2r",
 ]
 
 # katex options

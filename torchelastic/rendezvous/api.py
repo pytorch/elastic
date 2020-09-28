@@ -123,17 +123,16 @@ class RendezvousHandler(abc.ABC):
         """
         Closes all resources that were open for rendezvous run.
 
-        Usage
+        Usage:
 
-            ::
+        ::
 
-            def main():
-                rdzv_handler = ..
-                try:
-                    rank, world_size, store = rdzv_handler.next_rendezvous()
-                finally:
-                    rdzv_handler.shutdown()
-
+         def main():
+             rdzv_handler = ...
+             try:
+               rank, world_size, store = rdzv_handler.next_rendezvous()
+             finally:
+               rdzv_handler.shutdown()
         """
         pass
 

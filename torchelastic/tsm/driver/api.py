@@ -71,7 +71,7 @@ class Container:
 
     ::
 
-    my_container = Container(image="pytorch/torch:1")
+     my_container = Container(image="pytorch/torch:1")
                        .require(Resources(cpu=1, gpu=1, memMB=500))
                        .ports(tcp_store=8080, tensorboard=8081)
     """
@@ -123,11 +123,12 @@ class macros:
 
     ::
 
-    trainer = Role(name="trainer").runs("hello_world.py", "--app_id", macros.app_id)
-    app = Application("train_app").of(trainer)
-    app_id = session.run(app)
+     # runs: hello_world.py --app_id ${app_id}
+     trainer = Role(name="trainer").runs("hello_world.py", "--app_id", macros.app_id)
+     app = Application("train_app").of(trainer)
+     app_id = session.run(app)
 
-    # runs: hello_world.py --app_id ${app_id}
+
     """
 
     img_root = "${img_root}"
@@ -159,7 +160,7 @@ class Role:
 
     ::
 
-    trainer = Role(name="trainer")
+     trainer = Role(name="trainer")
                  .runs("my_trainer.py", "--arg", "foo", ENV_VAR="FOOBAR")
                  .on(container)
                  .replicas(4)
@@ -225,19 +226,20 @@ class ElasticRole(Role):
     .. warning:: ``replicas`` MUST BE an integer between (inclusive) ``nnodes``. That is,
                    ``ElasticRole("trainer", nnodes="2:4").replicas(5)`` is invalid and will
                    result in undefined behavior.
+
     ::
 
-    # effectively runs:
-    #    python -m torchelastic.distributed.launch
-    #        --nproc_per_node 8
-    #        --nnodes 2:4
-    #        --max_restarts 3
-    #        my_train_script.py --script_arg foo --another_arg bar
+     # effectively runs:
+     #    python -m torchelastic.distributed.launch
+     #        --nproc_per_node 8
+     #        --nnodes 2:4
+     #        --max_restarts 3
+     #        my_train_script.py --script_arg foo --another_arg bar
 
-    elastic_trainer = ElasticRole("trainer", nproc_per_node=8, nnodes="2:4", max_restarts=3)
-                      .runs("my_train_script.py", "--script_arg", "foo", "--another_arg", "bar")
-                      .on(container)
-                      .replicas(2)
+     elastic_trainer = ElasticRole("trainer", nproc_per_node=8, nnodes="2:4", max_restarts=3)
+                        .runs("my_train_script.py", "--script_arg", "foo", "--another_arg", "bar")
+                        .on(container)
+                        .replicas(2)
 
     """
 
@@ -550,11 +552,11 @@ class Session(abc.ABC):
 
         ::
 
-        while(True):
-            app_status = status(app)
-            if app_status.is_terminal():
-                return
-            sleep(10)
+         while(True):
+             app_status = status(app)
+             if app_status.is_terminal():
+                 return
+             sleep(10)
 
         Returns:
             The terminal status of the application, or ``None`` if the app does not exist anymore
