@@ -8,51 +8,28 @@
 
 import abc
 import os
+from dataclasses import dataclass, field
 from enum import Enum
 from string import Template
 from typing import Any, Dict, List, Optional
 
 
-class BaseObject:
-    """
-    Base object class that all object APIs inherit from. Standardizes
-    things like serialization, versioning, to_string methods.
-
-    # TODO add serde + versioning methods for robust session.attach(app_id)
-    """
-
-    def __repr__(self):
-        str = []
-        for (field, value) in self.__dict__.items():
-            str.append(f"{field}:{value.__repr__()}")
-        return f"{{{', '.join(str)}}}"
-
-
-class Resources(BaseObject):
+@dataclass
+class Resources:
     """
     Represents resource requirements for a ``Container``.
-    """
 
-    __slots__ = ("cpu", "gpu", "memMB", "capabilities")
-
-    def __init__(
-        self,
-        cpu: int,
-        gpu: int,
-        memMB: int,
-        capabilities: Optional[Dict[str, Any]] = None,
-    ):
-        """
-        Arguments:
+    Arguments:
             cpu: number of cpu cores (note: not hyper threads)
             gpu: number of gpus
             memMB: MB of ram
-            metadata: additional hardware specs (interpreted by scheduler)
-        """
-        self.cpu: int = cpu
-        self.gpu: int = gpu
-        self.memMB: int = memMB
-        self.capabilities: Dict[str, Any] = capabilities if capabilities else {}
+            capabilities: additional hardware specs (interpreted by scheduler)
+    """
+
+    cpu: int
+    gpu: int
+    memMB: int
+    capabilities: Dict[str, Any] = field(default_factory=dict)
 
     @staticmethod
     def copy(original: "Resources", **capabilities):
@@ -71,11 +48,12 @@ class Resources(BaseObject):
         )
 
 
-# used for cases when resource does not matter (e.g. ignored)
+# sentinel value used for cases when resource does not matter (e.g. ignored)
 NULL_RESOURCE: Resources = Resources(cpu=-1, gpu=-1, memMB=-1)
 
 
-class Container(BaseObject):
+@dataclass
+class Container:
     """
     Represents the specifications of the container that instances of ``Roles``
     run on. Maps to the container abstraction that the underlying scheduler
@@ -98,10 +76,9 @@ class Container(BaseObject):
                        .ports(tcp_store=8080, tensorboard=8081)
     """
 
-    def __init__(self, image: str):
-        self.image: str = image
-        self.resources: Resources = NULL_RESOURCE
-        self.port_map: Dict[str, int] = {}
+    image: str
+    resources: Resources = NULL_RESOURCE
+    port_map: Dict[str, int] = field(default_factory=dict)
 
     def require(self, resources: Resources) -> "Container":
         """
@@ -118,8 +95,11 @@ class Container(BaseObject):
         return self
 
 
-# used as the "zero" element in the container group
-NULL_CONTAINER: Container = Container(image="<NULL_IMAGE>")
+# sentinel value used to represent missing string attributes, such as image or entrypoint
+MISSING: str = "<MISSING>"
+
+# sentinel value used as the "zero" element in the container group
+NULL_CONTAINER: Container = Container(image=MISSING)
 
 
 class macros:
@@ -165,7 +145,8 @@ class macros:
         return args_sub
 
 
-class Role(BaseObject):
+@dataclass
+class Role:
     """
     A set of nodes that perform a specific duty within the ``Application``.
     Examples:
@@ -182,24 +163,30 @@ class Role(BaseObject):
                  .runs("my_trainer.py", "--arg", "foo", ENV_VAR="FOOBAR")
                  .on(container)
                  .replicas(4)
-    """
 
-    def __init__(self, name: str):
-        """
-        Arguments:
+    Arguments:
             name - name of the role
             entrypoint - command (within the container) to invoke the role
             args - commandline arguments to the entrypoint cmd
             env - environment variable mappings
             container - container to run in
             replicas - number of container replicas to run
-        """
-        self.name: str = name
-        self.entrypoint: str = ""
-        self.args: List[str] = []
-        self.env: Dict[str, str] = {}
-        self.container: Container = NULL_CONTAINER
-        self.num_replicas: int = 1
+    """
+
+    name: str
+    entrypoint: str
+    args: List[str]
+    env: Dict[str, str]
+    container: Container
+    num_replicas: int
+
+    def __init__(self, name: str):
+        self.name = name
+        self.entrypoint = MISSING
+        self.args = []
+        self.env = {}
+        self.container = NULL_CONTAINER
+        self.num_replicas = 1
 
     def runs(self, entrypoint: str, *args: str, **kwargs: str) -> "Role":
         self.entrypoint = entrypoint
@@ -216,6 +203,7 @@ class Role(BaseObject):
         return self
 
 
+@dataclass
 class ElasticRole(Role):
     """
     A ``Role`` for which the user provided ``entrypoint`` is executed with the
@@ -253,13 +241,18 @@ class ElasticRole(Role):
 
     """
 
+    torchelastic_launch_args: List[str]
+
     def __init__(self, name: str, **launch_kwargs):
         super().__init__(name)
+        self.entrypoint = "python"
+        self.args += ["-m", "torchelastic.distributed.launch"]
+        self.torchelastic_launch_args = []
+
         launch_kwargs.setdefault("rdzv_backend", "etcd")
         launch_kwargs.setdefault("rdzv_id", macros.app_id)
         launch_kwargs.setdefault("role", name)
 
-        self.torchelastic_launch_args = []
         for (arg, val) in launch_kwargs.items():
             if isinstance(val, bool):
                 # treat boolean kwarg as a flag
@@ -269,7 +262,6 @@ class ElasticRole(Role):
                 self.torchelastic_launch_args += [f"--{arg}", str(val)]
 
     def runs(self, entrypoint: str, *args: str, **kwargs: str) -> "ElasticRole":
-        self._setup_torchelastic_launcher()
         if not os.path.isabs(entrypoint) and not entrypoint.startswith(macros.img_root):
             # make entrypoint relative to {img_root} ONLY if it is not an absolute path
             entrypoint = os.path.join(macros.img_root, entrypoint)
@@ -278,15 +270,6 @@ class ElasticRole(Role):
         self.args += [entrypoint, *args]
         self.env.update({**kwargs})
         return self
-
-    def _setup_torchelastic_launcher(self):
-        """
-        Sets up torchelastic launcher so that it wraps the user provided entrypoint.
-        If a custom elastic launch CLI is to be used, extend this class and override
-        this method.
-        """
-        self.entrypoint = "python"
-        self.args = ["-m", "torchelastic.distributed.launch"]
 
 
 class RunMode(Enum):
@@ -304,18 +287,18 @@ class RunMode(Enum):
     MANAGED = 1
 
 
-class Application(BaseObject):
+@dataclass
+class Application:
     """
     Represents a distributed application made up of multiple ``Roles``.
     Contains the necessary information for the driver to submit this
     app to the scheduler.
     """
 
-    def __init__(self, name: str, run_mode: RunMode = RunMode.HEADLESS):
-        self.name = name
-        self.roles: List[Role] = []
-        self.run_mode = run_mode
-        self.is_attached: bool = False
+    name: str
+    roles: List[Role] = field(default_factory=list)
+    run_mode: RunMode = RunMode.HEADLESS
+    is_attached: bool = False
 
     def of(self, *roles: Role) -> "Application":
         self.roles += [*roles]
@@ -361,21 +344,22 @@ def is_terminal(state: AppState) -> bool:
     return state in _TERMINAL_STATES
 
 
+@dataclass
 class AppStatus:
     """
     The runtime status of the ``Application``.
     """
 
-    def __init__(self, state: AppState, num_restarts: int = 0, msg: str = ""):
-        self.state: AppState = state
-        self.num_restarts: int = num_restarts
-        self.msg: str = msg
-        self.ui_url: Optional[str] = None
+    state: AppState
+    num_restarts: int = 0
+    msg: str = ""
+    ui_url: Optional[str] = None
 
     def is_terminal(self) -> bool:
         return is_terminal(self.state)
 
 
+@dataclass
 class DescribeAppResponse:
     """
     Response object returned by ``Scheduler.describe(app)`` API. Contains
@@ -391,24 +375,12 @@ class DescribeAppResponse:
     access the member vars directly rather than provide accessors.
     """
 
-    def __init__(self):
-        self.app_id: str = "<NOT_SET>"
-        self.state: AppState = AppState.UNSUBMITTED
-        self.num_restarts: int = -1
-        self.msg: str = ""
-        self.ui_url: Optional[str] = None
-
-        # TODO T72035216 add other fields that come back from the scheduler's describe
-        # API. Typically this includes some type of JobDefinition which
-        # contains all the data to recreate the Application object. Store them
-        # here as member vars so that we can implement the session.attach() api:
-        #
-        # app_id = session.run(app_orig)
-        # /* session is lost, create a new session */
-        # new_session = Session(...)
-        # /* upon attaching the app, app is recreated */
-        # app_new = session.attach(app_id)
-        # assert app_new == app_orig
+    app_id: str = "<NOT_SET>"
+    state: AppState = AppState.UNSUBMITTED
+    num_restarts: int = -1
+    msg: str = ""
+    ui_url: Optional[str] = None
+    # TODO T72035216 add other fields that come back from the scheduler's describe
 
 
 class Scheduler(abc.ABC):
