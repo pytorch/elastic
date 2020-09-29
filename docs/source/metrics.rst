@@ -1,7 +1,7 @@
 .. _metrics-api:
 
 Metrics
-=======
+=========
 
 .. automodule:: torchelastic.metrics
 

@@ -21,6 +21,7 @@ with the following additional functionalities:
 1. Single-node multi-worker (with sidecar etcd server)
 
 ::
+
     >>> python -m torchelastic.distributed.launch
         --standalone
         --nnodes=1

@@ -30,6 +30,15 @@
 #   Makefile (redirect target)
 #  (on gh-pages branch) _layouts/docs_redirect.html
 
+dry_run=0
+for arg in "$@"; do
+    shift
+    case "$arg" in
+        "--dry-run") dry_run=1 ;;
+        "--help") echo "Usage $0 [--dry-run]"; exit 0 ;;
+    esac
+done
+
 repo_root=$(git rev-parse --show-toplevel)
 branch=$(git rev-parse --abbrev-ref HEAD)
 commit_id=$(git rev-parse --short HEAD)
@@ -56,6 +65,12 @@ build_dir=$docs_dir/build
 cd "$docs_dir" || exit
 pip install -r requirements.txt
 make clean html
+echo "Doc build complete"
+
+if [ $dry_run -eq 1 ]; then
+    echo "*** dry-run mode, building only. See build artifacts in: $build_dir"
+    exit
+fi
 
 tmp_dir=/tmp/torchelastic_docs_tmp
 rm -rf "${tmp_dir:?}"
@@ -82,4 +97,3 @@ fi
 cd $gh_pages_dir || exit
 git add .
 git commit --quiet -m "[doc_push][$release_tag] built from $commit_id ($branch). Redirects: ${redirects[*]} -> $torchelastic_ver."
-git push
