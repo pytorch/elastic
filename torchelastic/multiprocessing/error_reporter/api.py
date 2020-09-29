@@ -44,6 +44,48 @@ def exec_fn(user_funct: Callable, args: Tuple = ()) -> Any:
     return user_funct(*args)
 
 
-def get_error(error_process_pid: int) -> str:
+def get_error(error_process_pid: int) -> Optional[str]:
+    """
+    Retrieves an error(if any) that occurred on the child process.
+    If no exception occurred, the function will return None
+    """
     signal_handler = get_signal_handler()
     return signal_handler.construct_error_message(error_process_pid)
+
+
+def _configure_process_handler() -> None:
+    signal_handler = get_signal_handler()
+    signal_handler.configure()
+
+
+def record(func):
+    """
+    Decorator function that is invoked on the starting process function.
+    The decorator will invoke signal registerring mechanism that will allow
+    to propagate any signal termination related errors to the parent process.
+
+    Example
+
+    ::
+
+        from torchelastic.multiprocessing.error_reporter import record
+
+        @record
+        def main():
+            ...
+
+        if __name__=="__main__":
+            main()
+
+    """
+
+    def wrap():
+        try:
+            _configure_process_handler()
+            func()
+        except Exception as e:
+            signal_handler = get_signal_handler()
+            signal_handler.record_exception(e)
+            raise
+
+    return wrap

@@ -9,11 +9,16 @@
 import unittest
 from unittest.mock import Mock, patch
 
-from torchelastic.multiprocessing.error_reporter.api import exec_fn, get_error
+from torchelastic.multiprocessing.error_reporter.api import exec_fn, get_error, record
 
 
 def sum_func(arg1: int, arg2: int) -> int:
     return arg1 + arg2
+
+
+@record
+def raise_excepiton() -> str:
+    raise Exception("test exception")
 
 
 class ErrorReporterApiTest(unittest.TestCase):
@@ -31,3 +36,14 @@ class ErrorReporterApiTest(unittest.TestCase):
         get_signal_handler_mock.return_value = signal_handler_mock
         get_error(1234)
         signal_handler_mock.construct_error_message.assert_called_once()
+
+    def test_record(self):
+        mock_handler = Mock()
+        with patch(
+            "torchelastic.multiprocessing.error_reporter.api.get_signal_handler",
+            return_value=mock_handler,
+        ):
+            try:
+                raise_excepiton()
+            except Exception:
+                mock_handler.record_exception.assert_called_once()

@@ -7,7 +7,9 @@
 # LICENSE file in the root directory of this source tree.
 # Multiprocessing error-reporting module
 
+
 from abc import ABC, abstractmethod
+from typing import Optional
 
 
 # Error reported uses files to communicate between processes.
@@ -23,7 +25,11 @@ class SignalHandler(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def construct_error_message(self, child_pid: int) -> str:
+    def construct_error_message(self, child_pid: int) -> Optional[str]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def record_exception(self, e: Exception) -> None:
         raise NotImplementedError
 
 
@@ -32,6 +38,10 @@ class LocalSignalHandler(SignalHandler):
         # TODO (T73940701)
         pass
 
-    def construct_error_message(self, child_pid: int) -> str:
+    def construct_error_message(self, child_pid: int) -> Optional[str]:
+        # TODO (T73940701)
+        pass
+
+    def record_exception(self, e: Exception) -> None:
         # TODO (T73940701)
         pass
