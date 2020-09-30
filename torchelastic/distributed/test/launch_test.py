@@ -12,6 +12,7 @@ import subprocess
 import tempfile
 import unittest
 import uuid
+from unittest import mock
 from unittest.mock import Mock, patch
 
 import torchelastic.distributed.launch as launch
@@ -42,6 +43,10 @@ def pid_exists(pid):
         return True
     except OSError:
         return False
+
+
+class MockException(Exception):
+    pass
 
 
 class LaunchTest(unittest.TestCase):
@@ -233,6 +238,72 @@ class LaunchTest(unittest.TestCase):
         self.assertSetEqual(
             {str(i) for i in range(world_size)}, set(os.listdir(self.test_dir))
         )
+
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
+    def test_launch_elastic_worker_raise_exception(self):
+        """
+        Asserts that when the worker program fails the launcher catches
+        WorkerGroupFailureException and re-raises the min_rank's inner exception,
+        which will be a regular ``Exception`` with an message that looks like:
+
+        ::
+         -- Process 0 terminated with the following error:
+         Traceback (most recent call last):
+             File "...<omitted>..., line ## in _foo
+                fn(i, args...)
+             File "...<omitted>..., line ## in bar
+                ...<omitted>...
+
+        """
+        run_id = str(uuid.uuid4().int)
+        min_nodes = 1
+        max_nodes = 2
+        nproc_per_node = 4
+        args = [
+            f"--nnodes={min_nodes}:{max_nodes}",
+            f"--nproc_per_node={nproc_per_node}",
+            "--rdzv_backend=etcd",
+            f"--rdzv_endpoint={self._etcd_endpoint}",
+            f"--rdzv_id={run_id}",
+            "--monitor_interval=1",
+            "--max_restarts=0",
+            "--start_method=fork",
+            path("bin/test_script.py"),
+            "--fail",
+        ]
+
+        with self.assertRaisesRegex(
+            Exception, "-- Process 0 terminated with the following error:"
+        ):
+            launch.main(args)
+
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
+    @mock.patch("torchelastic.agent.server.local_elastic_agent.LocalElasticAgent.run")
+    def test_launch_elastic_agent_raise_exception(self, mock_agent_run):
+        """
+        Asserts that when the agent raises an exception
+        the launcher re-raises the original exception
+        """
+        run_id = str(uuid.uuid4().int)
+        min_nodes = 1
+        max_nodes = 2
+        nproc_per_node = 4
+        args = [
+            f"--nnodes={min_nodes}:{max_nodes}",
+            f"--nproc_per_node={nproc_per_node}",
+            "--rdzv_backend=etcd",
+            f"--rdzv_endpoint={self._etcd_endpoint}",
+            f"--rdzv_id={run_id}",
+            "--monitor_interval=1",
+            "--max_restarts=0",
+            "--start_method=fork",
+            path("bin/test_script.py"),
+            f"--touch_file_dir={self.test_dir}",
+        ]
+
+        mock_agent_run.side_effect = MockException
+        with self.assertRaises(MockException):
+            launch.main(args)
 
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_launch_standalone(self):

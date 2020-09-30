@@ -228,7 +228,7 @@ from argparse import REMAINDER, ArgumentParser
 import torch
 import torchelastic.rendezvous.registry as rdzv_registry
 from torchelastic import metrics
-from torchelastic.agent.server.api import WorkerSpec
+from torchelastic.agent.server.api import WorkerGroupFailureException, WorkerSpec
 from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
 from torchelastic.rendezvous import RendezvousParameters
 from torchelastic.rendezvous.etcd_server import EtcdServer
@@ -362,7 +362,7 @@ def parse_min_max_nnodes(nnodes: str):
 
 
 def wrapper_fn(omp_num_threads, cmd):
-    # TODO get rid of this wrapper_fn
+    # TODO get rid of this wrapper_fn when we switch over to torchelastic.multiprocessing
     # the agent uses multiprocessing.spawn to create nproc_per_node
     # instances of fn, and hence expects fn to be a callable
     # since this launcher deals with user python scripts and executables
@@ -512,11 +512,18 @@ def main(args=None):
         metrics.initialize_metrics()
         elastic_agent = LocalElasticAgent(spec, start_method=args.start_method)
         elastic_agent.run(spec.role)
+    except WorkerGroupFailureException as e:
+        # user-code error; propagate the one from the smallest rank on this node
+        excs = e.get_worker_exceptions()
+        min_rank = min(excs.keys())
+        raise excs[min_rank] from e
+    except Exception:
+        # this is an agent (platform) error
+        raise
     finally:
         rdzv_handler.shutdown()
-
-    if args.standalone:
-        etcd_server.stop()
+        if args.standalone:
+            etcd_server.stop()
 
 
 def _parse_rdzv_conf(conf_str: str):
