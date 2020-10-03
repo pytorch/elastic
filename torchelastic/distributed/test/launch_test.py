@@ -65,10 +65,14 @@ class LaunchTest(unittest.TestCase):
     def setUp(self):
         self.test_dir = tempfile.mkdtemp()
 
+        # remove any lingering environment variables
+        for env in os.environ.keys():
+            if env.startswith("PET_"):
+                del os.environ[env]
+
     def tearDown(self):
         shutil.rmtree(self.test_dir)
 
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_launch_user_script_python(self):
         run_id = str(uuid.uuid4().int)
         nnodes = 1
@@ -93,7 +97,6 @@ class LaunchTest(unittest.TestCase):
             {str(i) for i in range(world_size)}, set(os.listdir(self.test_dir))
         )
 
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_launch_user_script_bash(self):
         run_id = str(uuid.uuid4().int)
         nnodes = 1
@@ -125,7 +128,37 @@ class LaunchTest(unittest.TestCase):
             {str(i) for i in range(world_size)}, set(os.listdir(self.test_dir))
         )
 
-    # @unittest.skipIf(is_tsan(), "test incompatible with tsan")
+    def test_launch_with_env_vars(self):
+        run_id = str(uuid.uuid4().int)
+        nnodes = 1
+        nproc_per_node = 4
+        world_size = nnodes * nproc_per_node
+
+        os.environ["PET_NNODES"] = str(nnodes)
+        os.environ["PET_NPROC_PER_NODE"] = str(nproc_per_node)
+        os.environ["PET_RDZV_BACKEND"] = "etcd"
+        os.environ["PET_RDZV_ENDPOINT"] = self._etcd_endpoint
+        os.environ["PET_RDZV_ID"] = run_id
+        os.environ["PET_MONITOR_INTERVAL"] = "1"
+        os.environ["PET_START_METHOD"] = "fork"
+        os.environ["PET_NO_PYTHON"] = "1"
+
+        script_args = [path("bin/test_script.sh"), f"{self.test_dir}"]
+
+        with self.assertRaises(ValueError):
+            # --no_python cannot be used with --module
+            os.environ["PET_MODULE"] = "1"
+            launch.main(script_args)
+
+        os.environ["PET_MODULE"] = "0"
+        launch.main(script_args)
+
+        # make sure all the workers ran
+        # each worker touches a file with its global rank as the name
+        self.assertSetEqual(
+            {str(i) for i in range(world_size)}, set(os.listdir(self.test_dir))
+        )
+
     def test_wrapper_fn_kill_script_process(self):
         """
         tests that the wrapper_fn properly terminates

@@ -230,6 +230,7 @@ import torchelastic.rendezvous.registry as rdzv_registry
 from torchelastic import metrics
 from torchelastic.agent.server.api import WorkerGroupFailureException, WorkerSpec
 from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
+from torchelastic.distributed.argparse_util import check_env, env
 from torchelastic.rendezvous import RendezvousParameters
 from torchelastic.rendezvous.etcd_server import EtcdServer
 from torchelastic.utils.logging import get_logger
@@ -249,12 +250,14 @@ def parse_args(args):
     # worker/node size related arguments
     parser.add_argument(
         "--nnodes",
+        action=env,
         type=str,
         default="1:1",
         help="number of nodes or MIN_NODES:MAX_NODES",
     )
     parser.add_argument(
         "--nproc_per_node",
+        action=env,
         type=str,
         default="auto",
         help="number of workers per node, supported values: [auto, cpu, gpu, int]",
@@ -262,27 +265,32 @@ def parse_args(args):
 
     # rendezvous related arguments
     parser.add_argument(
-        "--rdzv_backend", type=str, default="etcd", help="rendezvous backend"
+        "--rdzv_backend",
+        action=env,
+        type=str,
+        default="etcd",
+        help="rendezvous backend",
     )
     parser.add_argument(
         "--rdzv_endpoint",
+        action=env,
         type=str,
         default="",
         help="rendezvous backend server host:port",
     )
-    parser.add_argument("--rdzv_id", type=str, help="user defined group id")
+    parser.add_argument("--rdzv_id", action=env, type=str, help="user defined group id")
     parser.add_argument(
         "--rdzv_conf",
+        action=env,
         type=str,
         default="",
         help="additional rdzv configuration (conf1=v1,conf2=v2,...)",
     )
 
-    # sidecar embed rdzv backend that defults to etcd
+    # sidecar embed rdzv backend that defaults to etcd
     parser.add_argument(
         "--standalone",
-        default=False,
-        action="store_true",
+        action=check_env,
         help="starts a local, standalone rdzv backend that is represented by"
         " etcd server on a random free port"
         "using the etcd binary specified in TORCHELASTIC_ETCD_BINARY_PATH"
@@ -295,39 +303,44 @@ def parse_args(args):
     # user-code launch related arguments
     parser.add_argument(
         "--max_restarts",
+        action=env,
         type=int,
         default=3,
         help="max number of worker group restarts before failing",
     )
     parser.add_argument(
         "--monitor_interval",
+        action=env,
         type=float,
         default=5,
         help="interval (in seconds) to monitor the state of workers",
     )
     parser.add_argument(
         "--start_method",
+        action=env,
         type=str,
         default="spawn",
         choices=["spawn", "fork", "forkserver"],
         help="multiprocessing start_method to use when creating workers",
     )
     parser.add_argument(
-        "--role", type=str, default="default", help="user-defined role for the workers"
+        "--role",
+        action=env,
+        type=str,
+        default="default",
+        help="user-defined role for the workers",
     )
     parser.add_argument(
         "-m",
         "--module",
-        default=False,
-        action="store_true",
+        action=check_env,
         help="Changes each process to interpret the launch script "
         "as a python module, executing with the same behavior as"
         "'python -m'.",
     )
     parser.add_argument(
         "--no_python",
-        default=False,
-        action="store_true",
+        action=check_env,
         help='Do not prepend the training script with "python" - just exec '
         "it directly. Useful when the script is not a Python script.",
     )
