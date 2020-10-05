@@ -145,14 +145,6 @@ class LocalSchedulerTest(unittest.TestCase):
         self.scheduler.cancel(app_id)
         self.assertTrue(self.scheduler.exists(app_id))
 
-    def test_wait_timeout(self):
-        role = Role("role1").runs("sleep.sh", "10").on(self.test_container).replicas(1)
-        app = Application(name="test_app").of(role)
-        app_id = self.scheduler.submit(app, RunMode.MANAGED)
-
-        with self.assertRaises(TimeoutError):
-            self.scheduler.wait(app_id, timeout=1)
-
     def test_invalid_cache_size(self):
         with self.assertRaises(ValueError):
             LocalScheduler(self.image_fetcher, cache_size=0)

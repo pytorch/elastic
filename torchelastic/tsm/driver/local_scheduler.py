@@ -278,7 +278,7 @@ class LocalScheduler(Scheduler):
         self._terminate(local_app)
         local_app.state = AppState.CANCELLED
 
-    def wait(self, app_id: str, timeout=-1) -> Optional[DescribeAppResponse]:
+    def wait(self, app_id: str) -> Optional[DescribeAppResponse]:
         """
         Waits for the app to finish or raise TimeoutError upon timeout (in seconds).
         If no timeout is specified waits indefinitely.
@@ -287,12 +287,8 @@ class LocalScheduler(Scheduler):
             The last return value from ``describe()``
         """
 
-        if timeout > 0:
-            expiry = time.time()
-            interval = timeout / 10
-        else:
-            expiry = sys.maxsize
-            interval = 1
+        expiry = sys.maxsize
+        interval = 1
 
         while expiry > time.time():
             desc = self.describe(app_id)
