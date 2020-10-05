@@ -1,5 +1,5 @@
 ---
 layout: docs_redirect
 title: PyTorch | Redirect
-redirect_url: "/elastic/0.2.1rc0/train_script.html"
+redirect_url: "/elastic/0.2.1/train_script.html"
 ---

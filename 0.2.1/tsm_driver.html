@@ -1,0 +1,1030 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Training Session Manager (TSM) &mdash; PyTorch/Elastic master documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!-- <link rel="stylesheet" href="_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="_static/katex-math.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Multiprocessing" href="multiprocessing.html" />
+    <link rel="prev" title="Cloud Provider Support (Deprecated)" href="runtime.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+  <!-- Preload the theme fonts -->
+
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+
+<!-- Preload the katex fonts -->
+
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Math-Italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size1-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size4-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size2-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size3-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Caligraphic-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+</head>
+
+<div class="container-fluid header-holder tutorials-header" id="header-holder">
+  <div class="container">
+    <div class="header-container">
+      <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <div class="ecosystem-dropdown">
+              <a id="dropdownMenuButton" data-toggle="ecosystem-dropdown">
+                Ecosystem
+              </a>
+              <div class="ecosystem-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub"">
+                  <span class=dropdown-title>Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem">
+                  <span class=dropdown-title>Tools & Libraries</span>
+                  <p>Explore the ecosystem of tools and libraries</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+          </li>
+
+          <li>
+            <div class="resources-dropdown">
+              <a id="resourcesDropdownButton" data-toggle="resources-dropdown">
+                Resources
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources"">
+                  <span class=dropdown-title>Developer Resources</span>
+                  <p>Find resources and get questions answered</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class=dropdown-title>About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">Github</a>
+          </li>
+        </ul>
+      </div>
+
+      <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
+    </div>
+
+  </div>
+</div>
+
+
+<body class="pytorch-body">
+
+   
+
+    
+
+    <div class="table-of-contents-link-wrapper">
+      <span>Table of Contents</span>
+      <a href="#" class="toggle-table-of-contents" data-behavior="toggle-table-of-contents"></a>
+    </div>
+
+    <nav data-toggle="wy-nav-shift" class="pytorch-left-menu" id="pytorch-left-menu">
+      <div class="pytorch-side-scroll">
+        <div class="pytorch-menu pytorch-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          <div class="pytorch-left-menu-search">
+            
+
+            
+              
+              
+                <div class="version">
+                  v0.2.1
+                </div>
+              
+            
+
+            
+
+
+  
+
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search Docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+            
+          </div>
+
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Get Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="train_script.html">Train script</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="distributed.html">Elastic Launch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="agent.html">Elastic Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="timer.html">Expiration Timers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rendezvous.html">Rendezvous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="events.html">Events</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Advanced</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="customization.html">Customization</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="kubernetes.html">TorchElastic Kubernetes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime.html">Cloud Provider Support (Deprecated)</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Experimental</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Training Session Manager (TSM)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multiprocessing.html">Multiprocessing</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <div class="pytorch-container">
+      <div class="pytorch-page-level-bar" id="pytorch-page-level-bar">
+        <div class="pytorch-breadcrumbs-wrapper">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="pytorch-breadcrumbs">
+    
+      <li>
+        <a href="index.html">
+          
+            Docs
+          
+        </a> &gt;
+      </li>
+
+        
+      <li>Training Session Manager (TSM)</li>
+    
+    
+      <li class="pytorch-breadcrumbs-aside">
+        
+            
+            <a href="_sources/tsm_driver.rst.txt" rel="nofollow"><img src="_static/images/view-page-source-icon.svg"></a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+</div>
+        </div>
+
+        <div class="pytorch-shortcuts-wrapper" id="pytorch-shortcuts-wrapper">
+          Shortcuts
+        </div>
+      </div>
+
+      <section data-toggle="wy-nav-shift" id="pytorch-content-wrap" class="pytorch-content-wrap">
+        <div class="pytorch-content-left">
+
+        
+          
+          <div class="rst-content">
+          
+            <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
+             <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
+              
+  <div class="section" id="training-session-manager-tsm">
+<h1>Training Session Manager (TSM)<a class="headerlink" href="#training-session-manager-tsm" title="Permalink to this headline">¶</a></h1>
+<p>Training Session Manager (TSM) is a set of programmatic APIs that
+helps you launch your distributed (PyTorch) applications onto the
+supported schedulers. Whereas torchelastic is deployed per container
+and manages worker processes and coordinates restart behaviors, TSM
+provides a way to launch the distributed job while natively supporting
+jobs that are (locally) managed by torchelastic.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>TSM is currently an experimental module
+and is subject to change for future releases of torchelastic.
+At the moment TSM only ships with a <code class="docutils literal notranslate"><span class="pre">LocalScheduler</span></code> allowing
+the user to run the distributed application locally on a dev host.</p>
+</div>
+<div class="section" id="module-torchelastic.tsm.driver">
+<span id="usage-overview"></span><h2>Usage Overview<a class="headerlink" href="#module-torchelastic.tsm.driver" title="Permalink to this headline">¶</a></h2>
+<p>Below is a simple program that locally launches a multi-role
+(trainer, parameter server, reader) distributed application.
+Each <code class="docutils literal notranslate"><span class="pre">Role</span></code> runs multiple replicas. In reality each replica
+runs on its own container on a host. An <code class="docutils literal notranslate"><span class="pre">Application</span></code> is made up
+to one or more such <code class="docutils literal notranslate"><span class="pre">Roles</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">getpass</span>
+<span class="kn">import</span> <span class="nn">torchelastic.tsm.driver</span> <span class="k">as</span> <span class="nn">tsm</span>
+
+<span class="n">username</span> <span class="o">=</span> <span class="n">getpass</span><span class="o">.</span><span class="n">getuser</span><span class="p">()</span>
+<span class="n">train_project_dir</span> <span class="o">=</span> <span class="n">tsm</span><span class="o">.</span><span class="n">Container</span><span class="p">(</span><span class="n">image</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;/home/</span><span class="si">{</span><span class="n">username</span><span class="si">}</span><span class="s2">/pytorch_trainer&quot;</span><span class="p">)</span>
+<span class="n">reader_project_dir</span> <span class="o">=</span> <span class="n">tsm</span><span class="o">.</span><span class="n">Container</span><span class="p">(</span><span class="n">image</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;/home/</span><span class="si">{</span><span class="n">username</span><span class="si">}</span><span class="s2">/pytorch_reader&quot;</span><span class="p">)</span>
+
+<span class="n">trainer</span> <span class="o">=</span> <span class="n">tsm</span><span class="o">.</span><span class="n">Role</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;trainer&quot;</span><span class="p">)</span>
+             <span class="o">.</span><span class="n">runs</span><span class="p">(</span><span class="s2">&quot;train_main.py&quot;</span><span class="p">,</span> <span class="s2">&quot;--epochs&quot;</span><span class="p">,</span> <span class="s2">&quot;50&quot;</span><span class="p">,</span> <span class="n">MY_ENV_VAR</span><span class="o">=</span><span class="s2">&quot;foobar&quot;</span><span class="p">)</span>
+             <span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">train_project_dir</span><span class="p">)</span>
+             <span class="o">.</span><span class="n">replicas</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+
+<span class="n">ps</span> <span class="o">=</span> <span class="n">tsm</span><span class="o">.</span><span class="n">Role</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;parameter_server&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;ps_main.py&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">train_project_dir</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">replicas</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="n">reader</span> <span class="o">=</span> <span class="n">tsm</span><span class="o">.</span><span class="n">Role</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;reader&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">runs</span><span class="p">(</span><span class="s2">&quot;reader/reader_main.py&quot;</span><span class="p">,</span> <span class="s2">&quot;--buffer_size&quot;</span><span class="p">,</span> <span class="s2">&quot;1024&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">reader_project_dir</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">replicas</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">tsm</span><span class="o">.</span><span class="n">Application</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;my_train_job&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">of</span><span class="p">(</span><span class="n">trainer</span><span class="p">,</span> <span class="n">ps</span><span class="p">,</span> <span class="n">reader</span><span class="p">)</span>
+
+<span class="n">session</span> <span class="o">=</span> <span class="n">tsm</span><span class="o">.</span><span class="n">session</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;my_session&quot;</span><span class="p">,</span> <span class="n">scheduler_backend</span><span class="o">=</span><span class="s2">&quot;local&quot;</span><span class="p">)</span>
+<span class="n">app_id</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+<span class="n">session</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">app_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In the example above, we have done a few things:</p>
+<ol class="arabic simple">
+<li><p>Created and ran a distributed training application that runs a total of
+4 + 10 + 1 = 15 containers (just processes since we used a <code class="docutils literal notranslate"><span class="pre">local</span></code> scheduler).</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">trainer</span></code> and <code class="docutils literal notranslate"><span class="pre">ps</span></code> run from the same container:
+<code class="docutils literal notranslate"><span class="pre">/home/$USER/pytorch_trainer</span></code> and the reader runs from a container:
+<code class="docutils literal notranslate"><span class="pre">/home/$USER/pytorch_reader</span></code>. The containers map to a local directory
+because we are using a local scheduler. For other non-trivial schedulers
+a container could map to a Docker image, tarball, rpm, etc.</p></li>
+<li><p>The main entrypoints are relative to the container image’s root dir.
+For example, the trainer runs <code class="docutils literal notranslate"><span class="pre">/home/$USER/pytorch_trainer/train_main.py</span></code>.</p></li>
+<li><p>Arguments to each role entrypoint are passed as <code class="docutils literal notranslate"><span class="pre">*args</span></code> after the entrypoint CMD.</p></li>
+<li><p>Environment variables to each role entrypoint are passed as <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code>
+after the arguments.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">session</span></code> object has action APIs on the app: <code class="docutils literal notranslate"><span class="pre">run</span></code>, <code class="docutils literal notranslate"><span class="pre">describe</span></code>, and <code class="docutils literal notranslate"><span class="pre">wait</span></code>.</p></li>
+</ol>
+</div>
+<div class="section" id="user-api-documentation">
+<h2>User API Documentation<a class="headerlink" href="#user-api-documentation" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="containers-and-resources">
+<h3>Containers and Resources<a class="headerlink" href="#containers-and-resources" title="Permalink to this headline">¶</a></h3>
+<dl class="py class">
+<dt id="torchelastic.tsm.driver.api.Container">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.tsm.driver.api.</code><code class="sig-name descname">Container</code><span class="sig-paren">(</span><em class="sig-param">image: str</em>, <em class="sig-param">resources: torchelastic.tsm.driver.api.Resources = Resources(cpu=-1</em>, <em class="sig-param">gpu=-1</em>, <em class="sig-param">memMB=-1</em>, <em class="sig-param">capabilities={})</em>, <em class="sig-param">port_map: Dict[str</em>, <em class="sig-param">int] = &lt;factory&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/tsm/driver/api.html#Container"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.tsm.driver.api.Container" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents the specifications of the container that instances of <code class="docutils literal notranslate"><span class="pre">Roles</span></code>
+run on. Maps to the container abstraction that the underlying scheduler
+supports. This could be an actual container (e.g. Docker) or a physical
+instance depending on the scheduler.</p>
+<p>An <code class="docutils literal notranslate"><span class="pre">image</span></code> is a software bundle that is installed on a <code class="docutils literal notranslate"><span class="pre">Container</span></code>.
+The container on the scheduler dictates what an image actually is.
+An image could be as simple as a tar-ball or map to a docker image.
+The scheduler typically knows how to “pull” the image given an
+image name (str), which could be a simple name (e.g. docker image) or a url
+(e.g. s3://path/my_image.tar).</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">my_container</span> <span class="o">=</span> <span class="n">Container</span><span class="p">(</span><span class="n">image</span><span class="o">=</span><span class="s2">&quot;pytorch/torch:1&quot;</span><span class="p">)</span>
+                  <span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="n">Resources</span><span class="p">(</span><span class="n">cpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">memMB</span><span class="o">=</span><span class="mi">500</span><span class="p">))</span>
+                  <span class="o">.</span><span class="n">ports</span><span class="p">(</span><span class="n">tcp_store</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">tensorboard</span><span class="o">=</span><span class="mi">8081</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt id="torchelastic.tsm.driver.api.Resources">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.tsm.driver.api.</code><code class="sig-name descname">Resources</code><span class="sig-paren">(</span><em class="sig-param">cpu: int</em>, <em class="sig-param">gpu: int</em>, <em class="sig-param">memMB: int</em>, <em class="sig-param">capabilities: Dict[str</em>, <em class="sig-param">Any] = &lt;factory&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/tsm/driver/api.html#Resources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.tsm.driver.api.Resources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents resource requirements for a <code class="docutils literal notranslate"><span class="pre">Container</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cpu</strong> – number of cpu cores (note: not hyper threads)</p></li>
+<li><p><strong>gpu</strong> – number of gpus</p></li>
+<li><p><strong>memMB</strong> – MB of ram</p></li>
+<li><p><strong>capabilities</strong> – additional hardware specs (interpreted by scheduler)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="roles-and-applications">
+<h3>Roles and Applications<a class="headerlink" href="#roles-and-applications" title="Permalink to this headline">¶</a></h3>
+<dl class="py class">
+<dt id="torchelastic.tsm.driver.api.Role">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.tsm.driver.api.</code><code class="sig-name descname">Role</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="p">:</span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)">str</a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/tsm/driver/api.html#Role"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.tsm.driver.api.Role" title="Permalink to this definition">¶</a></dt>
+<dd><p>A set of nodes that perform a specific duty within the <code class="docutils literal notranslate"><span class="pre">Application</span></code>.
+Examples:</p>
+<ol class="arabic simple">
+<li><p>Distributed data parallel app - made up of a single role (trainer).</p></li>
+<li><p>App with parameter server - made up of multiple roles (trainer, ps).</p></li>
+</ol>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">trainer</span> <span class="o">=</span> <span class="n">Role</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;trainer&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">runs</span><span class="p">(</span><span class="s2">&quot;my_trainer.py&quot;</span><span class="p">,</span> <span class="s2">&quot;--arg&quot;</span><span class="p">,</span> <span class="s2">&quot;foo&quot;</span><span class="p">,</span> <span class="n">ENV_VAR</span><span class="o">=</span><span class="s2">&quot;FOOBAR&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">container</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">replicas</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>- name of the role</strong> (<em>name</em>) – </p></li>
+<li><p><strong>- command</strong> (<em>entrypopython:int</em>) – </p></li>
+<li><p><strong>- commandline arguments to the entrypoint cmd</strong> (<em>args</em>) – </p></li>
+<li><p><strong>- environment variable mappings</strong> (<em>env</em>) – </p></li>
+<li><p><strong>- container to run in</strong> (<em>container</em>) – </p></li>
+<li><p><strong>- number of container replicas to run</strong> (<em>replicas</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="torchelastic.tsm.driver.api.ElasticRole">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.tsm.driver.api.</code><code class="sig-name descname">ElasticRole</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="p">:</span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)">str</a></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">launch_kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/tsm/driver/api.html#ElasticRole"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.tsm.driver.api.ElasticRole" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <code class="docutils literal notranslate"><span class="pre">Role</span></code> for which the user provided <code class="docutils literal notranslate"><span class="pre">entrypoint</span></code> is executed with the
+torchelastic agent (in the container). Note that the torchelastic agent
+invokes multiple copies of <code class="docutils literal notranslate"><span class="pre">entrypoint</span></code>.</p>
+<p>For more information about torchelastic see
+<a class="reference external" href="http://pytorch.org/elastic/0.2.0/quickstart.html">torchelastic quickstart docs</a>.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>It is the responsibility of the user to ensure that the
+container’s image includes torchelastic. Since TSM has no
+control over the build process of the image, it cannot
+automatically include torchelastic in the container’s image.</p>
+</div>
+<p>The following example launches 2 <code class="docutils literal notranslate"><span class="pre">replicas</span></code> (nodes) of an elastic <code class="docutils literal notranslate"><span class="pre">my_train_script.py</span></code>
+that is allowed to scale between 2 to 4 nodes. Each node runs 8 workers which are allowed
+to fail and restart a maximum of 3 times.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><code class="docutils literal notranslate"><span class="pre">replicas</span></code> MUST BE an integer between (inclusive) <code class="docutils literal notranslate"><span class="pre">nnodes</span></code>. That is,
+<code class="docutils literal notranslate"><span class="pre">ElasticRole(&quot;trainer&quot;,</span> <span class="pre">nnodes=&quot;2:4&quot;).replicas(5)</span></code> is invalid and will
+result in undefined behavior.</p>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># effectively runs:</span>
+<span class="c1">#    python -m torchelastic.distributed.launch</span>
+<span class="c1">#        --nproc_per_node 8</span>
+<span class="c1">#        --nnodes 2:4</span>
+<span class="c1">#        --max_restarts 3</span>
+<span class="c1">#        my_train_script.py --script_arg foo --another_arg bar</span>
+
+<span class="n">elastic_trainer</span> <span class="o">=</span> <span class="n">ElasticRole</span><span class="p">(</span><span class="s2">&quot;trainer&quot;</span><span class="p">,</span> <span class="n">nproc_per_node</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">nnodes</span><span class="o">=</span><span class="s2">&quot;2:4&quot;</span><span class="p">,</span> <span class="n">max_restarts</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+                   <span class="o">.</span><span class="n">runs</span><span class="p">(</span><span class="s2">&quot;my_train_script.py&quot;</span><span class="p">,</span> <span class="s2">&quot;--script_arg&quot;</span><span class="p">,</span> <span class="s2">&quot;foo&quot;</span><span class="p">,</span> <span class="s2">&quot;--another_arg&quot;</span><span class="p">,</span> <span class="s2">&quot;bar&quot;</span><span class="p">)</span>
+                   <span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">container</span><span class="p">)</span>
+                   <span class="o">.</span><span class="n">replicas</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt id="torchelastic.tsm.driver.api.macros">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.tsm.driver.api.</code><code class="sig-name descname">macros</code><a class="reference internal" href="_modules/torchelastic/tsm/driver/api.html#macros"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.tsm.driver.api.macros" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines macros that can be used with <code class="docutils literal notranslate"><span class="pre">Role.entrypoint</span></code> and <code class="docutils literal notranslate"><span class="pre">Role.args</span></code>.
+The macros will be substituted at runtime to their actual values.</p>
+<p>Available macros:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">img_root</span></code> - root directory of the pulled image on the container</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">app_id</span></code> - application id (same as the return value of <code class="docutils literal notranslate"><span class="pre">session.run(app)</span></code>)</p></li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">replica_id</span></code> - unique id for each instance of a replica of a Role,</dt><dd><p>for instance a role with 3 replicas could have the 0, 1, 2
+as replica ids. Note that when the container fails and is
+replaced, the new container will have the same <code class="docutils literal notranslate"><span class="pre">replica_id</span></code>
+as the one it is replacing. For instance if node 1 failed and
+was replaced by the scheduler the replacing node will also
+have <code class="docutils literal notranslate"><span class="pre">replica_id=1</span></code>.</p>
+</dd>
+</dl>
+</li>
+</ol>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># runs: hello_world.py --app_id ${app_id}</span>
+<span class="n">trainer</span> <span class="o">=</span> <span class="n">Role</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;trainer&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">runs</span><span class="p">(</span><span class="s2">&quot;hello_world.py&quot;</span><span class="p">,</span> <span class="s2">&quot;--app_id&quot;</span><span class="p">,</span> <span class="n">macros</span><span class="o">.</span><span class="n">app_id</span><span class="p">)</span>
+<span class="n">app</span> <span class="o">=</span> <span class="n">Application</span><span class="p">(</span><span class="s2">&quot;train_app&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">of</span><span class="p">(</span><span class="n">trainer</span><span class="p">)</span>
+<span class="n">app_id</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt id="torchelastic.tsm.driver.api.Application">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.tsm.driver.api.</code><code class="sig-name descname">Application</code><span class="sig-paren">(</span><em class="sig-param">name: str</em>, <em class="sig-param">roles: List[torchelastic.tsm.driver.api.Role] = &lt;factory&gt;</em>, <em class="sig-param">run_mode: torchelastic.tsm.driver.api.RunMode = &lt;RunMode.HEADLESS: 0&gt;</em>, <em class="sig-param">is_attached: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/tsm/driver/api.html#Application"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.tsm.driver.api.Application" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents a distributed application made up of multiple <code class="docutils literal notranslate"><span class="pre">Roles</span></code>.
+Contains the necessary information for the driver to submit this
+app to the scheduler.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="session">
+<h3>Session<a class="headerlink" href="#session" title="Permalink to this headline">¶</a></h3>
+<dl class="py class">
+<dt id="torchelastic.tsm.driver.api.Session">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.tsm.driver.api.</code><code class="sig-name descname">Session</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="p">:</span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)">str</a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/tsm/driver/api.html#Session"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.tsm.driver.api.Session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Entrypoint and client-facing API for TSM. Has the methods for the user to
+define and act upon <code class="docutils literal notranslate"><span class="pre">Applications</span></code>. The <code class="docutils literal notranslate"><span class="pre">Session</span></code> is stateful and
+represents a logical workspace of the user. It can be backed by a service
+(e.g. TSM server) for persistence or can be standalone with no persistence
+meaning that the <code class="docutils literal notranslate"><span class="pre">Session</span></code> lasts only during the duration of the hosting
+process (see the <code class="docutils literal notranslate"><span class="pre">attach()</span></code> API for instructions on re-parenting apps
+between sessions).</p>
+<dl class="py method">
+<dt id="torchelastic.tsm.driver.api.Session.attach">
+<em class="property">abstract </em><code class="sig-name descname">attach</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">app_id</span><span class="p">:</span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)">str</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#torchelastic.tsm.driver.api.Application" title="torchelastic.tsm.driver.api.Application">torchelastic.tsm.driver.api.Application</a><a class="reference internal" href="_modules/torchelastic/tsm/driver/api.html#Session.attach"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.tsm.driver.api.Session.attach" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attaches the application represented by the provided <code class="docutils literal notranslate"><span class="pre">app_id</span></code>.
+If the app is already attached to this session, then does nothing
+and returns the existing <code class="docutils literal notranslate"><span class="pre">Application</span></code> object.</p>
+<p>Whether all action APIs are supported on the attached application
+is dependent on the specific implementation of the session and scheduler.
+For instance a <code class="docutils literal notranslate"><span class="pre">StandaloneSession</span></code> with no persistent backend cannot
+fully recreate the application without the underlying scheduler
+supporting a <code class="docutils literal notranslate"><span class="pre">job_definition</span></code> API that stores the job’s template.
+Hence in this case, the user will not be able to re-run the attached
+app and can only call action APIs that require only the <code class="docutils literal notranslate"><span class="pre">app_id</span></code>
+to execute. Please refer to the specific session and scheduler
+implementation documentations to understand the attach behavior,
+assumptions, and consequences.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The re-created application object</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>UnknownAppException - if app was never run</strong><strong> or </strong><strong>attached on this session</strong> – </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.tsm.driver.api.Session.list">
+<em class="property">abstract </em><code class="sig-name descname">list</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)">str</a><span class="p">, </span><a class="reference internal" href="#torchelastic.tsm.driver.api.Application" title="torchelastic.tsm.driver.api.Application">torchelastic.tsm.driver.api.Application</a><span class="p">]</span><a class="reference internal" href="_modules/torchelastic/tsm/driver/api.html#Session.list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.tsm.driver.api.Session.list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the applications that were run with this session mapped by the app_id.
+The persistence of the session is implementation dependent.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.tsm.driver.api.Session.name">
+<code class="sig-name descname">name</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)">str</a><a class="reference internal" href="_modules/torchelastic/tsm/driver/api.html#Session.name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.tsm.driver.api.Session.name" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The name of this session.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.tsm.driver.api.Session.status">
+<em class="property">abstract </em><code class="sig-name descname">status</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">app_id</span><span class="p">:</span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)">str</a></span></em><span class="sig-paren">)</span> &#x2192; Optional<span class="p">[</span>torchelastic.tsm.driver.api.AppStatus<span class="p">]</span><a class="reference internal" href="_modules/torchelastic/tsm/driver/api.html#Session.status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.tsm.driver.api.Session.status" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The status of the application, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if the app does not exist anymore
+(e.g. was stopped in the past and removed from the scheduler’s backend).</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>UnknownAppException - if the app was never run</strong><strong> or </strong><strong>attached on this session</strong> – </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.tsm.driver.api.Session.stop">
+<em class="property">abstract </em><code class="sig-name descname">stop</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">app_id</span><span class="p">:</span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)">str</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.8)">None</a><a class="reference internal" href="_modules/torchelastic/tsm/driver/api.html#Session.stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.tsm.driver.api.Session.stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stops the application, effectively directing the scheduler to cancel
+the job.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method returns as soon as the cancel request has been
+submitted to the scheduler. The application will be in a
+<code class="docutils literal notranslate"><span class="pre">RUNNING</span></code> state until the scheduler actually terminates
+the job. If the scheduler successfully interrupts the job
+and terminates it the final state will be <code class="docutils literal notranslate"><span class="pre">CANCELLED</span></code>
+otherwise it will be <code class="docutils literal notranslate"><span class="pre">FAILED</span></code>.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>UnknownAppException - if app was never run</strong><strong> or </strong><strong>attached on this session</strong> – </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.tsm.driver.api.Session.wait">
+<em class="property">abstract </em><code class="sig-name descname">wait</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">app_id</span><span class="p">:</span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)">str</a></span></em><span class="sig-paren">)</span> &#x2192; Optional<span class="p">[</span>torchelastic.tsm.driver.api.AppStatus<span class="p">]</span><a class="reference internal" href="_modules/torchelastic/tsm/driver/api.html#Session.wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.tsm.driver.api.Session.wait" title="Permalink to this definition">¶</a></dt>
+<dd><p>Block waits (indefinitely) for the application to complete.
+Possible implementation:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">while</span><span class="p">(</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">app_status</span> <span class="o">=</span> <span class="n">status</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">app_status</span><span class="o">.</span><span class="n">is_terminal</span><span class="p">():</span>
+        <span class="k">return</span>
+    <span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The terminal status of the application, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if the app does not exist anymore</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>UnknownAppException - if the app was never run</strong><strong> or </strong><strong>attached on this session</strong> – </p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="developer-api-documentation">
+<h2>Developer API Documentation<a class="headerlink" href="#developer-api-documentation" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="scheduler">
+<h3>Scheduler<a class="headerlink" href="#scheduler" title="Permalink to this headline">¶</a></h3>
+<dl class="py class">
+<dt id="torchelastic.tsm.driver.api.Scheduler">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.tsm.driver.api.</code><code class="sig-name descname">Scheduler</code><a class="reference internal" href="_modules/torchelastic/tsm/driver/api.html#Scheduler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.tsm.driver.api.Scheduler" title="Permalink to this definition">¶</a></dt>
+<dd><p>An interface abstracting functionalities of a scheduler.
+Implementors need only implement those methods annotated with
+<code class="docutils literal notranslate"><span class="pre">&#64;abc.abstractmethod</span></code>.</p>
+<dl class="py method">
+<dt id="torchelastic.tsm.driver.api.Scheduler.cancel">
+<code class="sig-name descname">cancel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">app_id</span><span class="p">:</span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)">str</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.8)">None</a><a class="reference internal" href="_modules/torchelastic/tsm/driver/api.html#Scheduler.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.tsm.driver.api.Scheduler.cancel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cancels/kills the application. This method is idempotent within the same
+thread and is safe to call on the same application multiple times.
+However when called from multiple threads/processes on the same app
+the exact semantics of this method depends on the idempotency guarantees
+of the underlying scheduler API.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method does not block for the application to reach a
+cancelled state. To ensure that the application reaches a
+terminal state use the <code class="docutils literal notranslate"><span class="pre">wait</span></code> API.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.tsm.driver.api.Scheduler.describe">
+<em class="property">abstract </em><code class="sig-name descname">describe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">app_id</span><span class="p">:</span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)">str</a></span></em><span class="sig-paren">)</span> &#x2192; Optional<span class="p">[</span>torchelastic.tsm.driver.api.DescribeAppResponse<span class="p">]</span><a class="reference internal" href="_modules/torchelastic/tsm/driver/api.html#Scheduler.describe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.tsm.driver.api.Scheduler.describe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes the specified application.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Application description or <code class="docutils literal notranslate"><span class="pre">None</span></code> if the app does not exist.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.tsm.driver.api.Scheduler.exists">
+<code class="sig-name descname">exists</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">app_id</span><span class="p">:</span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)">str</a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/tsm/driver/api.html#Scheduler.exists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.tsm.driver.api.Scheduler.exists" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if the app exists (was submitted), <code class="docutils literal notranslate"><span class="pre">False</span></code> otherwise</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.tsm.driver.api.Scheduler.submit">
+<em class="property">abstract </em><code class="sig-name descname">submit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">app</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#torchelastic.tsm.driver.api.Application" title="torchelastic.tsm.driver.api.Application">torchelastic.tsm.driver.api.Application</a></span></em>, <em class="sig-param"><span class="n">mode</span><span class="p">:</span> <span class="n">torchelastic.tsm.driver.api.RunMode</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)">str</a><a class="reference internal" href="_modules/torchelastic/tsm/driver/api.html#Scheduler.submit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.tsm.driver.api.Scheduler.submit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Submits the application to be run by the scheduler.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The application id that uniquely identifies the submitted app.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="torchelastic.tsm.driver.local_scheduler.LocalScheduler">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.tsm.driver.local_scheduler.</code><code class="sig-name descname">LocalScheduler</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">image_fetcher</span><span class="p">:</span> <span class="n">torchelastic.tsm.driver.local_scheduler.ImageFetcher</span></em>, <em class="sig-param"><span class="n">cache_size</span><span class="p">:</span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)">int</a></span> <span class="o">=</span> <span class="default_value">100</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/tsm/driver/local_scheduler.html#LocalScheduler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.tsm.driver.local_scheduler.LocalScheduler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Schedules on localhost. Containers are modeled as processes and
+certain properties of the container that are either not relevant
+or that cannot be enforced for localhost
+runs are ignored. Properties that are ignored:</p>
+<ol class="arabic simple">
+<li><p>Resource requirements</p></li>
+<li><p>Container limit enforcements</p></li>
+<li><p>Restart policies</p></li>
+<li><p>Retry counts (no retries supported)</p></li>
+</ol>
+<dl class="simple">
+<dt>..note:: Use this scheduler sparingly since an application</dt><dd><p>that runs successfully on a session backed by this
+scheduler may not work on an actual production cluster
+using a different scheduler.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="torchelastic.tsm.driver.local_scheduler.LocalScheduler.describe">
+<code class="sig-name descname">describe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">app_id</span><span class="p">:</span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)">str</a></span></em><span class="sig-paren">)</span> &#x2192; Optional<span class="p">[</span>torchelastic.tsm.driver.api.DescribeAppResponse<span class="p">]</span><a class="reference internal" href="_modules/torchelastic/tsm/driver/local_scheduler.html#LocalScheduler.describe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.tsm.driver.local_scheduler.LocalScheduler.describe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes the specified application.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Application description or <code class="docutils literal notranslate"><span class="pre">None</span></code> if the app does not exist.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.tsm.driver.local_scheduler.LocalScheduler.submit">
+<code class="sig-name descname">submit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">app</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#torchelastic.tsm.driver.api.Application" title="torchelastic.tsm.driver.api.Application">torchelastic.tsm.driver.api.Application</a></span></em>, <em class="sig-param"><span class="n">mode</span><span class="p">:</span> <span class="n">torchelastic.tsm.driver.api.RunMode</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)">str</a><a class="reference internal" href="_modules/torchelastic/tsm/driver/local_scheduler.html#LocalScheduler.submit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.tsm.driver.local_scheduler.LocalScheduler.submit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Submits the application to be run by the scheduler.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The application id that uniquely identifies the submitted app.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.tsm.driver.local_scheduler.LocalScheduler.wait">
+<code class="sig-name descname">wait</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">app_id</span><span class="p">:</span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)">str</a></span></em><span class="sig-paren">)</span> &#x2192; Optional<span class="p">[</span>torchelastic.tsm.driver.api.DescribeAppResponse<span class="p">]</span><a class="reference internal" href="_modules/torchelastic/tsm/driver/local_scheduler.html#LocalScheduler.wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.tsm.driver.local_scheduler.LocalScheduler.wait" title="Permalink to this definition">¶</a></dt>
+<dd><p>Waits for the app to finish or raise TimeoutError upon timeout (in seconds).
+If no timeout is specified waits indefinitely.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The last return value from <code class="docutils literal notranslate"><span class="pre">describe()</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="session-builder">
+<h3>Session Builder<a class="headerlink" href="#session-builder" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+</div>
+
+
+             </article>
+             
+            </div>
+            <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="multiprocessing.html" class="btn btn-neutral float-right" title="Multiprocessing" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+      
+      
+        <a href="runtime.html" class="btn btn-neutral" title="Cloud Provider Support (Deprecated)" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+      
+    </div>
+  
+
+  
+
+    <hr>
+
+  
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, PyTorch Elastic Contributors.
+
+    </p>
+  </div>
+    
+      <div>
+        Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+      </div>
+     
+
+</footer>
+
+          </div>
+        </div>
+
+        <div class="pytorch-content-right" id="pytorch-content-right">
+          <div class="pytorch-right-menu" id="pytorch-right-menu">
+            <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
+              <ul>
+<li><a class="reference internal" href="#">Training Session Manager (TSM)</a><ul>
+<li><a class="reference internal" href="#module-torchelastic.tsm.driver">Usage Overview</a></li>
+<li><a class="reference internal" href="#user-api-documentation">User API Documentation</a><ul>
+<li><a class="reference internal" href="#containers-and-resources">Containers and Resources</a></li>
+<li><a class="reference internal" href="#roles-and-applications">Roles and Applications</a></li>
+<li><a class="reference internal" href="#session">Session</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#developer-api-documentation">Developer API Documentation</a><ul>
+<li><a class="reference internal" href="#scheduler">Scheduler</a></li>
+<li><a class="reference internal" href="#session-builder">Session Builder</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  
+
+
+  
+
+     
+       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+         <script src="_static/jquery.js"></script>
+         <script src="_static/underscore.js"></script>
+         <script src="_static/doctools.js"></script>
+         <script src="_static/language_data.js"></script>
+         <script src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js"></script>
+         <script src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js"></script>
+         <script src="_static/katex_autorenderer.js"></script>
+     
+
+  
+
+  <script type="text/javascript" src="_static/js/vendor/popper.min.js"></script>
+  <script type="text/javascript" src="_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+  <!-- Begin Footer -->
+
+  <div class="container-fluid docs-tutorials-resources" id="docs-tutorials-resources">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 text-center">
+          <h2>Docs</h2>
+          <p>Access comprehensive developer documentation for PyTorch</p>
+          <a class="with-right-arrow" href="https://pytorch.org/docs/stable/index.html">View Docs</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Tutorials</h2>
+          <p>Get in-depth tutorials for beginners and advanced developers</p>
+          <a class="with-right-arrow" href="https://pytorch.org/tutorials">View Tutorials</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Resources</h2>
+          <p>Find development resources and get your questions answered</p>
+          <a class="with-right-arrow" href="https://pytorch.org/resources">View Resources</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-logo-wrapper">
+        <a href="https://pytorch.org/" class="footer-logo"></a>
+      </div>
+
+      <div class="footer-links-wrapper">
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/">PyTorch</a></li>
+            <li><a href="https://pytorch.org/get-started">Get Started</a></li>
+            <li><a href="https://pytorch.org/features">Features</a></li>
+            <li><a href="https://pytorch.org/ecosystem">Ecosystem</a></li>
+            <li><a href="https://pytorch.org/blog/">Blog</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/blob/master/CONTRIBUTING.md">Contributing</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/resources">Resources</a></li>
+            <li><a href="https://pytorch.org/tutorials">Tutorials</a></li>
+            <li><a href="https://pytorch.org/docs/stable/index.html">Docs</a></li>
+            <li><a href="https://discuss.pytorch.org" target="_blank">Discuss</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/issues" target="_blank">Github Issues</a></li>
+            <li><a href="https://pytorch.org/assets/brand-guidelines/PyTorch-Brand-Guidelines.pdf" target="_blank">Brand Guidelines</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col follow-us-col">
+          <ul>
+            <li class="list-title">Stay Connected</li>
+            <li>
+              <div id="mc_embed_signup">
+                <form
+                  action="https://twitter.us14.list-manage.com/subscribe/post?u=75419c71fe0a935e53dfa4a3f&id=91d0dccd39"
+                  method="post"
+                  id="mc-embedded-subscribe-form"
+                  name="mc-embedded-subscribe-form"
+                  class="email-subscribe-form validate"
+                  target="_blank"
+                  novalidate>
+                  <div id="mc_embed_signup_scroll" class="email-subscribe-form-fields-wrapper">
+                    <div class="mc-field-group">
+                      <label for="mce-EMAIL" style="display:none;">Email Address</label>
+                      <input type="email" value="" name="EMAIL" class="required email" id="mce-EMAIL" placeholder="Email Address">
+                    </div>
+
+                    <div id="mce-responses" class="clear">
+                      <div class="response" id="mce-error-response" style="display:none"></div>
+                      <div class="response" id="mce-success-response" style="display:none"></div>
+                    </div>    <!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
+
+                    <div style="position: absolute; left: -5000px;" aria-hidden="true"><input type="text" name="b_75419c71fe0a935e53dfa4a3f_91d0dccd39" tabindex="-1" value=""></div>
+
+                    <div class="clear">
+                      <input type="submit" value="" name="subscribe" id="mc-embedded-subscribe" class="button email-subscribe-button">
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+            </li>
+          </ul>
+
+          <div class="footer-social-icons">
+            <a href="https://www.facebook.com/pytorch" target="_blank" class="facebook"></a>
+            <a href="https://twitter.com/pytorch" target="_blank" class="twitter"></a>
+            <a href="https://www.youtube.com/pytorch" target="_blank" class="youtube"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <div class="cookie-banner-wrapper">
+  <div class="container">
+    <p class="gdpr-notice">To analyze traffic and optimize your experience, we serve cookies on this site. By clicking or navigating, you agree to allow our usage of cookies. As the current maintainers of this site, Facebook’s Cookies Policy applies. Learn more, including about available controls: <a href="https://www.facebook.com/policies/cookies/">Cookies Policy</a>.</p>
+    <img class="close-button" src="_static/images/pytorch-x.svg">
+  </div>
+</div>
+
+  <!-- End Footer -->
+
+  <!-- Begin Mobile Menu -->
+
+  <div class="mobile-main-menu">
+    <div class="container-fluid">
+      <div class="container">
+        <div class="mobile-main-menu-header-container">
+          <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+          <a class="main-menu-close-button" href="#" data-behavior="close-mobile-menu"></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-main-menu-links-container">
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/features">Features</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/hub">PyTorch Hub</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/resources">Resources</a>
+          </li>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">Github</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- End Mobile Menu -->
+
+  <script type="text/javascript" src="_static/js/vendor/anchor.min.js"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function() {
+      mobileMenu.bind();
+      mobileTOC.bind();
+      pytorchAnchors.bind();
+      sideMenus.bind();
+      scrollToAnchor.bind();
+      highlightNavigation.bind();
+      mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Add class to links that have code blocks, since we cannot create links in code blocks
+      $("article.pytorch-article a span.pre").each(function(e) {
+        $(this).closest("a").addClass("has-code");
+      });
+    })
+  </script>
+</body>
+</html>
