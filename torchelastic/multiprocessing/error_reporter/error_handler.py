@@ -19,7 +19,7 @@ from typing import Optional
 ERROR_FILE_ENV: str = "ERROR_FILE_ENV_VAR"
 
 
-class SignalHandler(ABC):
+class ErrorHandler(ABC):
     @abstractmethod
     def configure(self):
         raise NotImplementedError
@@ -33,15 +33,17 @@ class SignalHandler(ABC):
         raise NotImplementedError
 
 
-class LocalSignalHandler(SignalHandler):
+class LocalErrorHandler(ErrorHandler):
+    """
+    Since we use stderr to get the errors for oss, the local error handler does
+    do anything.
+    """
+
     def configure(self):
-        # TODO (T73940701)
         pass
 
     def construct_error_message(self, child_pid: int) -> Optional[str]:
-        # TODO (T73940701)
         pass
 
     def record_exception(self, e: Exception) -> None:
-        # TODO (T73940701)
         pass

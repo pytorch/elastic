@@ -8,13 +8,11 @@
 
 import unittest
 
-from torchelastic.multiprocessing.error_reporter.handlers import get_signal_handler
-from torchelastic.multiprocessing.error_reporter.signal_handler import (
-    LocalSignalHandler,
-)
+from torchelastic.multiprocessing.error_reporter.error_handler import LocalErrorHandler
+from torchelastic.multiprocessing.error_reporter.handlers import get_error_handler
 
 
 class SignalHandlerFactoryTest(unittest.TestCase):
-    def test_get_local_signal_handler(self):
-        signal_handler = get_signal_handler()
-        self.assertTrue(isinstance(signal_handler, LocalSignalHandler))
+    def test_get_local_error_handler(self):
+        error_handler = get_error_handler()
+        self.assertTrue(isinstance(error_handler, LocalErrorHandler))

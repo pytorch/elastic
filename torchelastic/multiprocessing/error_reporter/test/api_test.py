@@ -22,25 +22,25 @@ def raise_excepiton() -> str:
 
 
 class ErrorReporterApiTest(unittest.TestCase):
-    @patch("torchelastic.multiprocessing.error_reporter.api.get_signal_handler")
-    def test_exec_fn(self, get_signal_handler_mock):
-        signal_handler_mock = Mock()
-        get_signal_handler_mock.return_value = signal_handler_mock
+    @patch("torchelastic.multiprocessing.error_reporter.api.get_error_handler")
+    def test_exec_fn(self, get_error_handler_mock):
+        error_handler_mock = Mock()
+        get_error_handler_mock.return_value = error_handler_mock
         res = exec_fn(sum_func, args=(1, 2))
         self.assertEqual(3, res)
-        signal_handler_mock.configure.assert_called_once()
+        error_handler_mock.configure.assert_called_once()
 
-    @patch("torchelastic.multiprocessing.error_reporter.api.get_signal_handler")
-    def test_get_error(self, get_signal_handler_mock):
-        signal_handler_mock = Mock()
-        get_signal_handler_mock.return_value = signal_handler_mock
+    @patch("torchelastic.multiprocessing.error_reporter.api.get_error_handler")
+    def test_get_error(self, get_error_handler_mock):
+        error_handler_mock = Mock()
+        get_error_handler_mock.return_value = error_handler_mock
         get_error(1234)
-        signal_handler_mock.construct_error_message.assert_called_once()
+        error_handler_mock.construct_error_message.assert_called_once()
 
     def test_record(self):
         mock_handler = Mock()
         with patch(
-            "torchelastic.multiprocessing.error_reporter.api.get_signal_handler",
+            "torchelastic.multiprocessing.error_reporter.api.get_error_handler",
             return_value=mock_handler,
         ):
             try:

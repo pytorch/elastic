@@ -8,11 +8,11 @@
 # Multiprocessing error-reporting module
 
 
-from torchelastic.multiprocessing.error_reporter.signal_handler import (
-    LocalSignalHandler,
-    SignalHandler,
+from torchelastic.multiprocessing.error_reporter.error_handler import (
+    ErrorHandler,
+    LocalErrorHandler,
 )
 
 
-def get_signal_handler() -> SignalHandler:
-    return LocalSignalHandler()
+def get_error_handler() -> ErrorHandler:
+    return LocalErrorHandler()

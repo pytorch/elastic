@@ -9,38 +9,18 @@
 
 import logging
 import os
-import time
 from typing import Any, Callable, Optional, Tuple
 
-from torchelastic.multiprocessing.error_reporter.handlers import get_signal_handler
+from torchelastic.multiprocessing.error_reporter.handlers import get_error_handler
 
 
 log: logging.Logger = logging.getLogger(__name__)
 
 
-def configure(sess_identifier: Optional[str] = None) -> None:
-    # TODO: lazy init this in the __init__.py file, in case user does not call configure.
-    """
-    Configure error reporter
-    session_identifier: a unique identifier for each error reporting session,
-        to guarantee unique error file paths
-        exp: timestamp for each multiprocessing.spawn call
-    """
-    # TODO(T74327900) : make cleanup procedure configurable
-    # TODO(avianou) : remove session identifier, since we can use differen mechanism
-    # to guarantee path uniquness. Also session identifier lacks debuggability
-    if not sess_identifier:
-        sess_identifier = str(int(time.monotonic() * 1000))
-    os.environ["SESSION_IDENTIFIER_ENV_VAR"] = sess_identifier
-    log.info(f"session_id set to {sess_identifier}")
-
-
 def exec_fn(user_funct: Callable, args: Tuple = ()) -> Any:
-    signal_handler = get_signal_handler()
-    log.info(
-        f"exec_fn process {os.getpid()}, using signal hanler: {signal_handler.__class__}"
-    )
-    signal_handler.configure()
+    log.warning("This is an experimental API and is going to be removed in future")
+    error_handler = get_error_handler()
+    error_handler.configure()
     return user_funct(*args)
 
 
@@ -49,13 +29,15 @@ def get_error(error_process_pid: int) -> Optional[str]:
     Retrieves an error(if any) that occurred on the child process.
     If no exception occurred, the function will return None
     """
-    signal_handler = get_signal_handler()
-    return signal_handler.construct_error_message(error_process_pid)
+    log.warning("This is an experimental API and is going to be removed in future")
+    error_handler = get_error_handler()
+    return error_handler.construct_error_message(error_process_pid)
 
 
 def _configure_process_handler() -> None:
-    signal_handler = get_signal_handler()
-    signal_handler.configure()
+    log.warning("This is an experimental API and is going to be removed in future")
+    error_handler = get_error_handler()
+    error_handler.configure()
 
 
 def record(func):
@@ -79,13 +61,15 @@ def record(func):
 
     """
 
+    log.warning("This is an experimental API and is going to be removed in future")
+
     def wrap():
         try:
             _configure_process_handler()
             func()
         except Exception as e:
-            signal_handler = get_signal_handler()
-            signal_handler.record_exception(e)
+            error_handler = get_error_handler()
+            error_handler.record_exception(e)
             raise
 
     return wrap
