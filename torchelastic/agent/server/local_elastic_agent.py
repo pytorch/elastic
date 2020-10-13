@@ -77,7 +77,7 @@ class _DistInfo:
         self.role_name = role_name
 
 
-def _wrap(local_rank, ret_val_queue, dist_infos, fn, args):
+def _wrap(local_rank, ret_val_queues, dist_infos, fn, args):
     import faulthandler
 
     try:
@@ -103,6 +103,8 @@ def _wrap(local_rank, ret_val_queue, dist_infos, fn, args):
     os.environ["TORCHELASTIC_MAX_RESTARTS"] = str(info.max_restarts)
     os.environ["TORCHELASTIC_RUN_ID"] = info.run_id
     ret = fn(*args)
+    ret_val_queue = ret_val_queues[local_rank]
+    # Note: ret_val_queue will always contain a single element.
     ret_val_queue.put((info.rank, ret))
 
 
@@ -157,9 +159,10 @@ class LocalElasticAgent(SimpleElasticAgent):
         self._start_method = start_method
         # pyre-ignore[8]: Attribute has type `ProcessContext`; used as `None`.
         self._process_context: mp.ProcessContext = None
-        # a queue that holds return values for each worker fn
-        # each element of the queue is a tuple (rank, ret_val)
-        self._ret_val_queue = None
+        # queues for holding return values for each worker fn
+        # each element of the queue is ret_val
+        # pyre-ignore[8]: Attribute has type `Dict`; used as `None`.
+        self._ret_val_queues: Dict[int, mp.SimpleQueue] = None
 
     @prof
     def _stop_workers(self, worker_group: WorkerGroup) -> None:
@@ -176,6 +179,17 @@ class LocalElasticAgent(SimpleElasticAgent):
         restart_count = spec.max_restarts - self._remaining_restarts
 
         dist_infos: Dict[int, _DistInfo] = {}
+        # Use SimgleQueue since it does not create a thread to transfer data.
+        # We observed deadlock when using Queue: When the process finishes
+        # It executes a finalize function that does: `thread.join()`
+        # The join blocks forever.
+        # Note: Each queue will contain a single element and will be used by a single
+        # worker process.
+        self._ret_val_queues: Dict[int, mp.SimpleQueue] = {
+            i: mp.get_context(self._start_method).SimpleQueue()
+            for i in range(0, len(worker_group.workers))
+        }
+
         for worker in worker_group.workers:
             local_rank = worker.local_rank
             dist_infos[local_rank] = _DistInfo(
@@ -193,10 +207,9 @@ class LocalElasticAgent(SimpleElasticAgent):
                 spec.role,
             )
 
-        self._ret_val_queue = mp.get_context(self._start_method).Queue()
         self._process_context = mp.start_processes(
             fn=_wrap,
-            args=(self._ret_val_queue, dist_infos, spec.fn, spec.args),
+            args=(self._ret_val_queues, dist_infos, spec.fn, spec.args),
             nprocs=spec.local_world_size,
             join=False,
             daemon=False,
@@ -228,11 +241,15 @@ class LocalElasticAgent(SimpleElasticAgent):
             if self._process_context.join(timeout=-1):
                 # copy ret_val_queue into a map
                 ret_vals = {}
-                assert worker_group.spec.local_world_size == self._ret_val_queue.qsize()
-                for _ in range(self._ret_val_queue.qsize()):
-                    (rank, out) = self._ret_val_queue.get()
+                for local_rank, ret_queue in self._ret_val_queues.items():
+                    if ret_queue.empty():
+                        raise RuntimeError(
+                            f"Worker {local_rank} did not return any value."
+                        )
+                    rank, out = ret_queue.get()
                     ret_vals[rank] = out
-                self._ret_val_queue = None
+                # pyre-ignore[8]: Attribute has type `Dict`; used as `None`.
+                self._ret_val_queues = None
                 return MonitorResult(WorkerState.SUCCEEDED, ret_vals)
             else:
                 return MonitorResult(WorkerState.HEALTHY)
