@@ -23,14 +23,14 @@ class MockRequestQueue(RequestQueue):
 
 class MockTimerServer(TimerServer):
     """
-    Mock implementation of TimerServer for testing purposes.
-    This mock has the following behavior:
+     Mock implementation of TimerServer for testing purposes.
+     This mock has the following behavior:
 
-    1. reaping worker 1 throws
-    2. reaping worker 2 succeeds
-    3. reaping worker 3 fails (caught exception)
+     1. reaping worker 1 throws
+     2. reaping worker 2 succeeds
+     3. reaping worker 3 fails (caught exception)
 
-   For each workers 1 - 3 returns 2 expired timers
+    For each workers 1 - 3 returns 2 expired timers
     """
 
     def __init__(self, request_queue, max_interval):
