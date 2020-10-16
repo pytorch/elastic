@@ -35,7 +35,7 @@ class ErrorReporterApiTest(unittest.TestCase):
         error_handler_mock = Mock()
         get_error_handler_mock.return_value = error_handler_mock
         get_error(1234)
-        error_handler_mock.construct_error_message.assert_called_once()
+        error_handler_mock.get_process_error.assert_called_once()
 
     def test_record(self):
         mock_handler = Mock()

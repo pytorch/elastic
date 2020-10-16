@@ -8,9 +8,12 @@
 # Multiprocessing error-reporting module
 
 import logging
-import os
 from typing import Any, Callable, Optional, Tuple
 
+from torchelastic.multiprocessing.error_reporter.error_handler import (  # noqa F401
+    ErrorMessage,
+    ErrorType,
+)
 from torchelastic.multiprocessing.error_reporter.handlers import get_error_handler
 
 
@@ -24,14 +27,22 @@ def exec_fn(user_funct: Callable, args: Tuple = ()) -> Any:
     return user_funct(*args)
 
 
-def get_error(error_process_pid: int) -> Optional[str]:
+def get_error(error_process_pid: int) -> Optional[ErrorMessage]:
     """
     Retrieves an error(if any) that occurred on the child process.
     If no exception occurred, the function will return None
     """
     log.warning("This is an experimental API and is going to be removed in future")
     error_handler = get_error_handler()
-    return error_handler.construct_error_message(error_process_pid)
+    return error_handler.get_process_error(error_process_pid)
+
+
+def cleanup() -> None:
+    """
+    Performs cleanup actions
+    """
+    error_handler = get_error_handler()
+    return error_handler.cleanup()
 
 
 def _configure_process_handler() -> None:
