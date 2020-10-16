@@ -11,13 +11,17 @@ import signal
 from subprocess import CompletedProcess
 from typing import List, Optional
 
-from torchelastic.multiprocessing.popen import ResponsivePopen
+from torchelastic.multiprocessing.base_process_handler import (  # noqa F401
+    ProcessExitedException,
+    ProcessRaisedException,
+)
 from torchelastic.multiprocessing.proc_context import (  # noqa F401
     Params,
     ProcContext,
     ProcessGroupException,
     TerminationBehavior,
 )
+from torchelastic.multiprocessing.process_handler import ProcessHandler
 
 
 def _pr_set_pdeathsig(sig=signal.SIGTERM):
@@ -42,6 +46,12 @@ def run_async(
     termination: TerminationBehavior = TerminationBehavior.GROUP,
     termination_timeout: float = 5,
 ) -> ProcContext:
+    """
+    Starts a number of subprocesses equal to len(params). Each subprocess executes
+    a single command provided by the ``Params`` class. Returns immediatelly with a
+    process context object that can be used to execute operations over a list of
+    processes.
+    """
     processes = []
     for param in params:
         kwargs = {"args": param.args, "stdout": param.stdout, "stderr": param.stderr}
@@ -49,7 +59,7 @@ def run_async(
             kwargs["env"] = param.env
         kwargs.update(param.kwargs)
         kwargs["preexec_fn"] = _process_preexec_fn
-        process = ResponsivePopen(**kwargs)
+        process = ProcessHandler(**kwargs)
         processes.append(process)
     return ProcContext(
         processes,
@@ -64,6 +74,14 @@ def run(
     termination_timeout: float = 5,
     termination: TerminationBehavior = TerminationBehavior.GROUP,
 ) -> Optional[List[CompletedProcess]]:
+    """
+    Synchronous method that starts a number of processes, each subprocess executes
+    commnad provided by ``Params`` class. Wais for ``timeout`` to finish. If
+    timeout is None, the method will wait until all processes are done.
+    When failure occurs on a process, users can specify ``termination_timeout``.
+    The method will wait this amount of time for other processes before sending SIGTERM
+    signal.
+    """
     proc_context = run_async(
         params=params, termination=termination, termination_timeout=termination_timeout
     )

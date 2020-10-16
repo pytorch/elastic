@@ -13,7 +13,8 @@ from enum import Enum
 from subprocess import CompletedProcess, TimeoutExpired
 from typing import Dict, List, Optional
 
-from torchelastic.multiprocessing.popen import ProcessException, ResponsivePopen
+from torchelastic.multiprocessing.base_process_handler import ProcessException
+from torchelastic.multiprocessing.process_handler import ProcessHandler
 
 
 class TerminationBehavior(Enum):
@@ -41,7 +42,7 @@ class ProcessGroupException(Exception):
 
 class Params:
     """
-    Represents parameters to ``ResponsivePopen``. Class accepts any parameters that the standard
+    Represents parameters to ``ProcessHandler``. Class accepts any parameters that the standard
     ``subprocess.Popen`` accepts, except preexec_fn.
     """
 
@@ -73,7 +74,7 @@ class ProcContext:
 
     def __init__(
         self,
-        proc_list: List[ResponsivePopen],
+        proc_list: List[ProcessHandler],
         termination_behavior: TerminationBehavior,
         termination_timeout: float = 5,  # seconds
     ):
