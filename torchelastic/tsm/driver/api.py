@@ -9,9 +9,10 @@
 import abc
 import os
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
 from string import Template
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 
 @dataclass
@@ -382,7 +383,8 @@ class DescribeAppResponse:
     num_restarts: int = -1
     msg: str = ""
     ui_url: Optional[str] = None
-    # TODO T72035216 add other fields that come back from the scheduler's describe
+
+    roles: List[Role] = field(default_factory=list)
 
 
 class Scheduler(abc.ABC):
@@ -445,6 +447,69 @@ class Scheduler(abc.ABC):
         else:
             # do nothing if the app does not exist
             return
+
+    def log_iter(
+        self,
+        app_id: str,
+        role_name: str,
+        k: int = 0,
+        regex: Optional[str] = None,
+        since: Optional[datetime] = None,
+        until: Optional[datetime] = None,
+    ) -> Iterable:
+        """
+        Returns an iterator to the log lines of the ``k``th replica of the ``role``.
+        The iterator ends end all qualifying log lines have been read.
+
+        If the scheduler supports time-based cursors fetching log lines
+        for custom time ranges, then the ``since``, ``until`` fields are
+        honored, otherwise they are ignored. Not specifying ``since`` and ``until``
+        is equivalent to getting all available log lines. If the ``until`` is
+        empty, then the iterator behaves like ``tail -f``, following the log output
+        until the job reaches a terminal state.
+
+        The exact definition of what constitutes a log is scheduler specific. Some
+        schedulers may consider stderr or stdout as the log, others may read the logs
+        from a log file.
+
+        Behaviors and assumptions:
+
+        1. Produces an undefined-behavior if called on an app that does not exist
+           The caller should check that the app exists using ``exists(app_id)``
+           prior to calling this method.
+
+        2. Is not stateful, calling this method twice with same parameters
+           returns a new iterator. Prior iteration
+           progress is lost.
+
+        3. Does not always support log-tailing. Not all schedulers support live
+           log iteration (e.g. tailing logs while the app is running). Refer to
+           the specific scheduler's documentation for the iterator's behavior.
+
+        4. Does not guarantee log retention. It is possible that by the time this
+           method is called, the underlying scheduler may have purged the log records
+           for this application. If so this method raises an arbitrary exception.
+
+        5. Only raises a ``StopIteration`` exception when the accessible log lines
+           have been fully exhausted and the app has reached a final state. For instance,
+           if the app gets stuck and does not produce any log lines, then the iterator
+           blocks until the app eventually gets killed (either via timeout or manually)
+           at which point it raises a ``StopIteration``.
+
+        6. Need not be supported by all schedulers.
+
+        7. Some schedulers may support line cursors by supporting ``__getitem__``
+           (e.g. ``iter[50]`` seeks to the 50th log line).
+
+        Returns:
+            An ``Iterator`` over log lines of the specified role replica
+
+        Raises:
+            NotImplementedError - if the scheduler does not support log iteration
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__qualname__} does not support application log iteration"
+        )
 
 
 class UnknownAppException(Exception):
@@ -615,5 +680,76 @@ class Session(abc.ABC):
 
         Raises:
             UnknownAppException - if app was never run or attached on this session
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def log_lines(
+        self,
+        app_id: str,
+        role_name: str,
+        k: int = 0,
+        regex: Optional[str] = None,
+        since: Optional[datetime] = None,
+        until: Optional[datetime] = None,
+    ) -> Iterable:
+        """
+        Returns an iterator over the log lines of the specified job container.
+
+        .. note:: ``k`` is the node (host) id NOT the ``rank``.
+
+        .. note:: ``since`` and ``until`` need not always be honored (depends on scheduler).
+
+        .. warning:: The semantics and guarantees of the returned iterator is highly
+                     scheduler dependent. See ``torchelastic.tsm.driver.api.Scheduler.log_iter``
+                     for the high-level semantics of this log iterator. For this reason
+                     it is HIGHLY DISCOURAGED to use this method for generating output
+                     to pass to downstream functions/dependencies. This method
+                     DOES NOT guarantee that 100% of the log lines are returned.
+                     It is totally valid for this method to return no or partial log lines
+                     if the scheduler has already totally or partially purged log records
+                     for the application.
+
+        Usage:
+
+        ::
+
+         app_id = session.run(app)
+
+         print("== trainer node 0 logs ==")
+         for line in session.log_lines(app_id, "trainer", k=0):
+            print(line)
+
+        Discouraged anti-pattern:
+
+        ::
+
+         # DO NOT DO THIS!!!!
+         # parses accuracy metric from log and reports it for this experiment run
+
+         accuracy = -1
+         for line in session.log_lines(app_id, "trainer", k=0):
+            if matches_regex(line, "final model_accuracy:[0-9]*"):
+                accuracy = parse_accuracy(line)
+                break
+
+         report(experiment_name, accuracy)
+
+        Arguments:
+            app_id - application id
+            role_name - role within the app (e.g. "trainer")
+            k - k^th replica of the role to fetch the logs for
+            regex - optional regex filter, returns all lines if left empty
+            since - datetime based start cursor. If left empty begins from the
+                    first log line (start of job).
+            until - datetime based end cursor. If left empty, follows the log output
+                    until the job completes and all log lines have been consumed.
+
+        Returns:
+             An iterator over the role's ``k``th replica of the specified application.
+
+        Raises:
+             UnknownAppException - if the app was never run or attached on this session.
+
         """
         raise NotImplementedError()

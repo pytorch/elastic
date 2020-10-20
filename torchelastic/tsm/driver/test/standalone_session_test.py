@@ -5,10 +5,12 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
+import datetime
 import os
 import shutil
 import tempfile
 import unittest
+from unittest import mock
 from unittest.mock import MagicMock
 
 from torchelastic.tsm.driver.api import (
@@ -78,6 +80,11 @@ class StandaloneSessionTest(unittest.TestCase):
         self.assertEqual(AppState.RUNNING, session2.status(app_id).state)
         session2.stop(app_id)
         self.assertEqual(AppState.CANCELLED, session2.status(app_id).state)
+
+    def test_attach_unknown(self):
+        session = StandaloneSession(name="test_session", scheduler=self.scheduler)
+        with self.assertRaises(UnknownAppException):
+            session.attach("unknown_app")
 
     def test_attach_and_run(self):
         session1 = StandaloneSession(name="test_session1", scheduler=self.scheduler)
@@ -184,3 +191,32 @@ class StandaloneSessionTest(unittest.TestCase):
         )
         with self.assertRaises(UnknownAppException):
             session.stop("unknown_app_id")
+
+    def test_log_lines_unknown_app(self):
+        session = StandaloneSession(
+            name="test_session", scheduler=self.scheduler, wait_interval=1
+        )
+        with self.assertRaises(UnknownAppException):
+            session.log_lines("unknown", "trainer")
+
+    @mock.patch("torchelastic.tsm.driver.api.Scheduler", autospec=True)
+    def test_log_lines(self, scheduler_mock):
+        scheduler_mock.exists.return_value = True
+        scheduler_mock.log_iter.return_value = iter(["hello", "world"])
+        session = StandaloneSession(
+            name="test_session", scheduler=scheduler_mock, wait_interval=1
+        )
+        app_id = "mock_app"
+        role_name = "trainer"
+        replica_id = 2
+        regex = "QPS.*"
+        since = datetime.datetime.now()
+        until = datetime.datetime.now()
+        lines = list(
+            session.log_lines(app_id, role_name, replica_id, regex, since, until)
+        )
+
+        self.assertEqual(["hello", "world"], lines)
+        scheduler_mock.log_iter.assert_called_once_with(
+            app_id, role_name, replica_id, regex, since, until
+        )

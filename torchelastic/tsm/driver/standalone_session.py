@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 
+
 # Copyright (c) Facebook, Inc. and its affiliates.
 # All rights reserved.
 #
+import time
+
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
-
-import time
-from typing import Dict, Optional
+from datetime import datetime
+from typing import Dict, Iterable, Optional
 
 from torchelastic.tsm.driver.api import (
     Application,
@@ -82,8 +84,26 @@ class StandaloneSession(Session):
             self._scheduler.cancel(app_id)
 
     def attach(self, app_id: str) -> Application:
-        # TODO recreate the app to the best extent; empty app for now (e.g. cannot re-run the app)
-        app = Application(name=app_id)
+        desc = self._scheduler.describe(app_id)
+
+        if not desc:
+            raise UnknownAppException(app_id)
+
+        app = Application(name=app_id).of(*desc.roles)
         app.is_attached = True
         self._apps[app_id] = app
         return app
+
+    def log_lines(
+        self,
+        app_id: str,
+        role_name: str,
+        k: int = 0,
+        regex: Optional[str] = None,
+        since: Optional[datetime] = None,
+        until: Optional[datetime] = None,
+    ) -> Iterable:
+        if not self._scheduler.exists(app_id):
+            raise UnknownAppException(app_id)
+
+        return self._scheduler.log_iter(app_id, role_name, k, regex, since, until)

@@ -7,7 +7,8 @@
 # LICENSE file in the root directory of this source tree.
 import os
 import unittest
-from typing import Dict, Optional
+from datetime import datetime
+from typing import Dict, Iterable, Optional
 
 from torchelastic.tsm.driver.api import (
     _TERMINAL_STATES,
@@ -214,6 +215,17 @@ class SessionTest(unittest.TestCase):
 
         def attach(self, app_id: str) -> Application:
             return Application(app_id)
+
+        def log_lines(
+            self,
+            app_id: str,
+            role_name: str,
+            k: int = 0,
+            regex: Optional[str] = None,
+            since: Optional[datetime] = None,
+            until: Optional[datetime] = None,
+        ) -> Iterable:
+            return iter([])
 
     def test_validate_no_roles(self):
         session = self.MockSession()
