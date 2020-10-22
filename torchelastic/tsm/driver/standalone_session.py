@@ -12,6 +12,7 @@ from datetime import datetime
 from typing import Dict, Iterable, Optional
 
 from torchelastic.tsm.driver.api import (
+    AppDryRunInfo,
     Application,
     AppNotReRunnableException,
     AppStatus,
@@ -41,6 +42,11 @@ class StandaloneSession(Session):
         app_id = self._scheduler.submit(app, mode)
         self._apps[app_id] = app
         return app_id
+
+    def dryrun(
+        self, app: Application, mode: RunMode = RunMode.HEADLESS
+    ) -> AppDryRunInfo:
+        return self._scheduler.submit_dryrun(app, mode)
 
     def status(self, app_id: str) -> Optional[AppStatus]:
         if app_id not in self._apps:

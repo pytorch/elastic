@@ -11,6 +11,7 @@ import shutil
 import tempfile
 import unittest
 
+from mock import patch
 from torchelastic.tsm.driver.api import (
     Application,
     AppState,
@@ -78,7 +79,6 @@ class LocalSchedulerTest(unittest.TestCase):
             .replicas(num_replicas)
         )
         app = Application(name="test_app").of(role)
-
         app_id = self.scheduler.submit(app, RunMode.HEADLESS)
 
         self.assertEqual("test_app_0", app_id)
@@ -95,6 +95,35 @@ class LocalSchedulerTest(unittest.TestCase):
 
         self.assertEqual("test_app_1", app_id)
         self.assertEqual(AppState.FAILED, self.scheduler.wait(app_id).state)
+
+    @patch(
+        "torchelastic.tsm.driver.local_scheduler.LocalDirectoryImageFetcher.fetch",
+        return_value="",
+    )
+    def test_submit_dryrun(self, img_fetcher_fetch_mock):
+        master = (
+            Role("master")
+            .runs("master.par", "arg1", ENV_VAR_1="VAL1")
+            .on(self.test_container)
+        )
+        trainer = (
+            Role("trainer").runs("trainer.par").on(self.test_container).replicas(2)
+        )
+
+        app = Application(name="test_app").of(master, trainer)
+        info = self.scheduler.submit_dryrun(app, RunMode.HEADLESS)
+        print(info)
+        self.assertEqual(2, len(info.request))
+        master_info = info.request[0]["master"]
+        trainer_info = info.request[1]["trainer"]
+        self.assertEqual(1, len(master_info))
+        self.assertEqual(2, len(trainer_info))
+        self.assertEqual(
+            {"args": ["master.par", "arg1"], "env": {"ENV_VAR_1": "VAL1"}},
+            master_info[0],
+        )
+        self.assertEqual({"args": ["trainer.par"], "env": {}}, trainer_info[0])
+        self.assertEqual({"args": ["trainer.par"], "env": {}}, trainer_info[1])
 
     def test_submit_multiple_roles(self):
         test_file1 = os.path.join(self.test_dir, "test_file_1")

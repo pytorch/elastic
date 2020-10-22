@@ -15,9 +15,11 @@ import time
 from typing import Dict, List, Optional
 
 from torchelastic.tsm.driver.api import (
+    AppDryRunInfo,
     Application,
     AppState,
     DescribeAppResponse,
+    Role,
     RunMode,
     Scheduler,
     is_terminal,
@@ -205,7 +207,56 @@ class LocalScheduler(Scheduler):
         local_app = _LocalApplication(app.name)
         local_app.set_run_mode(mode)
 
-        for role in app.roles:
+        for role_popen_args in self._to_app_popen_args(app_id, app.roles):
+            for i, (role_name, replica_popen_args) in enumerate(
+                role_popen_args.items()
+            ):
+                for replica_popen_arg in replica_popen_args:
+                    log.info(f"Running {role_name} replica {i}): {replica_popen_arg}")
+                    proc = subprocess.Popen(**replica_popen_arg)
+                    local_app.add_process(role_name, proc)
+
+        self._apps[app_id] = local_app
+        return app_id
+
+    def submit_dryrun(self, app: Application, mode: RunMode) -> AppDryRunInfo:
+        app_popen_args = self._to_app_popen_args(f"{app.name}_##", app.roles)
+        import pprint
+
+        return AppDryRunInfo(
+            app_popen_args, lambda p: pprint.pformat(p, indent=2, width=80)
+        )
+
+    def _to_app_popen_args(self, app_id: str, roles: List[Role]):
+        """
+        returns the popen args for all processes that needs to be created for the app
+
+        ::
+
+         # for each role
+         [
+           { <role_name_1> : [{args: cmd, env: env, ... other popen args ...}, ...]},
+           { <role_name_1> : [{args: cmd, env: env, ... other popen args ...}, ...]},
+           ...
+         ]
+
+         # example (app has 2 roles: master (1 replica), trainer (2 replicas)
+         [
+           {
+             "master" : [
+               {args: "master.par", env: env, ... other popen args ...}
+              ]
+           },
+           {
+             "trainer" : [
+               {args: "trainer.par", env: env, ... other popen args ...},
+               {args: "trainer.par", env: env, ... other popen args ...}
+              ]
+           },
+         ]
+        """
+        app_popen_params = []
+        for role in roles:
             container = role.container
             assert (
                 container
@@ -213,16 +264,17 @@ class LocalScheduler(Scheduler):
 
             img_root = self._image_fetcher.fetch(container.image)
             cmd = os.path.join(img_root, role.entrypoint)
+
+            role_popen_params = {}
             for replica_id in range(role.num_replicas):
                 args = [cmd] + macros.substitute(
                     role.args, img_root, app_id, str(replica_id)
                 )
-                log.info(f"Running {args} with env: {role.env}")
-                proc = subprocess.Popen(args, env=role.env)
-                local_app.add_process(role.name, proc)
 
-        self._apps[app_id] = local_app
-        return app_id
+                replica_popen_params = role_popen_params.setdefault(role.name, [])
+                replica_popen_params.append({"args": args, "env": role.env})
+            app_popen_params.append(role_popen_params)
+        return app_popen_params
 
     def _failed(self, p: subprocess.Popen):
         if self._is_alive(p):

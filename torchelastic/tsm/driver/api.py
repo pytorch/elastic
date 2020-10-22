@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from string import Template
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, TypeVar
 
 
 @dataclass
@@ -387,6 +387,27 @@ class DescribeAppResponse:
     roles: List[Role] = field(default_factory=list)
 
 
+T = TypeVar("T")
+
+
+class AppDryRunInfo(Generic[T]):
+    """
+    Returned by ``Scheduler.submit_dryrun``. Represents the
+    request that would have been made to the scheduler.
+    The ``fmt_str()`` method of this object should return a
+    pretty formatted string representation of the underlying
+    request object such that ``print(info)`` yields a human
+    readable representation of the underlying request.
+    """
+
+    def __init__(self, request: T, fmt: Callable[[T], str]):
+        self.request = request
+        self._fmt = fmt
+
+    def __repr__(self):
+        return self._fmt(self.request)
+
+
 class Scheduler(abc.ABC):
     """
     An interface abstracting functionalities of a scheduler.
@@ -401,6 +422,17 @@ class Scheduler(abc.ABC):
 
         Returns:
             The application id that uniquely identifies the submitted app.
+        """
+        raise NotImplementedError()
+
+    def submit_dryrun(self, app: Application, mode: RunMode) -> AppDryRunInfo:
+        """
+        Rather than submitting the request to run the app, returns the
+        request object that would have been submitted to the underlying
+        service. The type of the request object is scheduler dependent.
+        This method can be used to dry-run an application. Please refer
+        to the scheduler implementation's documentation regarding
+        the actual return type.
         """
         raise NotImplementedError()
 
@@ -583,6 +615,11 @@ class Session(abc.ABC):
                 )
 
         return self._run(app, mode)
+
+    def dryrun(
+        self, app: Application, mode: RunMode = RunMode.HEADLESS
+    ) -> AppDryRunInfo:
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def _run(self, app: Application, mode: RunMode = RunMode.HEADLESS) -> str:

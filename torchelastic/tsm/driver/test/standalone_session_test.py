@@ -67,6 +67,17 @@ class StandaloneSessionTest(unittest.TestCase):
         app_id = session.run(app)
         self.assertEqual(AppState.SUCCEEDED, session.wait(app_id).state)
 
+    def test_dryrun(self):
+        scheduler_mock = MagicMock()
+        session = StandaloneSession(
+            name="test_session", scheduler=scheduler_mock, wait_interval=1
+        )
+        role = Role(name="touch").runs("echo", "hello world").on(self.test_container)
+        app = Application("name").of(role)
+
+        session.dryrun(app)
+        scheduler_mock.submit_dryrun.assert_called_once_with(app, RunMode.HEADLESS)
+
     def test_attach(self):
         session1 = StandaloneSession(name="test_session1", scheduler=self.scheduler)
         role = Role(name="sleep").runs("sleep.sh", "60").on(self.test_container)

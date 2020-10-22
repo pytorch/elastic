@@ -10,8 +10,10 @@ import unittest
 from datetime import datetime
 from typing import Dict, Iterable, Optional
 
+from mock import MagicMock
 from torchelastic.tsm.driver.api import (
     _TERMINAL_STATES,
+    AppDryRunInfo,
     Application,
     AppState,
     AppStatus,
@@ -260,3 +262,14 @@ class SessionTest(unittest.TestCase):
             )
             app = Application("no container").of(role)
             session.run(app)
+
+
+class AppDryRunInfoTest(unittest.TestCase):
+    def test_repr(self):
+        request_mock = MagicMock()
+        to_string_mock = MagicMock()
+        info = AppDryRunInfo(request_mock, to_string_mock)
+        info.__repr__()
+        self.assertEqual(request_mock, info.request)
+
+        to_string_mock.assert_called_once_with(request_mock)
