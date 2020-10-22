@@ -19,6 +19,7 @@ def parse_args():
         action="store_true",
         help="forces the script to throw a RuntimeError",
     )
+
     parser.add_argument(
         "--wait", default=0, type=int, help="wait time in seconds befor start executing"
     )

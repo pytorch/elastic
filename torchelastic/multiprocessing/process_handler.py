@@ -8,6 +8,7 @@
 
 
 import signal
+import time
 from typing import Optional
 
 from torchelastic.multiprocessing.base_process_handler import (
@@ -33,6 +34,7 @@ class ProcessHandler(BaseProcessHandler):
                 signal_name,
                 self.stdout,
                 self.stderr,
+                int(time.time() * 1000),
             )
         return return_code
 

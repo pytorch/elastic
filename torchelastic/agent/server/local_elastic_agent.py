@@ -9,7 +9,6 @@
 import os
 from typing import Any, Dict
 
-import torch.multiprocessing as mp
 from torchelastic.agent.server.api import (
     MonitorResult,
     SimpleElasticAgent,
@@ -19,6 +18,7 @@ from torchelastic.agent.server.api import (
     WorkerState,
 )
 from torchelastic.metrics.api import prof
+from torchelastic.multiprocessing import MpParameters, start_processes
 from torchelastic.utils.logging import get_logger
 
 
@@ -77,7 +77,7 @@ class _DistInfo:
         self.role_name = role_name
 
 
-def _wrap(local_rank, ret_val_queues, dist_infos, fn, args):
+def _wrap(local_rank, dist_infos, fn, args):
     import faulthandler
 
     try:
@@ -102,10 +102,7 @@ def _wrap(local_rank, ret_val_queues, dist_infos, fn, args):
     os.environ["TORCHELASTIC_RESTART_COUNT"] = str(info.restart_count)
     os.environ["TORCHELASTIC_MAX_RESTARTS"] = str(info.max_restarts)
     os.environ["TORCHELASTIC_RUN_ID"] = info.run_id
-    ret = fn(*args)
-    ret_val_queue = ret_val_queues[local_rank]
-    # Note: ret_val_queue will always contain a single element.
-    ret_val_queue.put((info.rank, ret))
+    return (info.rank, fn(*args))
 
 
 class LocalElasticAgent(SimpleElasticAgent):
@@ -157,19 +154,11 @@ class LocalElasticAgent(SimpleElasticAgent):
     ):
         super().__init__(spec, exit_barrier_timeout)
         self._start_method = start_method
-        # pyre-ignore[8]: Attribute has type `ProcessContext`; used as `None`.
-        self._process_context: mp.ProcessContext = None
-        # queues for holding return values for each worker fn
-        # each element of the queue is ret_val
-        # pyre-ignore[8]: Attribute has type `Dict`; used as `None`.
-        self._ret_val_queues: Dict[int, mp.SimpleQueue] = None
+        self._process_context = None
 
     @prof
     def _stop_workers(self, worker_group: WorkerGroup) -> None:
-        for proc in self._process_context.processes:
-            if proc.is_alive():
-                proc.terminate()
-            proc.join()
+        self._process_context.terminate()
 
     @prof
     def _start_workers(self, worker_group: WorkerGroup) -> Dict[int, Any]:
@@ -179,16 +168,6 @@ class LocalElasticAgent(SimpleElasticAgent):
         restart_count = spec.max_restarts - self._remaining_restarts
 
         dist_infos: Dict[int, _DistInfo] = {}
-        # Use SimgleQueue since it does not create a thread to transfer data.
-        # We observed deadlock when using Queue: When the process finishes
-        # It executes a finalize function that does: `thread.join()`
-        # The join blocks forever.
-        # Note: Each queue will contain a single element and will be used by a single
-        # worker process.
-        self._ret_val_queues: Dict[int, mp.SimpleQueue] = {
-            i: mp.get_context(self._start_method).SimpleQueue()
-            for i in range(0, len(worker_group.workers))
-        }
 
         for worker in worker_group.workers:
             local_rank = worker.local_rank
@@ -207,12 +186,11 @@ class LocalElasticAgent(SimpleElasticAgent):
                 spec.role,
             )
 
-        self._process_context = mp.start_processes(
-            fn=_wrap,
-            args=(self._ret_val_queues, dist_infos, spec.fn, spec.args),
-            nprocs=spec.local_world_size,
-            join=False,
-            daemon=False,
+        params = [
+            MpParameters(fn=_wrap, args=(dist_infos, spec.fn, spec.args))
+        ] * spec.local_world_size
+        self._process_context = start_processes(
+            params,
             start_method=self._start_method,
         )
 
@@ -238,19 +216,13 @@ class LocalElasticAgent(SimpleElasticAgent):
             return MonitorResult(WorkerState.UNKNOWN)
 
         try:
-            if self._process_context.join(timeout=-1):
-                # copy ret_val_queue into a map
-                ret_vals = {}
-                for local_rank, ret_queue in self._ret_val_queues.items():
-                    if ret_queue.empty():
-                        raise RuntimeError(
-                            f"Worker {local_rank} did not return any value."
-                        )
-                    rank, out = ret_queue.get()
-                    ret_vals[rank] = out
-                # pyre-ignore[8]: Attribute has type `Dict`; used as `None`.
-                self._ret_val_queues = None
-                return MonitorResult(WorkerState.SUCCEEDED, ret_vals)
+            ret_vals = self._process_context.wait(timeout=-1)
+            if ret_vals:
+                # copy ret_val_queue into a map with a global ranks
+                workers_ret_vals = {}
+                for rank, ret_val in ret_vals.values():
+                    workers_ret_vals[rank] = ret_val
+                return MonitorResult(WorkerState.SUCCEEDED, workers_ret_vals)
             else:
                 return MonitorResult(WorkerState.HEALTHY)
         except Exception as e:
