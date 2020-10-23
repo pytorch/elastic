@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch.multiprocessing as mp
-from torchelastic.multiprocessing.api import BaseProcessContext
+from torchelastic.multiprocessing.api import BaseProcessContext, expire
 
 
 @dataclass
@@ -44,20 +44,24 @@ class MpProcessContext(BaseProcessContext):
     def __init__(self, mp_process_context: mp.ProcessContext, ret_val_queues):
         self._process_context: mp.ProcessContext = mp_process_context
         self._ret_val_queues = ret_val_queues
+        self._worker_ret_vals = {}
 
     def wait(self, timeout: Optional[float] = None) -> Optional[Dict[int, Any]]:
-        if not self._process_context.join(timeout):
+        def _wait(deadline, period) -> bool:
+            self._worker_ret_vals.update(self._try_collect_outputs())
+            return self._process_context.join(period)
+
+        expire(fn=_wait, timeout=timeout)
+
+        if not self._process_context.join(-1):
             return None
-        ret_vals = {}
-        for idx in range(len(self._process_context.processes)):
-            ret_queue = self._ret_val_queues[idx]
-            if ret_queue.empty():
-                raise RuntimeError(
-                    f"ret_val queue of process rank: {idx} was empty. This should never happen, and indicates a bug"
-                )
-            out = ret_queue.get()
-            ret_vals[idx] = out
-        return ret_vals
+        self._worker_ret_vals.update(self._try_collect_outputs())
+        if len(self._worker_ret_vals) != len(self._process_context.processes):
+            ranks = self._collect_workers_ranks_without_return_values()
+            raise RuntimeError(
+                f"Workers: {ranks} did not return any values, this should never happend and indicates bug"
+            )
+        return self._worker_ret_vals
 
     def pids(self) -> List[int]:
         return self._process_context.pids()
@@ -67,6 +71,25 @@ class MpProcessContext(BaseProcessContext):
             if proc.is_alive():
                 proc.terminate()
             proc.join()
+
+    def _collect_workers_ranks_without_return_values(self):
+        # returns ranks of workers which queues did not return any values.
+        # This normally should never happen and indicates that there is a
+        # bug in the code.
+        ranks = []
+        for idx in range(0, len(self._process_context.processes)):
+            if idx not in self._worker_ret_vals:
+                ranks.append(idx)
+        return ranks
+
+    def _try_collect_outputs(self) -> Dict[int, Any]:
+        out_vals = {}
+        for idx in range(len(self._process_context.processes)):
+            ret_queue = self._ret_val_queues[idx]
+            if not ret_queue.empty():
+                out = ret_queue.get()
+                out_vals[idx] = out
+        return out_vals
 
 
 def start_processes(

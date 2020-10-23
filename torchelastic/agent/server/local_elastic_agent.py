@@ -216,7 +216,7 @@ class LocalElasticAgent(SimpleElasticAgent):
             return MonitorResult(WorkerState.UNKNOWN)
 
         try:
-            ret_vals = self._process_context.wait(timeout=-1)
+            ret_vals = self._process_context.wait(timeout=1)
             if ret_vals:
                 # copy ret_val_queue into a map with a global ranks
                 workers_ret_vals = {}

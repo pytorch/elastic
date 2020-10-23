@@ -7,7 +7,9 @@
 # LICENSE file in the root directory of this source tree.
 
 import abc
-from typing import Any, Dict, List, Optional
+import sys
+import time
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 
 class BaseProcessContext(abc.ABC):
@@ -48,3 +50,24 @@ class BaseProcessContext(abc.ABC):
         Terminates all processes.
         """
         raise NotImplementedError()
+
+
+def _get_deadline_and_period(timeout: Optional[float]) -> Tuple[float, float]:
+    if not timeout:
+        deadline = sys.maxsize
+        period = 1  # one second
+    elif timeout >= 0:
+        deadline = time.time() + timeout
+        period = min(1, int(timeout / 10))
+    else:
+        deadline = time.time() + 1  # wait for one second
+        period = 1  # one second
+    return deadline, period
+
+
+def expire(fn: Callable[[float, float], bool], timeout: Optional[float] = None) -> None:
+    deadline, period = _get_deadline_and_period(timeout)
+    while deadline > time.time():
+        res = fn(deadline, period)
+        if res:
+            break

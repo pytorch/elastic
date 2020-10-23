@@ -9,12 +9,11 @@
 import ctypes
 import os
 import signal
-import sys
 import time
 from subprocess import CompletedProcess, TimeoutExpired
 from typing import Dict, List, Optional, Tuple, Union
 
-from torchelastic.multiprocessing.api import BaseProcessContext
+from torchelastic.multiprocessing.api import BaseProcessContext, expire
 from torchelastic.multiprocessing.base_process_handler import ProcessException
 from torchelastic.multiprocessing.process_handler import ProcessHandler
 
@@ -93,23 +92,18 @@ class SubprocessContext(BaseProcessContext):
         will return None.
         The method will throw the exception that is first got recorded.
         """
-        if timeout and timeout > 0:
-            deadline = time.time() + timeout
-            period = min(1, int(timeout / 10))
-        elif timeout and timeout <= 0:
-            deadline = time.time() + 1  # wait for one second
-            period = 1  # one second
-        else:
-            deadline = sys.maxsize
-            period = 1
-        while deadline > time.time():
+
+        def _wait(deadline, period) -> bool:
             if not self._any_alive():
-                break
+                return True
             root_exception = self._try_wait_and_raise()
             if root_exception:
                 self.terminate()
                 raise root_exception
             time.sleep(period)
+            return False
+
+        expire(fn=_wait, timeout=timeout)
         if self._any_alive():
             return None
         root_exception = self._try_wait_and_raise()
