@@ -10,8 +10,8 @@ import os
 import shutil
 import tempfile
 import unittest
+from unittest.mock import patch
 
-from mock import patch
 from torchelastic.tsm.driver.api import (
     Application,
     AppState,

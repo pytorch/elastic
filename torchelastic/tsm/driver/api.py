@@ -12,7 +12,19 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from string import Template
-from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 
 @dataclass
@@ -408,6 +420,180 @@ class AppDryRunInfo(Generic[T]):
         return self._fmt(self.request)
 
 
+# valid ``RunConfig`` values; only support primitives (str, int, float, bool)
+ConfigValue = Union[str, int, float, bool, None]
+
+
+@dataclass(frozen=True)
+class RunConfig:
+    """
+    Additional run configs for the app. These are typically
+    scheduler runtime configs/arguments that do not bind
+    to ``Application`` nor the ``Scheduler``. For example
+    a particular cluster (within the scheduler) the application
+    should be submitted to. Since the same app can be launched
+    into multiple types of clusters (devo, prod) the
+    cluster id config does not bind to the app. Neither
+    does this bind to the scheduler since the cluster can
+    be partitioned by size of the instances (S, M, L) or by
+    a preemption setting (e.g. on-demand vs spot).
+
+    Since ``Session`` allows the application to be submitted
+    to multiple schedulers, users who want to submit the same
+    app into multiple schedulers from the same session can
+    union all the ``RunConfig``s into a single object. The
+    scheduler implementation will selectively read the configs
+    it needs.
+
+    This class is intended to be trivially serialized and
+    passed around or saved hence only allow primitives
+    as config values. Should the scheduler need more than
+    simple primitives (e.g. list of str) it is up to the
+    scheduler to document a way to encode thie value as a
+    str and parse it (e.g. representing list of str as
+    comma delimited str).
+
+    Usage:
+
+    ::
+
+     # write
+     config = RunConfig()
+     config.set("run_as_user", prod")
+     config.set("priority", 10)
+
+     # read
+     config.get("run_as_user") # "prod"
+     config.get("priority") # 10
+     config.get("never_set") # None
+    """
+
+    cfgs: Dict[str, ConfigValue] = field(default_factory=dict)
+
+    def set(self, cfg_key: str, cfg_val: ConfigValue):
+        self.cfgs[cfg_key] = cfg_val
+
+    def get(self, key: str) -> ConfigValue:
+        return self.cfgs.get(key, None)
+
+    def __repr__(self):
+        return self.cfgs.__repr__()
+
+
+class runopts:
+    """
+    Holds the accepted scheduler run configuration
+    keys, default value (if any), and help message string.
+    These options are provided by the ``Scheduler`` and validated
+    in ``Session.run`` against user provided ``RunConfig``.
+    Allows ``None`` default values. Required opts must NOT have a
+    non-None default.
+
+    .. important:: This class has no accessors because it is intended to
+                   be constructed and returned by ``Scheduler.run_config_options``
+                   and printed out as a "help" tool or as part of an exception msg.
+    Usage:
+
+    ::
+     opts = runopts()
+
+     opts.add("run_as_user", type_=str, help="user to run the job as")
+     opts.add("cluster_id", type_=int, help="cluster to submit the job", required=True)
+     opts.add("priority", type_=float, default=0.5, help="job priority")
+     opts.add("preemptible", type_=bool, default=False, help="is the job preemptible")
+
+     # invalid
+     opts.add("illegal", default=10, required=True)
+     opts.add("bad_type", type=str, default=10)
+
+     opts.check(RunConfig)
+     print(opts)
+    """
+
+    def __init__(self):
+        self._opts: Dict[str, Tuple[ConfigValue, Type[ConfigValue], bool, str]] = {}
+
+    def add(
+        self,
+        cfg_key: str,
+        type_: Type[ConfigValue],
+        help: str,
+        default: ConfigValue = None,
+        required=False,
+    ):
+        """
+        Adds the ``config`` option with the given help string and ``default``
+        value (if any). If the ``default`` is not specified then this option
+        is a required option.
+        """
+        if required and default is not None:
+            raise ValueError(
+                f"Required option {cfg_key} must not specify default value. Given: {default}"
+            )
+        if default is not None:
+            if not isinstance(default, type_):
+                raise TypeError(
+                    f"Option: {cfg_key}, must be of type: {type_}."
+                    f" Given: {default} ({type(default).__name__})"
+                )
+
+        self._opts[cfg_key] = (default, type_, required, help)
+
+    def resolve(self, config: RunConfig):
+        """
+        Checks the given config against this ``runopts`` and sets default configs
+        if not set.
+
+        .. warning:: This method mutates the provided config!
+
+        """
+
+        # make a copy; don't need to be deep b/c the values are primitives
+        resolved_cfg = RunConfig(config.cfgs.copy())
+
+        for cfg_key, (default, type_, required, _help) in self._opts.items():
+            val = resolved_cfg.get(cfg_key)
+
+            # check required opt
+            if required and val is None:
+                raise KeyError(
+                    f"Required run option: {cfg_key}, must be provided and not None. Given: {config}"
+                )
+
+            # check type (None matches all types)
+            if val is not None and not isinstance(val, type_):
+                raise TypeError(
+                    f"Run option: {cfg_key}, must be of type: {type_.__name__}."
+                    f"  Given: {val} ({type(val).__name__})"
+                )
+
+            # not required and not set, set to default
+            if val is None:
+                resolved_cfg.set(cfg_key, default)
+        return resolved_cfg
+
+    def __repr__(self):
+        # make it a pretty printable dict
+        pretty_opts = {}
+        for cfg_key, (default, type_, required, help) in self._opts.items():
+            key = f"*{cfg_key}" if required else cfg_key
+            opt = {"type": type_.__name__}
+            if required:
+                opt["required"] = True
+            else:
+                opt["default"] = default
+            opt["help"] = help
+
+            pretty_opts[key] = opt
+        import pprint
+
+        return pprint.pformat(
+            pretty_opts,
+            indent=2,
+            width=80,
+        )
+
+
 class Scheduler(abc.ABC):
     """
     An interface abstracting functionalities of a scheduler.
@@ -435,6 +621,13 @@ class Scheduler(abc.ABC):
         the actual return type.
         """
         raise NotImplementedError()
+
+    def run_opts(self) -> runopts:
+        """
+        Returns the run configuration options expected by the scheduler.
+        Basically a ``--help`` for the ``run`` API.
+        """
+        return runopts()
 
     @abc.abstractmethod
     def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
@@ -619,6 +812,22 @@ class Session(abc.ABC):
     def dryrun(
         self, app: Application, mode: RunMode = RunMode.HEADLESS
     ) -> AppDryRunInfo:
+        raise NotImplementedError()
+
+    def run_opts(self) -> Dict[str, runopts]:
+        """
+        Returns the ``runopts`` for the supported scheduler backends.
+
+        Usage:
+
+        ::
+
+         local_runopts = session.run_opts()["local"]
+         print("local scheduler run options: {local_runopts}")
+
+        Returns:
+            A map of scheduler backend to its ``runopts``
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod

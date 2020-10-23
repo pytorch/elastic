@@ -20,6 +20,7 @@ from torchelastic.tsm.driver.api import (
     Scheduler,
     Session,
     UnknownAppException,
+    runopts,
 )
 
 
@@ -47,6 +48,11 @@ class StandaloneSession(Session):
         self, app: Application, mode: RunMode = RunMode.HEADLESS
     ) -> AppDryRunInfo:
         return self._scheduler.submit_dryrun(app, mode)
+
+    def run_opts(self) -> Dict[str, runopts]:
+        # TODO key will be the scheduler backend (to be done in the next diff)
+        # proxying it with class name for now
+        return {self._scheduler.__class__.__qualname__: self._scheduler.run_opts()}
 
     def status(self, app_id: str) -> Optional[AppStatus]:
         if app_id not in self._apps:

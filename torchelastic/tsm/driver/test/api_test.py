@@ -5,6 +5,7 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
+import dataclasses
 import os
 import unittest
 from datetime import datetime
@@ -21,9 +22,11 @@ from torchelastic.tsm.driver.api import (
     ElasticRole,
     Resources,
     Role,
+    RunConfig,
     RunMode,
     Session,
     macros,
+    runopts,
 )
 
 
@@ -273,3 +276,131 @@ class AppDryRunInfoTest(unittest.TestCase):
         self.assertEqual(request_mock, info.request)
 
         to_string_mock.assert_called_once_with(request_mock)
+
+
+class RunConfigTest(unittest.TestCase):
+    def get_cfg(self):
+        cfg = RunConfig()
+        cfg.set("run_as", "root")
+        cfg.set("cluster_id", 123)
+        cfg.set("priority", 0.5)
+        cfg.set("preemtible", True)
+        return cfg
+
+    def test_valid_values(self):
+        cfg = self.get_cfg()
+
+        self.assertEqual("root", cfg.get("run_as"))
+        self.assertEqual(123, cfg.get("cluster_id"))
+        self.assertEqual(0.5, cfg.get("priority"))
+        self.assertTrue(cfg.get("preemtible"))
+        self.assertIsNone(cfg.get("unknown"))
+
+    def test_serde(self):
+        """
+        tests trivial serialization into dict then back
+        """
+        cfg = self.get_cfg()
+        ser = dataclasses.asdict(cfg)
+        deser = RunConfig(**ser)
+
+        self.assertEqual("root", deser.get("run_as"))
+        self.assertEqual(123, deser.get("cluster_id"))
+        self.assertEqual(0.5, deser.get("priority"))
+        self.assertTrue(deser.get("preemtible"))
+
+    def test_runopts_add(self):
+        """
+        tests for various add option variations
+        does not assert anything, a successful test
+        should not raise any unexpected errors
+        """
+        opts = runopts()
+        opts.add("run_as", type_=str, help="run as user")
+        opts.add("run_as_default", type_=str, help="run as user", default="root")
+        opts.add("run_as_required", type_=str, help="run as user", required=True)
+
+        with self.assertRaises(ValueError):
+            opts.add(
+                "run_as", type_=str, help="run as user", default="root", required=True
+            )
+
+        opts.add("priority", type_=int, help="job priority", default=10)
+
+        with self.assertRaises(TypeError):
+            opts.add("priority", type_=int, help="job priority", default=0.5)
+
+        # this print is intentional (demonstrates the intended usecase)
+        print(opts)
+
+    def get_runopts(self):
+        opts = runopts()
+        opts.add("run_as", type_=str, help="run as user", required=True)
+        opts.add("priority", type_=int, help="job priority", default=10)
+        opts.add("cluster_id", type_=str, help="cluster to submit job")
+        return opts
+
+    def test_runopts_resolve_minimal(self):
+        opts = self.get_runopts()
+
+        cfg = RunConfig()
+        cfg.set("run_as", "foobar")
+
+        resolved = opts.resolve(cfg)
+        self.assertEqual("foobar", resolved.get("run_as"))
+        self.assertEqual(10, resolved.get("priority"))
+        self.assertIsNone(resolved.get("cluster_id"))
+
+        # make sure original config is untouched
+        self.assertEqual("foobar", cfg.get("run_as"))
+        self.assertIsNone(cfg.get("priority"))
+        self.assertIsNone(cfg.get("cluster_id"))
+
+    def test_runopts_resolve_override(self):
+        opts = self.get_runopts()
+
+        cfg = RunConfig()
+        cfg.set("run_as", "foobar")
+        cfg.set("priority", 20)
+        cfg.set("cluster_id", "test_cluster")
+
+        resolved = opts.resolve(cfg)
+        self.assertEqual("foobar", resolved.get("run_as"))
+        self.assertEqual(20, resolved.get("priority"))
+        self.assertEqual("test_cluster", resolved.get("cluster_id"))
+
+    def test_runopts_resolve_missing_required(self):
+        opts = self.get_runopts()
+
+        cfg = RunConfig()
+        cfg.set("priority", 20)
+        cfg.set("cluster_id", "test_cluster")
+
+        with self.assertRaises(KeyError):
+            opts.resolve(cfg)
+
+    def test_runopts_resolve_bad_type(self):
+        opts = self.get_runopts()
+
+        cfg = RunConfig()
+        cfg.set("run_as", "foobar")
+        cfg.set("cluster_id", 123)
+
+        with self.assertRaises(TypeError):
+            opts.resolve(cfg)
+
+    def test_runopts_resolve_unioned(self):
+        # runconfigs is a union of all run opts for all schedulers
+        # make sure  opts resolves run configs that have more
+        # configs than it knows about
+        opts = self.get_runopts()
+
+        cfg = RunConfig()
+        cfg.set("run_as", "foobar")
+        cfg.set("some_other_opt", "baz")
+
+        resolved = opts.resolve(cfg)
+        self.assertEqual("foobar", resolved.get("run_as"))
+        self.assertEqual(10, resolved.get("priority"))
+        self.assertIsNone(resolved.get("cluster_id"))
+        self.assertEqual("baz", resolved.get("some_other_opt"))
