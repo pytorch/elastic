@@ -13,6 +13,7 @@ import subprocess
 import sys
 import time
 from typing import Dict, List, Optional
+from uuid import uuid4
 
 from torchelastic.tsm.driver.api import (
     AppDryRunInfo,
@@ -144,11 +145,7 @@ class LocalScheduler(Scheduler):
     """
 
     def __init__(self, image_fetcher: ImageFetcher, cache_size: int = 100):
-        # for each app name keeps an incrementing id, to support running
-        # multiple instances of the same app
-        self._ids: Dict[AppName, int] = {}
         # TODO T72035686 replace dict with a proper LRUCache data structure
-        # and don't forget to remove the app name from "_ids" when evicting finished apps=
         self._apps: Dict[AppId, _LocalApplication] = {}
         self._image_fetcher = image_fetcher
 
@@ -196,13 +193,10 @@ class LocalScheduler(Scheduler):
                     f"App cache size ({self._cache_size}) exceeded. Increase the cache size"
                 )
 
-        id = self._ids.setdefault(app.name, -1) + 1
-        self._ids[app.name] = id
-        app_id = f"{app.name}_{id}"
-
+        app_id = self._make_unique_id(app.name)
         assert (
             app_id not in self._apps
-        ), "no app_id collisons expected since incremental integer suffix is used"
+        ), "no app_id collisons expected since uuid4 suffix is used"
 
         local_app = _LocalApplication(app.name)
         local_app.set_run_mode(mode)
@@ -218,6 +212,10 @@ class LocalScheduler(Scheduler):
 
         self._apps[app_id] = local_app
         return app_id
+
+    @staticmethod
+    def _make_unique_id(app_name: str) -> str:
+        return f"{app_name}_{str(uuid4()).split('-')[0]}"
 
     def submit_dryrun(self, app: Application, mode: RunMode) -> AppDryRunInfo:
         app_popen_args = self._to_app_popen_args(f"{app.name}_##", app.roles)

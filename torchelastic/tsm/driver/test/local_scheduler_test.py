@@ -52,6 +52,11 @@ class LocalDirImageFetcherTest(unittest.TestCase):
             fetcher.fetch(non_existent_dir)
 
 
+LOCAL_SCHEDULER_MAKE_UNIQUE_ID = (
+    "torchelastic.tsm.driver.local_scheduler.LocalScheduler._make_unique_id"
+)
+
+
 class LocalSchedulerTest(unittest.TestCase):
     def setUp(self):
         self.test_dir = tempfile.mkdtemp("LocalSchedulerTest")
@@ -79,21 +84,25 @@ class LocalSchedulerTest(unittest.TestCase):
             .replicas(num_replicas)
         )
         app = Application(name="test_app").of(role)
-        app_id = self.scheduler.submit(app, RunMode.HEADLESS)
+        expected_app_id = LocalScheduler._make_unique_id(app.name)
+        with patch(LOCAL_SCHEDULER_MAKE_UNIQUE_ID, return_value=expected_app_id):
+            app_id = self.scheduler.submit(app, RunMode.HEADLESS)
 
-        self.assertEqual("test_app_0", app_id)
+        self.assertEqual(f"{expected_app_id}", app_id)
         self.assertEqual(AppState.SUCCEEDED, self.scheduler.wait(app_id).state)
 
         for i in range(num_replicas):
             self.assertTrue(
-                os.path.isfile(os.path.join(self.test_dir, f"{app_id}_{i}"))
+                os.path.isfile(os.path.join(self.test_dir, f"{expected_app_id}_{i}"))
             )
 
         role = Role("role1").runs("fail.sh").on(self.test_container).replicas(2)
         app = Application(name="test_app").of(role)
-        app_id = self.scheduler.submit(app, RunMode.HEADLESS)
+        expected_app_id = LocalScheduler._make_unique_id(app.name)
+        with patch(LOCAL_SCHEDULER_MAKE_UNIQUE_ID, return_value=expected_app_id):
+            app_id = self.scheduler.submit(app, RunMode.HEADLESS)
 
-        self.assertEqual("test_app_1", app_id)
+        self.assertEqual(f"{expected_app_id}", app_id)
         self.assertEqual(AppState.FAILED, self.scheduler.wait(app_id).state)
 
     @patch(
