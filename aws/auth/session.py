@@ -8,6 +8,7 @@
 
 import abc
 
+# pyre-fixme[21]: Could not find module `boto3`.
 import boto3
 
 
