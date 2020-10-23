@@ -10,8 +10,8 @@ import os
 import unittest
 from datetime import datetime
 from typing import Dict, Iterable, Optional
+from unittest.mock import MagicMock
 
-from mock import MagicMock
 from torchelastic.tsm.driver.api import (
     _TERMINAL_STATES,
     AppDryRunInfo,
