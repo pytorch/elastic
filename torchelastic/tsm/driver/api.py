@@ -123,7 +123,7 @@ class macros:
     Available macros:
 
     1. ``img_root`` - root directory of the pulled image on the container
-    2. ``app_id`` - application id (same as the return value of ``session.run(app)``)
+    2. ``app_id`` - application id as assigned by the scheduler
     3. ``replica_id`` - unique id for each instance of a replica of a Role,
                         for instance a role with 3 replicas could have the 0, 1, 2
                         as replica ids. Note that when the container fails and is
@@ -139,8 +139,7 @@ class macros:
      # runs: hello_world.py --app_id ${app_id}
      trainer = Role(name="trainer").runs("hello_world.py", "--app_id", macros.app_id)
      app = Application("train_app").of(trainer)
-     app_id = session.run(app)
-
+     app_handle = session.run(app, scheduler="local", cfg=RunConfig())
 
     """
 
@@ -287,21 +286,6 @@ class ElasticRole(Role):
         return self
 
 
-class RunMode(Enum):
-    """
-    Run mode of the application. Supported modes are:
-
-    1. HEADLESS - Application is allowed to continue running even when the
-                  hosting session has terminated. This is the default mode.
-
-    2. MANAGED - Application's lifetime is bound to the hosting session. If
-                 the session goes away, so will the app.
-    """
-
-    HEADLESS = 0
-    MANAGED = 1
-
-
 @dataclass
 class Application:
     """
@@ -312,8 +296,6 @@ class Application:
 
     name: str
     roles: List[Role] = field(default_factory=list)
-    run_mode: RunMode = RunMode.HEADLESS
-    is_attached: bool = False
 
     def of(self, *roles: Role) -> "Application":
         self.roles += [*roles]
@@ -528,7 +510,7 @@ class runopts:
         """
         if required and default is not None:
             raise ValueError(
-                f"Required option {cfg_key} must not specify default value. Given: {default}"
+                f"Required option: {cfg_key} must not specify default value. Given: {default}"
             )
         if default is not None:
             if not isinstance(default, type_):
@@ -556,15 +538,19 @@ class runopts:
 
             # check required opt
             if required and val is None:
-                raise KeyError(
-                    f"Required run option: {cfg_key}, must be provided and not None. Given: {config}"
+                raise InvalidRunConfigException(
+                    f"Required run option: {cfg_key}, must be provided and not None",
+                    config,
+                    self,
                 )
 
             # check type (None matches all types)
             if val is not None and not isinstance(val, type_):
-                raise TypeError(
-                    f"Run option: {cfg_key}, must be of type: {type_.__name__}."
-                    f"  Given: {val} ({type(val).__name__})"
+                raise InvalidRunConfigException(
+                    f"Run option: {cfg_key}, must be of type: {type_.__name__},"
+                    f" but was: {val} ({type(val).__name__})",
+                    config,
+                    self,
                 )
 
             # not required and not set, set to default
@@ -594,6 +580,20 @@ class runopts:
         )
 
 
+class InvalidRunConfigException(Exception):
+    """
+    Raised when the supplied ``RunConfig`` does not satisfy the
+    ``runopts``, either due to missing required configs or value
+    type mismatch.
+    """
+
+    def __init__(self, invalid_reason: str, run_config: RunConfig, runopts: "runopts"):
+        super().__init__(f"{invalid_reason}. Given: {run_config}, Expected: {runopts}")
+
+
+SchedulerBackend = str
+
+
 class Scheduler(abc.ABC):
     """
     An interface abstracting functionalities of a scheduler.
@@ -601,17 +601,25 @@ class Scheduler(abc.ABC):
     ``@abc.abstractmethod``.
     """
 
-    @abc.abstractmethod
-    def submit(self, app: Application, mode: RunMode) -> str:
+    def submit(self, app: Application, cfg: RunConfig) -> str:
         """
         Submits the application to be run by the scheduler.
 
         Returns:
             The application id that uniquely identifies the submitted app.
         """
+        return self._submit(app, self.run_opts().resolve(cfg))
+
+    @abc.abstractmethod
+    def _submit(self, app: Application, cfg: RunConfig) -> str:
+        """
+        Actually performs the submit action, implementors should implement
+        this method rather than ``submit``.
+        """
+
         raise NotImplementedError()
 
-    def submit_dryrun(self, app: Application, mode: RunMode) -> AppDryRunInfo:
+    def submit_dryrun(self, app: Application, cfg: RunConfig) -> AppDryRunInfo:
         """
         Rather than submitting the request to run the app, returns the
         request object that would have been submitted to the underlying
@@ -620,6 +628,9 @@ class Scheduler(abc.ABC):
         to the scheduler implementation's documentation regarding
         the actual return type.
         """
+        return self._submit_dryrun(app, self.run_opts().resolve(cfg))
+
+    def _submit_dryrun(self, app: Application, cfg: RunConfig) -> AppDryRunInfo:
         raise NotImplementedError()
 
     def run_opts(self) -> runopts:
@@ -737,28 +748,81 @@ class Scheduler(abc.ABC):
         )
 
 
+class MalformedAppHandleException(Exception):
+    """
+    Raised when APIs are given a bad app handle.
+    """
+
+    def __init__(self, app_handle: str):
+        super().__init__(
+            f"{app_handle} is not of the form: <scheduler_backend>://<session_name>/<app_id>"
+        )
+
+
+class SessionMismatchException(Exception):
+    """
+    Raised on session certain action APIs
+    when the session_name on an app handle does not match
+    the current session's name. Modify/update APIs raise
+    this exception as modifying/updataing an application
+    owned by a different session should not be allowed.
+    """
+
+    def __init__(self, app_handle: str, session_name: str):
+        super().__init__(
+            f"App handle: {app_handle} is not owned by this session: {session_name}."
+            f" Please perform the action on the correct session"
+            f" or re-run the app on this session"
+        )
+
+
+class UnknownSchedulerException(Exception):
+    def __init__(self, scheduler_backend: SchedulerBackend):
+        super().__init__(
+            f"Scheduler backend: {scheduler_backend} does not exist."
+            f" Use session.scheduler_backends() to see all supported schedulers"
+        )
+
+
+# encodes information about a running app in url format
+# {scheduler_backend}://{session_name}/{app_id}
+AppHandle = str
+
+
 class UnknownAppException(Exception):
     """
     Raised by ``Session`` APIs when either the application does not
     exist or the application is not owned by the session.
     """
 
-    def __init__(self, app_id: str):
+    def __init__(self, app_handle: "AppHandle"):
         super().__init__(
-            f"Unknown app = {app_id}. Did you forget to call session.run() or session.attach()?"
+            f"Unknown app = {app_handle}. Did you forget to call session.run()?"
+            f" Otherwise, the app may have already finished and purged by the scheduler"
         )
 
 
-class AppNotReRunnableException(Exception):
+def make_app_handle(
+    scheduler_backend: SchedulerBackend, session_name: str, app_id: str
+):
+    return f"{scheduler_backend}://{session_name}/{app_id}"
+
+
+def parse_app_handle(app_handle: AppHandle) -> Tuple[SchedulerBackend, str, str]:
     """
-    Raised when the application is not re-runnable. That is, one cannot have two run instances
-    of the same application. See ``Session.attach()`` for when this is the case.
+    parses the app handle into ```(scheduler_backend, session_name, and app_id)```
     """
 
-    def __init__(self, app: Application):
-        super().__init__(
-            f"App {app.name} is not re-runnable. To re-run attached apps, use a session/scheduler that supports such action."
-        )
+    # parse it manually b/c currently tsm does not
+    # define allowed characters nor length for session name and app_id
+    import re
+
+    pattern = r"(?P<scheduler_backend>.+)://(?P<session_name>.+)/(?P<app_id>.+)"
+    match = re.match(pattern, app_handle)
+    if not match:
+        raise MalformedAppHandleException(app_handle)
+    gd = match.groupdict()
+    return gd["scheduler_backend"], gd["session_name"], gd["app_id"]
 
 
 class Session(abc.ABC):
@@ -782,7 +846,22 @@ class Session(abc.ABC):
         """
         return self._name
 
-    def run(self, app: Application, mode: RunMode = RunMode.HEADLESS) -> str:
+    def run(
+        self,
+        app: Application,
+        scheduler: SchedulerBackend = "default",
+        cfg: Optional[RunConfig] = None,
+    ) -> AppHandle:
+        """
+        Runs the given application in the specified mode.
+
+        Returns:
+            An application handle that is used to call other action APIs on the app.
+
+        Raises:
+            AppNotReRunnableException - if the session/scheduler does not support re-running attached apps
+        """
+
         # input validation
         if not app.roles:
             raise ValueError(
@@ -792,26 +871,67 @@ class Session(abc.ABC):
         for role in app.roles:
             if not role.entrypoint:
                 raise ValueError(
-                    f"No entrypoint for role: {role.name}. Did you forget to call role.runs(entrypoint, args, env)?"
+                    f"No entrypoint for role: {role.name}."
+                    f" Did you forget to call role.runs(entrypoint, args, env)?"
                 )
             if role.num_replicas <= 0:
                 raise ValueError(
-                    f"Non-positive replicas for role: {role.name}. Did you forget to call role.replicas(positive_number)?"
+                    f"Non-positive replicas for role: {role.name}."
+                    f" Did you forget to call role.replicas(positive_number)?"
                 )
             if role.container == NULL_CONTAINER:
                 raise ValueError(
-                    f"No container for role: {role.name}. Did you forget to call role.on(container)"
+                    f"No container for role: {role.name}."
+                    f" Did you forget to call role.on(container)"
                 )
             if role.container.resources == NULL_RESOURCE:
                 raise ValueError(
-                    f"No resources for container: {role.container.image}. Did you forget to call container.require(resources)"
+                    f"No resources for container: {role.container.image}."
+                    f" Did you forget to call container.require(resources)"
                 )
 
-        return self._run(app, mode)
+        return self._run(app, scheduler, cfg or RunConfig())
+
+    @abc.abstractmethod
+    def _run(
+        self,
+        app: Application,
+        scheduler: SchedulerBackend,
+        cfg: RunConfig,
+    ) -> AppHandle:
+        """
+        The actual run logic.
+        Implementors of ``Session`` should implement this method rather than ``run``.
+        """
+        raise NotImplementedError()
 
     def dryrun(
-        self, app: Application, mode: RunMode = RunMode.HEADLESS
+        self,
+        app: Application,
+        scheduler: SchedulerBackend = "default",
+        cfg: Optional[RunConfig] = None,
     ) -> AppDryRunInfo:
+        """
+        Dry runs an app on the given scheduler with the provided run configs.
+        Does not actually submit the app but rather returns what would have been
+        submitted. The returned ``AppDryRunInfo`` is pretty formatted and can
+        be printed or logged directly.
+
+        Usage:
+
+        ::
+
+         dryrun_info = session.dryrun(app, scheduler="local", cfg)
+         print(dryrun_info)
+
+        """
+        return self._dryrun(app, scheduler, cfg or RunConfig())
+
+    def _dryrun(self, app: Application, scheduler: SchedulerBackend, cfg: RunConfig):
+        """
+        The actual dryrun logic.
+        Implementors of ``Session`` should implement this method rather than ``dryrun``.
+        """
         raise NotImplementedError()
 
     def run_opts(self) -> Dict[str, runopts]:
@@ -831,32 +951,26 @@ class Session(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _run(self, app: Application, mode: RunMode = RunMode.HEADLESS) -> str:
+    def scheduler_backends(self) -> List[SchedulerBackend]:
         """
-        Runs the given application in the specified mode.
-
-        Returns:
-            The application id that is used to call other action APIs on the app
-
-        Raises:
-            AppNotReRunnableException - if the session/scheduler does not support re-running attached apps
+        Returns a list of all supported scheduler backends.
+        All session implementations must support a "default"
+        scheduler backend and document what the default
+        scheduler is.
         """
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def status(self, app_id: str) -> Optional[AppStatus]:
+    def status(self, app_handle: AppHandle) -> Optional[AppStatus]:
         """
         Returns:
             The status of the application, or ``None`` if the app does not exist anymore
             (e.g. was stopped in the past and removed from the scheduler's backend).
-
-        Raises:
-            UnknownAppException - if the app was never run or attached on this session
         """
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def wait(self, app_id: str) -> Optional[AppStatus]:
+    def wait(self, app_handle: AppHandle) -> Optional[AppStatus]:
         """
         Block waits (indefinitely) for the application to complete.
         Possible implementation:
@@ -871,25 +985,22 @@ class Session(abc.ABC):
 
         Returns:
             The terminal status of the application, or ``None`` if the app does not exist anymore
-
-        Raises:
-            UnknownAppException - if the app was never run or attached on this session
         """
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def list(self) -> Dict[str, Application]:
+    def list(self) -> Dict[AppHandle, Application]:
         """
-        Returns the applications that were run with this session mapped by the app_id.
+        Returns the applications that were run with this session mapped by the app handle.
         The persistence of the session is implementation dependent.
         """
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def stop(self, app_id: str) -> None:
+    def stop(self, app_handle: AppHandle) -> None:
         """
         Stops the application, effectively directing the scheduler to cancel
-        the job.
+        the job. Does nothing if the app does not exist.
 
         .. note:: This method returns as soon as the cancel request has been
                   submitted to the scheduler. The application will be in a
@@ -899,40 +1010,28 @@ class Session(abc.ABC):
                   otherwise it will be ``FAILED``.
 
         Raises:
-            UnknownAppException - if app was never run or attached on this session
+            SessionMismatchException - if the app handle does not belong to this session
         """
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def attach(self, app_id: str) -> Application:
+    def describe(self, app_handle: AppHandle) -> Optional[Application]:
         """
-        Attaches the application represented by the provided ``app_id``.
-        If the app is already attached to this session, then does nothing
-        and returns the existing ``Application`` object.
-
-        Whether all action APIs are supported on the attached application
-        is dependent on the specific implementation of the session and scheduler.
-        For instance a ``StandaloneSession`` with no persistent backend cannot
-        fully recreate the application without the underlying scheduler
-        supporting a ``job_definition`` API that stores the job's template.
-        Hence in this case, the user will not be able to re-run the attached
-        app and can only call action APIs that require only the ``app_id``
-        to execute. Please refer to the specific session and scheduler
-        implementation documentations to understand the attach behavior,
-        assumptions, and consequences.
+        Reconstructs the application (to the best extent) given the app handle.
+        Note that the reconstructed application may not be the complete app as
+        it was submitted via the run API. How much of the app can be reconstructed
+        is scheduler dependent.
 
         Returns:
-            The re-created application object
-
-        Raises:
-            UnknownAppException - if app was never run or attached on this session
+            Application or None if the app does not exist anymore or if the
+            scheduler does not support describing the app handle
         """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def log_lines(
         self,
-        app_id: str,
+        app_handle: AppHandle,
         role_name: str,
         k: int = 0,
         regex: Optional[str] = None,
@@ -960,10 +1059,10 @@ class Session(abc.ABC):
 
         ::
 
-         app_id = session.run(app)
+         app_handle = session.run(app, scheduler="local", cfg=RunConfig())
 
          print("== trainer node 0 logs ==")
-         for line in session.log_lines(app_id, "trainer", k=0):
+         for line in session.log_lines(app_handle, "trainer", k=0):
             print(line)
 
         Discouraged anti-pattern:
@@ -974,7 +1073,7 @@ class Session(abc.ABC):
          # parses accuracy metric from log and reports it for this experiment run
 
          accuracy = -1
-         for line in session.log_lines(app_id, "trainer", k=0):
+         for line in session.log_lines(app_handle, "trainer", k=0):
             if matches_regex(line, "final model_accuracy:[0-9]*"):
                 accuracy = parse_accuracy(line)
                 break
@@ -982,7 +1081,7 @@ class Session(abc.ABC):
          report(experiment_name, accuracy)
 
         Arguments:
-            app_id - application id
+            app_handle - application handle
             role_name - role within the app (e.g. "trainer")
             k - k^th replica of the role to fetch the logs for
             regex - optional regex filter, returns all lines if left empty
@@ -994,8 +1093,9 @@ class Session(abc.ABC):
         Returns:
              An iterator over the role's ``k``th replica of the specified application.
 
-        Raises:
-             UnknownAppException - if the app was never run or attached on this session.
+        Raise:
+            UnknownAppException - if the app does not exist in the scheduler
+            SessionMismatchException - if the app handle does not belong to this session
 
         """
         raise NotImplementedError()

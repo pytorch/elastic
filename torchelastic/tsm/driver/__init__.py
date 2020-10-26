@@ -61,18 +61,25 @@ In the example above, we have done a few things:
 
 
 """
+from typing import Optional
+
 from torchelastic.tsm.driver.api import (  # noqa: F401 F403
+    AppHandle,
     Application,
     AppState,
+    AppStatus,
     Container,
     ElasticRole,
     Resources,
     Role,
-    RunMode,
+    RunConfig,
+    SchedulerBackend,
     Session,
     macros,
+    parse_app_handle,
+    runopts,
 )
-from torchelastic.tsm.driver.schedulers import get_scheduler
+from torchelastic.tsm.driver.schedulers import get_schedulers
 from torchelastic.tsm.driver.standalone_session import StandaloneSession
 
 
@@ -82,12 +89,21 @@ except ModuleNotFoundError:
     pass
 
 
-def session(
-    name: str, scheduler_backend: str, backend: str = "standalone", **scheduler_args
-):
-    scheduler = get_scheduler(scheduler_backend, **scheduler_args)
+def _gen_session_name(session_backend: str):
+    import uuid
+    import getpass
+
+    hash_short = str(uuid.uuid4()).split("-")[0]
+    return f"tsm_{session_backend}_{getpass.getuser()}_{hash_short}"
+
+
+def session(name: Optional[str] = None, backend: str = "standalone", **scheduler_args):
     if backend != "standalone":
         raise ValueError(
             f"Unsupported session backend: {backend}. Supported values: standalone"
         )
-    return StandaloneSession(name=name, scheduler=scheduler)
+
+    if not name:
+        name = _gen_session_name(backend)
+
+    return StandaloneSession(name=name, schedulers=get_schedulers(**scheduler_args))

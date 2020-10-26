@@ -5,15 +5,14 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
+from typing import Dict
 
-
-import torchelastic.tsm.driver.api as Scheduler
 import torchelastic.tsm.driver.local_scheduler as local_scheduler
+from torchelastic.tsm.driver.api import Scheduler, SchedulerBackend
 
 
-def get_scheduler(scheduler_type: str, **scheduler_params) -> Scheduler:
-    schedulers = {"local": local_scheduler.create_scheduler}
-    if scheduler_type not in schedulers:
-        raise ValueError(f"Unknown scheduler type: {scheduler_type}")
-    scheduler_create_method = schedulers[scheduler_type]
-    return scheduler_create_method(**scheduler_params)
+def get_schedulers(**scheduler_params) -> Dict[SchedulerBackend, Scheduler]:
+    return {
+        "local": local_scheduler.create_scheduler(**scheduler_params),
+        "default": local_scheduler.create_scheduler(**scheduler_params),
+    }

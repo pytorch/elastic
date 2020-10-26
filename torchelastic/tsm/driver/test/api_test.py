@@ -9,23 +9,30 @@ import dataclasses
 import os
 import unittest
 from datetime import datetime
-from typing import Dict, Iterable, Optional
+from typing import Dict, Iterable, List, Optional
 from unittest.mock import MagicMock
 
 from torchelastic.tsm.driver.api import (
     _TERMINAL_STATES,
     AppDryRunInfo,
+    AppHandle,
     Application,
     AppState,
     AppStatus,
     Container,
+    DescribeAppResponse,
     ElasticRole,
+    InvalidRunConfigException,
+    MalformedAppHandleException,
     Resources,
     Role,
     RunConfig,
-    RunMode,
+    Scheduler,
+    SchedulerBackend,
     Session,
     macros,
+    make_app_handle,
+    parse_app_handle,
     runopts,
 )
 
@@ -181,6 +188,36 @@ class ElasticRoleBuilderTest(unittest.TestCase):
         )
 
 
+class AppHandleTest(unittest.TestCase):
+    def test_parse_malformed_app_handles(self):
+        bad_app_handles = {
+            "my_session/my_application_id": "missing scheduler backend",
+            "local://my_session/": "missing app_id",
+            "local://my_application_id": "missing session",
+        }
+
+        for handle, msg in bad_app_handles.items():
+            with self.subTest(f"malformed app handle: {msg}", handle=handle):
+                with self.assertRaises(MalformedAppHandleException):
+                    parse_app_handle(handle)
+
+    def test_parse(self):
+        (scheduler_backend, session_name, app_id) = parse_app_handle(
+            "local://my_session/my_app_id_1234"
+        )
+        self.assertEqual("local", scheduler_backend)
+        self.assertEqual("my_session", session_name)
+        self.assertEqual("my_app_id_1234", app_id)
+
+    def test_make(self):
+        app_handle = make_app_handle(
+            scheduler_backend="local",
+            session_name="my_session",
+            app_id="my_app_id_1234",
+        )
+        self.assertEqual("local://my_session/my_app_id_1234", app_handle)
+
+
 class ApplicationTest(unittest.TestCase):
     def test_application(self):
         container = Container(image="test_image")
@@ -189,13 +226,10 @@ class ApplicationTest(unittest.TestCase):
         self.assertEqual("test_app", app.name)
         self.assertEqual(1, len(app.roles))
         self.assertEqual(trainer, app.roles[0])
-        self.assertEqual(RunMode.HEADLESS, app.run_mode)
 
     def test_application_default(self):
         app = Application(name="test_app")
-        self.assertEqual(RunMode.HEADLESS, app.run_mode)
         self.assertEqual(0, len(app.roles))
-        self.assertFalse(app.is_attached)
 
 
 class SessionTest(unittest.TestCase):
@@ -203,27 +237,29 @@ class SessionTest(unittest.TestCase):
         def __init__(self):
             super().__init__("mock session")
 
-        def _run(self, app: Application, mode: RunMode = RunMode.HEADLESS) -> str:
+        def _run(
+            self, app: Application, scheduler: SchedulerBackend, cfg: RunConfig
+        ) -> str:
             return app.name
 
-        def status(self, app_id: str) -> Optional[AppStatus]:
+        def status(self, app_handle: AppHandle) -> Optional[AppStatus]:
             return None
 
-        def wait(self, app_id: str) -> Optional[AppStatus]:
+        def wait(self, app_handle: AppHandle) -> Optional[AppStatus]:
             return None
 
         def list(self) -> Dict[str, Application]:
             return {}
 
-        def stop(self, app_id: str) -> None:
+        def stop(self, app_handle: AppHandle) -> None:
             pass
 
-        def attach(self, app_id: str) -> Application:
-            return Application(app_id)
+        def describe(self, app_handle: AppHandle) -> Optional[Application]:
+            return Application(app_handle)
 
         def log_lines(
             self,
-            app_id: str,
+            app_handle: AppHandle,
             role_name: str,
             k: int = 0,
             regex: Optional[str] = None,
@@ -231,6 +267,9 @@ class SessionTest(unittest.TestCase):
             until: Optional[datetime] = None,
         ) -> Iterable:
             return iter([])
+
+        def scheduler_backends(self) -> List[SchedulerBackend]:
+            return ["default"]
 
     def test_validate_no_roles(self):
         session = self.MockSession()
@@ -376,7 +415,7 @@ class RunConfigTest(unittest.TestCase):
         cfg.set("priority", 20)
         cfg.set("cluster_id", "test_cluster")
 
-        with self.assertRaises(KeyError):
+        with self.assertRaises(InvalidRunConfigException):
             opts.resolve(cfg)
 
     def test_runopts_resolve_bad_type(self):
@@ -386,7 +425,7 @@ class RunConfigTest(unittest.TestCase):
         cfg.set("run_as", "foobar")
         cfg.set("cluster_id", 123)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(InvalidRunConfigException):
             opts.resolve(cfg)
 
     def test_runopts_resolve_unioned(self):
@@ -404,3 +443,60 @@ class RunConfigTest(unittest.TestCase):
         self.assertEqual(10, resolved.get("priority"))
         self.assertIsNone(resolved.get("cluster_id"))
         self.assertEqual("baz", resolved.get("some_other_opt"))
+
+
+class SchedulerTest(unittest.TestCase):
+    class MockScheduler(Scheduler):
+        def _submit(self, app: Application, cfg: RunConfig) -> str:
+            return app.name
+
+        def _submit_dryrun(self, app: Application, cfg: RunConfig) -> AppDryRunInfo:
+            return AppDryRunInfo(None, lambda t: "None")
+
+        def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
+            return None
+
+        def _cancel_existing(self, app_id: str) -> None:
+            pass
+
+        def log_iter(
+            self,
+            app_id: str,
+            role_name: str,
+            k: int = 0,
+            regex: Optional[str] = None,
+            since: Optional[datetime] = None,
+            until: Optional[datetime] = None,
+        ) -> Iterable:
+            return iter([])
+
+        def run_opts(self) -> runopts:
+            opts = runopts()
+            opts.add("foo", type_=str, required=True, help="required option")
+            return opts
+
+    def test_invalid_run_cfg(self):
+        scheduler_mock = SchedulerTest.MockScheduler()
+        app_mock = MagicMock()
+
+        with self.assertRaises(InvalidRunConfigException):
+            empty_cfg = RunConfig()
+            scheduler_mock.submit(app_mock, empty_cfg)
+
+        with self.assertRaises(InvalidRunConfigException):
+            bad_type_cfg = RunConfig()
+            bad_type_cfg.set("foo", 100)
+            scheduler_mock.submit(app_mock, empty_cfg)
+
+    def test_invalid_dryrun_cfg(self):
+        scheduler_mock = SchedulerTest.MockScheduler()
+        app_mock = MagicMock()
+
+        with self.assertRaises(InvalidRunConfigException):
+            empty_cfg = RunConfig()
+            scheduler_mock.submit_dryrun(app_mock, empty_cfg)
+
+        with self.assertRaises(InvalidRunConfigException):
+            bad_type_cfg = RunConfig()
+            bad_type_cfg.set("foo", 100)
+            scheduler_mock.submit_dryrun(app_mock, empty_cfg)
