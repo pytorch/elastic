@@ -8,15 +8,12 @@
 
 import unittest
 
-from torchelastic.tsm.driver.schedulers import get_scheduler
+from torchelastic.tsm.driver.local_scheduler import LocalScheduler
+from torchelastic.tsm.driver.schedulers import get_schedulers
 
 
 class SchedulersTest(unittest.TestCase):
     def test_get_local_schedulers(self):
-        scheduler = get_scheduler("local", cache_size=250)
-        self.assertIsNotNone(scheduler)
-        self.assertEquals(250, scheduler._cache_size)
-
-    def test_get_unknown_scheduler(self):
-        with self.assertRaises(ValueError):
-            get_scheduler("unknown_scheduler", cache_size=250)
+        schedulers = get_schedulers()
+        self.assertTrue(isinstance(schedulers["local"], LocalScheduler))
+        self.assertTrue(isinstance(schedulers["default"], LocalScheduler))

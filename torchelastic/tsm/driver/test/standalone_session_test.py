@@ -15,13 +15,13 @@ from unittest.mock import MagicMock
 
 from torchelastic.tsm.driver.api import (
     Application,
-    AppNotReRunnableException,
     AppState,
     Container,
     DescribeAppResponse,
     Resources,
     Role,
-    RunMode,
+    RunConfig,
+    SessionMismatchException,
     UnknownAppException,
 )
 from torchelastic.tsm.driver.local_scheduler import (
@@ -47,8 +47,8 @@ class StandaloneSessionTest(unittest.TestCase):
         write_shell_script(self.test_dir, "fail.sh", ["exit 1"])
         write_shell_script(self.test_dir, "sleep.sh", ["sleep $1"])
 
-        self.image_fetcher = LocalDirectoryImageFetcher()
-        self.scheduler = LocalScheduler(self.image_fetcher)
+        self.scheduler = LocalScheduler()
+        self.cfg = RunConfig({"image_fetcher": "dir"})
 
         # resource ignored for local scheduler; adding as an example
         self.test_container = Container(image=self.test_dir).require(Resource.SMALL)
@@ -59,59 +59,40 @@ class StandaloneSessionTest(unittest.TestCase):
     def test_run(self):
         test_file = os.path.join(self.test_dir, "test_file")
         session = StandaloneSession(
-            name="test_session", scheduler=self.scheduler, wait_interval=1
+            name="test_session", schedulers={"default": self.scheduler}, wait_interval=1
         )
         role = Role(name="touch").runs("touch.sh", test_file).on(self.test_container)
         app = Application("name").of(role)
 
-        app_id = session.run(app)
+        app_id = session.run(app, cfg=self.cfg)
         self.assertEqual(AppState.SUCCEEDED, session.wait(app_id).state)
 
     def test_dryrun(self):
         scheduler_mock = MagicMock()
         session = StandaloneSession(
-            name="test_session", scheduler=scheduler_mock, wait_interval=1
+            name="test_session", schedulers={"default": scheduler_mock}, wait_interval=1
         )
         role = Role(name="touch").runs("echo", "hello world").on(self.test_container)
         app = Application("name").of(role)
+        session.dryrun(app, "default", cfg=self.cfg)
+        scheduler_mock.submit_dryrun.assert_called_once_with(app, self.cfg)
 
-        session.dryrun(app)
-        scheduler_mock.submit_dryrun.assert_called_once_with(app, RunMode.HEADLESS)
-
-    def test_attach(self):
-        session1 = StandaloneSession(name="test_session1", scheduler=self.scheduler)
+    def test_describe(self):
+        session1 = StandaloneSession(
+            name="session1", schedulers={"default": self.scheduler}
+        )
         role = Role(name="sleep").runs("sleep.sh", "60").on(self.test_container)
         app = Application("sleeper").of(role)
 
-        app_id = session1.run(app)
+        app_handle = session1.run(app, cfg=self.cfg)
+        self.assertEqual(app, session1.describe(app_handle))
 
-        session2 = StandaloneSession(name="test_session2", scheduler=self.scheduler)
-        session2.attach(app_id)
-
-        self.assertEqual(AppState.RUNNING, session2.status(app_id).state)
-        session2.stop(app_id)
-        self.assertEqual(AppState.CANCELLED, session2.status(app_id).state)
-
-    def test_attach_unknown(self):
-        session = StandaloneSession(name="test_session", scheduler=self.scheduler)
-        with self.assertRaises(UnknownAppException):
-            session.attach("unknown_app")
-
-    def test_attach_and_run(self):
-        session1 = StandaloneSession(name="test_session1", scheduler=self.scheduler)
-        test_file = os.path.join(self.test_dir, "test_file")
-        role = Role(name="touch").runs("touch.sh", test_file).on(self.test_container)
-        app = Application("touch_test_file").of(role)
-        app_id = session1.run(app)
-
-        session2 = StandaloneSession(name="test_session2", scheduler=self.scheduler)
-        attached_app = session2.attach(app_id)
-        with self.assertRaises(AppNotReRunnableException):
-            session2.run(attached_app)
+        # unknown app should return None
+        self.assertIsNone(session1.describe("default://session1/unknown_app"))
 
     def test_list(self):
         session = StandaloneSession(
-            name="test_session", scheduler=self.scheduler, wait_interval=1
+            name="test_session", schedulers={"default": self.scheduler}, wait_interval=1
         )
         role = Role(name="touch").runs("sleep.sh", "1").on(self.test_container)
         app = Application("sleeper").of(role)
@@ -122,7 +103,7 @@ class StandaloneSessionTest(unittest.TestCase):
             # since this test validates the list() API,
             # we do not wait for the apps to finish so run the apps
             # in managed mode so that the local scheduler reaps the apps on exit
-            session.run(app, mode=RunMode.MANAGED)
+            session.run(app)
 
         apps = session.list()
         self.assertEqual(num_apps, len(apps))
@@ -132,9 +113,9 @@ class StandaloneSessionTest(unittest.TestCase):
         # removed by the scheduler also get removed from the session after a status() API has been
         # called on the app
 
-        scheduler = LocalScheduler(self.image_fetcher, cache_size=1)
+        scheduler = LocalScheduler(cache_size=1)
         session = StandaloneSession(
-            name="test_session", scheduler=scheduler, wait_interval=1
+            name="test_session", schedulers={"default": scheduler}, wait_interval=1
         )
         test_file = os.path.join(self.test_dir, "test_file")
         role = Role(name="touch").runs("touch.sh", test_file).on(self.test_container)
@@ -143,10 +124,10 @@ class StandaloneSessionTest(unittest.TestCase):
         # local scheduler was setup with a cache size of 1
         # run the same app twice (the first will be removed from the scheduler's cache)
         # then validate that the first one will drop from the session's app cache as well
-        app_id1 = session.run(app)
+        app_id1 = session.run(app, cfg=self.cfg)
         session.wait(app_id1)
 
-        app_id2 = session.run(app)
+        app_id2 = session.run(app, cfg=self.cfg)
         session.wait(app_id2)
 
         apps = session.list()
@@ -157,21 +138,20 @@ class StandaloneSessionTest(unittest.TestCase):
 
     def test_status(self):
         session = StandaloneSession(
-            name="test_session", scheduler=self.scheduler, wait_interval=1
+            name="test_session", schedulers={"default": self.scheduler}, wait_interval=1
         )
         role = Role(name="sleep").runs("sleep.sh", "60").on(self.test_container)
         app = Application("sleeper").of(role)
-        app_id = session.run(app)
-        self.assertEqual(AppState.RUNNING, session.status(app_id).state)
-        session.stop(app_id)
-        self.assertEqual(AppState.CANCELLED, session.status(app_id).state)
+        app_handle = session.run(app, cfg=self.cfg)
+        self.assertEqual(AppState.RUNNING, session.status(app_handle).state)
+        session.stop(app_handle)
+        self.assertEqual(AppState.CANCELLED, session.status(app_handle).state)
 
     def test_status_unknown_app(self):
         session = StandaloneSession(
-            name="test_session", scheduler=self.scheduler, wait_interval=1
+            name="test_session", schedulers={"default": self.scheduler}, wait_interval=1
         )
-        with self.assertRaises(UnknownAppException):
-            session.status("unknown_app_id")
+        self.assertIsNone(session.status("default://test_session/unknown_app_id"))
 
     def test_status_ui_url(self):
         app_id = "test_app"
@@ -182,52 +162,89 @@ class StandaloneSessionTest(unittest.TestCase):
         mock_scheduler.describe.return_value = resp
 
         session = StandaloneSession(
-            name="test_ui_url_session", scheduler=mock_scheduler
+            name="test_ui_url_session", schedulers={"default": mock_scheduler}
         )
         role = Role("ignored").runs("/bin/echo").on(self.test_container)
-        session.run(Application(app_id).of(role))
-        status = session.status(app_id)
+        app_handle = session.run(Application(app_id).of(role))
+        status = session.status(app_handle)
         self.assertEquals(resp.ui_url, status.ui_url)
 
     def test_wait_unknown_app(self):
         session = StandaloneSession(
-            name="test_session", scheduler=self.scheduler, wait_interval=1
+            name="test_session", schedulers={"default": self.scheduler}, wait_interval=1
         )
-        with self.assertRaises(UnknownAppException):
-            session.wait("unknown_app_id")
+        self.assertIsNone(session.wait("default://test_session/unknown_app_id"))
+        self.assertIsNone(session.wait("default://another_session/some_app"))
 
-    def test_stop_unknown_app(self):
+    def test_stop(self):
         session = StandaloneSession(
-            name="test_session", scheduler=self.scheduler, wait_interval=1
+            name="test_session", schedulers={"default": self.scheduler}, wait_interval=1
         )
-        with self.assertRaises(UnknownAppException):
-            session.stop("unknown_app_id")
+        self.assertIsNone(session.stop("default://test_session/unknown_app_id"))
+
+        with self.assertRaises(SessionMismatchException):
+            session.stop("default://another_session/some_app_id")
 
     def test_log_lines_unknown_app(self):
         session = StandaloneSession(
-            name="test_session", scheduler=self.scheduler, wait_interval=1
+            name="test_session", schedulers={"default": self.scheduler}, wait_interval=1
         )
         with self.assertRaises(UnknownAppException):
-            session.log_lines("unknown", "trainer")
+            session.log_lines("default://test_session/unknown", "trainer")
 
-    @mock.patch("torchelastic.tsm.driver.api.Scheduler", autospec=True)
-    def test_log_lines(self, scheduler_mock):
-        scheduler_mock.exists.return_value = True
+    def test_log_lines(self):
+        app_id = "mock_app"
+
+        scheduler_mock = MagicMock()
+        scheduler_mock.describe.return_value = DescribeAppResponse(
+            app_id, AppState.RUNNING
+        )
         scheduler_mock.log_iter.return_value = iter(["hello", "world"])
         session = StandaloneSession(
-            name="test_session", scheduler=scheduler_mock, wait_interval=1
+            name="test_session", schedulers={"default": scheduler_mock}, wait_interval=1
         )
-        app_id = "mock_app"
+
         role_name = "trainer"
         replica_id = 2
         regex = "QPS.*"
         since = datetime.datetime.now()
         until = datetime.datetime.now()
         lines = list(
-            session.log_lines(app_id, role_name, replica_id, regex, since, until)
+            session.log_lines(
+                f"default://test_session/{app_id}",
+                role_name,
+                replica_id,
+                regex,
+                since,
+                until,
+            )
         )
 
         self.assertEqual(["hello", "world"], lines)
         scheduler_mock.log_iter.assert_called_once_with(
             app_id, role_name, replica_id, regex, since, until
         )
+
+    def test_log_lines_another_session(self):
+        scheduler_mock = MagicMock()
+        session = StandaloneSession(
+            name="session1", schedulers={"default": scheduler_mock}, wait_interval=1
+        )
+        with self.assertRaises(SessionMismatchException):
+            session.log_lines("default://session2/app_id", "trainer")
+
+    def test_no_default_scheduler(self):
+        with self.assertRaises(ValueError):
+            StandaloneSession(name="test_session", schedulers={"local": self.scheduler})
+
+    def test_get_schedulers(self):
+        default_sched_mock = MagicMock()
+        local_sched_mock = MagicMock()
+        schedulers = {"default": default_sched_mock, "local": local_sched_mock}
+        session = StandaloneSession(name="test_session", schedulers=schedulers)
+
+        role = Role(name="sleep").runs("sleep.sh", "60").on(self.test_container)
+        app = Application("sleeper").of(role)
+        cfg = RunConfig()
+        session.run(app, scheduler="local", cfg=cfg)
+        local_sched_mock.submit.called_once_with(app, cfg)

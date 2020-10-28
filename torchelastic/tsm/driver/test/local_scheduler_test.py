@@ -17,12 +17,13 @@ from torchelastic.tsm.driver.api import (
     AppState,
     Container,
     Role,
-    RunMode,
+    RunConfig,
     macros,
 )
 from torchelastic.tsm.driver.local_scheduler import (
     LocalDirectoryImageFetcher,
     LocalScheduler,
+    make_unique,
 )
 
 from .test_util import write_shell_script
@@ -52,9 +53,7 @@ class LocalDirImageFetcherTest(unittest.TestCase):
             fetcher.fetch(non_existent_dir)
 
 
-LOCAL_SCHEDULER_MAKE_UNIQUE_ID = (
-    "torchelastic.tsm.driver.local_scheduler.LocalScheduler._make_unique_id"
-)
+LOCAL_SCHEDULER_MAKE_UNIQUE = "torchelastic.tsm.driver.local_scheduler.make_unique"
 
 
 class LocalSchedulerTest(unittest.TestCase):
@@ -64,9 +63,7 @@ class LocalSchedulerTest(unittest.TestCase):
         write_shell_script(self.test_dir, "fail.sh", ["exit 1"])
         write_shell_script(self.test_dir, "sleep.sh", ["sleep $1"])
 
-        self.image_fetcher = LocalDirectoryImageFetcher()
-        self.scheduler = LocalScheduler(self.image_fetcher)
-
+        self.scheduler = LocalScheduler()
         self.test_container = Container(image=self.test_dir)
 
     def tearDown(self):
@@ -84,9 +81,10 @@ class LocalSchedulerTest(unittest.TestCase):
             .replicas(num_replicas)
         )
         app = Application(name="test_app").of(role)
-        expected_app_id = LocalScheduler._make_unique_id(app.name)
-        with patch(LOCAL_SCHEDULER_MAKE_UNIQUE_ID, return_value=expected_app_id):
-            app_id = self.scheduler.submit(app, RunMode.HEADLESS)
+        expected_app_id = make_unique(app.name)
+        with patch(LOCAL_SCHEDULER_MAKE_UNIQUE, return_value=expected_app_id):
+            cfg = RunConfig()
+            app_id = self.scheduler.submit(app, cfg)
 
         self.assertEqual(f"{expected_app_id}", app_id)
         self.assertEqual(AppState.SUCCEEDED, self.scheduler.wait(app_id).state)
@@ -98,9 +96,9 @@ class LocalSchedulerTest(unittest.TestCase):
 
         role = Role("role1").runs("fail.sh").on(self.test_container).replicas(2)
         app = Application(name="test_app").of(role)
-        expected_app_id = LocalScheduler._make_unique_id(app.name)
-        with patch(LOCAL_SCHEDULER_MAKE_UNIQUE_ID, return_value=expected_app_id):
-            app_id = self.scheduler.submit(app, RunMode.HEADLESS)
+        expected_app_id = make_unique(app.name)
+        with patch(LOCAL_SCHEDULER_MAKE_UNIQUE, return_value=expected_app_id):
+            app_id = self.scheduler.submit(app, cfg)
 
         self.assertEqual(f"{expected_app_id}", app_id)
         self.assertEqual(AppState.FAILED, self.scheduler.wait(app_id).state)
@@ -120,7 +118,8 @@ class LocalSchedulerTest(unittest.TestCase):
         )
 
         app = Application(name="test_app").of(master, trainer)
-        info = self.scheduler.submit_dryrun(app, RunMode.HEADLESS)
+        cfg = RunConfig()
+        info = self.scheduler.submit_dryrun(app, cfg)
         print(info)
         self.assertEqual(2, len(info.request))
         master_info = info.request[0]["master"]
@@ -150,7 +149,8 @@ class LocalSchedulerTest(unittest.TestCase):
             .replicas(1)
         )
         app = Application(name="test_app").of(role1, role2)
-        app_id = self.scheduler.submit(app, RunMode.HEADLESS)
+        cfg = RunConfig()
+        app_id = self.scheduler.submit(app, cfg)
 
         self.assertEqual(AppState.SUCCEEDED, self.scheduler.wait(app_id).state)
         self.assertTrue(os.path.isfile(test_file1))
@@ -159,8 +159,9 @@ class LocalSchedulerTest(unittest.TestCase):
     def test_describe(self):
         role = Role("role1").runs("sleep.sh", "2").on(self.test_container).replicas(1)
         app = Application(name="test_app").of(role)
+        cfg = RunConfig()
         self.assertIsNone(self.scheduler.describe("test_app_0"))
-        app_id = self.scheduler.submit(app, RunMode.HEADLESS)
+        app_id = self.scheduler.submit(app, cfg)
         desc = self.scheduler.describe(app_id)
         self.assertEqual(AppState.RUNNING, desc.state)
         self.assertEqual(AppState.SUCCEEDED, self.scheduler.wait(app_id).state)
@@ -168,7 +169,8 @@ class LocalSchedulerTest(unittest.TestCase):
     def test_cancel(self):
         role = Role("role1").runs("sleep.sh", "10").on(self.test_container).replicas(1)
         app = Application(name="test_app").of(role)
-        app_id = self.scheduler.submit(app, RunMode.HEADLESS)
+        cfg = RunConfig()
+        app_id = self.scheduler.submit(app, cfg)
         desc = self.scheduler.describe(app_id)
         self.assertEqual(AppState.RUNNING, desc.state)
         self.scheduler.cancel(app_id)
@@ -177,7 +179,8 @@ class LocalSchedulerTest(unittest.TestCase):
     def test_exists(self):
         role = Role("role1").runs("sleep.sh", "10").on(self.test_container).replicas(1)
         app = Application(name="test_app").of(role)
-        app_id = self.scheduler.submit(app, RunMode.HEADLESS)
+        cfg = RunConfig()
+        app_id = self.scheduler.submit(app, cfg)
 
         self.assertTrue(self.scheduler.exists(app_id))
         self.scheduler.cancel(app_id)
@@ -185,33 +188,35 @@ class LocalSchedulerTest(unittest.TestCase):
 
     def test_invalid_cache_size(self):
         with self.assertRaises(ValueError):
-            LocalScheduler(self.image_fetcher, cache_size=0)
+            LocalScheduler(cache_size=0)
 
         with self.assertRaises(ValueError):
-            LocalScheduler(self.image_fetcher, cache_size=-1)
+            LocalScheduler(cache_size=-1)
 
     def test_cache_full(self):
-        scheduler = LocalScheduler(self.image_fetcher, cache_size=1)
+        scheduler = LocalScheduler(cache_size=1)
 
         role = Role("role1").runs("sleep.sh", "10").on(self.test_container).replicas(1)
         app = Application(name="test_app").of(role)
-        scheduler.submit(app, RunMode.MANAGED)
+        cfg = RunConfig()
+        scheduler.submit(app, cfg)
         with self.assertRaises(IndexError):
-            scheduler.submit(app, RunMode.MANAGED)
+            scheduler.submit(app, cfg)
 
     def test_cache_evict(self):
-        scheduler = LocalScheduler(self.image_fetcher, cache_size=1)
+        scheduler = LocalScheduler(cache_size=1)
         test_file1 = os.path.join(self.test_dir, "test_file_1")
         test_file2 = os.path.join(self.test_dir, "test_file_2")
         role1 = Role("role1").runs("touch.sh", test_file1).on(self.test_container)
         role2 = Role("role2").runs("touch.sh", test_file2).on(self.test_container)
         app1 = Application(name="touch_test_file1").of(role1)
         app2 = Application(name="touch_test_file2").of(role2)
+        cfg = RunConfig()
 
-        app_id1 = scheduler.submit(app1, RunMode.HEADLESS)
+        app_id1 = scheduler.submit(app1, cfg)
         self.assertEqual(AppState.SUCCEEDED, scheduler.wait(app_id1).state)
 
-        app_id2 = scheduler.submit(app2, RunMode.HEADLESS)
+        app_id2 = scheduler.submit(app2, cfg)
         self.assertEqual(AppState.SUCCEEDED, scheduler.wait(app_id2).state)
 
         # app1 should've been evicted

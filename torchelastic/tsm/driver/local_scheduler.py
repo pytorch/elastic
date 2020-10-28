@@ -20,16 +20,22 @@ from torchelastic.tsm.driver.api import (
     Application,
     AppState,
     DescribeAppResponse,
+    InvalidRunConfigException,
     Role,
-    RunMode,
+    RunConfig,
     Scheduler,
     is_terminal,
     macros,
+    runopts,
 )
 from torchelastic.utils.logging import get_logger
 
 
 log = get_logger()
+
+
+def make_unique(app_name: str) -> str:
+    return f"{app_name}_{str(uuid4()).split('-')[0]}"
 
 
 class ImageFetcher(abc.ABC):
@@ -103,7 +109,6 @@ class _LocalApplication:
         self.state: AppState = AppState.PENDING
         # time (in seconds since epoch) when the last set_state method() was called
         self.last_updated: float = -1
-        self.run_mode: RunMode = RunMode.MANAGED
 
     def add_process(self, role_name: str, proc: subprocess.Popen) -> None:
         procs = self.role_procs.setdefault(role_name, [])
@@ -113,9 +118,6 @@ class _LocalApplication:
         self.last_updated = time.time()
         self.state = state
 
-    def set_run_mode(self, mode: RunMode):
-        self.run_mode = mode
-
     def __repr__(self):
         role_to_pid = {}
         for (role_name, procs) in self.role_procs.items():
@@ -123,7 +125,7 @@ class _LocalApplication:
             for p in procs:
                 pids.append(p.pid)
 
-        return f"{{name:{self.name}, state:{self.state}, mode:{self.run_mode}, pid_map:{role_to_pid}}}"
+        return f"{{name:{self.name}, state:{self.state}, pid_map:{role_to_pid}}}"
 
 
 class LocalScheduler(Scheduler):
@@ -144,14 +146,34 @@ class LocalScheduler(Scheduler):
              using a different scheduler.
     """
 
-    def __init__(self, image_fetcher: ImageFetcher, cache_size: int = 100):
+    def __init__(self, cache_size: int = 100):
         # TODO T72035686 replace dict with a proper LRUCache data structure
         self._apps: Dict[AppId, _LocalApplication] = {}
-        self._image_fetcher = image_fetcher
 
         if cache_size <= 0:
             raise ValueError("cache size must be greater than zero")
         self._cache_size = cache_size
+
+    def run_opts(self) -> runopts:
+        opts = runopts()
+        opts.add("image_fetcher", type_=str, help="image fetcher type", default="dir")
+        return opts
+
+    def _img_fetchers(self) -> Dict[str, ImageFetcher]:
+        return {"dir": LocalDirectoryImageFetcher()}
+
+    def _get_img_fetcher(self, cfg: RunConfig) -> ImageFetcher:
+        img_fetcher_type = cfg.get("image_fetcher")
+        fetchers = self._img_fetchers()
+        # pyre-ignore [6]: type check already done by runopt.resolve
+        img_fetcher = fetchers.get(img_fetcher_type, None)
+        if not img_fetcher:
+            raise InvalidRunConfigException(
+                f"Unsupported image fetcher type: {img_fetcher_type}. Must be one of: {fetchers.keys()}",
+                cfg,
+                self.run_opts(),
+            )
+        return img_fetcher
 
     def _evict_lru(self) -> bool:
         """
@@ -171,13 +193,6 @@ class LocalScheduler(Scheduler):
 
         if lru_app_id:
             # evict LRU finished app from the apps cache
-            # do not remove the app name from the ids map so that the ids
-            # remain unique throughout the lifespan of this scheduler
-            # for example if cache size == 1
-            #     app_id1 = submit(app)
-            #     app_id2 = submit(app) # app_id1 was evicted here
-            #     app_id1 == "app.name_0"
-            #     app_id2 == "app.name_1"
             del self._apps[lru_app_id]
 
             log.debug(f"evicting app: {lru_app_id}, from local scheduler cache")
@@ -186,22 +201,21 @@ class LocalScheduler(Scheduler):
             log.debug(f"no apps evicted, all {len(self._apps)} apps are running")
             return False
 
-    def submit(self, app: Application, mode: RunMode) -> str:
+    def _submit(self, app: Application, cfg: RunConfig) -> str:
         if len(self._apps) == self._cache_size:
             if not self._evict_lru():
                 raise IndexError(
                     f"App cache size ({self._cache_size}) exceeded. Increase the cache size"
                 )
 
-        app_id = self._make_unique_id(app.name)
+        app_id = make_unique(app.name)
         assert (
             app_id not in self._apps
         ), "no app_id collisons expected since uuid4 suffix is used"
 
         local_app = _LocalApplication(app.name)
-        local_app.set_run_mode(mode)
 
-        for role_popen_args in self._to_app_popen_args(app_id, app.roles):
+        for role_popen_args in self._to_app_popen_args(app_id, app.roles, cfg):
             for i, (role_name, replica_popen_args) in enumerate(
                 role_popen_args.items()
             ):
@@ -213,19 +227,15 @@ class LocalScheduler(Scheduler):
         self._apps[app_id] = local_app
         return app_id
 
-    @staticmethod
-    def _make_unique_id(app_name: str) -> str:
-        return f"{app_name}_{str(uuid4()).split('-')[0]}"
-
-    def submit_dryrun(self, app: Application, mode: RunMode) -> AppDryRunInfo:
-        app_popen_args = self._to_app_popen_args(f"{app.name}_##", app.roles)
+    def _submit_dryrun(self, app: Application, cfg: RunConfig) -> AppDryRunInfo:
+        app_popen_args = self._to_app_popen_args(f"{app.name}_##", app.roles, cfg)
         import pprint
 
         return AppDryRunInfo(
             app_popen_args, lambda p: pprint.pformat(p, indent=2, width=80)
         )
 
-    def _to_app_popen_args(self, app_id: str, roles: List[Role]):
+    def _to_app_popen_args(self, app_id: str, roles: List[Role], cfg: RunConfig):
         """
         returns the popen args for all processes that needs to be created for the app
 
@@ -260,7 +270,8 @@ class LocalScheduler(Scheduler):
                 container
             ), "all roles in a submitted app must have container association"
 
-            img_root = self._image_fetcher.fetch(container.image)
+            image_fetcher = self._get_img_fetcher(cfg)
+            img_root = image_fetcher.fetch(container.image)
             cmd = os.path.join(img_root, role.entrypoint)
 
             role_popen_params = {}
@@ -353,14 +364,11 @@ class LocalScheduler(Scheduler):
         raise TimeoutError(f"timed out waiting for app: {app_id} to finish")
 
     def __del__(self):
-        # terminate all MANAGED apps
+        # terminate all apps
         for (app_id, app) in self._apps.items():
-            if app.run_mode == RunMode.MANAGED:
-                log.info(f"Terminating managed app: {app_id}")
-                self._cancel_existing(app_id)
+            log.info(f"Terminating app: {app_id}")
+            self._cancel_existing(app_id)
 
 
 def create_scheduler(**kwargs) -> LocalScheduler:
-    image_fetcher = LocalDirectoryImageFetcher()
-    cache_size = kwargs.get("cache_size", 100)
-    return LocalScheduler(image_fetcher, cache_size=cache_size)
+    return LocalScheduler(cache_size=kwargs.get("cache_size", 100))
