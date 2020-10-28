@@ -8,11 +8,18 @@
 
 
 import abc
+import ctypes
+import json
 import os
+import re
+import signal
 import subprocess
 import sys
 import time
-from typing import Dict, List, Optional
+import warnings
+from dataclasses import dataclass
+from datetime import datetime
+from typing import IO, Any, Dict, Iterable, List, Optional
 from uuid import uuid4
 
 from torchelastic.tsm.driver.api import (
@@ -95,6 +102,45 @@ AppName = str
 RoleName = str
 
 
+@dataclass
+class _LocalReplica:
+    """
+    Contains information about a locally running role replica.
+    """
+
+    role_name: RoleName
+    replica_id: int
+    proc: subprocess.Popen
+    stdout: Optional[IO]  # None means no log_dir (out to console)
+    stderr: Optional[IO]  # None means no log_dir (out to console)
+
+    def terminate(self) -> None:
+        """
+        terminates the underlying process for this replica
+        closes stdout and stderr file handles
+        safe to call multiple times
+        """
+        # safe to call terminate on a process that already died
+        self.proc.terminate()
+        self.proc.wait()
+
+        # close stdout and stderr log file handles
+        if self.stdout:
+            # pyre-ignore [16] already null checked
+            self.stdout.close()
+        if self.stderr:
+            self.stderr.close()
+
+    def is_alive(self) -> bool:
+        return self.proc.poll() is None
+
+    def failed(self) -> bool:
+        if self.is_alive():  # if still running, then has not failed
+            return False
+        else:
+            return self.proc.returncode != 0
+
+
 class _LocalApplication:
     """
     Container object used by ``LocalhostScheduler`` to group the pids that
@@ -102,30 +148,101 @@ class _LocalApplication:
     process and has a pid.
     """
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, id: str, log_dir: str):
         self.name = name
-        # role name -> proc_1, proc_2, ... (proc for each replica)
-        self.role_procs: Dict[RoleName, List[subprocess.Popen]] = {}
+        self.id = id
+        self.log_dir = log_dir
+        # role name -> [replicas, ...]
+        self.role_replicas: Dict[RoleName, List[_LocalReplica]] = {}
         self.state: AppState = AppState.PENDING
         # time (in seconds since epoch) when the last set_state method() was called
         self.last_updated: float = -1
 
-    def add_process(self, role_name: str, proc: subprocess.Popen) -> None:
-        procs = self.role_procs.setdefault(role_name, [])
-        procs.append(proc)
+    def add_replica(self, role_name: str, replica: _LocalReplica) -> None:
+        procs = self.role_replicas.setdefault(role_name, [])
+        procs.append(replica)
 
-    def set_state(self, state: AppState):
+    def set_state(self, state: AppState) -> None:
         self.last_updated = time.time()
         self.state = state
 
+    def terminate(self) -> None:
+        """
+        terminates all procs associated with this app,
+        and closes any resources (e.g. log file handles)
+        safe to call multiple times
+        """
+        # terminate all replica processes
+        for replicas in self.role_replicas.values():
+            for r in replicas:
+                r.terminate()
+
+    def close(self) -> None:
+        """
+        terminates all procs associated with this app,
+        and closes any resources (e.g. log file handles)
+        and if log_dir has been specified,
+        writes a SUCCESS file indicating that the log files
+        have been flushed and closed and ready to read.
+        NOT safe to call multiple times!
+        """
+        self.terminate()
+
+        # drop a SUCCESS file in the log dir to signal that
+        # the log file handles have all been closed properly
+        # and that they can reliably be read
+        roles_info = {}
+        for role_name, replicas in self.role_replicas.items():
+            replicas_info = []
+            for replica in replicas:
+                replica_info = {
+                    "replica_id": replica.replica_id,
+                    "pid": replica.proc.pid,
+                    "exitcode": replica.proc.returncode,
+                }
+                if self.log_dir:
+                    # pyre-ignore [16] replica.stdout|stderr is a file handle if log_dir
+                    replica_info["stdout"] = replica.stdout.name
+                    replica_info["stderr"] = replica.stderr.name
+                replicas_info.append(replica_info)
+            roles_info[role_name] = replicas_info
+        app_info = {
+            "app_name": self.name,
+            "app_id": self.id,
+            "log_dir": self.log_dir or "<None>",
+            "final_state": self.state.name,
+            "last_updated": self.last_updated,
+            "roles": roles_info,
+        }
+        info_str = json.dumps(app_info, indent=2)
+
+        if self.log_dir:
+            with open(os.path.join(self.log_dir, "SUCCESS"), "w") as fp:
+                fp.write(info_str)
+
+        log.info(f"Successfully closed app_id: {self.id}.\n{info_str}")
+
     def __repr__(self):
         role_to_pid = {}
-        for (role_name, procs) in self.role_procs.items():
+        for (role_name, replicas) in self.role_replicas.items():
             pids = role_to_pid.setdefault(role_name, [])
-            for p in procs:
-                pids.append(p.pid)
+            for r in replicas:
+                pids.append(r.proc.pid)
 
         return f"{{name:{self.name}, state:{self.state}, pid_map:{role_to_pid}}}"
+
+
+def _pr_set_pdeathsig() -> None:
+    """
+    Sets PR_SET_PDEATHSIG to ensure a child process is
+    terminated appropriately.
+
+    See http://stackoverflow.com/questions/1884941/ for more information.
+    For libc.so.6 read http://www.linux-m68k.org/faq/glibcinfo.html
+    """
+    libc = ctypes.CDLL("libc.so.6")
+    PR_SET_PDEATHSIG = 1
+    libc.prctl(PR_SET_PDEATHSIG, signal.SIGTERM)
 
 
 class LocalScheduler(Scheduler):
@@ -157,6 +274,12 @@ class LocalScheduler(Scheduler):
     def run_opts(self) -> runopts:
         opts = runopts()
         opts.add("image_fetcher", type_=str, help="image fetcher type", default="dir")
+        opts.add(
+            "log_dir",
+            type_=str,
+            default=None,
+            help="dir to write stdout/stderr log files of replicas (defaults to stdout|err PIPE)",
+        )
         return opts
 
     def _img_fetchers(self) -> Dict[str, ImageFetcher]:
@@ -201,6 +324,40 @@ class LocalScheduler(Scheduler):
             log.debug(f"no apps evicted, all {len(self._apps)} apps are running")
             return False
 
+    def _get_file_io(self, file: Optional[str]):
+        """
+        Given a file name, opens the file for write and returns the IO.
+        If no file name is given, then returns ``None``
+        Raises a ``FileExistsError`` if the file is already present.
+        """
+
+        if not file:
+            return None
+
+        if os.path.isfile(file):
+            raise FileExistsError(
+                f"log file: {file} already exists,"
+                f" specify a different log_dir, app_name, or remove the file and retry"
+            )
+
+        os.makedirs(os.path.dirname(file), exist_ok=True)
+        return open(file, mode="w")
+
+    def _popen(self, role_name: str, replica_id: int, **popen_kwargs) -> _LocalReplica:
+        """
+        Same as ``subprocess.Popen(**popen_kwargs)`` but is able to take ``stdout`` and ``stderr``
+        as file name ``str`` rather than a file-like obj.
+        """
+        stdout_ = self._get_file_io(popen_kwargs.pop("stdout", None))
+        stderr_ = self._get_file_io(popen_kwargs.pop("stderr", None))
+
+        proc = subprocess.Popen(
+            **popen_kwargs, stdout=stdout_, stderr=stderr_, preexec_fn=_pr_set_pdeathsig
+        )
+        return _LocalReplica(
+            role_name, replica_id, proc, stdout=stdout_, stderr=stderr_
+        )
+
     def _submit(self, app: Application, cfg: RunConfig) -> str:
         if len(self._apps) == self._cache_size:
             if not self._evict_lru():
@@ -213,16 +370,15 @@ class LocalScheduler(Scheduler):
             app_id not in self._apps
         ), "no app_id collisons expected since uuid4 suffix is used"
 
-        local_app = _LocalApplication(app.name)
+        # pyre-ignore [6] RunConfig type checked in runopt.resolve
+        local_app = _LocalApplication(app.name, app_id, cfg.get("log_dir"))
 
         for role_popen_args in self._to_app_popen_args(app_id, app.roles, cfg):
-            for i, (role_name, replica_popen_args) in enumerate(
-                role_popen_args.items()
-            ):
-                for replica_popen_arg in replica_popen_args:
-                    log.info(f"Running {role_name} replica {i}): {replica_popen_arg}")
-                    proc = subprocess.Popen(**replica_popen_arg)
-                    local_app.add_process(role_name, proc)
+            for role_name, replica_popen_args in role_popen_args.items():
+                for replica_id, replica_popen_arg in enumerate(replica_popen_args):
+                    log.info(f"Running {role_name} ({replica_id}): {replica_popen_arg}")
+                    replica = self._popen(role_name, replica_id, **replica_popen_arg)
+                    local_app.add_replica(role_name, replica)
 
         self._apps[app_id] = local_app
         return app_id
@@ -263,6 +419,7 @@ class LocalScheduler(Scheduler):
            },
          ]
         """
+        log_dir = cfg.get("log_dir")
         app_popen_params = []
         for role in roles:
             container = role.container
@@ -279,17 +436,19 @@ class LocalScheduler(Scheduler):
                 args = [cmd] + macros.substitute(
                     role.args, img_root, app_id, str(replica_id)
                 )
-
                 replica_popen_params = role_popen_params.setdefault(role.name, [])
-                replica_popen_params.append({"args": args, "env": role.env})
+                params: Dict[str, Any] = {"args": args, "env": role.env}
+                if log_dir:
+                    base_log_dir = os.path.join(
+                        str(log_dir), app_id, role.name, str(replica_id)
+                    )
+                    params["stdout"] = os.path.join(base_log_dir, "stdout.log")
+                    params["stderr"] = os.path.join(base_log_dir, "stderr.log")
+
+                replica_popen_params.append(params)
+
             app_popen_params.append(role_popen_params)
         return app_popen_params
-
-    def _failed(self, p: subprocess.Popen):
-        if self._is_alive(p):
-            return False
-        else:
-            return p.returncode != 0
 
     def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
         if app_id not in self._apps:
@@ -297,25 +456,27 @@ class LocalScheduler(Scheduler):
 
         local_app = self._apps[app_id]
 
-        # check if the app has been known to have finished
+        # check if the app is known to have finished
         if is_terminal(local_app.state):
             state = local_app.state
         else:
             running = False
             failed = False
-            for (_, procs) in local_app.role_procs.items():
-                for p in procs:
-                    running |= self._is_alive(p)
-                    failed |= self._failed(p)
+            for replicas in local_app.role_replicas.values():
+                for r in replicas:
+                    running |= r.is_alive()
+                    failed |= r.failed()
 
             if running:
                 state = AppState.RUNNING
             elif failed:
                 state = AppState.FAILED
-                self._terminate(local_app)  # terminate danglers
             else:
                 state = AppState.SUCCEEDED
             local_app.set_state(state)
+
+        if is_terminal(local_app.state):
+            local_app.close()
 
         resp = DescribeAppResponse()
         resp.app_id = app_id
@@ -323,51 +484,100 @@ class LocalScheduler(Scheduler):
         resp.num_restarts = 0
         return resp
 
-    def _is_alive(self, p: subprocess.Popen):
-        return p.poll() is None
+    def log_iter(
+        self,
+        app_id: str,
+        role_name: str,
+        k: int = 0,
+        regex: Optional[str] = None,
+        since: Optional[datetime] = None,
+        until: Optional[datetime] = None,
+    ) -> Iterable:
+        if since or until:
+            warnings.warn(
+                "Since and/or until times specified for LocalScheduler.log_iter."
+                " These will be ignored and all log lines will be returned"
+            )
 
-    def _terminate(self, app: _LocalApplication):
-        for (_, procs) in app.role_procs.items():
-            for p in procs:
-                # safe to call terminate on a process that already died
-                p.terminate()
-                p.wait()
+        app = self._apps[app_id]
+        if not app.log_dir:
+            raise RuntimeError(
+                f"app: {app_id} was not configured to log into a file."
+                f" Did you run it with log_dir set in RunConfig?"
+            )
+
+        log_dir = os.path.join(app.log_dir, app_id, role_name)
+        log_file = os.path.join(log_dir, str(k), "stderr.log")
+        return LogIterator(app_id, regex or ".*", log_file, self)
 
     def _cancel_existing(self, app_id: str) -> None:
         # can assume app_id exists
         local_app = self._apps[app_id]
-        self._terminate(local_app)
+        local_app.close()
         local_app.state = AppState.CANCELLED
-
-    def wait(self, app_id: str) -> Optional[DescribeAppResponse]:
-        """
-        Waits for the app to finish or raise TimeoutError upon timeout (in seconds).
-        If no timeout is specified waits indefinitely.
-
-        Returns:
-            The last return value from ``describe()``
-        """
-
-        expiry = sys.maxsize
-        interval = 1
-
-        while expiry > time.time():
-            desc = self.describe(app_id)
-
-            if desc is None:
-                return None
-            elif is_terminal(desc.state):
-                return desc
-
-            time.sleep(interval)
-
-        raise TimeoutError(f"timed out waiting for app: {app_id} to finish")
 
     def __del__(self):
         # terminate all apps
         for (app_id, app) in self._apps.items():
             log.info(f"Terminating app: {app_id}")
-            self._cancel_existing(app_id)
+            app.terminate()
+
+
+class LogIterator:
+    def __init__(
+        self, app_id: str, regex: str, log_file: str, scheduler: LocalScheduler
+    ):
+        self._app_id: str = app_id
+        self._regex = re.compile(regex)
+        self._log_file: str = log_file
+        self._log_fp: Optional[IO] = None
+        self._scheduler: LocalScheduler = scheduler
+        self._app_finished: bool = False
+
+    def _check_finished(self):
+        # either the app (already finished) was evicted from the LRU cache
+        # -- or -- the app reached a terminal state (and still in the cache)
+        desc = self._scheduler.describe(self._app_id)
+        if not desc or is_terminal(desc.state):
+            self._app_finished = True
+        else:
+            self._app_finished = False
+
+    def __iter__(self):
+        # wait for the log file to appear or app to finish (whichever happens first)
+        while True:
+            self._check_finished()  # check to see if app has finished running
+
+            if os.path.isfile(self._log_file):
+                self._log_fp = open(self._log_file, "r")  # noqa: P201
+                break
+
+            if self._app_finished:
+                # app finished without ever writing a log file
+                raise RuntimeError(
+                    f"app: {self._app_id} finished without writing: {self._log_file}"
+                )
+
+            time.sleep(1)
+        return self
+
+    def __next__(self):
+        while True:
+            line = self._log_fp.readline()
+            if not line:
+                # we have reached EOF and app finished
+                if self._app_finished:
+                    self._log_fp.close()
+                    raise StopIteration()
+
+                # if app is still running we need to wait for more possible log lines
+                # sleep for 1 sec to avoid thrashing the follow
+                time.sleep(1)
+                self._check_finished()
+            else:
+                line = line.rstrip("\n")  # strip the trailing newline
+                if re.match(self._regex, line):
+                    return line
 
 
 def create_scheduler(**kwargs) -> LocalScheduler:
