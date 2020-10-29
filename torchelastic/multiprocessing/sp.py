@@ -14,8 +14,8 @@ from subprocess import CompletedProcess, TimeoutExpired
 from typing import Dict, List, Optional, Tuple, Union
 
 from torchelastic.multiprocessing.api import BaseProcessContext, expire
-from torchelastic.multiprocessing.base_process_handler import ProcessException
-from torchelastic.multiprocessing.process_handler import ProcessHandler
+from torchelastic.multiprocessing.errors import ProcessException
+from torchelastic.multiprocessing.subprocess_handler import SubprocessHandler
 
 
 def _pr_set_pdeathsig(sig=signal.SIGTERM):
@@ -79,7 +79,7 @@ class SubprocessContext(BaseProcessContext):
 
     def __init__(
         self,
-        proc_list: List[ProcessHandler],
+        proc_list: List[SubprocessHandler],
     ):
         self.processes = proc_list
 
@@ -164,7 +164,6 @@ def _resolve_std_stream(stream: Union[str, int, None], type: str, rank: int):
 def start_processes(
     params: List[SubprocessParameters],
 ) -> SubprocessContext:
-
     processes = []
     for local_rank, proc_params in enumerate(params):
         stdout_stream = _resolve_std_stream(proc_params.stdout, "stdout", local_rank)
@@ -177,6 +176,6 @@ def start_processes(
             "stderr": stderr_stream,
         }
         popen_args.update(proc_args)
-        process = ProcessHandler(**popen_args)
+        process = SubprocessHandler(**popen_args)
         processes.append(process)
     return SubprocessContext(processes)

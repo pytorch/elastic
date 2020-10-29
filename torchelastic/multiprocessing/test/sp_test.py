@@ -12,7 +12,7 @@ import subprocess
 import tempfile
 import unittest
 
-from torchelastic.multiprocessing.base_process_handler import ProcessException
+from torchelastic.multiprocessing.errors import ProcessException
 from torchelastic.multiprocessing.sp import (
     SubprocessParameters,
     _resolve_std_stream,
@@ -25,42 +25,53 @@ def path(script):
 
 
 class SubprocessContextTest(unittest.TestCase):
-    def _check_stream(self, stream, string) -> bool:
-        for line in stream:
-            if string in line.decode():
-                return True
+    def _check_file(self, file_path, string) -> bool:
+        with open(file_path, "r") as f:
+            for line in f.readlines():
+                if string in line:
+                    return True
         return False
 
     def test_run_success(self):
+        test_dir = tempfile.mkdtemp()
         nprocs = 4
         params_list = [
             SubprocessParameters(
                 args=[path("bin/test_script.py")],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stdout=test_dir,
+                stderr=test_dir,
             )
         ] * nprocs
         proc_context = start_processes(params_list)
         completed_processes = proc_context.wait()
-        for res in completed_processes.values():
-            self.assertTrue(self._check_stream(res.stdout, "Success"))
+        for rank in range(len(completed_processes.values())):
+            self.assertTrue(
+                self._check_file(f"{test_dir}/{rank}/stdout.log", "Success")
+            )
+        shutil.rmtree(test_dir)
 
     def test_run_fail_group(self):
+        test_dir = tempfile.mkdtemp()
         nprocs = 4
         params_list = [
             SubprocessParameters(
                 args=[path("bin/test_script.py"), "--fail"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stdout=test_dir,
+                stderr=test_dir,
             )
         ] * nprocs
         proc_context = start_processes(params_list)
         with self.assertRaises(ProcessException) as context:
             proc_context.wait()
-        exception = context.exception
-        self._check_stream(
-            exception.stderr, "raising exception since --fail flag was set"
+        failed_proc_rank = 0
+        for idx, proc in enumerate(proc_context.processes):
+            if context.exception.pid == proc.pid:
+                failed_proc_rank = idx
+        self._check_file(
+            f"{test_dir}/{failed_proc_rank}/stderr.log",
+            "raising exception since --fail flag was set",
         )
+        shutil.rmtree(test_dir)
 
     def test_run_async_success(self):
         nprocs = 4
@@ -73,21 +84,22 @@ class SubprocessContextTest(unittest.TestCase):
         self.assertFalse(proc_context._any_alive())
 
     def test_run_different_timing(self):
+        test_dir = tempfile.mkdtemp()
         params_list = [
             SubprocessParameters(
                 args=[path("bin/test_script.py"), "--wait", "2", "--fail"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stdout=test_dir,
+                stderr=test_dir,
             ),
             SubprocessParameters(
                 args=[path("bin/test_script.py"), "--wait", "1"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stdout=test_dir,
+                stderr=test_dir,
             ),
             SubprocessParameters(
                 args=[path("bin/test_script.py"), "--wait", "5"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stdout=test_dir,
+                stderr=test_dir,
             ),
         ]
         proc_context = start_processes(
@@ -96,9 +108,16 @@ class SubprocessContextTest(unittest.TestCase):
         with self.assertRaises(ProcessException) as context:
             proc_context.wait(timeout=3)
 
-        self._check_stream(
-            context.exception.stderr, "raising exception since --fail flag was set"
+        failed_rank = 0
+        for rank, proc in enumerate(proc_context.processes):
+            if context.exception.pid == proc.pid:
+                failed_rank = rank
+
+        self._check_file(
+            f"{test_dir}/{failed_rank}/stderr.log",
+            "raising exception since --fail flag was set",
         )
+        shutil.rmtree(test_dir)
 
     def _read_file(self, path):
         with open(path, "r") as file:
@@ -146,25 +165,19 @@ class SubprocessContextTest(unittest.TestCase):
             self._get_params(
                 [path("bin/test_script.py")],
                 stdout=test_dir,
-                stderr=subprocess.PIPE,
             ),
             self._get_params(
                 [path("bin/test_script.py"), "--fail"],
                 stdout=test_dir,
-                stderr=subprocess.PIPE,
             ),
         ]
         params_list[1].args.append("--fail")
         proc_context = start_processes(params_list)
         with self.assertRaises(ProcessException) as context:
             proc_context.wait()
-        exception = context.exception
         self.assertTrue(os.path.exists(f"{test_dir}/0/stdout.log"))
         self.assertTrue(os.path.exists(f"{test_dir}/1/stdout.log"))
         self.assertEqual("Success", self._read_file(f"{test_dir}/0/stdout.log"))
-        self._check_stream(
-            exception.stderr, "raising exception since --fail flag was set"
-        )
         shutil.rmtree(test_dir)
 
     def test_wait_no_timeout(self):
@@ -172,8 +185,6 @@ class SubprocessContextTest(unittest.TestCase):
         params_list = [
             SubprocessParameters(
                 args=[path("bin/test_script.py"), "--wait", "5"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
             )
         ] * nprocs
         proc_context = start_processes(params_list)

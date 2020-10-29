@@ -162,8 +162,8 @@ class LaunchTest(unittest.TestCase):
     def test_wrapper_fn_kill_script_process(self):
         """
         tests that the wrapper_fn properly terminates
-        the script process (the script process is the sub_sub_process of
-        the agent
+        the script process (the script process is the subprocess of
+        the agent)
         """
         nprocs = 2
         sleep = 300
