@@ -80,7 +80,7 @@ class LocalSchedulerTest(unittest.TestCase):
             ["for i in $(seq 0 $1); do echo $i 1>&2; sleep $2; done"],
         )
 
-        self.scheduler = LocalScheduler()
+        self.scheduler = LocalScheduler(session_name="test_session")
         self.test_container = Container(image=self.test_dir)
 
     def wait(
@@ -167,7 +167,10 @@ class LocalSchedulerTest(unittest.TestCase):
         app_id = self.scheduler.submit(app, cfg)
         self.wait(app_id)
 
-        with open(os.path.join(log_dir, "SUCCESS"), "r") as f:
+        success_file = os.path.join(
+            log_dir, self.scheduler.session_name, app_id, "SUCCESS"
+        )
+        with open(success_file, "r") as f:
             sf_json = json.load(f)
             self.assertEqual(app_id, sf_json["app_id"])
             self.assertEqual("test_app", sf_json["app_name"])
@@ -192,7 +195,11 @@ class LocalSchedulerTest(unittest.TestCase):
         app_id = self.scheduler.submit(app, cfg)
         self.wait(app_id)
 
-        with open(os.path.join(log_dir, "SUCCESS"), "r") as f:
+        success_file = os.path.join(
+            log_dir, self.scheduler.session_name, app_id, "SUCCESS"
+        )
+
+        with open(success_file, "r") as f:
             sf_json = json.load(f)
             self.assertEqual(app_id, sf_json["app_id"])
             self.assertEqual("test_app", sf_json["app_name"])
@@ -255,8 +262,8 @@ class LocalSchedulerTest(unittest.TestCase):
             {
                 "args": ["trainer.par"],
                 "env": {},
-                "stdout": "/tmp/test_app_##/trainer/0/stdout.log",
-                "stderr": "/tmp/test_app_##/trainer/0/stderr.log",
+                "stdout": f"/tmp/{self.scheduler.session_name}/test_app_##/trainer/0/stdout.log",
+                "stderr": f"/tmp/{self.scheduler.session_name}/test_app_##/trainer/0/stderr.log",
             },
             trainer_info[0],
         )
@@ -264,8 +271,8 @@ class LocalSchedulerTest(unittest.TestCase):
             {
                 "args": ["trainer.par"],
                 "env": {},
-                "stdout": "/tmp/test_app_##/trainer/1/stdout.log",
-                "stderr": "/tmp/test_app_##/trainer/1/stderr.log",
+                "stdout": f"/tmp/{self.scheduler.session_name}/test_app_##/trainer/1/stdout.log",
+                "stderr": f"/tmp/{self.scheduler.session_name}/test_app_##/trainer/1/stderr.log",
             },
             trainer_info[1],
         )
@@ -368,13 +375,13 @@ class LocalSchedulerTest(unittest.TestCase):
 
     def test_invalid_cache_size(self):
         with self.assertRaises(ValueError):
-            LocalScheduler(cache_size=0)
+            LocalScheduler(session_name="test_session", cache_size=0)
 
         with self.assertRaises(ValueError):
-            LocalScheduler(cache_size=-1)
+            LocalScheduler(session_name="test_session", cache_size=-1)
 
     def test_cache_full(self):
-        scheduler = LocalScheduler(cache_size=1)
+        scheduler = LocalScheduler(session_name="test_session", cache_size=1)
 
         role = Role("role1").runs("sleep.sh", "10").on(self.test_container).replicas(1)
         app = Application(name="test_app").of(role)
@@ -384,7 +391,7 @@ class LocalSchedulerTest(unittest.TestCase):
             scheduler.submit(app, cfg)
 
     def test_cache_evict(self):
-        scheduler = LocalScheduler(cache_size=1)
+        scheduler = LocalScheduler(session_name="test_session", cache_size=1)
         test_file1 = os.path.join(self.test_dir, "test_file_1")
         test_file2 = os.path.join(self.test_dir, "test_file_2")
         role1 = Role("role1").runs("touch.sh", test_file1).on(self.test_container)

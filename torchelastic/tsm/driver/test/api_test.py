@@ -447,6 +447,9 @@ class RunConfigTest(unittest.TestCase):
 
 class SchedulerTest(unittest.TestCase):
     class MockScheduler(Scheduler):
+        def __init__(self, session_name):
+            super().__init__(session_name)
+
         def _submit(self, app: Application, cfg: RunConfig) -> str:
             return app.name
 
@@ -476,7 +479,7 @@ class SchedulerTest(unittest.TestCase):
             return opts
 
     def test_invalid_run_cfg(self):
-        scheduler_mock = SchedulerTest.MockScheduler()
+        scheduler_mock = SchedulerTest.MockScheduler("test_session")
         app_mock = MagicMock()
 
         with self.assertRaises(InvalidRunConfigException):
@@ -489,7 +492,7 @@ class SchedulerTest(unittest.TestCase):
             scheduler_mock.submit(app_mock, empty_cfg)
 
     def test_invalid_dryrun_cfg(self):
-        scheduler_mock = SchedulerTest.MockScheduler()
+        scheduler_mock = SchedulerTest.MockScheduler("test_session")
         app_mock = MagicMock()
 
         with self.assertRaises(InvalidRunConfigException):

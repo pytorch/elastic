@@ -11,8 +11,10 @@ import torchelastic.tsm.driver.local_scheduler as local_scheduler
 from torchelastic.tsm.driver.api import Scheduler, SchedulerBackend
 
 
-def get_schedulers(**scheduler_params) -> Dict[SchedulerBackend, Scheduler]:
+def get_schedulers(
+    session_name: str, **scheduler_params
+) -> Dict[SchedulerBackend, Scheduler]:
     return {
-        "local": local_scheduler.create_scheduler(**scheduler_params),
-        "default": local_scheduler.create_scheduler(**scheduler_params),
+        "local": local_scheduler.create_scheduler(session_name, **scheduler_params),
+        "default": local_scheduler.create_scheduler(session_name, **scheduler_params),
     }

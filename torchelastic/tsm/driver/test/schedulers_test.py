@@ -14,6 +14,9 @@ from torchelastic.tsm.driver.schedulers import get_schedulers
 
 class SchedulersTest(unittest.TestCase):
     def test_get_local_schedulers(self):
-        schedulers = get_schedulers()
+        schedulers = get_schedulers(session_name="test_session")
         self.assertTrue(isinstance(schedulers["local"], LocalScheduler))
         self.assertTrue(isinstance(schedulers["default"], LocalScheduler))
+
+        self.assertEquals("test_session", schedulers["local"].session_name)
+        self.assertEquals("test_session", schedulers["default"].session_name)

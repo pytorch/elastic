@@ -106,4 +106,5 @@ def session(name: Optional[str] = None, backend: str = "standalone", **scheduler
     if not name:
         name = _gen_session_name(backend)
 
+    scheduler_args["session_name"] = name
     return StandaloneSession(name=name, schedulers=get_schedulers(**scheduler_args))

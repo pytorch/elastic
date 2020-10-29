@@ -39,6 +39,9 @@ class Resource:
     LARGE = Resources(cpu=16, gpu=0, memMB=(16 * 1024))
 
 
+SESSION_NAME = "test_session"
+
+
 class StandaloneSessionTest(unittest.TestCase):
     def setUp(self):
         self.test_dir = tempfile.mkdtemp("StandaloneSessionTest")
@@ -47,7 +50,7 @@ class StandaloneSessionTest(unittest.TestCase):
         write_shell_script(self.test_dir, "fail.sh", ["exit 1"])
         write_shell_script(self.test_dir, "sleep.sh", ["sleep $1"])
 
-        self.scheduler = LocalScheduler()
+        self.scheduler = LocalScheduler(SESSION_NAME)
         self.cfg = RunConfig({"image_fetcher": "dir"})
 
         # resource ignored for local scheduler; adding as an example
@@ -59,7 +62,7 @@ class StandaloneSessionTest(unittest.TestCase):
     def test_run(self):
         test_file = os.path.join(self.test_dir, "test_file")
         session = StandaloneSession(
-            name="test_session", schedulers={"default": self.scheduler}, wait_interval=1
+            name=SESSION_NAME, schedulers={"default": self.scheduler}, wait_interval=1
         )
         role = Role(name="touch").runs("touch.sh", test_file).on(self.test_container)
         app = Application("name").of(role)
@@ -70,7 +73,7 @@ class StandaloneSessionTest(unittest.TestCase):
     def test_dryrun(self):
         scheduler_mock = MagicMock()
         session = StandaloneSession(
-            name="test_session", schedulers={"default": scheduler_mock}, wait_interval=1
+            name=SESSION_NAME, schedulers={"default": scheduler_mock}, wait_interval=1
         )
         role = Role(name="touch").runs("echo", "hello world").on(self.test_container)
         app = Application("name").of(role)
@@ -78,21 +81,21 @@ class StandaloneSessionTest(unittest.TestCase):
         scheduler_mock.submit_dryrun.assert_called_once_with(app, self.cfg)
 
     def test_describe(self):
-        session1 = StandaloneSession(
-            name="session1", schedulers={"default": self.scheduler}
+        session = StandaloneSession(
+            name=SESSION_NAME, schedulers={"default": self.scheduler}
         )
         role = Role(name="sleep").runs("sleep.sh", "60").on(self.test_container)
         app = Application("sleeper").of(role)
 
-        app_handle = session1.run(app, cfg=self.cfg)
-        self.assertEqual(app, session1.describe(app_handle))
+        app_handle = session.run(app, cfg=self.cfg)
+        self.assertEqual(app, session.describe(app_handle))
 
         # unknown app should return None
-        self.assertIsNone(session1.describe("default://session1/unknown_app"))
+        self.assertIsNone(session.describe("default://session1/unknown_app"))
 
     def test_list(self):
         session = StandaloneSession(
-            name="test_session", schedulers={"default": self.scheduler}, wait_interval=1
+            name=SESSION_NAME, schedulers={"default": self.scheduler}, wait_interval=1
         )
         role = Role(name="touch").runs("sleep.sh", "1").on(self.test_container)
         app = Application("sleeper").of(role)
@@ -113,9 +116,9 @@ class StandaloneSessionTest(unittest.TestCase):
         # removed by the scheduler also get removed from the session after a status() API has been
         # called on the app
 
-        scheduler = LocalScheduler(cache_size=1)
+        scheduler = LocalScheduler(session_name=SESSION_NAME, cache_size=1)
         session = StandaloneSession(
-            name="test_session", schedulers={"default": scheduler}, wait_interval=1
+            name=SESSION_NAME, schedulers={"default": scheduler}, wait_interval=1
         )
         test_file = os.path.join(self.test_dir, "test_file")
         role = Role(name="touch").runs("touch.sh", test_file).on(self.test_container)
@@ -138,7 +141,7 @@ class StandaloneSessionTest(unittest.TestCase):
 
     def test_status(self):
         session = StandaloneSession(
-            name="test_session", schedulers={"default": self.scheduler}, wait_interval=1
+            name=SESSION_NAME, schedulers={"default": self.scheduler}, wait_interval=1
         )
         role = Role(name="sleep").runs("sleep.sh", "60").on(self.test_container)
         app = Application("sleeper").of(role)
@@ -149,7 +152,7 @@ class StandaloneSessionTest(unittest.TestCase):
 
     def test_status_unknown_app(self):
         session = StandaloneSession(
-            name="test_session", schedulers={"default": self.scheduler}, wait_interval=1
+            name=SESSION_NAME, schedulers={"default": self.scheduler}, wait_interval=1
         )
         self.assertIsNone(session.status("default://test_session/unknown_app_id"))
 
@@ -171,14 +174,14 @@ class StandaloneSessionTest(unittest.TestCase):
 
     def test_wait_unknown_app(self):
         session = StandaloneSession(
-            name="test_session", schedulers={"default": self.scheduler}, wait_interval=1
+            name=SESSION_NAME, schedulers={"default": self.scheduler}, wait_interval=1
         )
         self.assertIsNone(session.wait("default://test_session/unknown_app_id"))
         self.assertIsNone(session.wait("default://another_session/some_app"))
 
     def test_stop(self):
         session = StandaloneSession(
-            name="test_session", schedulers={"default": self.scheduler}, wait_interval=1
+            name=SESSION_NAME, schedulers={"default": self.scheduler}, wait_interval=1
         )
         self.assertIsNone(session.stop("default://test_session/unknown_app_id"))
 
@@ -187,7 +190,7 @@ class StandaloneSessionTest(unittest.TestCase):
 
     def test_log_lines_unknown_app(self):
         session = StandaloneSession(
-            name="test_session", schedulers={"default": self.scheduler}, wait_interval=1
+            name=SESSION_NAME, schedulers={"default": self.scheduler}, wait_interval=1
         )
         with self.assertRaises(UnknownAppException):
             session.log_lines("default://test_session/unknown", "trainer")
@@ -201,7 +204,7 @@ class StandaloneSessionTest(unittest.TestCase):
         )
         scheduler_mock.log_iter.return_value = iter(["hello", "world"])
         session = StandaloneSession(
-            name="test_session", schedulers={"default": scheduler_mock}, wait_interval=1
+            name=SESSION_NAME, schedulers={"default": scheduler_mock}, wait_interval=1
         )
 
         role_name = "trainer"
@@ -235,7 +238,7 @@ class StandaloneSessionTest(unittest.TestCase):
 
     def test_no_default_scheduler(self):
         with self.assertRaises(ValueError):
-            StandaloneSession(name="test_session", schedulers={"local": self.scheduler})
+            StandaloneSession(name=SESSION_NAME, schedulers={"local": self.scheduler})
 
     def test_get_schedulers(self):
         default_sched_mock = MagicMock()

@@ -148,9 +148,10 @@ class _LocalApplication:
     process and has a pid.
     """
 
-    def __init__(self, name: str, id: str, log_dir: str):
+    def __init__(self, name: str, id: str, log_dir: Optional[str]):
         self.name = name
         self.id = id
+        # None or cfg.get("log_dir")/<session_name>/<app_id>
         self.log_dir = log_dir
         # role name -> [replicas, ...]
         self.role_replicas: Dict[RoleName, List[_LocalReplica]] = {}
@@ -217,6 +218,7 @@ class _LocalApplication:
         info_str = json.dumps(app_info, indent=2)
 
         if self.log_dir:
+            # pyre-ignore [6]: app.log_dir nullchecked above
             with open(os.path.join(self.log_dir, "SUCCESS"), "w") as fp:
                 fp.write(info_str)
 
@@ -263,7 +265,9 @@ class LocalScheduler(Scheduler):
              using a different scheduler.
     """
 
-    def __init__(self, cache_size: int = 100):
+    def __init__(self, session_name: str, cache_size: int = 100):
+        super().__init__(session_name)
+
         # TODO T72035686 replace dict with a proper LRUCache data structure
         self._apps: Dict[AppId, _LocalApplication] = {}
 
@@ -284,6 +288,14 @@ class LocalScheduler(Scheduler):
 
     def _img_fetchers(self) -> Dict[str, ImageFetcher]:
         return {"dir": LocalDirectoryImageFetcher()}
+
+    def _get_app_log_dir(self, app_id: str, cfg: RunConfig) -> Optional[str]:
+        # pyre-ignore [6]: type check already done by runopt.resolve
+        log_dir: str = cfg.get("log_dir")
+        if log_dir:
+            return os.path.join(log_dir, self.session_name, app_id)
+        else:
+            return None
 
     def _get_img_fetcher(self, cfg: RunConfig) -> ImageFetcher:
         img_fetcher_type = cfg.get("image_fetcher")
@@ -370,8 +382,9 @@ class LocalScheduler(Scheduler):
             app_id not in self._apps
         ), "no app_id collisons expected since uuid4 suffix is used"
 
-        # pyre-ignore [6] RunConfig type checked in runopt.resolve
-        local_app = _LocalApplication(app.name, app_id, cfg.get("log_dir"))
+        local_app = _LocalApplication(
+            app.name, app_id, self._get_app_log_dir(app_id, cfg)
+        )
 
         for role_popen_args in self._to_app_popen_args(app_id, app.roles, cfg):
             for role_name, replica_popen_args in role_popen_args.items():
@@ -419,7 +432,6 @@ class LocalScheduler(Scheduler):
            },
          ]
         """
-        log_dir = cfg.get("log_dir")
         app_popen_params = []
         for role in roles:
             container = role.container
@@ -438,10 +450,9 @@ class LocalScheduler(Scheduler):
                 )
                 replica_popen_params = role_popen_params.setdefault(role.name, [])
                 params: Dict[str, Any] = {"args": args, "env": role.env}
-                if log_dir:
-                    base_log_dir = os.path.join(
-                        str(log_dir), app_id, role.name, str(replica_id)
-                    )
+                app_log_dir = self._get_app_log_dir(app_id, cfg)
+                if app_log_dir:
+                    base_log_dir = os.path.join(app_log_dir, role.name, str(replica_id))
                     params["stdout"] = os.path.join(base_log_dir, "stdout.log")
                     params["stderr"] = os.path.join(base_log_dir, "stderr.log")
 
@@ -506,8 +517,8 @@ class LocalScheduler(Scheduler):
                 f" Did you run it with log_dir set in RunConfig?"
             )
 
-        log_dir = os.path.join(app.log_dir, app_id, role_name)
-        log_file = os.path.join(log_dir, str(k), "stderr.log")
+        # pyre-ignore [6]: app.log_dir nullchecked above
+        log_file = os.path.join(app.log_dir, role_name, str(k), "stderr.log")
         return LogIterator(app_id, regex or ".*", log_file, self)
 
     def _cancel_existing(self, app_id: str) -> None:
@@ -580,5 +591,8 @@ class LogIterator:
                     return line
 
 
-def create_scheduler(**kwargs) -> LocalScheduler:
-    return LocalScheduler(cache_size=kwargs.get("cache_size", 100))
+def create_scheduler(session_name: str, **kwargs) -> LocalScheduler:
+    return LocalScheduler(
+        session_name=session_name,
+        cache_size=kwargs.get("cache_size", 100),
+    )

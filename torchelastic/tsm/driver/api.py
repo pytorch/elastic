@@ -601,6 +601,9 @@ class Scheduler(abc.ABC):
     ``@abc.abstractmethod``.
     """
 
+    def __init__(self, session_name: str):
+        self.session_name = session_name
+
     def submit(self, app: Application, cfg: RunConfig) -> str:
         """
         Submits the application to be run by the scheduler.
