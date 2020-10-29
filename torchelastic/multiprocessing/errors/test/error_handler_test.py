@@ -23,7 +23,7 @@ class ErrorHandlerTest(unittest.TestCase):
             raise_exception()
         except Exception as e:
             error_handler.record_exception(e)
-        error_file = error_handler._get_error_file_path(os.getpid())
+        error_file = error_handler._get_error_reply_file(os.getpid())
         self.assertTrue(os.path.exists(error_file))
         with open(error_file, "r") as f:
             data = json.load(f)

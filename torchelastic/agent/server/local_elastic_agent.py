@@ -18,7 +18,14 @@ from torchelastic.agent.server.api import (
     WorkerState,
 )
 from torchelastic.metrics.api import prof
-from torchelastic.multiprocessing import MpParameters, start_processes
+from torchelastic.multiprocessing import (
+    BaseProcessContext,
+    MpParameters,
+    SubprocessParameters,
+    start_processes,
+    start_subprocesses,
+)
+from torchelastic.multiprocessing.errors import get_error_dir
 from torchelastic.utils.logging import get_logger
 
 
@@ -77,6 +84,27 @@ class _DistInfo:
         self.role_name = role_name
 
 
+def _get_worker_env(dist_info: _DistInfo, local_rank: int) -> Dict[str, str]:
+    worker_env = {}
+    worker_env["LOCAL_RANK"] = str(local_rank)
+    worker_env["RANK"] = str(dist_info.rank)
+    worker_env["GROUP_RANK"] = str(dist_info.group_rank)
+    worker_env["ROLE_RANK"] = str(dist_info.role_rank)
+    worker_env["ROLE_NAME"] = dist_info.role_name
+    worker_env["LOCAL_WORLD_SIZE"] = str(dist_info.local_world_size)
+    worker_env["WORLD_SIZE"] = str(dist_info.world_size)
+    worker_env["ROLE_WORLD_SIZE"] = str(dist_info.role_world_size)
+    worker_env["MASTER_ADDR"] = dist_info.master_addr
+    worker_env["MASTER_PORT"] = str(dist_info.master_port)
+    worker_env["TORCHELASTIC_RESTART_COUNT"] = str(dist_info.restart_count)
+    worker_env["TORCHELASTIC_MAX_RESTARTS"] = str(dist_info.max_restarts)
+    worker_env["TORCHELASTIC_RUN_ID"] = dist_info.run_id
+    worker_env["TORCHELASTIC_ERROR_DIR"] = get_error_dir()
+    if "OMP_NUM_THREADS" in os.environ:
+        worker_env["OMP_NUM_THREADS"] = os.environ["OMP_NUM_THREADS"]
+    return worker_env
+
+
 def _wrap(local_rank, dist_infos, fn, args):
     import faulthandler
 
@@ -88,21 +116,9 @@ def _wrap(local_rank, dist_infos, fn, args):
             exc_info=e,
         )
 
-    info = dist_infos[local_rank]
-    os.environ["LOCAL_RANK"] = str(local_rank)
-    os.environ["RANK"] = str(info.rank)
-    os.environ["GROUP_RANK"] = str(info.group_rank)
-    os.environ["ROLE_RANK"] = str(info.role_rank)
-    os.environ["ROLE_NAME"] = info.role_name
-    os.environ["LOCAL_WORLD_SIZE"] = str(info.local_world_size)
-    os.environ["WORLD_SIZE"] = str(info.world_size)
-    os.environ["ROLE_WORLD_SIZE"] = str(info.role_world_size)
-    os.environ["MASTER_ADDR"] = info.master_addr
-    os.environ["MASTER_PORT"] = str(info.master_port)
-    os.environ["TORCHELASTIC_RESTART_COUNT"] = str(info.restart_count)
-    os.environ["TORCHELASTIC_MAX_RESTARTS"] = str(info.max_restarts)
-    os.environ["TORCHELASTIC_RUN_ID"] = info.run_id
-    return (info.rank, fn(*args))
+    worker_env = _get_worker_env(dist_infos[local_rank], local_rank)
+    os.environ.update(worker_env)
+    return fn(*args)
 
 
 class LocalElasticAgent(SimpleElasticAgent):
@@ -129,7 +145,10 @@ class LocalElasticAgent(SimpleElasticAgent):
     user code deal with ensuring that workers are terminated in a synchronous
     manner rather than relying on the exit_barrier_timeout.
 
-    Example
+    The agent supports launching functions via torch.multiprocessing and
+    launching arbitrary user commands via python subprocess.
+
+    Example launching function
 
     ::
 
@@ -147,6 +166,21 @@ class LocalElasticAgent(SimpleElasticAgent):
                         ...<OTHER_PARAMS...>)
             agent = LocalElasticAgent(spec, start_method)
             agent.run()
+
+    Example launching command
+
+    ::
+
+        def main():
+            start_method="spawn"
+            spec = WorkerSpec(
+                        role="trainer",
+                        local_world_size=nproc_per_process,
+                        cmd=["ls", "-la"]
+                        ...<OTHER_PARAMS...>)
+            agent = LocalElasticAgent(spec, start_method)
+            agent.run()
+
     """
 
     def __init__(
@@ -186,18 +220,36 @@ class LocalElasticAgent(SimpleElasticAgent):
                 spec.role,
             )
 
-        params = [
-            MpParameters(fn=_wrap, args=(dist_infos, spec.fn, spec.args))
-        ] * spec.local_world_size
-        self._process_context = start_processes(
-            params,
-            start_method=self._start_method,
-        )
+        if spec.fn:
+            self._process_context = self._start_mp(dist_infos, spec)
+        else:
+            self._process_context = self._start_sp(dist_infos, spec)
 
         return {
             local_rank: pid
             for local_rank, pid in enumerate(self._process_context.pids())
         }
+
+    def _start_mp(
+        self, dist_infos: Dict[int, _DistInfo], spec: WorkerSpec
+    ) -> BaseProcessContext:
+        proc_params = [
+            MpParameters(fn=_wrap, args=(dist_infos, spec.fn, spec.args))
+        ] * spec.local_world_size
+        return start_processes(proc_params, start_method=self._start_method)
+
+    def _start_sp(
+        self, dist_infos: Dict[int, _DistInfo], spec: WorkerSpec
+    ) -> BaseProcessContext:
+        proc_params = []
+        for local_rank, dist_info in dist_infos.items():
+            proc_params.append(
+                SubprocessParameters(
+                    args=spec.cmd,
+                    env=_get_worker_env(dist_info, local_rank),
+                )
+            )
+        return start_subprocesses(proc_params)
 
     @prof
     def _monitor_workers(self, worker_group: WorkerGroup) -> MonitorResult:
@@ -220,8 +272,9 @@ class LocalElasticAgent(SimpleElasticAgent):
             if ret_vals:
                 # copy ret_val_queue into a map with a global ranks
                 workers_ret_vals = {}
-                for rank, ret_val in ret_vals.values():
-                    workers_ret_vals[rank] = ret_val
+                for local_rank, ret_val in ret_vals.items():
+                    worker = worker_group.workers[local_rank]
+                    workers_ret_vals[worker.global_rank] = ret_val
                 return MonitorResult(WorkerState.SUCCEEDED, workers_ret_vals)
             else:
                 return MonitorResult(WorkerState.HEALTHY)

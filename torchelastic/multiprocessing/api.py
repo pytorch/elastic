@@ -53,7 +53,7 @@ class BaseProcessContext(abc.ABC):
 
 
 def _get_deadline_and_period(timeout: Optional[float]) -> Tuple[float, float]:
-    if not timeout:
+    if timeout is None:
         deadline = sys.maxsize
         period = 1  # one second
     elif timeout >= 0:

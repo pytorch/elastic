@@ -50,6 +50,7 @@ from typing import List
 
 import torchelastic.multiprocessing.mp as mp_context
 import torchelastic.multiprocessing.sp as sp_context
+from torchelastic.multiprocessing.api import BaseProcessContext  # noqa F401
 from torchelastic.multiprocessing.mp import MpParameters, MpProcessContext  # noqa F401
 from torchelastic.multiprocessing.sp import (  # noqa F401
     SubprocessContext,

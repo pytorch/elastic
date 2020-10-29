@@ -17,7 +17,7 @@ from unittest.mock import Mock, patch
 
 import torchelastic.distributed.launch as launch
 import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
-from torch.multiprocessing import start_processes
+from torchelastic.multiprocessing.errors import ProcessException
 from torchelastic.rendezvous.etcd_server import EtcdServer
 from torchelastic.test.test_utils import is_tsan
 
@@ -159,46 +159,6 @@ class LaunchTest(unittest.TestCase):
             {str(i) for i in range(world_size)}, set(os.listdir(self.test_dir))
         )
 
-    def test_wrapper_fn_kill_script_process(self):
-        """
-        tests that the wrapper_fn properly terminates
-        the script process (the script process is the subprocess of
-        the agent)
-        """
-        nprocs = 2
-        sleep = 300
-
-        # wraps wrapper_fn to be torch.multiprocessing compatible
-        # which requires rank to be passed as first arugment
-        def wrap_wrap(rank, *args):
-            launch.wrapper_fn(*args)
-
-        context = start_processes(
-            fn=wrap_wrap,
-            args=(None, (path("bin/sleep_script.py"), "--sleep", f"{sleep}")),
-            nprocs=nprocs,
-            join=False,
-            start_method="fork",
-        )
-        # quick check to see that the wrapper_fn started running
-        # without this join() call we don't see an exception on typos
-        # and other silly mistakes (silently fails)
-        context.join(timeout=-1)
-
-        script_pids = []
-        for wrapper_fn_pid in context.pids():
-            script_pid = get_child_pids(wrapper_fn_pid)
-            # there should only be one child of wrapper_fn
-            self.assertEqual(1, len(script_pid))
-            script_pids.append(script_pid[0])
-
-        for wrapper_fn_proc in context.processes:
-            wrapper_fn_proc.terminate()
-            wrapper_fn_proc.join()
-
-        for script_pid in script_pids:
-            self.assertFalse(pid_exists(script_pid))
-
     def _test_nproc_launch_configuration(self, nproc_type, expected_number):
         run_id = str(uuid.uuid4().int)
         nnodes = 1
@@ -305,9 +265,7 @@ class LaunchTest(unittest.TestCase):
             "--fail",
         ]
 
-        with self.assertRaisesRegex(
-            Exception, "-- Process 0 terminated with the following error:"
-        ):
+        with self.assertRaisesRegex(ProcessException, "terminated with exit code 1"):
             launch.main(args)
 
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")

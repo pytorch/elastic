@@ -24,15 +24,20 @@ def try_raise_exception(error_process_pid: int, exit_code: int = 0) -> None:
     return _process_error_handler.try_raise_exception(error_process_pid, exit_code)
 
 
-def record(fn=None, root_process: bool = False):
+def get_error_dir() -> str:
+    """
+    Tries to retrieve the exception that was recorded by the ``error_process_pid``
+    and raises it as ``ProcessException``. exit_code can be provided that will be
+    used to build a message as well as to retrieve signal name.
+    """
+    return _process_error_handler.get_error_dir()
+
+
+def record(fn=None):
     """
     Decorator function that is invoked on the starting process function.
     The decorator will invoke signal registerring mechanism that will allow
     to propagate any signal termination related errors to the parent process.
-
-    Optional ``root_process`` can be provided that indicates that the
-    exception occurred on the root process, and the exception needs to
-    be processed by scheduler-dependent functionality.
 
     Note: the decorator should be invoked a single time per processor, and
     it is best to set it on top of the main function.
@@ -51,10 +56,10 @@ def record(fn=None, root_process: bool = False):
         if __name__=="__main__":
             main()
 
-        # root process
+        # parent
         from torchelastic.multiprocessing.errors import record
 
-        @record(root_process=True)
+        @record()
         def main():
             # invoke child main as subprocess
             ...

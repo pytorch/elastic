@@ -219,8 +219,6 @@ job is invoking this launcher.
 """
 import logging
 import os
-import signal
-import subprocess
 import sys
 import uuid
 from argparse import REMAINDER, ArgumentParser
@@ -231,6 +229,7 @@ from torchelastic import metrics
 from torchelastic.agent.server.api import WorkerGroupFailureException, WorkerSpec
 from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
 from torchelastic.distributed.argparse_util import check_env, env
+from torchelastic.multiprocessing.errors import record
 from torchelastic.rendezvous import RendezvousParameters
 from torchelastic.rendezvous.etcd_server import EtcdServer
 from torchelastic.utils.logging import get_logger
@@ -374,50 +373,6 @@ def parse_min_max_nnodes(nnodes: str):
     return min_nodes, max_nodes
 
 
-def wrapper_fn(omp_num_threads, cmd):
-    # TODO get rid of this wrapper_fn when we switch over to torchelastic.multiprocessing
-    # the agent uses multiprocessing.spawn to create nproc_per_node
-    # instances of fn, and hence expects fn to be a callable
-    # since this launcher deals with user python scripts and executables
-    # we wrap the script/executable with this function which Popens
-    # the wrapped script/executable. This implies that for each
-    # worker we create two processes (wrapper_fn and fn).
-    # the process tree looks like the following:
-    #
-    # [launcher/agent]
-    #               |-- [wrapper_fn_0]
-    #               |               |-- [fn_0]
-    #               |-- [wrapper_fn_1]
-    #               |               |-- [fn_1]
-    #               |      ...
-    #               |      ...
-    #               |-- [wrapper_fn_k]
-    #               |               |-- [fn_k]
-    #
-
-    # set PyTorch distributed related environmental variables
-    if omp_num_threads is not None:
-        os.environ["OMP_NUM_THREADS"] = str(omp_num_threads)
-
-    process = subprocess.Popen(cmd)
-
-    # since we wrap the script process with this function (which runs as a
-    # subprocess of the agent) when the agent terminates this function
-    # due to some exception or membership change event we want the script
-    # to also get killed. If we do not register this exit handler
-    # the script process will get re-parented to the parent of this function
-    # (agent process) and we will end up with multiple copies of the script
-    # this should all go away with D20613415
-    def kill_script_pid(signum, frame):
-        process.terminate()
-
-    signal.signal(signal.SIGTERM, kill_script_pid)
-
-    process.wait()
-    if process.returncode != 0:
-        raise subprocess.CalledProcessError(returncode=process.returncode, cmd=cmd)
-
-
 def determine_local_world_size(nproc_per_node: str):
     try:
         logging.info(f"Using nproc_per_node={nproc_per_node}.")
@@ -449,6 +404,7 @@ def determine_local_world_size(nproc_per_node: str):
         return num_proc
 
 
+@record()
 def main(args=None):
     # If ``args`` not passed, defaults to ``sys.argv[:1]``
     args = parse_args(args)
@@ -484,6 +440,8 @@ def main(args=None):
             f"your application as needed. \n"
             f"*****************************************"
         )
+        # This env variable will be passed down to the subprocesses
+        os.environ["OMP_NUM_THREADS"] = str(omp_num_threads)
 
     with_python = not args.no_python
     cmd = []
@@ -516,8 +474,7 @@ def main(args=None):
         spec = WorkerSpec(
             role=args.role,
             local_world_size=nproc_per_node,
-            fn=wrapper_fn,
-            args=(omp_num_threads, cmd),
+            cmd=cmd,
             rdzv_handler=rdzv_handler,
             max_restarts=args.max_restarts,
             monitor_interval=args.monitor_interval,

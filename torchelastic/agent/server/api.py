@@ -13,7 +13,7 @@ import socket
 import time
 from contextlib import closing
 from enum import Enum
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torchelastic.rendezvous as rdzv
 import torchelastic.utils.store as store_util
@@ -39,6 +39,7 @@ class WorkerSpec:
         "role",
         "local_world_size",
         "fn",
+        "cmd",
         "args",
         "rdzv_handler",
         "max_restarts",
@@ -50,9 +51,10 @@ class WorkerSpec:
         self,
         role: str,
         local_world_size: int,
-        fn: Callable,
-        args: Tuple,
         rdzv_handler: rdzv.RendezvousHandler,
+        args: Optional[Tuple] = None,
+        fn: Optional[Callable] = None,
+        cmd: Optional[List[str]] = None,
         max_restarts: int = 3,
         monitor_interval: float = 30.0,
         master_port=None,
@@ -62,8 +64,11 @@ class WorkerSpec:
         Arguments:
             role (str): user-defined role for the workers with this spec
             local_world_size (int): number local workers to run
-            fn (Callable): worker main entry point function
-            args (Tuple): arguments to pass to ``fn(args)``
+            fn (Optional[Callable]): worker main entry point function. If fn is passed
+                cmd should not be passed
+            cmd (Optional[List[str]]): cmd that is used to launch processes. If cmd
+                is passed, fn should not be passed.
+            args (Optional[Tuple]): arguments to pass to ``fn(args)``
             rdzv_handler (RendezvousHandler): handles rdzv for this set of workers
             max_restarts (int): number of max retries for the workers
             monitor_interval (int): monitor status of workers every ``n`` seconds
@@ -75,11 +80,18 @@ class WorkerSpec:
         assert max_restarts >= 0
         assert monitor_interval > 0
 
+        if cmd and fn:
+            raise AssertionError("Both cmd and fn args provided, please specify one")
+
+        if not cmd and not fn:
+            raise AssertionError("No cmd or fn specified, please specify one")
+
         # Note: role is not used for data parallel, every worker has the same role
         # wiring it in to handle more elaborate situations later
         self.role = role
         self.local_world_size = local_world_size
         self.fn = fn
+        self.cmd = cmd
         self.args = args
         self.rdzv_handler = rdzv_handler
         self.max_restarts = max_restarts
@@ -734,7 +746,10 @@ class SimpleElasticAgent(ElasticAgent):
         spec = self._worker_group.spec
         role = spec.role
 
-        log.info(f"[{role}] starting workers for function: {spec.fn.__name__}")
+        if spec.fn:
+            log.info(f"[{role}] starting workers for function: {spec.fn.__name__}")
+        else:
+            log.info(f"[{role}] starting workers for cmd: {spec.cmd}")
 
         self._initialize_workers(self._worker_group)
         monitor_interval = spec.monitor_interval

@@ -45,7 +45,7 @@ class WorkerGroupTest(unittest.TestCase):
         spec = WorkerSpec(
             role="test_trainer",
             local_world_size=4,
-            fn=do_nothing(),
+            fn=do_nothing,
             args=(),
             rdzv_handler=None,
             max_restarts=50,

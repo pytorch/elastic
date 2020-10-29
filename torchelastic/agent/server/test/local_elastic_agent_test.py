@@ -7,7 +7,6 @@
 # LICENSE file in the root directory of this source tree.
 import multiprocessing
 import os
-import signal
 import time
 import unittest
 import uuid
@@ -18,6 +17,7 @@ import torch.distributed as dist
 import torch.distributed.rpc as rpc
 import torchelastic.rendezvous.registry as rdzv_registry
 from torch.distributed.rpc.backend_registry import BackendType
+from torch.multiprocessing import ProcessRaisedException
 from torchelastic.agent.server.api import (
     WorkerGroupFailureException,
     WorkerSpec,
@@ -173,7 +173,8 @@ class LocalElasticAgentTest(unittest.TestCase):
 
     def _get_worker_spec(
         self,
-        fn,
+        fn=None,
+        cmd=None,
         args=(),
         max_restarts=1,
         num_agents=1,
@@ -194,6 +195,7 @@ class LocalElasticAgentTest(unittest.TestCase):
             role="test_trainer",
             local_world_size=local_world_size,
             fn=fn,
+            cmd=cmd,
             args=args,
             rdzv_handler=rdzv_handler,
             max_restarts=max_restarts,
@@ -351,8 +353,9 @@ class LocalElasticAgentTest(unittest.TestCase):
             agent.run()
 
         excs = cm.exception.get_worker_exceptions()
-        for i in range(spec.local_world_size):
-            self.assertTrue(isinstance(excs[i], Exception))
+        self.assertEqual(spec.local_world_size, len(excs))
+        for e in excs.values():
+            self.assertTrue(isinstance(e, ProcessRaisedException))
 
         self.assertEqual(WorkerState.FAILED, agent.get_worker_group().state)
         self.assertEqual(0, agent._remaining_restarts)
@@ -361,7 +364,7 @@ class LocalElasticAgentTest(unittest.TestCase):
     def test_run_bipolar_function(self):
         spec = self._get_worker_spec(fn=_bipolar_function, max_restarts=2)
         agent = LocalElasticAgent(spec, start_method="fork")
-        with self.assertRaises(Exception):
+        with self.assertRaises(WorkerGroupFailureException):
             agent.run()
         self.assertEqual(WorkerState.FAILED, agent.get_worker_group().state)
         self.assertEqual(0, agent._remaining_restarts)
@@ -613,3 +616,13 @@ class LocalElasticAgentTest(unittest.TestCase):
         agent = LocalElasticAgent(spec, start_method="fork")
         agent.run()
         barrier_mock.assert_called_once()
+
+    def test_provide_fn_and_cmd(self):
+        with self.assertRaises(AssertionError):
+            self._get_worker_spec(
+                fn=_bipolar_function, cmd=["test.bin"], max_restarts=2
+            )
+
+    def test_provide_none(self):
+        with self.assertRaises(AssertionError):
+            self._get_worker_spec(max_restarts=2)

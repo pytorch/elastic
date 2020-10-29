@@ -32,8 +32,22 @@ def parse_args():
 
 def main():
     args = parse_args()
-
-    env_vars = ["RANK", "LOCAL_RANK", "WORLD_SIZE", "MASTER_ADDR", "MASTER_PORT"]
+    env_vars = [
+        "LOCAL_RANK",
+        "RANK",
+        "GROUP_RANK",
+        "ROLE_RANK",
+        "ROLE_NAME",
+        "LOCAL_WORLD_SIZE",
+        "WORLD_SIZE",
+        "ROLE_WORLD_SIZE",
+        "MASTER_ADDR",
+        "MASTER_PORT",
+        "TORCHELASTIC_RESTART_COUNT",
+        "TORCHELASTIC_MAX_RESTARTS",
+        "TORCHELASTIC_RUN_ID",
+        "OMP_NUM_THREADS",
+    ]
 
     print("Distributed env vars set by agent:")
     for env_var in env_vars:

@@ -36,4 +36,4 @@ from torchelastic.multiprocessing.errors.error_handler import (  # noqa F401
     ProcessException,
 )
 
-from .api import record, try_raise_exception  # noqa F401
+from .api import get_error_dir, record, try_raise_exception  # noqa F401
