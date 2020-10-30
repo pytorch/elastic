@@ -158,6 +158,74 @@ class macros:
         return args_sub
 
 
+class RetryPolicy(str, Enum):
+    """
+    Defines the retry policy for the ``Roles`` in the ``Application``.
+    The policy defines the behavior when the role replica encounters a failure:
+
+    1. unsuccessful (non zero) exit code
+    2. hardware/host crashes
+    3. preemption
+    4. eviction
+
+    .. note:: Not all retry policies are supported by all schedulers.
+              However all schedulers must support ``RetryPolicy.APPLICATION``.
+              Please refer to the scheduler's documentation for more information
+              on the retry policies they support and behavior caveats (if any).
+
+    1. REPLICA - Replaces the replica instance. Surviving replicas are untouched.
+                 Use with ``ElasticRole`` to have torchelastic coordinate restarts
+                 and membership changes. Otherwise, it is up to the application to
+                 deal with failed replica departures and replacement replica admittance.
+    2. APPLICATION - Restarts the entire application.
+
+    """
+
+    REPLICA = "REPLICA"
+    APPLICATION = "APPLICATION"
+
+
+class DeploymentPreference(str, Enum):
+    """
+    Hint to the scheduler on how it should treat the deployment of the
+    replicas of the ``Role``. If the deployment preference type is
+    natively supported by the scheduler, then the scheduler honors it,
+    otherwise it is ignored, therefore, as the name suggests, this option
+    is a "preference" rather than a specification.
+
+    .. note:: A good litmus test whether this preference is being used correctly is
+              to ensure that the role runs correctly and acceptably with
+              ``DepoymentPreference.JOB``.
+
+    Please refer to the scheduler's documentation
+    on what/how exactly it treats the deployment preferences (if supported).
+    Dry-running the application with different deployment preferences on the
+    roles and printing out the ``AppDryRunInfo`` provides useful insight
+    on how the scheduler treats this preference.
+
+    .. warning:: ``DeploymentPreference.SERVICE`` is NOT a guarantee for
+                   higher scheduling priority or high availability and should NOT
+                   be depended on to increase the reliability of flaky applications.
+                   This is NOT a substitute for poorly engineered applications.
+
+    1. JOB - a regular batch job of ``n`` replicas (nothing special, this is the default).
+    2. SERVICE - indicates that the ``Role`` should be deployed similar to a
+                 webservice, useful for roles like parameter servers or chief (supervisor).
+                 Usually this means that the scheduler will
+                 try its best to maintain a highly available set of ``n`` replicas
+                 for this Role, replacing unhealthy hosts, disallowing preemptions/evictions,
+                 and ensuring a certain quality-of-service bar. Typically failures
+                 NOT due to the fault of the application (e.g. host failure) are not
+                 counted towards the ``max_retries`` and the scheduler may go as far
+                 as to preemptively allocate spare capacity to the role to ensure
+                 that host replacements can be done in a timely fashion.
+
+    """
+
+    JOB = "JOB"
+    SERVICE = "SERVICE"
+
+
 @dataclass
 class Role:
     """
@@ -184,22 +252,22 @@ class Role:
             env - environment variable mappings
             container - container to run in
             replicas - number of container replicas to run
+            max_retries - max number of retries before giving up
+            retry_policy - retry behavior upon replica failures
+            deployment_preference - hint to the scheduler on how to best
+                                    deploy and manage replicas of this role
+
     """
 
     name: str
-    entrypoint: str
-    args: List[str]
-    env: Dict[str, str]
-    container: Container
-    num_replicas: int
-
-    def __init__(self, name: str):
-        self.name = name
-        self.entrypoint = MISSING
-        self.args = []
-        self.env = {}
-        self.container = NULL_CONTAINER
-        self.num_replicas = 1
+    entrypoint: str = MISSING
+    args: List[str] = field(default_factory=list)
+    env: Dict[str, str] = field(default_factory=dict)
+    container: Container = NULL_CONTAINER
+    num_replicas: int = 1
+    max_retries: int = 0
+    retry_policy: RetryPolicy = RetryPolicy.APPLICATION
+    deployment_preference: DeploymentPreference = DeploymentPreference.JOB
 
     def runs(self, entrypoint: str, *args: str, **kwargs: str) -> "Role":
         self.entrypoint = entrypoint
@@ -215,8 +283,18 @@ class Role:
         self.num_replicas = replicas
         return self
 
+    def with_retry_policy(self, retry_policy: RetryPolicy, max_retries: int) -> "Role":
+        self.retry_policy = retry_policy
+        self.max_retries = max_retries
+        return self
 
-@dataclass
+    def with_deployment_preference(
+        self, deployment_preference: DeploymentPreference
+    ) -> "Role":
+        self.deployment_preference = deployment_preference
+        return self
+
+
 class ElasticRole(Role):
     """
     A ``Role`` for which the user provided ``entrypoint`` is executed with the
@@ -255,10 +333,8 @@ class ElasticRole(Role):
 
     """
 
-    torchelastic_launch_args: List[str]
-
     def __init__(self, name: str, **launch_kwargs):
-        super().__init__(name)
+        super().__init__(name=name)
         self.entrypoint = "python"
         self.args += ["-m", "torchelastic.distributed.launch"]
         self.torchelastic_launch_args = []

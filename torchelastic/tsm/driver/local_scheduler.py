@@ -256,8 +256,9 @@ class LocalScheduler(Scheduler):
 
     1. Resource requirements
     2. Container limit enforcements
-    3. Restart policies
+    3. Retry policies
     4. Retry counts (no retries supported)
+    5. Deployment preferences
 
     ..note:: Use this scheduler sparingly since an application
              that runs successfully on a session backed by this

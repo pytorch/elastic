@@ -14,17 +14,21 @@ from unittest.mock import MagicMock
 
 from torchelastic.tsm.driver.api import (
     _TERMINAL_STATES,
+    MISSING,
+    NULL_CONTAINER,
     AppDryRunInfo,
     AppHandle,
     Application,
     AppState,
     AppStatus,
     Container,
+    DeploymentPreference,
     DescribeAppResponse,
     ElasticRole,
     InvalidRunConfigException,
     MalformedAppHandleException,
     Resources,
+    RetryPolicy,
     Role,
     RunConfig,
     Scheduler,
@@ -65,6 +69,18 @@ class ResourcesTest(unittest.TestCase):
 
 
 class RoleBuilderTest(unittest.TestCase):
+    def test_defaults(self):
+        default = Role("foobar")
+        self.assertEqual("foobar", default.name)
+        self.assertEqual(MISSING, default.entrypoint)
+        self.assertEqual({}, default.env)
+        self.assertEqual([], default.args)
+        self.assertEqual(NULL_CONTAINER, default.container)
+        self.assertEqual(1, default.num_replicas)
+        self.assertEqual(0, default.max_retries)
+        self.assertEqual(RetryPolicy.APPLICATION, default.retry_policy)
+        self.assertEqual(DeploymentPreference.JOB, default.deployment_preference)
+
     def test_build_role(self):
         # runs: ENV_VAR_1=FOOBAR /bin/echo hello world
         container = Container(image="test_image")
@@ -74,6 +90,8 @@ class RoleBuilderTest(unittest.TestCase):
             .runs("/bin/echo", "hello", "world", ENV_VAR_1="FOOBAR")
             .on(container)
             .replicas(2)
+            .with_retry_policy(RetryPolicy.REPLICA, max_retries=5)
+            .with_deployment_preference(DeploymentPreference.SERVICE)
         )
 
         self.assertEqual("trainer", trainer.name)
@@ -82,6 +100,9 @@ class RoleBuilderTest(unittest.TestCase):
         self.assertEqual(["hello", "world"], trainer.args)
         self.assertEqual(container, trainer.container)
         self.assertEqual(2, trainer.num_replicas)
+        self.assertEqual(5, trainer.max_retries)
+        self.assertEqual(RetryPolicy.REPLICA, trainer.retry_policy)
+        self.assertEqual(DeploymentPreference.SERVICE, trainer.deployment_preference)
 
 
 class ElasticRoleBuilderTest(unittest.TestCase):
@@ -130,7 +151,7 @@ class ElasticRoleBuilderTest(unittest.TestCase):
 
     def test_build_elastic_role_override_rdzv_params(self):
         role = ElasticRole(
-            "test_role", nnodes="2:4", rdzv_backend="zeus", rdzv_id="foobar"
+            "test_role", nnodes="2:4", rdzv_backend="etcd", rdzv_id="foobar"
         ).runs("user_script.py", "--script_arg", "foo")
         self.assertEqual(
             [
@@ -139,7 +160,7 @@ class ElasticRoleBuilderTest(unittest.TestCase):
                 "--nnodes",
                 "2:4",
                 "--rdzv_backend",
-                "zeus",
+                "etcd",
                 "--rdzv_id",
                 "foobar",
                 "--role",
@@ -186,6 +207,46 @@ class ElasticRoleBuilderTest(unittest.TestCase):
             ],
             role.args,
         )
+
+    def test_json_serialization(self):
+        """
+        Tests that an ElasticRole can be serialized into json (dict)
+        then recreated as a Role. An ElasticRole is really just a builder
+        utility to make it easy for users to create a Role with the entrypoint
+        being ``torchelastic.distributed.launch``
+        """
+        container = Container(
+            image="user_image", resources=Resources(cpu=1, gpu=0, memMB=512)
+        ).ports(tensorboard=8080)
+        elastic_role = (
+            ElasticRole(
+                "test_role", nnodes="2:4", rdzv_backend="etcd", rdzv_id="foobar"
+            )
+            .runs("user_script.py", "--script_arg", "foo")
+            .on(container)
+            .replicas(3)
+        )
+
+        # this is effectively JSON
+        elastic_json = dataclasses.asdict(elastic_role)
+        container_json = elastic_json.pop("container")
+        resources_json = container_json.pop("resources")
+
+        role = Role(
+            **elastic_json,
+            container=Container(
+                **container_json, resources=Resources(**resources_json)
+            ),
+        )
+
+        self.assertEqual(container, role.container)
+        self.assertEqual(elastic_role.name, role.name)
+        self.assertEqual(elastic_role.entrypoint, role.entrypoint)
+        self.assertEqual(
+            elastic_role.args,
+            role.args,
+        )
+        self.assertEqual(dataclasses.asdict(elastic_role), dataclasses.asdict(role))
 
 
 class AppHandleTest(unittest.TestCase):
