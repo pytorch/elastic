@@ -47,6 +47,7 @@ def main():
         "TORCHELASTIC_MAX_RESTARTS",
         "TORCHELASTIC_RUN_ID",
         "OMP_NUM_THREADS",
+        "TEST_SENTINEL_PARENT",
     ]
 
     print("Distributed env vars set by agent:")

@@ -70,6 +70,11 @@ class LaunchTest(unittest.TestCase):
             if env.startswith("PET_"):
                 del os.environ[env]
 
+        # set a sentinel env var on the parent proc
+        # this should be present on the child and gets
+        # asserted in ``bin/test_script.py``
+        os.environ["TEST_SENTINEL_PARENT"] = "FOOBAR"
+
     def tearDown(self):
         shutil.rmtree(self.test_dir)
 

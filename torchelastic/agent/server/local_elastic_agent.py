@@ -243,10 +243,12 @@ class LocalElasticAgent(SimpleElasticAgent):
     ) -> BaseProcessContext:
         proc_params = []
         for local_rank, dist_info in dist_infos.items():
+            env = _get_worker_env(dist_info, local_rank)
+            env.update(os.environ)
             proc_params.append(
                 SubprocessParameters(
                     args=spec.cmd,
-                    env=_get_worker_env(dist_info, local_rank),
+                    env=env,
                 )
             )
         return start_subprocesses(proc_params)
