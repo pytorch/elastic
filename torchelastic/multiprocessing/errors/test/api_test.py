@@ -24,13 +24,13 @@ class ApiTest(unittest.TestCase):
     def test_record_non_root(self):
         with self.assertRaises(RuntimeError):
             raise_exception_non_root()
-        error_file_path = _process_error_handler._get_error_file(os.getpid())
+        error_file_path = _process_error_handler.error_file
         self.assertTrue(os.path.exists(error_file_path))
 
     def test_record_root(self):
         with self.assertRaises(RuntimeError):
             raise_exception_root()
-        error_file_path = _process_error_handler._get_error_file(os.getpid())
+        error_file_path = _process_error_handler.error_file
         self.assertTrue(os.path.exists(error_file_path))
 
     def test_try_raise_exception(self):
