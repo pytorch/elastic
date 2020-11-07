@@ -7,8 +7,9 @@
 # LICENSE file in the root directory of this source tree.
 
 import abc
+import json
 import os
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
 from string import Template
@@ -378,7 +379,7 @@ class Application:
         return self
 
 
-class AppState(Enum):
+class AppState(str, Enum):
     """
     State of the application. An application starts from an initial
     ``UNSUBMITTED`` state and moves through ``SUBMITTED``, ``PENDING``,
@@ -420,16 +421,30 @@ def is_terminal(state: AppState) -> bool:
 @dataclass
 class AppStatus:
     """
-    The runtime status of the ``Application``.
+    The runtime status of the ``Application``. The scheduler can
+    return an arbitrary text message (msg field).
+    If any error occurs, scheduler can populate ``scheduler_error_msg``
+    with json response
     """
 
     state: AppState
     num_restarts: int = 0
     msg: str = ""
+    scheduler_error_msg: str = "<NONE>"
     ui_url: Optional[str] = None
 
     def is_terminal(self) -> bool:
         return is_terminal(self.state)
+
+    def __repr__(self):
+        app_status_dict = asdict(self)
+        scheduler_error_msg = app_status_dict.pop("scheduler_error_msg")
+        if scheduler_error_msg != "<NONE>":
+            scheduler_error_msg_parsed = json.loads(scheduler_error_msg)
+        else:
+            scheduler_error_msg_parsed = "<NONE>"
+        app_status_dict["scheduler_error_msg"] = scheduler_error_msg_parsed
+        return json.dumps(app_status_dict, indent=2)
 
 
 @dataclass
@@ -446,12 +461,16 @@ class DescribeAppResponse:
     Since this class is a data class and contains many member variables we
     keep the usage simple and provide a no-args constructor and chose to
     access the member vars directly rather than provide accessors.
+
+    If scheduler returns arbitrary message, the ``msg`` field should be populated.
+    If scheduler returns a structured json, the ``scheduler_error_msg`` field should be populated.
     """
 
     app_id: str = "<NOT_SET>"
     state: AppState = AppState.UNSUBMITTED
     num_restarts: int = -1
-    msg: str = ""
+    msg: str = "<NONE>"
+    scheduler_error_msg: str = "<NONE>"
     ui_url: Optional[str] = None
 
     roles: List[Role] = field(default_factory=list)

@@ -124,7 +124,9 @@ class StandaloneSession(Session):
             self._apps.pop(app_handle, None)
             return None
 
-        app_status = AppStatus(desc.state, desc.num_restarts, desc.msg)
+        app_status = AppStatus(
+            desc.state, desc.num_restarts, desc.msg, desc.scheduler_error_msg
+        )
         app_status.ui_url = desc.ui_url
         return app_status
 

@@ -6,6 +6,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 import dataclasses
+import json
 import os
 import unittest
 from datetime import datetime
@@ -49,6 +50,29 @@ class ApplicationStatusTest(unittest.TestCase):
                 self.assertTrue(is_terminal)
             else:
                 self.assertFalse(is_terminal)
+
+    def test_serialize(self):
+        status = AppStatus(AppState.FAILED)
+        serialized = status.__repr__()
+        deser_status_dict = json.loads(serialized)
+        deser_status = AppStatus(**deser_status_dict)
+        self.assertEqual(status.state, deser_status.state)
+        self.assertEqual(status.msg, deser_status.msg)
+        self.assertEqual(status.scheduler_error_msg, deser_status.scheduler_error_msg)
+
+    def test_serialize_embed_json(self):
+        status = AppStatus(
+            AppState.FAILED, scheduler_error_msg='{"message": "test error"}'
+        )
+        serialized = status.__repr__()
+        deser_status_dict = json.loads(serialized)
+        scheduler_msg = deser_status_dict.pop("scheduler_error_msg")
+        scheduler_msg_json = json.dumps(scheduler_msg)
+        deser_status_dict["scheduler_error_msg"] = scheduler_msg_json
+        deser_status = AppStatus(**deser_status_dict)
+        self.assertEqual(status.state, deser_status.state)
+        self.assertEqual(status.msg, deser_status.msg)
+        self.assertEqual(status.scheduler_error_msg, deser_status.scheduler_error_msg)
 
 
 class ResourcesTest(unittest.TestCase):
