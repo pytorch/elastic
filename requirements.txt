@@ -1,3 +1,5 @@
 numpy
 python-etcd>=0.4.5
-torch==1.7.0
+# please install torch nightly by following the instructions on
+# https://pytorch.org/
+torch>=1.8.0dev
