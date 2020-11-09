@@ -16,7 +16,6 @@ import time
 from base64 import b64decode, b64encode
 from typing import Optional
 
-# pyre-fixme[21]: Could not find module `etcd`.
 import etcd
 
 # pyre-ignore[21]: Could not find name `Store` in `torch.distributed`.

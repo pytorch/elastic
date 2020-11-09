@@ -14,7 +14,6 @@ import subprocess
 import tempfile
 import time
 
-# pyre-fixme[21]: Could not find module `etcd`.
 import etcd
 from torchelastic.utils.logging import get_logger
 
@@ -182,7 +181,6 @@ class EtcdServer:
         atexit.register(stop_etcd, self._etcd_proc, self._data_dir)
         self._wait_for_ready(timeout)
 
-    # pyre-fixme[11]: Annotation `Client` is not defined as a type.
     def get_client(self) -> etcd.Client:
         """
         Returns:
