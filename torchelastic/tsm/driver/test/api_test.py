@@ -17,6 +17,7 @@ from torchelastic.tsm.driver.api import (
     _TERMINAL_STATES,
     MISSING,
     NULL_CONTAINER,
+    NULL_RESOURCE,
     AppDryRunInfo,
     AppHandle,
     Application,
@@ -85,11 +86,65 @@ class ResourcesTest(unittest.TestCase):
         self.assertEqual(new_resources.cpu, 1)
         self.assertEqual(new_resources.gpu, 2)
         self.assertEqual(new_resources.memMB, 3)
+
         self.assertEqual(len(new_resources.capabilities), 3)
         self.assertEqual(new_resources.capabilities["old_key"], "old_value")
         self.assertEqual(new_resources.capabilities["test_key"], "test_value_new")
         self.assertEqual(new_resources.capabilities["new_key"], "new_value")
         self.assertEqual(resources.capabilities["test_key"], "test_value")
+
+
+class ContainerBuilderTest(unittest.TestCase):
+    def test_create_container_with_resources(self):
+        res1 = Resources(cpu=1, gpu=2, memMB=128)
+        res2 = Resources(cpu=1, gpu=2, memMB=256)
+        container = (
+            Container("torch").require(res1, "default").require(res2, "test_scheduler")
+        )
+        self.assertEqual(2, len(container.resources))
+        self.assertEqual(res1, container.resources["default"])
+        self.assertEqual(res2, container.resources["test_scheduler"])
+
+    def test_create_container_with_resources(self):
+        res1 = Resources(cpu=1, gpu=2, memMB=128)
+        res2 = Resources(cpu=1, gpu=2, memMB=256)
+        container = Container("torch").require(
+            {"default": res1, "test_scheduler": res2}
+        )
+        self.assertEqual(2, len(container.resources))
+        self.assertEqual(res1, container.resources["default"])
+        self.assertEqual(res2, container.resources["test_scheduler"])
+
+    def test_create_container_no_backend(self):
+        res1 = Resources(cpu=1, gpu=2, memMB=128)
+        container = Container("torch").require(res1)
+        self.assertEqual(1, len(container.resources))
+        self.assertEqual(res1, container.resources[Container._ALL])
+
+    def test_get_resource(self):
+        res1 = Resources(cpu=1, gpu=2, memMB=128)
+        res2 = Resources(cpu=1, gpu=2, memMB=256)
+        container = Container("torch").require({"default": res1, Container._ALL: res2})
+        self.assertEqual(2, len(container.resources))
+        self.assertEqual(res1, container.get_resources("default"))
+        self.assertEqual(res2, container.get_resources(Container._ALL))
+        self.assertEqual(res2, container.get_resources("unknown_scheduler"))
+
+    def test_get_resource_none(self):
+        res1 = Resources(cpu=1, gpu=2, memMB=128)
+        res2 = Resources(cpu=1, gpu=2, memMB=256)
+        container = Container("torch").require(
+            {"default": res1, "test_scheduler": res2}
+        )
+        self.assertEqual(NULL_RESOURCE, container.get_resources("non-existent"))
+
+    def test_get_resource_incorrect_input(self):
+        res1 = Resources(cpu=1, gpu=2, memMB=128)
+        res2 = Resources(cpu=1, gpu=2, memMB=256)
+        with self.assertRaises(ValueError):
+            Container("torch").require(
+                {"default": res1, "test_scheduler": res2}, "new_scheduler"
+            )
 
 
 class RoleBuilderTest(unittest.TestCase):
@@ -239,8 +294,9 @@ class ElasticRoleBuilderTest(unittest.TestCase):
         utility to make it easy for users to create a Role with the entrypoint
         being ``torchelastic.distributed.launch``
         """
+        resources = Resources(cpu=1, gpu=0, memMB=512)
         container = Container(
-            image="user_image", resources=Resources(cpu=1, gpu=0, memMB=512)
+            image="user_image", resources={"default": resources}
         ).ports(tensorboard=8080)
         elastic_role = (
             ElasticRole(
@@ -255,14 +311,14 @@ class ElasticRoleBuilderTest(unittest.TestCase):
         elastic_json = dataclasses.asdict(elastic_role)
         container_json = elastic_json.pop("container")
         resources_json = container_json.pop("resources")
+        container_json["resources"] = {}
+        for sched, resource_json in resources_json.items():
+            container_json["resources"][sched] = Resources(**resource_json)
 
         role = Role(
             **elastic_json,
-            container=Container(
-                **container_json, resources=Resources(**resources_json)
-            ),
+            container=Container(**container_json),
         )
-
         self.assertEqual(container, role.container)
         self.assertEqual(elastic_role.name, role.name)
         self.assertEqual(elastic_role.entrypoint, role.entrypoint)

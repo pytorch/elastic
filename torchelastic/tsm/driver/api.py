@@ -28,6 +28,9 @@ from typing import (
 )
 
 
+SchedulerBackend = str
+
+
 @dataclass
 class Resources:
     """
@@ -81,24 +84,49 @@ class Container:
     image name (str), which could be a simple name (e.g. docker image) or a url
     (e.g. s3://path/my_image.tar).
 
+    A ``Resources`` can be bound to a specific scheduler backend or ``SchedulerBackend.ALL`` (default)
+    to specify that the same ``Resources`` is to be used for all schedulers.
+
     Usage:
 
     ::
 
+     # define resources for all schedulers
      my_container = Container(image="pytorch/torch:1")
                        .require(Resources(cpu=1, gpu=1, memMB=500))
                        .ports(tcp_store=8080, tensorboard=8081)
+
+     # define resources for a specific scheduler
+     my_container = Container(image="pytorch/torch:1")
+                       .require(Resources(cpu=1, gpu=1, memMB=500), "custom_scheduler")
+                       .ports(tcp_store=8080, tensorboard=8081)
+
     """
 
     image: str
-    resources: Resources = NULL_RESOURCE
+    resources: Dict[SchedulerBackend, Resources] = field(default_factory=dict)
     port_map: Dict[str, int] = field(default_factory=dict)
 
-    def require(self, resources: Resources) -> "Container":
+    _ALL = "all"
+
+    def require(
+        self,
+        resources: Union[Resources, Dict[SchedulerBackend, Resources]],
+        scheduler: Optional[SchedulerBackend] = None,
+    ) -> "Container":
         """
         Sets resource requirements on the container.
         """
-        self.resources = resources
+        if isinstance(resources, Resources):
+            scheduler = scheduler or self._ALL
+            self.resources[scheduler] = resources
+        else:
+            if scheduler is not None:
+                raise ValueError(
+                    "Incorrect parameters. Both resource map as well as scheduler type were provided."
+                    "Provide either map or resource with scheduler type"
+                )
+            self.resources.update(resources)
         return self
 
     def ports(self, **kwargs: int) -> "Container":
@@ -107,6 +135,14 @@ class Container:
         """
         self.port_map.update({**kwargs})
         return self
+
+    def get_resources(self, scheduler: Optional[SchedulerBackend] = None) -> Resources:
+        """
+        Retrieves resources for the specified ``scheduler``. Returns `None` if none found.
+        """
+        if scheduler and scheduler in self.resources:
+            return self.resources[scheduler]
+        return self.resources.get(self._ALL, NULL_RESOURCE)
 
 
 # sentinel value used to represent missing string attributes, such as image or entrypoint
@@ -686,9 +722,6 @@ class InvalidRunConfigException(Exception):
         super().__init__(f"{invalid_reason}. Given: {run_config}, Expected: {runopts}")
 
 
-SchedulerBackend = str
-
-
 class Scheduler(abc.ABC):
     """
     An interface abstracting functionalities of a scheduler.
@@ -982,7 +1015,11 @@ class Session(abc.ABC):
                     f"No container for role: {role.name}."
                     f" Did you forget to call role.on(container)"
                 )
-            if role.container.resources == NULL_RESOURCE:
+            # TODO(aivanou) t79202235 Move scheduler specific logic to schedulers
+            if (
+                scheduler != "local"
+                and role.container.get_resources(scheduler) == NULL_RESOURCE
+            ):
                 raise ValueError(
                     f"No resources for container: {role.container.image}."
                     f" Did you forget to call container.require(resources)"
