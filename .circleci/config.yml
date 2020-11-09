@@ -56,6 +56,13 @@ install_dep: &install_dep
         echo "In venv: $(pyenv local) - $(python --version), $(pip --version)"
         python --version
         pip --version
+        # TODO remove when torch-1.8.0 releases
+        pip uninstall -y torch
+        if [[ -z ${CUDA_VERSION} ]]; then
+          pip install --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+        else
+          pip install --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cu101/torch_nightly.html
+        fi
         pip install --progress-bar off -r requirements.txt
         pip install --progress-bar off black isort
         pip list
