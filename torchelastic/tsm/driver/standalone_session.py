@@ -183,5 +183,5 @@ class StandaloneSession(Session):
         if not self.status(app_handle):
             raise UnknownAppException(app_handle)
 
-        scheduler, app_id = self._scheduler_app_id(app_handle)
+        scheduler, app_id = self._scheduler_app_id(app_handle, check_session=False)
         return scheduler.log_iter(app_id, role_name, k, regex, since, until)

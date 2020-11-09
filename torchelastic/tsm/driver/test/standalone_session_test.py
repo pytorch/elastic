@@ -244,14 +244,6 @@ class StandaloneSessionTest(unittest.TestCase):
             app_id, role_name, replica_id, regex, since, until
         )
 
-    def test_log_lines_another_session(self):
-        scheduler_mock = MagicMock()
-        session = StandaloneSession(
-            name="session1", schedulers={"default": scheduler_mock}, wait_interval=1
-        )
-        with self.assertRaises(SessionMismatchException):
-            session.log_lines("default://session2/app_id", "trainer")
-
     def test_no_default_scheduler(self):
         with self.assertRaises(ValueError):
             StandaloneSession(name=SESSION_NAME, schedulers={"local": self.scheduler})
