@@ -61,6 +61,7 @@ In the example above, we have done a few things:
 
 
 """
+import getpass
 from typing import Optional
 
 from torchelastic.tsm.driver.api import (  # noqa: F401 F403
@@ -89,6 +90,10 @@ from torchelastic.tsm.driver.schedulers import get_schedulers
 from torchelastic.tsm.driver.standalone_session import StandaloneSession
 
 
+def get_owner():
+    return getpass.getuser()
+
+
 try:
     from torchelastic.tsm.driver.api_extended import *  # noqa: F401 F403
 except ModuleNotFoundError:
@@ -96,11 +101,7 @@ except ModuleNotFoundError:
 
 
 def _gen_session_name(session_backend: str):
-    import uuid
-    import getpass
-
-    hash_short = str(uuid.uuid4()).split("-")[0]
-    return f"tsm_{session_backend}_{getpass.getuser()}_{hash_short}"
+    return f"tsm_{session_backend}_{get_owner()}"
 
 
 def session(name: Optional[str] = None, backend: str = "standalone", **scheduler_args):
