@@ -90,7 +90,7 @@ from torchelastic.tsm.driver.schedulers import get_schedulers
 from torchelastic.tsm.driver.standalone_session import StandaloneSession
 
 
-def get_owner():
+def get_owner() -> str:
     return getpass.getuser()
 
 
