@@ -450,7 +450,8 @@ class LocalScheduler(Scheduler):
                     role.args, img_root, app_id, str(replica_id)
                 )
                 replica_popen_params = role_popen_params.setdefault(role.name, [])
-                params: Dict[str, Any] = {"args": args, "env": role.env}
+                env_vars = {**self._default_role_envs(), **role.env}
+                params: Dict[str, Any] = {"args": args, "env": env_vars}
                 app_log_dir = self._get_app_log_dir(app_id, cfg)
                 if app_log_dir:
                     base_log_dir = os.path.join(app_log_dir, role.name, str(replica_id))
@@ -461,6 +462,12 @@ class LocalScheduler(Scheduler):
 
             app_popen_params.append(role_popen_params)
         return app_popen_params
+
+    def _default_role_envs(self) -> Dict[str, str]:
+        """
+        Returns default env vars that should be passed to the role's replica subprocesses.
+        """
+        return {}
 
     def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
         if app_id not in self._apps:

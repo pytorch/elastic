@@ -235,7 +235,9 @@ class LocalSchedulerTest(unittest.TestCase):
         self.assertEqual(
             {
                 "args": ["master.par", "arg1"],
-                "env": {"ENV_VAR_1": "VAL1"},
+                "env": {
+                    "ENV_VAR_1": "VAL1",
+                },
             },
             master_info[0],
         )
