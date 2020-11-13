@@ -125,7 +125,7 @@ class StandaloneSession(Session):
             return None
 
         app_status = AppStatus(
-            desc.state, desc.num_restarts, desc.msg, desc.scheduler_error_msg
+            desc.state, desc.num_restarts, desc.msg, desc.structured_error_msg
         )
         app_status.ui_url = desc.ui_url
         return app_status

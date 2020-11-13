@@ -176,7 +176,7 @@ class StandaloneSessionTest(unittest.TestCase):
         app_id = "test_app"
         mock_scheduler = MagicMock()
         resp = DescribeAppResponse()
-        resp.scheduler_error_msg = '{"message": "test error"}'
+        resp.structured_error_msg = '{"message": "test error"}'
         mock_scheduler.submit.return_value = app_id
         mock_scheduler.describe.return_value = resp
 
@@ -186,7 +186,7 @@ class StandaloneSessionTest(unittest.TestCase):
         role = Role("ignored").runs("/bin/echo").on(self.test_container)
         app_handle = session.run(Application(app_id).of(role))
         status = session.status(app_handle)
-        self.assertEquals(resp.scheduler_error_msg, status.scheduler_error_msg)
+        self.assertEquals(resp.structured_error_msg, status.structured_error_msg)
 
     def test_wait_unknown_app(self):
         session = StandaloneSession(

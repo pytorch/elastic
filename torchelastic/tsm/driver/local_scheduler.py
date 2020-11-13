@@ -12,9 +12,11 @@ import ctypes
 import json
 import os
 import re
+import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 import warnings
 from dataclasses import dataclass
@@ -113,6 +115,8 @@ class _LocalReplica:
     proc: subprocess.Popen
     stdout: Optional[IO]  # None means no log_dir (out to console)
     stderr: Optional[IO]  # None means no log_dir (out to console)
+    error_file: str
+    cleanup_resources: bool
 
     def terminate(self) -> None:
         """
@@ -139,6 +143,10 @@ class _LocalReplica:
             return False
         else:
             return self.proc.returncode != 0
+
+    def cleanup(self) -> None:
+        if self.cleanup_resources and os.path.exists(self.error_file):
+            shutil.rmtree(os.path.dirname(self.error_file))
 
 
 class _LocalApplication:
@@ -177,6 +185,35 @@ class _LocalApplication:
         for replicas in self.role_replicas.values():
             for r in replicas:
                 r.terminate()
+
+    def __del__(self):
+        self.cleanup()
+
+    def cleanup(self) -> None:
+        for replicas in self.role_replicas.values():
+            for replica in replicas:
+                replica.cleanup()
+
+    def _get_error_file(self) -> Optional[str]:
+        error_file = None
+        min_timestamp = sys.maxsize
+        for replicas in self.role_replicas.values():
+            for replica in replicas:
+                if not os.path.exists(replica.error_file):
+                    continue
+                mtime = os.path.getmtime(replica.error_file)
+                if mtime < min_timestamp:
+                    min_timestamp = mtime
+                    error_file = replica.error_file
+        return error_file
+
+    def get_structured_error_msg(self) -> str:
+        msg = "<NONE>"
+        error_file = self._get_error_file()
+        if not error_file:
+            return msg
+        with open(error_file, "r") as f:
+            return json.dumps(json.load(f))
 
     def close(self) -> None:
         """
@@ -221,6 +258,7 @@ class _LocalApplication:
             # pyre-ignore [6]: app.log_dir nullchecked above
             with open(os.path.join(self.log_dir, "SUCCESS"), "w") as fp:
                 fp.write(info_str)
+        self.cleanup()
 
         log.info(f"Successfully closed app_id: {self.id}.\n{info_str}")
 
@@ -356,19 +394,47 @@ class LocalScheduler(Scheduler):
         os.makedirs(os.path.dirname(file), exist_ok=True)
         return open(file, mode="w")
 
-    def _popen(self, role_name: str, replica_id: int, **popen_kwargs) -> _LocalReplica:
+    def _popen(
+        self, role_name: str, replica_id: int, log_dir: Optional[str], **popen_kwargs
+    ) -> _LocalReplica:
         """
         Same as ``subprocess.Popen(**popen_kwargs)`` but is able to take ``stdout`` and ``stderr``
         as file name ``str`` rather than a file-like obj.
         """
         stdout_ = self._get_file_io(popen_kwargs.pop("stdout", None))
         stderr_ = self._get_file_io(popen_kwargs.pop("stderr", None))
+        if log_dir:
+            cleanup_resources = False
+            error_file = os.path.join(log_dir, role_name, str(replica_id), "error.json")
+            os.makedirs(os.path.dirname(error_file), exist_ok=True)
+        else:
+            cleanup_resources = True
+            error_file = os.path.join(tempfile.mkdtemp(), "error.json")
+        proc_envs = {"TORCHELASTIC_ERROR_FILE": error_file}
+        if "env" in popen_kwargs:
+            popen_kwargs["env"].update(proc_envs)
+        else:
+            # The standard behavior of subprocess.Popen when no env is provided
+            # is to copy the parent process env. variables.
+            env = {}
+            env.update(os.environ)
+            env.update(proc_envs)
+            popen_kwargs["env"] = env
 
         proc = subprocess.Popen(
-            **popen_kwargs, stdout=stdout_, stderr=stderr_, preexec_fn=_pr_set_pdeathsig
+            **popen_kwargs,
+            stdout=stdout_,
+            stderr=stderr_,
+            preexec_fn=_pr_set_pdeathsig,
         )
         return _LocalReplica(
-            role_name, replica_id, proc, stdout=stdout_, stderr=stderr_
+            role_name,
+            replica_id,
+            proc,
+            stdout=stdout_,
+            stderr=stderr_,
+            error_file=error_file,
+            cleanup_resources=cleanup_resources,
         )
 
     def _submit(self, app: Application, cfg: RunConfig) -> str:
@@ -391,7 +457,12 @@ class LocalScheduler(Scheduler):
             for role_name, replica_popen_args in role_popen_args.items():
                 for replica_id, replica_popen_arg in enumerate(replica_popen_args):
                     log.info(f"Running {role_name} ({replica_id}): {replica_popen_arg}")
-                    replica = self._popen(role_name, replica_id, **replica_popen_arg)
+                    replica = self._popen(
+                        role_name,
+                        replica_id,
+                        self._get_app_log_dir(app_id, cfg),
+                        **replica_popen_arg,
+                    )
                     local_app.add_replica(role_name, replica)
 
         self._apps[app_id] = local_app
@@ -474,6 +545,7 @@ class LocalScheduler(Scheduler):
             return None
 
         local_app = self._apps[app_id]
+        structured_error_msg = local_app.get_structured_error_msg()
 
         # check if the app is known to have finished
         if is_terminal(local_app.state):
@@ -499,6 +571,7 @@ class LocalScheduler(Scheduler):
 
         resp = DescribeAppResponse()
         resp.app_id = app_id
+        resp.structured_error_msg = structured_error_msg
         resp.state = state
         resp.num_restarts = 0
         return resp
