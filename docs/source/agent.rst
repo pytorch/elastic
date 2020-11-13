@@ -58,4 +58,4 @@ to implement.
    :members:
    :private-members:
 
-.. autoclass:: torchelastic.agent.server.api.MonitorResult
+.. autoclass:: torchelastic.agent.server.api.RunResult

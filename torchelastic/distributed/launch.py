@@ -226,10 +226,15 @@ from argparse import REMAINDER, ArgumentParser
 import torch
 import torchelastic.rendezvous.registry as rdzv_registry
 from torchelastic import metrics
-from torchelastic.agent.server.api import WorkerGroupFailureException, WorkerSpec
+from torchelastic.agent.server.api import WorkerSpec
 from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
 from torchelastic.distributed.argparse_util import check_env, env
-from torchelastic.multiprocessing.errors import record
+from torchelastic.multiprocessing.errors import (
+    cleanup,
+    get_failure_message,
+    process_failure,
+    record,
+)
 from torchelastic.rendezvous import RendezvousParameters
 from torchelastic.rendezvous.etcd_server import EtcdServer
 from torchelastic.utils.logging import get_logger
@@ -481,19 +486,30 @@ def main(args=None):
         )
         metrics.initialize_metrics()
         elastic_agent = LocalElasticAgent(spec, start_method=args.start_method)
-        elastic_agent.run(spec.role)
-    except WorkerGroupFailureException as e:
-        # user-code error; propagate the one from the smallest rank on this node
-        excs = e.get_worker_exceptions()
-        min_rank = min(excs.keys())
-        raise excs[min_rank] from e
-    except Exception:
-        # this is an agent (platform) error
-        raise
+        group_result = elastic_agent.run(spec.role)
+        if group_result.is_failed():
+            min_rank = min(group_result.failures.keys())
+            failure = group_result.failures[min_rank]
+            # Note: this line will raise an exception to indicate to the
+            # scheduler process that something went wrong.
+            # If any workers wrote the error file, it will be propagated
+            # to the scheduler specific destination.
+            process_failure(failure)
+            msg = f"""
+*********************************************************************** \n
+***********************USER CODE FAILED WITH ERROR****************** \n\n
+{get_failure_message(failure)} \n
+******************************************************************** \n\n
+******************************************************************** \n
+            """
+            log.warning(msg)
+            # Expected (0-127), 0 - success, anything else - failure
+            sys.exit(abs(failure.exit_code))
     finally:
         rdzv_handler.shutdown()
         if args.standalone:
             etcd_server.stop()
+        cleanup()
 
 
 def _parse_rdzv_conf(conf_str: str):

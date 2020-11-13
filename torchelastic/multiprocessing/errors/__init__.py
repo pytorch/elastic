@@ -33,7 +33,15 @@ Usage
 
 
 from torchelastic.multiprocessing.errors.error_handler import (  # noqa F401
-    ProcessException,
+    ProcessFailure,
 )
 
-from .api import get_error_dir, record, try_raise_exception  # noqa F401
+from .api import (  # noqa F401
+    cleanup,
+    exec_fn,
+    get_error_file,
+    get_failed_result,
+    get_failure_message,
+    process_failure,
+    record,
+)

@@ -26,7 +26,7 @@ class InitTest(unittest.TestCase):
     def test_invoke_mp(self, mp_mock):
         params = [MpParameters(fn=dummy_fn, args=())] * 4
         start_processes(params, start_method="fork")
-        mp_mock.assert_called_once_with(params, "fork")
+        mp_mock.assert_called_once_with(params, "fork", 0)
 
     def test_invoke_mp_no_params(self):
         with self.assertRaises(ValueError):
@@ -40,4 +40,4 @@ class InitTest(unittest.TestCase):
     def test_invoke_sp(self, sp_mock):
         params = [SubprocessParameters(args=[], test_key="test_value")] * 4
         start_subprocesses(params)
-        sp_mock.assert_called_once_with(params)
+        sp_mock.assert_called_once_with(params, 0)

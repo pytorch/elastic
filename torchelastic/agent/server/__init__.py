@@ -33,6 +33,7 @@ from .api import (  # noqa F401
     SimpleElasticAgent,
     Worker,
     WorkerGroup,
+    RunResult,
     WorkerSpec,
     WorkerState,
 )

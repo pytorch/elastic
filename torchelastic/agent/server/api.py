@@ -12,12 +12,14 @@ import json
 import socket
 import time
 from contextlib import closing
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torchelastic.rendezvous as rdzv
 import torchelastic.utils.store as store_util
 from torchelastic.metrics import prof, put_metric
+from torchelastic.multiprocessing.errors import ProcessFailure
 from torchelastic.utils.logging import get_logger
 
 
@@ -305,52 +307,29 @@ class _RoleInstanceInfo:
         return (start_idx, end_idx)
 
 
-class MonitorResult:
+@dataclass
+class RunResult:
     """
-    Returned by the agent's ``_monitor_workers`` API. A holder object
-    that holds information about the monitoring results.
-    The ``ret_vals`` and ``exceptions`` field map each worker's
-    return value (output) and exceptions (if any) accordingly by
-    the workers global rank.
+    Results returned by the worker executions. The ``return_values`` and ``failures`` are mutually exclusive.
+    If all workers succeed the ``results`` field will contain output results and ``failures`` will be empty.
+    If any worker fails, ``failures`` will contain failed workers and ``results`` will
+    be empty.
 
     ``state = SUCCEEDED`` will have ``ret_val``.
     ``state = FAILED`` will have ``exceptions``.
     For other states both these fields will be empty.
+
+    .. note: Currently ``failures`` will contain N instances of the first worker that is failed.
+             This behavior may change in later versions.
+
     """
 
-    __slots__ = ["state", "ret_vals", "exceptions"]
+    state: WorkerState
+    return_values: Dict[int, Any] = field(default_factory=dict)
+    failures: Dict[int, ProcessFailure] = field(default_factory=dict)
 
-    def __init__(
-        self,
-        state: WorkerState,
-        # pyre-fixme[9]: ret_vals has type `Dict[int, typing.Any]`; used as `None`.
-        ret_vals: Dict[int, Any] = None,
-        # pyre-fixme[9]: exceptions has type `Dict[int, Exception]`; used as `None`.
-        exceptions: Dict[int, Exception] = None,
-    ):
-        self.state = state
-        self.ret_vals = ret_vals
-        self.exceptions = exceptions
-
-
-class WorkerGroupFailureException(Exception):
-    """
-    Thrown when the agent cannot or has given up trying to run the workers.
-    This is typically thrown:
-
-    1. Exceeded ``max_restarts``.
-    2. Workers fail with errors that are deemed ``NonRestartable``
-
-    When constructing this exception the underlying worker exceptions
-    are provided as a map of the worker's global rank to the exception.
-    """
-
-    def __init__(self, msg: str, worker_excs: Dict[int, Exception]):
-        super().__init__(msg)
-        self._worker_excs = worker_excs
-
-    def get_worker_exceptions(self) -> Dict[int, Exception]:
-        return self._worker_excs
+    def is_failed(self) -> bool:
+        return self.state == WorkerState.FAILED
 
 
 def _get_socket_with_port() -> socket.socket:
@@ -415,29 +394,27 @@ class ElasticAgent(abc.ABC):
     Usage
     ::
 
-     try:
-         results = agent.run()
-         return results[0] # return rank 0's results
-     except WorkerGroupFailureException as e:
-         exceptions = e.get_worker_exceptions()
-         log.exception(f"worker 0 failed with: {exceptions[0]}")
-     except Exception as e:
-         log.exception(f"error while running agent")
+     group_result = agent.run()
+      if group_result.is_failed():
+        # workers failed
+        failure = group_result.failures[0]
+        log.exception(f"worker 0 failed with exit code : {failure.exit_code}")
+      else:
+        return group_result.return_values[0] # return rank 0's results
 
     """
 
     @abc.abstractmethod
-    def run(self, role: str = DEFAULT_ROLE) -> Dict[int, Any]:
+    def run(self, role: str = DEFAULT_ROLE) -> RunResult:
         """
         Runs the agent, retrying the worker group on failures up to
         ``max_restarts``.
 
         Returns:
-            The return values for each worker mapped by the worker's global rank.
-            Empty if workers have void signature.
+            The result of the execution, containing the return values or
+            failure details for each worker mapped by the worker's global rank.
 
         Raises:
-            WorkerGroupFailureException - workers did not successfully run
             Exception - any other failures NOT related to worker process
         """
         raise NotImplementedError()
@@ -495,7 +472,7 @@ class SimpleElasticAgent(ElasticAgent):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _monitor_workers(self, worker_group: WorkerGroup) -> MonitorResult:
+    def _monitor_workers(self, worker_group: WorkerGroup) -> RunResult:
         r"""
         Checks on the workers for the ``worker_group`` and returns
         the new state of the worker group.
@@ -690,17 +667,13 @@ class SimpleElasticAgent(ElasticAgent):
         self._initialize_workers(worker_group)
 
     @prof
-    def run(self, role: str = DEFAULT_ROLE) -> Dict[int, Any]:
-        is_failed = False
-        try:
-            return self._invoke_run(role)
-        except Exception as e:
-            is_failed = True
-            raise
-        finally:
-            self._record_metrics(is_failed)
+    def run(self, role: str = DEFAULT_ROLE) -> RunResult:
+        result = self._invoke_run(role)
+        self._record_metrics(result)
+        return result
 
-    def _record_metrics(self, is_failed: bool = False):
+    def _record_metrics(self, group_results: RunResult):
+        is_failed = group_results.is_failed()
         self._record_flakiness_metric(is_failed)
         spec = self._worker_group.spec
         restarts_happened = self._remaining_restarts != spec.max_restarts
@@ -727,9 +700,6 @@ class SimpleElasticAgent(ElasticAgent):
 
     def _record_flakiness_metric(self, is_failed: bool = False):
         if is_failed:
-            if not isinstance(is_failed, WorkerGroupFailureException):
-                # Only user code can contribute into flakiness score
-                return
             flakiness = 100.0
         else:
             spec = self._worker_group.spec
@@ -740,7 +710,7 @@ class SimpleElasticAgent(ElasticAgent):
 
         put_metric(f"workers.{spec.role}.flakiness", int(flakiness))
 
-    def _invoke_run(self, role: str = DEFAULT_ROLE) -> Dict[int, Any]:
+    def _invoke_run(self, role: str = DEFAULT_ROLE) -> RunResult:
         # NOTE: currently only works for a single role
 
         spec = self._worker_group.spec
@@ -758,8 +728,8 @@ class SimpleElasticAgent(ElasticAgent):
         while True:
             assert self._worker_group.state != WorkerState.INIT
             time.sleep(monitor_interval)
-            monitor_result = self._monitor_workers(self._worker_group)
-            state = monitor_result.state
+            run_result = self._monitor_workers(self._worker_group)
+            state = run_result.state
             self._worker_group.state = state
 
             put_metric(f"workers.{role}.remaining_restarts", self._remaining_restarts)
@@ -771,7 +741,7 @@ class SimpleElasticAgent(ElasticAgent):
                     f" Waiting {self._exit_barrier_timeout} seconds for other agents to finish."
                 )
                 self._exit_barrier()
-                return monitor_result.ret_vals
+                return run_result
             elif state in {WorkerState.UNHEALTHY, WorkerState.FAILED}:
                 if self._remaining_restarts > 0:
                     log.info(
@@ -785,10 +755,7 @@ class SimpleElasticAgent(ElasticAgent):
                     self._stop_workers(self._worker_group)
                     self._worker_group.state = WorkerState.FAILED
                     self._exit_barrier()
-                    raise WorkerGroupFailureException(
-                        f"[{role}] exceeded max_restarts={spec.max_restarts}",
-                        monitor_result.exceptions,
-                    )
+                    return run_result
             elif state == WorkerState.HEALTHY:
                 # membership changes do not count as retries
                 num_nodes_waiting = rdzv_handler.num_nodes_waiting()

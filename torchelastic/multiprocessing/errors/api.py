@@ -8,29 +8,71 @@
 # Multiprocessing error-reporting module
 
 from functools import wraps
+from typing import Any, Callable, Optional, Tuple
 
+from torchelastic.multiprocessing.errors.error_handler import ProcessFailure
 from torchelastic.multiprocessing.errors.handlers import get_error_handler
 
 
 _process_error_handler = get_error_handler()
 
 
-def try_raise_exception(error_process_pid: int, exit_code: int = 0) -> None:
+def exec_fn(f: Callable, args: Tuple) -> Any:
     """
-    Tries to retrieve the exception that was recorded by the ``error_process_pid``
-    and raises it as ``ProcessException``. exit_code can be provided that will be
-    used to build a message as well as to retrieve signal name.
+    Executes provided function with configured error handler. If any exception
+    occurs, it will be first processed by the error handler before raising it.
     """
-    return _process_error_handler.try_raise_exception(error_process_pid, exit_code)
+    try:
+        _process_error_handler.configure()
+        result = f(*args)
+        return result
+    except Exception as e:
+        _process_error_handler.record_exception(e)
+        raise
 
 
-def get_error_dir() -> str:
+def process_failure(failure: ProcessFailure) -> None:
     """
-    Tries to retrieve the exception that was recorded by the ``error_process_pid``
-    and raises it as ``ProcessException``. exit_code can be provided that will be
-    used to build a message as well as to retrieve signal name.
+    Tries to retrieve the error from the file in ``ProcessFailure.error_file``
+    and copy-pastes the content to the parent error file. Raises the ``Exception``
+    to indicate to the upper stack that the error occurred on child process.
+    If no child_error found, the warning message will be printed to the logger and
+    no error file will be recorded.
     """
-    return _process_error_handler.get_error_dir()
+    _process_error_handler.process_failure(failure)
+
+
+def get_failure_message(failure: ProcessFailure) -> str:
+    """
+    Retrieves and pretty prints the failure message.
+    """
+    return _process_error_handler._get_failure_message(failure)
+
+
+def cleanup() -> None:
+    """
+    Cleanup resources that may be created by the error handler
+    """
+    _process_error_handler.cleanup()
+
+
+def get_failed_result(
+    child_rank: int, child_pid: int, exit_code: int = 1, run_id: int = 0
+) -> Optional[ProcessFailure]:
+    """
+    Returns error file
+    """
+    return _process_error_handler.get_failed_result(
+        child_rank, child_pid, exit_code, run_id
+    )
+
+
+def get_error_file(rank: int, run_id: int = 0) -> str:
+    """
+    Returns error file based on the rank in format:
+    ``os.path.join(base_dir, rank, error.log_{run_id})``
+    """
+    return _process_error_handler.get_error_file(rank, run_id)
 
 
 def record(fn=None):
@@ -40,7 +82,10 @@ def record(fn=None):
     to propagate any signal termination related errors to the parent process.
 
     Note: the decorator should be invoked a single time per processor, and
-    it is best to set it on top of the main function.
+    it is best to set it on top of the main function. The decorator invokes
+    ``configure`` method to properly configure error handler and
+    ``record_exception`` method to record exception. If the error_file
+    already exists, the exception will not be recorded.
 
     Example
 

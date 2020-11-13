@@ -13,8 +13,8 @@ import time
 from subprocess import CompletedProcess, TimeoutExpired
 from typing import Dict, List, Optional, Tuple, Union
 
-from torchelastic.multiprocessing.api import BaseProcessContext, expire
-from torchelastic.multiprocessing.errors import ProcessException
+from torchelastic.multiprocessing.api import BaseProcessContext, ProcessGroupResult
+from torchelastic.multiprocessing.errors import ProcessFailure, get_error_file
 from torchelastic.multiprocessing.subprocess_handler import SubprocessHandler
 
 
@@ -77,38 +77,32 @@ class SubprocessContext(BaseProcessContext):
     Combines common operations that are executed on the same process group.
     """
 
-    def __init__(
-        self,
-        proc_list: List[SubprocessHandler],
-    ):
+    def __init__(self, proc_list: List[SubprocessHandler], run_id: int = 0):
         self.processes = proc_list
+        self.run_id = run_id
 
-    def wait(
-        self, timeout: Optional[float] = None
-    ) -> Optional[Dict[int, CompletedProcess]]:
+    def wait(self, timeout: Optional[float] = None) -> Optional[ProcessGroupResult]:
         r"""
         Method waits for process group completion in a loop. If all processes succeeded the list of
         ``subprocess.CompletedProcess`` will be returned. If processes are still running the method
         will return None.
         The method will throw the exception that is first got recorded.
         """
-
-        def _wait(deadline, period) -> bool:
+        deadline, period = self._get_deadline_and_period(timeout)
+        while deadline > time.time():
             if not self._any_alive():
-                return True
-            root_exception = self._try_wait_and_raise()
-            if root_exception:
+                break
+            failed_result = self._try_wait_or_get_result()
+            if failed_result:
                 self.terminate()
-                raise root_exception
+                return ProcessGroupResult(failure=failed_result)
             time.sleep(period)
-            return False
 
-        expire(fn=_wait, timeout=timeout)
         if self._any_alive():
             return None
-        root_exception = self._try_wait_and_raise()
-        if root_exception:
-            raise root_exception
+        failed_result = self._try_wait_or_get_result()
+        if failed_result:
+            return ProcessGroupResult(failure=failed_result)
         results = {}
         for idx, proc in enumerate(self.processes):
             results[idx] = CompletedProcess(
@@ -117,8 +111,7 @@ class SubprocessContext(BaseProcessContext):
                 stdout=proc.stdout,
                 stderr=proc.stderr,
             )
-
-        return results
+        return ProcessGroupResult(return_values=results)
 
     def pids(self) -> List[int]:
         return [int(proc.pid) for proc in self.processes]
@@ -129,17 +122,21 @@ class SubprocessContext(BaseProcessContext):
                 return True
         return False
 
-    def _try_wait_and_raise(self, timeout: float = 1.0) -> Optional[ProcessException]:
-        root_exception = None
+    def _try_wait_or_get_result(self, timeout: float = 1.0) -> Optional[ProcessFailure]:
+        failed_result = None
         for proc in self.processes:
             try:
-                proc.wait_or_raise(timeout)
+                proc_failed_result = proc.wait_with_return(timeout, self.run_id)
             except TimeoutExpired:
-                pass
-            except ProcessException as e:
-                if not root_exception or root_exception.timestamp > e.timestamp:
-                    root_exception = e
-        return root_exception
+                continue
+            if not proc_failed_result:
+                continue
+            if (
+                failed_result is None
+                or failed_result.timestamp > proc_failed_result.timestamp
+            ):
+                failed_result = proc_failed_result
+        return failed_result
 
     def terminate(self) -> None:
         for proc in self.processes:
@@ -162,7 +159,7 @@ def _resolve_std_stream(stream: Union[str, int, None], type: str, rank: int):
 
 
 def start_processes(
-    params: List[SubprocessParameters],
+    params: List[SubprocessParameters], run_id: int = 0
 ) -> SubprocessContext:
     processes = []
     for local_rank, proc_params in enumerate(params):
@@ -176,6 +173,11 @@ def start_processes(
             "stderr": stderr_stream,
         }
         popen_args.update(proc_args)
-        process = SubprocessHandler(**popen_args)
+        if "env" not in popen_args:
+            popen_args["env"] = {}
+        popen_args["env"]["TORCHELASTIC_ERROR_FILE"] = get_error_file(
+            local_rank, run_id
+        )
+        process = SubprocessHandler(local_rank, **popen_args)
         processes.append(process)
-    return SubprocessContext(processes)
+    return SubprocessContext(processes, run_id)

@@ -10,7 +10,7 @@ import os
 from typing import Any, Dict
 
 from torchelastic.agent.server.api import (
-    MonitorResult,
+    RunResult,
     SimpleElasticAgent,
     Worker,
     WorkerGroup,
@@ -25,7 +25,6 @@ from torchelastic.multiprocessing import (
     start_processes,
     start_subprocesses,
 )
-from torchelastic.multiprocessing.errors import get_error_dir
 from torchelastic.utils.logging import get_logger
 
 
@@ -99,7 +98,6 @@ def _get_worker_env(dist_info: _DistInfo, local_rank: int) -> Dict[str, str]:
     worker_env["TORCHELASTIC_RESTART_COUNT"] = str(dist_info.restart_count)
     worker_env["TORCHELASTIC_MAX_RESTARTS"] = str(dist_info.max_restarts)
     worker_env["TORCHELASTIC_RUN_ID"] = dist_info.run_id
-    worker_env["TORCHELASTIC_ERROR_DIR"] = get_error_dir()
     if "OMP_NUM_THREADS" in os.environ:
         worker_env["OMP_NUM_THREADS"] = os.environ["OMP_NUM_THREADS"]
     return worker_env
@@ -236,7 +234,12 @@ class LocalElasticAgent(SimpleElasticAgent):
         proc_params = [
             MpParameters(fn=_wrap, args=(dist_infos, spec.fn, spec.args))
         ] * spec.local_world_size
-        return start_processes(proc_params, start_method=self._start_method)
+        run_id = spec.max_restarts - self._remaining_restarts
+        return start_processes(
+            proc_params,
+            start_method=self._start_method,
+            run_id=run_id,
+        )
 
     def _start_sp(
         self, dist_infos: Dict[int, _DistInfo], spec: WorkerSpec
@@ -251,10 +254,11 @@ class LocalElasticAgent(SimpleElasticAgent):
                     env=env,
                 )
             )
-        return start_subprocesses(proc_params)
+        run_id = spec.max_restarts - self._remaining_restarts
+        return start_subprocesses(proc_params, run_id=run_id)
 
     @prof
-    def _monitor_workers(self, worker_group: WorkerGroup) -> MonitorResult:
+    def _monitor_workers(self, worker_group: WorkerGroup) -> RunResult:
         role = worker_group.spec.role
 
         # torch process context join() isn't really a join in the
@@ -267,22 +271,30 @@ class LocalElasticAgent(SimpleElasticAgent):
         pc_pids = set(self._process_context.pids())
         if worker_pids != pc_pids:
             log.error(f"[{role}] worker pids do not match process_context pids")
-            return MonitorResult(WorkerState.UNKNOWN)
+            return RunResult(state=WorkerState.UNKNOWN)
 
-        try:
-            ret_vals = self._process_context.wait(timeout=1)
-            if ret_vals:
+        proc_group_result = self._process_context.wait(timeout=1)
+        if proc_group_result:
+            if proc_group_result.is_failed():
+                log.error(f"[{role}] Worker group failed")
+                return RunResult(
+                    state=WorkerState.FAILED,
+                    return_values={},
+                    failures={
+                        w.global_rank: proc_group_result.failure
+                        for w in worker_group.workers
+                    },
+                )
+            else:
                 # copy ret_val_queue into a map with a global ranks
                 workers_ret_vals = {}
-                for local_rank, ret_val in ret_vals.items():
+                for local_rank, ret_val in proc_group_result.return_values.items():
                     worker = worker_group.workers[local_rank]
                     workers_ret_vals[worker.global_rank] = ret_val
-                return MonitorResult(WorkerState.SUCCEEDED, workers_ret_vals)
-            else:
-                return MonitorResult(WorkerState.HEALTHY)
-        except Exception as e:
-            log.exception(f"[{role}] Worker group failed")
-            return MonitorResult(
-                WorkerState.FAILED,
-                exceptions={w.global_rank: e for w in worker_group.workers},
-            )
+                return RunResult(
+                    state=WorkerState.SUCCEEDED,
+                    return_values=workers_ret_vals,
+                    failures={},
+                )
+        else:
+            return RunResult(state=WorkerState.HEALTHY)

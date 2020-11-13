@@ -7,6 +7,8 @@
 # LICENSE file in the root directory of this source tree.
 import multiprocessing
 import os
+import shutil
+import tempfile
 import time
 import unittest
 import uuid
@@ -17,16 +19,12 @@ import torch.distributed as dist
 import torch.distributed.rpc as rpc
 import torchelastic.rendezvous.registry as rdzv_registry
 from torch.distributed.rpc.backend_registry import BackendType
-from torch.multiprocessing import ProcessRaisedException
-from torchelastic.agent.server.api import (
-    WorkerGroupFailureException,
-    WorkerSpec,
-    WorkerState,
-)
+from torchelastic.agent.server.api import WorkerSpec, WorkerState
 from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
+from torchelastic.multiprocessing.errors import record
 from torchelastic.rendezvous import RendezvousParameters
 from torchelastic.rendezvous.etcd_server import EtcdServer
-from torchelastic.test.test_utils import is_asan_or_tsan, is_tsan
+from torchelastic.test.test_utils import is_tsan
 
 
 def _happy_function():
@@ -35,6 +33,12 @@ def _happy_function():
 
 def _sad_function():
     raise RuntimeError("sad because i throw")
+
+
+def _transient_bug():
+    run_id = int(os.environ["TORCHELASTIC_RESTART_COUNT"])
+    if run_id == 0:
+        raise RuntimeError("transient error")
 
 
 def _fatal_signal_function(expected_error_index: int, sig: int):
@@ -165,6 +169,10 @@ class LocalElasticAgentTest(unittest.TestCase):
         # stop the standalone etcd server
         cls._etcd_server.stop()
 
+    def setUp(self):
+        # clear env vars
+        os.environ.pop("TORCHELASTIC_ERROR_FILE", None)
+
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_run_happy_function(self):
         spec = self._get_worker_spec(fn=_happy_function)
@@ -207,8 +215,9 @@ class LocalElasticAgentTest(unittest.TestCase):
     def test_check_role_name(self):
         spec = self._get_worker_spec(fn=_get_env_var, args=("ROLE_NAME",))
         agent = LocalElasticAgent(spec, start_method="fork")
-        res = agent.run()
-        for role_name in res.values():
+        group_result = agent.run()
+        results = group_result.return_values
+        for role_name in results.values():
             self.assertEquals(spec.role, role_name)
 
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
@@ -285,7 +294,8 @@ class LocalElasticAgentTest(unittest.TestCase):
         role_ranks = {}
         global_ranks = []
         grouped_ranks = {}
-        for role, res in return_dict.values():
+        for role, group_result in return_dict.values():
+            res = group_result.return_values
             for (
                 group_rank,
                 rank,
@@ -347,15 +357,21 @@ class LocalElasticAgentTest(unittest.TestCase):
 
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_run_sad_function(self):
-        spec = self._get_worker_spec(fn=_sad_function, max_restarts=2)
-        agent = LocalElasticAgent(spec, start_method="fork")
-        with self.assertRaises(WorkerGroupFailureException) as cm:
-            agent.run()
+        self._test_run_sad_function()
 
-        excs = cm.exception.get_worker_exceptions()
-        self.assertEqual(spec.local_world_size, len(excs))
-        for e in excs.values():
-            self.assertTrue(isinstance(e, ProcessRaisedException))
+    @record
+    def _test_run_sad_function(self):
+        spec = self._get_worker_spec(fn=_sad_function, max_restarts=0)
+        agent = LocalElasticAgent(spec, start_method="fork")
+        group_results = agent.run()
+        failed_results = group_results.failures
+        self.assertEqual(spec.local_world_size, len(failed_results))
+        # all ranks will have the same result
+        for result in failed_results.values():
+            self.assertTrue(os.path.exists(result.error_file))
+            with open(result.error_file, "r") as f:
+                data = f.read().replace("\n", "")
+                self.assertTrue("RuntimeError: sad because i throw" in data)
 
         self.assertEqual(WorkerState.FAILED, agent.get_worker_group().state)
         self.assertEqual(0, agent._remaining_restarts)
@@ -364,8 +380,7 @@ class LocalElasticAgentTest(unittest.TestCase):
     def test_run_bipolar_function(self):
         spec = self._get_worker_spec(fn=_bipolar_function, max_restarts=2)
         agent = LocalElasticAgent(spec, start_method="fork")
-        with self.assertRaises(WorkerGroupFailureException):
-            agent.run()
+        agent.run()
         self.assertEqual(WorkerState.FAILED, agent.get_worker_group().state)
         self.assertEqual(0, agent._remaining_restarts)
 
@@ -382,20 +397,22 @@ class LocalElasticAgentTest(unittest.TestCase):
 
         spec = self._get_worker_spec(fn=return_run_id, max_restarts=0)
         agent = LocalElasticAgent(spec, start_method="fork")
-        ret = agent.run()
+        group_result = agent.run()
+        results = group_result.return_values
 
         for i in range(spec.local_world_size):
-            self.assertEqual(spec.rdzv_handler.get_run_id(), ret[i])
+            self.assertEqual(spec.rdzv_handler.get_run_id(), results[i])
 
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_get_worker_return_values(self):
         spec = self._get_worker_spec(fn=_return_rank_times, args=(2,))
         agent = LocalElasticAgent(spec, start_method="fork")
-        ret_vals = agent.run()
+        group_result = agent.run()
+        results = group_result.return_values
 
-        self.assertEqual(spec.local_world_size, len(ret_vals))
+        self.assertEqual(spec.local_world_size, len(results))
         for i in range(spec.local_world_size):
-            self.assertEqual(i * 2, ret_vals[i])
+            self.assertEqual(i * 2, results[i])
 
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_double_agent_happy(self):
@@ -626,3 +643,40 @@ class LocalElasticAgentTest(unittest.TestCase):
     def test_provide_none(self):
         with self.assertRaises(AssertionError):
             self._get_worker_spec(max_restarts=2)
+
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
+    def test_failed_result_with_run_id(self):
+        temp_dir = tempfile.mkdtemp()
+        os.environ["TORCHELASTIC_ERROR_FILE"] = f"{temp_dir}/error.log"
+        self._test_failed_result_with_run_id()
+        shutil.rmtree(temp_dir)
+
+    @record
+    def _test_failed_result_with_run_id(self):
+        max_restarts = 3
+        spec = self._get_worker_spec(fn=_sad_function, max_restarts=max_restarts)
+        agent = LocalElasticAgent(spec, start_method="fork")
+        run_result = agent.run()
+        for failure in run_result.failures.values():
+            error_file = failure.error_file
+            self.assertTrue(error_file.endswith(f"_{max_restarts}"))
+
+    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
+    def test_transient_bug(self):
+        temp_dir = tempfile.mkdtemp()
+        os.environ["TORCHELASTIC_ERROR_FILE"] = f"{temp_dir}/error.log"
+        self._test_transient_bug(temp_dir)
+        shutil.rmtree(temp_dir)
+
+    @record
+    def _test_transient_bug(self, error_dir: str):
+        max_restarts = 3
+        spec = self._get_worker_spec(fn=_transient_bug, max_restarts=max_restarts)
+        agent = LocalElasticAgent(spec, start_method="fork")
+        run_result = agent.run()
+        self.assertEqual(WorkerState.SUCCEEDED, run_result.state)
+        for rank in range(len(run_result.return_values)):
+            error_file_0 = os.path.join(error_dir, str(rank), "error.log_0")
+            self.assertTrue(os.path.exists(error_file_0))
+            error_file_1 = os.path.join(error_dir, str(rank), "error.log_1")
+            self.assertFalse(os.path.exists(error_file_1))

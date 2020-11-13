@@ -17,9 +17,13 @@ from unittest.mock import Mock, patch
 
 import torchelastic.distributed.launch as launch
 import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
-from torchelastic.multiprocessing.errors import ProcessException
+from torchelastic.agent.server.api import RunResult, WorkerState
 from torchelastic.rendezvous.etcd_server import EtcdServer
 from torchelastic.test.test_utils import is_tsan
+
+
+def launch_in_proc(args):
+    launch.main(args)
 
 
 def path(script):
@@ -240,17 +244,8 @@ class LaunchTest(unittest.TestCase):
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_launch_elastic_worker_raise_exception(self):
         """
-        Asserts that when the worker program fails the launcher catches
-        WorkerGroupFailureException and re-raises the min_rank's inner exception,
-        which will be a regular ``Exception`` with an message that looks like:
-
-        ::
-         -- Process 0 terminated with the following error:
-         Traceback (most recent call last):
-             File "...<omitted>..., line ## in _foo
-                fn(i, args...)
-             File "...<omitted>..., line ## in bar
-                ...<omitted>...
+        Asserts that when the worker program fails and lancher raieses exception
+        to indicate that worker process failed
 
         """
         run_id = str(uuid.uuid4().int)
@@ -269,9 +264,10 @@ class LaunchTest(unittest.TestCase):
             path("bin/test_script.py"),
             "--fail",
         ]
-
-        with self.assertRaisesRegex(ProcessException, "terminated with exit code 1"):
-            launch.main(args)
+        proc = mp.Process(target=launch_in_proc, args=(args,))
+        proc.start()
+        proc.join()
+        self.assertEqual(1, proc.exitcode)
 
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     @mock.patch("torchelastic.agent.server.local_elastic_agent.LocalElasticAgent.run")
@@ -370,7 +366,7 @@ class LaunchTest(unittest.TestCase):
             launch.parse_min_max_nnodes("2:20:30")
 
     @patch("torchelastic.distributed.launch.LocalElasticAgent")
-    def test_launch_rdzv_shutdown(self, _):
+    def test_launch_rdzv_shutdown(self, agent_mock_cls):
         nnodes = 1
         nproc_per_node = 4
         args = [
@@ -381,6 +377,9 @@ class LaunchTest(unittest.TestCase):
             path("bin/test_script.py"),
             f"--touch_file_dir={self.test_dir}",
         ]
+        agent_mock = Mock()
+        agent_mock.run.return_value = RunResult(WorkerState.SUCCEEDED)
+        agent_mock_cls.return_value = agent_mock
         rdzv_handler_mock = Mock()
         with patch(
             "torchelastic.rendezvous.registry.get_rendezvous_handler"

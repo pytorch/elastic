@@ -7,34 +7,31 @@
 # LICENSE file in the root directory of this source tree.
 
 
-import signal
 import subprocess
 from typing import Optional
 
-from torchelastic.multiprocessing.errors import try_raise_exception
+from torchelastic.multiprocessing.errors import ProcessFailure, get_failed_result
 
 
 class SubprocessHandler(subprocess.Popen):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, rank: int = 0, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.rank = rank
 
-    def wait_or_raise(self, timeout: Optional[float] = None) -> int:
+    def wait_with_return(
+        self, timeout: Optional[float] = None, run_id: int = 0
+    ) -> Optional[ProcessFailure]:
         """
-        Wait for child process to terminate. After wait is finished, the
-        error reporter will check whether there were any exceptions.
+        Wait for child process to terminate. If the process is finshied
+        tries to retrieve the failure.
         """
         exit_code = super().wait(timeout)
         if exit_code != 0:
-            try_raise_exception(self.pid, exit_code)
-        return exit_code
+            return get_failed_result(self.rank, self.pid, exit_code, run_id)
+        return None
 
     def is_alive(self) -> bool:
         """
         Returns True if process is running, otherwise returns False.
         """
         return self.poll() is None
-
-    def _get_signal_name_from_return_code(self, return_code: int) -> Optional[str]:
-        if return_code < 0:
-            return signal.Signals(-return_code).name
-        return None

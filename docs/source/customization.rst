@@ -30,8 +30,11 @@ shown below.
 
     agent = LocalElasticAgent(spec, start_method="spawn")
     try:
-        results = agent.run()
-        print(f"worker 0 return value is: results[0]")
+        run_result = agent.run()
+        if run_result.is_failed():
+            print(f"worker 0 failed with: run_result.failures[0]")
+        else:
+            print(f"worker 0 return value is: run_result.return_values[0]")
     except Exception ex:
         # handle exception
 

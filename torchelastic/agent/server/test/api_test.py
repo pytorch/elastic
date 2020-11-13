@@ -14,15 +14,15 @@ from unittest.mock import call, patch
 
 import torchelastic.rendezvous.registry as rdzv_registry
 from torchelastic.agent.server.api import (
-    MonitorResult,
+    RunResult,
     SimpleElasticAgent,
     WorkerGroup,
-    WorkerGroupFailureException,
     WorkerSpec,
     WorkerState,
     _get_fq_hostname,
     _RoleInstanceInfo,
 )
+from torchelastic.multiprocessing.errors import ProcessFailure
 from torchelastic.rendezvous import RendezvousHandler, RendezvousParameters
 from torchelastic.rendezvous.etcd_server import EtcdServer
 
@@ -135,14 +135,19 @@ class TestAgent(SimpleElasticAgent):
         self.start_workers_call_count += 1
         return ids
 
-    # pyre-fixme[15]: `_monitor_workers` overrides method defined in
-    #  `SimpleElasticAgent` inconsistently.
-    def _monitor_workers(self, worker_group: WorkerGroup) -> WorkerState:
+    def _monitor_workers(self, worker_group: WorkerGroup) -> RunResult:
         raise NotImplementedError("mock this method")
 
 
 def monres(state: WorkerState):
-    return MonitorResult(state)
+    if state == WorkerState.SUCCEEDED:
+        return RunResult(state=state, return_values={0: 0}, failures={})
+    elif state in {WorkerState.UNHEALTHY, WorkerState.FAILED}:
+        return RunResult(
+            state=state, return_values={}, failures={0: ProcessFailure("", 0, 0, 0, 0)}
+        )
+    else:
+        return RunResult(state=state)
 
 
 class SimpleElasticAgentTest(unittest.TestCase):
@@ -212,17 +217,8 @@ class SimpleElasticAgentTest(unittest.TestCase):
     def test_record_flakiness_metric_user_exception(self, put_metric_mock):
         spec = self._get_worker_spec(max_restarts=1)
         agent = TestAgent(spec)
-        error = WorkerGroupFailureException("test error", {})
-        agent._record_flakiness_metric(error)
+        agent._record_flakiness_metric(True)
         put_metric_mock.assert_called_with("workers.test_trainer.flakiness", 100)
-
-    @patch("torchelastic.agent.server.api.put_metric")
-    def test_record_flakiness_metric_exception(self, put_metric_mock):
-        spec = self._get_worker_spec(max_restarts=1)
-        agent = TestAgent(spec)
-        error = ValueError("test error")
-        agent._record_flakiness_metric(error)
-        put_metric_mock.assert_not_called()
 
     @patch.object(TestAgent, "_invoke_run")
     @patch.object(TestAgent, "_record_metrics")
@@ -237,7 +233,8 @@ class SimpleElasticAgentTest(unittest.TestCase):
     def test_record_metrics_success_no_retries(self, put_metric_mock):
         spec = self._get_worker_spec(max_restarts=1)
         agent = TestAgent(spec)
-        agent._record_metrics(False)
+        group_result = RunResult({}, {})
+        agent._record_metrics(group_result)
         calls = self._get_record_metrics_test_calls(success_no_retries=1)
         put_metric_mock.assert_has_calls(calls, any_order=True)
 
@@ -246,7 +243,8 @@ class SimpleElasticAgentTest(unittest.TestCase):
         spec = self._get_worker_spec(max_restarts=10)
         agent = TestAgent(spec)
         agent._remaining_restarts = 2
-        agent._record_metrics(False)
+        group_result = RunResult({}, {})
+        agent._record_metrics(group_result)
         calls = self._get_record_metrics_test_calls(success_with_retries=1)
         put_metric_mock.assert_has_calls(calls, any_order=True)
 
@@ -255,7 +253,10 @@ class SimpleElasticAgentTest(unittest.TestCase):
         spec = self._get_worker_spec(max_restarts=10)
         agent = TestAgent(spec)
         agent._remaining_restarts = 2
-        agent._record_metrics(True)
+        group_result = RunResult(
+            state=WorkerState.FAILED, return_values={}, failures={0: 0}
+        )
+        agent._record_metrics(group_result)
         calls = self._get_record_metrics_test_calls(failed_with_retries=1)
         put_metric_mock.assert_has_calls(calls, any_order=True)
 
@@ -263,7 +264,10 @@ class SimpleElasticAgentTest(unittest.TestCase):
     def test_record_metrics_failed_no_retries(self, put_metric_mock):
         spec = self._get_worker_spec(max_restarts=10)
         agent = TestAgent(spec)
-        agent._record_metrics(True)
+        group_result = RunResult(
+            state=WorkerState.FAILED, return_values={}, failures={0: 0}
+        )
+        agent._record_metrics(group_result)
         calls = self._get_record_metrics_test_calls(failed_no_retries=1)
         put_metric_mock.assert_has_calls(calls, any_order=True)
 
@@ -390,9 +394,7 @@ class SimpleElasticAgentTest(unittest.TestCase):
                 agent = TestAgent(spec)
                 worker_group = agent._worker_group
 
-                with self.assertRaises(Exception):
-                    agent.run()
-
+                agent.run()
                 self.assertEqual(WorkerState.FAILED, worker_group.state)
                 self.assertEqual(0, agent._remaining_restarts)
                 # one monitor call for each retry + one to monitor the last retry

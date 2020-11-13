@@ -61,6 +61,7 @@ from torchelastic.multiprocessing.sp import (  # noqa F401
 def start_processes(
     params: List[MpParameters],
     start_method: str = "spawn",
+    run_id: int = 0,
 ):
     """
     Starts processes using torch.multiprocessing.spawn. Each process executes the same
@@ -72,11 +73,12 @@ def start_processes(
         raise ValueError(
             "Params cannot be empty. Provide at least single MpParameters object"
         )
-    return mp_context.start_processes(proc_params, start_method)
+    return mp_context.start_processes(proc_params, start_method, run_id)
 
 
 def start_subprocesses(
     params: List[SubprocessParameters],
+    run_id: int = 0,
 ):
     """
     Starts processes via subprocess.Popen.
@@ -88,4 +90,4 @@ def start_subprocesses(
             "Params cannot be empty. Provide at least single SubprocessParameters object"
         )
 
-    return sp_context.start_processes(proc_params)
+    return sp_context.start_processes(proc_params, run_id)
