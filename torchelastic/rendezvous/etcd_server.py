@@ -138,7 +138,7 @@ class EtcdServer:
         """
         return f"{self._host}:{self._port}"
 
-    def start(self, timeout: int = 60) -> None:
+    def start(self, timeout: int = 60, num_retries: int = 3) -> None:
         """
         Starts the server, and waits for it to be ready. When this function
         returns the sever is ready to take requests.
@@ -146,11 +146,25 @@ class EtcdServer:
         Args:
             timeout: time (in seconds) to wait for the server to be ready
                 before giving up.
+            num_retries: number of retries to start the server. Each retry
+                will wait for max ``timeout`` before considering it as failed.
 
         Raises:
             TimeoutError: if the server is not ready within the specified timeout
         """
+        while True:
+            try:
+                return self._start(timeout)
+            except Exception as e:
+                num_retries -= 1
+                log.warning(
+                    f"Failed to start etcd server, got error: {str(e)}, retrying"
+                )
+                if num_retries <= 0:
+                    raise
+        atexit.register(stop_etcd, self._etcd_proc, self._data_dir)
 
+    def _start(self, timeout: int = 60) -> None:
         sock = find_free_port()
         sock_peer = find_free_port()
         self._port = sock.getsockname()[1]
@@ -178,7 +192,6 @@ class EtcdServer:
         sock.close()
         sock_peer.close()
         self._etcd_proc = subprocess.Popen(etcd_cmd, close_fds=True)
-        atexit.register(stop_etcd, self._etcd_proc, self._data_dir)
         self._wait_for_ready(timeout)
 
     def get_client(self) -> etcd.Client:
@@ -191,13 +204,18 @@ class EtcdServer:
             host=self._host, port=self._port, version_prefix="/v2", read_timeout=10
         )
 
-    def _wait_for_ready(self, timeout: int = 60):
+    def _wait_for_ready(self, timeout: int = 60) -> None:
         client = etcd.Client(
             host=f"{self._host}", port=self._port, version_prefix="/v2", read_timeout=5
         )
         max_time = time.time() + timeout
 
         while time.time() < max_time:
+            if self._etcd_proc.poll() is not None:
+                # etcd server process finished
+                raise RuntimeError(
+                    f"Etcd server process exited with the code: {self._etcd_proc.returncode}"
+                )
             try:
                 log.info(f"etcd server ready. version: {client.version}")
                 return
@@ -209,4 +227,5 @@ class EtcdServer:
         """
         Stops the server and cleans up auto generated resources (e.g. data dir)
         """
+        log.info("EtcdServer stop method called")
         stop_etcd(self._etcd_proc, self._data_dir)
