@@ -23,10 +23,10 @@ User API Documentation
 
 .. currentmodule:: torchelastic.tsm.driver.api
 
-Containers and Resources
+Containers and Resource
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autoclass:: Container
-.. autoclass:: Resources
+.. autoclass:: Resource
 
 Roles and Applications
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -54,9 +54,3 @@ Scheduler
 
 Session Builder
 ~~~~~~~~~~~~~~~~
-
-
-
-
-
-

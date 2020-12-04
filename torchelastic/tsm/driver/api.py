@@ -32,7 +32,7 @@ SchedulerBackend = str
 
 
 @dataclass
-class Resources:
+class Resource:
     """
     Represents resource requirements for a ``Container``.
 
@@ -49,7 +49,7 @@ class Resources:
     capabilities: Dict[str, Any] = field(default_factory=dict)
 
     @staticmethod
-    def copy(original: "Resources", **capabilities):
+    def copy(original: "Resource", **capabilities):
         """
         Copies a resource and applies new capabilities. If the same capabilities
         are present in the original resource and as parameter, the one from parameter
@@ -57,7 +57,7 @@ class Resources:
         """
         res_capabilities = dict(original.capabilities)
         res_capabilities.update(capabilities)
-        return Resources(
+        return Resource(
             cpu=original.cpu,
             gpu=original.gpu,
             memMB=original.memMB,
@@ -66,7 +66,7 @@ class Resources:
 
 
 # sentinel value used for cases when resource does not matter (e.g. ignored)
-NULL_RESOURCE: Resources = Resources(cpu=-1, gpu=-1, memMB=-1)
+NULL_RESOURCE: Resource = Resource(cpu=-1, gpu=-1, memMB=-1)
 
 
 @dataclass
@@ -84,40 +84,40 @@ class Container:
     image name (str), which could be a simple name (e.g. docker image) or a url
     (e.g. s3://path/my_image.tar).
 
-    A ``Resources`` can be bound to a specific scheduler backend or ``SchedulerBackend.ALL`` (default)
-    to specify that the same ``Resources`` is to be used for all schedulers.
+    A ``Resource`` can be bound to a specific scheduler backend or ``SchedulerBackend.ALL`` (default)
+    to specify that the same ``Resource`` is to be used for all schedulers.
 
     Usage:
 
     ::
 
-     # define resources for all schedulers
+     # define resource for all schedulers
      my_container = Container(image="pytorch/torch:1")
-                       .require(Resources(cpu=1, gpu=1, memMB=500))
+                       .require(Resource(cpu=1, gpu=1, memMB=500))
                        .ports(tcp_store=8080, tensorboard=8081)
 
-     # define resources for a specific scheduler
+     # define resource for a specific scheduler
      my_container = Container(image="pytorch/torch:1")
-                       .require(Resources(cpu=1, gpu=1, memMB=500), "custom_scheduler")
+                       .require(Resource(cpu=1, gpu=1, memMB=500), "custom_scheduler")
                        .ports(tcp_store=8080, tensorboard=8081)
 
     """
 
     image: str
-    resources: Dict[SchedulerBackend, Resources] = field(default_factory=dict)
+    resources: Dict[SchedulerBackend, Resource] = field(default_factory=dict)
     port_map: Dict[str, int] = field(default_factory=dict)
 
     _ALL = "all"
 
     def require(
         self,
-        resources: Union[Resources, Dict[SchedulerBackend, Resources]],
+        resources: Union[Resource, Dict[SchedulerBackend, Resource]],
         scheduler: Optional[SchedulerBackend] = None,
     ) -> "Container":
         """
         Sets resource requirements on the container.
         """
-        if isinstance(resources, Resources):
+        if isinstance(resources, Resource):
             scheduler = scheduler or self._ALL
             self.resources[scheduler] = resources
         else:
@@ -136,9 +136,9 @@ class Container:
         self.port_map.update({**kwargs})
         return self
 
-    def get_resources(self, scheduler: Optional[SchedulerBackend] = None) -> Resources:
+    def get_resource(self, scheduler: Optional[SchedulerBackend] = None) -> Resource:
         """
-        Retrieves resources for the specified ``scheduler``. Returns `None` if none found.
+        Retrieves resource for the specified ``scheduler``. Returns `None` if none found.
         """
         if scheduler and scheduler in self.resources:
             return self.resources[scheduler]
@@ -1018,7 +1018,7 @@ class Session(abc.ABC):
             # TODO(aivanou) t79202235 Move scheduler specific logic to schedulers
             if (
                 scheduler != "local"
-                and role.container.get_resources(scheduler) == NULL_RESOURCE
+                and role.container.get_resource(scheduler) == NULL_RESOURCE
             ):
                 raise ValueError(
                     f"No resources for container: {role.container.image}."

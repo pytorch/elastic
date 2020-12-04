@@ -18,7 +18,7 @@ from torchelastic.tsm.driver.api import (
     AppState,
     Container,
     DescribeAppResponse,
-    Resources,
+    Resource,
     Role,
     RunConfig,
     SessionMismatchException,
@@ -33,10 +33,10 @@ from torchelastic.tsm.driver.standalone_session import StandaloneSession
 from .test_util import write_shell_script
 
 
-class Resource:
-    SMALL = Resources(cpu=1, gpu=0, memMB=1024)
-    MEDIUM = Resources(cpu=4, gpu=0, memMB=(4 * 1024))
-    LARGE = Resources(cpu=16, gpu=0, memMB=(16 * 1024))
+class resource:
+    SMALL = Resource(cpu=1, gpu=0, memMB=1024)
+    MEDIUM = Resource(cpu=4, gpu=0, memMB=(4 * 1024))
+    LARGE = Resource(cpu=16, gpu=0, memMB=(16 * 1024))
 
 
 SESSION_NAME = "test_session"
@@ -54,7 +54,7 @@ class StandaloneSessionTest(unittest.TestCase):
         self.cfg = RunConfig({"image_fetcher": "dir"})
 
         # resource ignored for local scheduler; adding as an example
-        self.test_container = Container(image=self.test_dir).require(Resource.SMALL)
+        self.test_container = Container(image=self.test_dir).require(resource.SMALL)
 
     def tearDown(self):
         shutil.rmtree(self.test_dir)
