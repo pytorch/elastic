@@ -7,87 +7,249 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-Library that launches multiple processes via a function or a binary entrypoint.
-It uses torch.multiprocessing to launch functions and
-python subprocess module to launch binaries.
+Library that launches and manages ``n`` copies of worker subprocesses
+either specified by a function or a binary.
 
-The logical structure of the module and how it relates to torch.mp and subprocess
+For functions, it uses ``torch.multiprocessing`` (and therefore python
+``multiprocessing``) to spawn/fork worker processes. For binaries it uses python
+``subprocessing.Popen`` to create worker processes.
 
-.. code-block::
 
-    -torchelastic.multiprocessing
-     |- api.py # common interfaces that are used by implementations
-     |- mp.py # implementations using torch.multiprocessing
-     |- sp.py # implementations using python subprocess
-
-Usage 1 (multiprocessing)
+Usage 1: Launching two trainers as a function
 
 ::
 
-    # launches 4 processes that execute dummy_fn function and waits for results.
+ from torchelastic.multiprocessing import Redirect, start_processes
 
-    from torchelastic.multiprocessing import MpParameters
-
-    params = [MpParameters(fn=dummy_fn, args=())]*4
-    context = start_processes(start_method = "spawn", *params)
-    res_dict = context.wait()
+ def trainer(a, b, c):
+     pass # train
 
 
-    # launches 4 subprocesses and redirects outputs to pipe
+ # runs two trainers
+ # LOCAL_RANK=0 trainer(1,2,3)
+ # LOCAL_RANK=1 trainer(4,5,6)
+ ctx = start_processes(
+         name="trainer",
+         entrypoint=trainer,
+         args={0: (1,2,3), 1: (4,5,6)},
+         envs={0: {"LOCAL_RANK": 0}, 1: {"LOCAL_RANK": 1}},
+         log_dir="/tmp/foobar",
+         redirects=Std.ALL, # write all worker stdout/stderr to a log file
+         tee={0: Std.ERR}, # tee only local rank 0's stderr to console
+       )
 
-    import subprocess
-    from torchelastic.multiprocessing import SubprocessParameters
+ # waits for all copies of trainer to finish
+ ctx.wait()
 
-    params = [SubprocessParameters(args=["ls", "-la", "./"], stdout=subprocess.PIPE)]*4
+Usage 2: Launching 2 echo workers as a binary
 
-    context = start_subprocesses(*params)
-    context.wait()
+::
 
+ # same as invoking
+ # echo hello
+ # echo world > stdout.log
+ ctx = start_processes(
+         name="echo"
+         entrypoint="echo",
+         args={0: "hello", 1: "world"},
+         redirects={1: Std:OUT},
+        )
 
 """
+import os
+from typing import Callable, Dict, Tuple, Union
 
-from typing import List
-
-import torchelastic.multiprocessing.mp as mp_context
-import torchelastic.multiprocessing.sp as sp_context
-from torchelastic.multiprocessing.api import BaseProcessContext  # noqa F401
-from torchelastic.multiprocessing.mp import MpParameters, MpProcessContext  # noqa F401
-from torchelastic.multiprocessing.sp import (  # noqa F401
+from torchelastic.multiprocessing.api import (  # noqa F401
+    MultiprocessContext,
+    PContext,
+    ProcessFailure,
+    RunProcsResult,
+    Std,
     SubprocessContext,
-    SubprocessParameters,
+    _validate_full_rank,
+    to_map,
 )
 
 
 def start_processes(
-    params: List[MpParameters],
+    name: str,
+    entrypoint: Union[Callable, str],
+    args: Dict[int, Tuple],
+    envs: Dict[int, Dict[str, str]],
+    log_dir: str,
     start_method: str = "spawn",
-    run_id: int = 0,
-):
+    redirects: Union[Std, Dict[int, Std]] = Std.NONE,
+    tee: Union[Std, Dict[int, Std]] = Std.NONE,
+) -> PContext:
     """
-    Starts processes using torch.multiprocessing.spawn. Each process executes the same
-    function. Returns the process context that contains methods over a set of processes.
-    Note: All params must have the same values
+    Starts ``n`` copies of ``entrypoint`` processes with the provided options.
+    ``entrypoint`` is either a ``Callable`` (function) or a ``str`` (binary).
+    The number of copies is determined by the number of entries for ``args`` and
+    ``envs`` arguments, which need to have the same key set.
+
+    ``args`` and ``env`` parameters are the arguments and environment variables
+    to pass down to the entrypoint mapped by the replica index (local rank).
+    All local ranks must be accounted for.
+    That is, the keyset should be ``{0,1,...,(nprocs-1)}``.
+
+    .. note:: When the ``entrypoint`` is a binary (``str``), ``args`` can only be strings.
+              If any other type is given, then it is casted to a string representation
+              (e.g. ``str(arg1)``). Furthermore, a binary failure will only write
+              an ``error.json`` error file if the main function is annotated with
+              ``torchelastic.multiprocessing.errors.record``. For function launches,
+              this is done by default and there is no need to manually annotate
+              with the ``@record`` annotation.
+
+    ``redirects`` and ``tees`` are bitmasks specifying which std stream(s) to redirect
+    to a log file in the ``log_dir``. Valid mask values are defined in ``Std``.
+    To redirect/tee only certain local ranks, pass ``redirects`` as a map with the key as
+    the local rank to specify the redirect behavior for.
+    Any missing local ranks will default to ``Redirect.NONE``.
+
+    ``tee`` acts like the unix "tee" command in that it redirects + prints to console.
+    To avoid worker stdout/stderr from printing to console, use the ``redirects`` parameter.
+
+    For each process, the ``log_dir`` will contain:
+
+    1. ``{local_rank}/error.json`` - if the process failed, a file with the error info
+    2. ``{local_rank}/stdout.json`` - if ``redirect & STDOUT == STDOUT``
+    2. ``{local_rank}/stderr.json`` - if ``redirect & STDERR == STDERR``
+
+    .. note:: It is expected that the ``log_dir`` exists, is empty, and is a directory.
+
+    Example:
+
+    ::
+
+     log_dir = "/tmp/test"
+
+     # ok; two copies of foo: foo("bar0"), foo("bar1")
+     start_processes(
+        name="trainer",
+        entrypoint=foo,
+        args:{0:("bar0",), 1:("bar1",),
+        envs:{0:{}, 1:{}},
+        log_dir=log_dir
+     )
+
+     # invalid; envs missing for local rank 1
+     start_processes(
+        name="trainer",
+        entrypoint=foo,
+        args:{0:("bar0",), 1:("bar1",),
+        envs:{0:{}},
+        log_dir=log_dir
+     )
+
+     # ok; two copies of /usr/bin/touch: touch file1, touch file2
+     start_processes(
+        name="trainer",
+        entrypoint="/usr/bin/touch",
+        args:{0:("file1",), 1:("file2",),
+        envs:{0:{}, 1:{}},
+        log_dir=log_dir
+      )
+
+     # caution; arguments casted to string, runs:
+     # echo "1" "2" "3" and echo "[1, 2, 3]"
+     start_processes(
+        name="trainer",
+        entrypoint="/usr/bin/echo",
+        args:{0:(1,2,3), 1:([1,2,3],),
+        envs:{0:{}, 1:{}},
+        log_dir=log_dir
+      )
+
+    Arguments:
+        name: a human readable short name that describes what the processes are
+              (used as header when tee'ing stdout/stderr outputs)
+        entrypoint: either a ``Callable`` (function) or ``cmd`` (binary)
+        args: arguments to each replica
+        envs: env vars to each replica
+        log_dir: directory used to write log files
+        nprocs: number of copies to create (one on each process)
+        start_method: multiprocessing start method (spawn, fork, forkserver)
+                      ignored for binaries
+        redirects: which std streams to redirect to a log file
+        tees: which std streams to redirect + print to console
+
     """
-    proc_params = list(params)
-    if len(proc_params) == 0:
-        raise ValueError(
-            "Params cannot be empty. Provide at least single MpParameters object"
+
+    # listdir raises FileNotFound or NotADirectoryError so no need to check manually
+    if os.listdir(log_dir):
+        raise RuntimeError(
+            f"log_dir: {log_dir} is not empty, please provide an empty log_dir"
         )
-    return mp_context.start_processes(proc_params, start_method, run_id)
 
+    nprocs = len(args)
+    _validate_full_rank(args, nprocs, "args")
+    _validate_full_rank(envs, nprocs, "envs")
 
-def start_subprocesses(
-    params: List[SubprocessParameters],
-    run_id: int = 0,
-):
-    """
-    Starts processes via subprocess.Popen.
-    Returns the process context that contains methods over a set of processes.
-    """
-    proc_params = list(params)
-    if len(proc_params) == 0:
-        raise ValueError(
-            "Params cannot be empty. Provide at least single SubprocessParameters object"
+    # create subdirs for each local rank in the logs_dir
+    # logs_dir
+    #       |- 0
+    #          |- error.json
+    #          |- stdout.log
+    #          |- stderr.log
+    #       |- ...
+    #       |- (nprocs-1)
+    redirs = to_map(redirects, nprocs)
+    ts = to_map(tee, nprocs)
+
+    # to tee stdout/stderr we first redirect into a file
+    # then tail -f stdout.log/stderr.log so add tee settings to redirects
+    for local_rank, tee_std in ts.items():
+        redirect_std = redirs[local_rank]
+        redirs[local_rank] = redirect_std | tee_std
+
+    stdouts = {local_rank: "" for local_rank in range(nprocs)}
+    stderrs = {local_rank: "" for local_rank in range(nprocs)}
+    tee_stdouts: Dict[int, str] = {}
+    tee_stderrs: Dict[int, str] = {}
+    error_files = {}
+
+    for local_rank in range(nprocs):
+        clogdir = os.path.join(log_dir, str(local_rank))
+        os.mkdir(clogdir)
+
+        rd = redirs[local_rank]
+        if (rd & Std.OUT) == Std.OUT:
+            stdouts[local_rank] = os.path.join(clogdir, "stdout.log")
+        if (rd & Std.ERR) == Std.ERR:
+            stderrs[local_rank] = os.path.join(clogdir, "stderr.log")
+
+        t = ts[local_rank]
+        if t & Std.OUT == Std.OUT:
+            tee_stdouts[local_rank] = stdouts[local_rank]
+        if t & Std.ERR == Std.ERR:
+            tee_stderrs[local_rank] = stderrs[local_rank]
+
+        error_file = os.path.join(clogdir, "error.json")
+        error_files[local_rank] = error_file
+        envs[local_rank]["TORCHELASTIC_ERROR_FILE"] = error_file
+
+    if isinstance(entrypoint, str):
+        return SubprocessContext(
+            name=name,
+            entrypoint=entrypoint,
+            args=args,
+            envs=envs,
+            stdouts=stdouts,
+            stderrs=stderrs,
+            tee_stdouts=tee_stdouts,
+            tee_stderrs=tee_stderrs,
+            error_files=error_files,
         )
-
-    return sp_context.start_processes(proc_params, run_id)
+    else:
+        return MultiprocessContext(
+            name=name,
+            entrypoint=entrypoint,
+            args=args,
+            envs=envs,
+            stdouts=stdouts,
+            stderrs=stderrs,
+            tee_stdouts=tee_stdouts,
+            tee_stderrs=tee_stderrs,
+            error_files=error_files,
+            start_method=start_method,
+        )

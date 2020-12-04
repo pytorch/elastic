@@ -6,117 +6,24 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import logging
 import os
-from typing import Any, Dict
+import shutil
+import tempfile
+from typing import Any, Dict, Optional, Tuple
 
 from torchelastic.agent.server.api import (
     RunResult,
     SimpleElasticAgent,
-    Worker,
     WorkerGroup,
     WorkerSpec,
     WorkerState,
 )
 from torchelastic.metrics.api import prof
-from torchelastic.multiprocessing import (
-    BaseProcessContext,
-    MpParameters,
-    SubprocessParameters,
-    start_processes,
-    start_subprocesses,
-)
-from torchelastic.utils.logging import get_logger
+from torchelastic.multiprocessing import start_processes
 
 
-log = get_logger()
-
-
-class _DistInfo:
-    """
-    Container for information required to create a torch process group.
-    To be created on the agent's process and passed to the worker sub-process.
-    Hence this object needs to be a pure data object with no state and
-    preferably only primitive member variables
-    """
-
-    __slots__ = [
-        "rank",
-        "group_rank",
-        "role_rank",
-        "local_world_size",
-        "role_world_size",
-        "world_size",
-        "master_addr",
-        "master_port",
-        "restart_count",
-        "max_restarts",
-        "run_id",
-        "role_name",
-    ]
-
-    def __init__(
-        self,
-        rank: int,
-        group_rank: int,
-        role_rank: int,
-        local_world_size: int,
-        role_world_size: int,
-        world_size: int,
-        master_addr: str,
-        master_port: int,
-        restart_count: int,
-        max_restarts: int,
-        run_id: str,
-        role_name: str,
-    ):
-        self.rank = rank
-        self.group_rank = group_rank
-        self.local_world_size = local_world_size
-        self.role_rank = role_rank
-        self.world_size = world_size
-        self.role_world_size = role_world_size
-        self.master_addr = master_addr
-        self.master_port = master_port
-        self.restart_count = restart_count
-        self.max_restarts = max_restarts
-        self.run_id = run_id
-        self.role_name = role_name
-
-
-def _get_worker_env(dist_info: _DistInfo, local_rank: int) -> Dict[str, str]:
-    worker_env = {}
-    worker_env["LOCAL_RANK"] = str(local_rank)
-    worker_env["RANK"] = str(dist_info.rank)
-    worker_env["GROUP_RANK"] = str(dist_info.group_rank)
-    worker_env["ROLE_RANK"] = str(dist_info.role_rank)
-    worker_env["ROLE_NAME"] = dist_info.role_name
-    worker_env["LOCAL_WORLD_SIZE"] = str(dist_info.local_world_size)
-    worker_env["WORLD_SIZE"] = str(dist_info.world_size)
-    worker_env["ROLE_WORLD_SIZE"] = str(dist_info.role_world_size)
-    worker_env["MASTER_ADDR"] = dist_info.master_addr
-    worker_env["MASTER_PORT"] = str(dist_info.master_port)
-    worker_env["TORCHELASTIC_RESTART_COUNT"] = str(dist_info.restart_count)
-    worker_env["TORCHELASTIC_MAX_RESTARTS"] = str(dist_info.max_restarts)
-    worker_env["TORCHELASTIC_RUN_ID"] = dist_info.run_id
-    if "OMP_NUM_THREADS" in os.environ:
-        worker_env["OMP_NUM_THREADS"] = os.environ["OMP_NUM_THREADS"]
-    return worker_env
-
-
-def _wrap(local_rank, dist_infos, fn, args):
-    import faulthandler
-
-    try:
-        faulthandler.enable(all_threads=True)
-    except Exception as e:
-        log.warn(
-            "Unable to enable fault handler. Failure signals on worker process will not dump tracebacks",
-            exc_info=e,
-        )
-
-    worker_env = _get_worker_env(dist_infos[local_rank], local_rank)
-    os.environ.update(worker_env)
-    return fn(*args)
+log = logging.getLogger(__name__)
 
 
 class LocalElasticAgent(SimpleElasticAgent):
@@ -131,27 +38,25 @@ class LocalElasticAgent(SimpleElasticAgent):
     is interpreted to be a local process. The agent starts and stops all worker
     processes as a single unit.
 
+
     The worker function and argument passed to the worker function must be
     python multiprocessing compatible. To pass multiprocessing data structures
     to the workers you may create the data structure in the same multiprocessing
     context as the specified ``start_method`` and pass it as a function argument.
 
-    The exit_barrier_timeout specifies the amount of time (in seconds) to wait
+    The ``exit_barrier_timeout`` specifies the amount of time (in seconds) to wait
     for other agents to finish. This acts as a safety net to handle cases where
     workers finish at different times, to prevent agents from viewing workers
     that finished early as a scale-down event. It is strongly advised that the
     user code deal with ensuring that workers are terminated in a synchronous
     manner rather than relying on the exit_barrier_timeout.
 
-    The agent supports launching functions via torch.multiprocessing and
-    launching arbitrary user commands via python subprocess.
-
     Example launching function
 
     ::
 
-        def trainer(shared_queue):
-            pass
+        def trainer(args) -> str:
+            return "do train"
 
         def main():
             start_method="spawn"
@@ -159,38 +64,60 @@ class LocalElasticAgent(SimpleElasticAgent):
             spec = WorkerSpec(
                         role="trainer",
                         local_world_size=nproc_per_process,
-                        fn=trainer,
-                        args=(shared_queue,),
+                        entrypoint=trainer,
+                        args=("foobar",),
                         ...<OTHER_PARAMS...>)
             agent = LocalElasticAgent(spec, start_method)
-            agent.run()
+            results = agent.run()
 
-    Example launching command
+            if results.is_failed():
+                print("trainer failed")
+            else:
+                print(f"rank 0 return value: {results.return_values[0]}")
+                # prints -> rank 0 return value: do train
+
+    Example launching binary
 
     ::
 
         def main():
-            start_method="spawn"
             spec = WorkerSpec(
                         role="trainer",
                         local_world_size=nproc_per_process,
-                        cmd=["ls", "-la"]
+                        entrypoint="/usr/local/bin/trainer",
+                        args=("--trainer_args", "foobar"),
                         ...<OTHER_PARAMS...>)
-            agent = LocalElasticAgent(spec, start_method)
-            agent.run()
+            agent = LocalElasticAgent(spec)
+            results = agent.run()
+
+            if not results.is_failed():
+                print("binary launches do not have return values")
 
     """
 
     def __init__(
-        self, spec: WorkerSpec, start_method="spawn", exit_barrier_timeout: float = 300
+        self,
+        spec: WorkerSpec,
+        start_method="spawn",
+        exit_barrier_timeout: float = 300,
+        log_dir: Optional[str] = None,
     ):
         super().__init__(spec, exit_barrier_timeout)
         self._start_method = start_method
-        self._process_context = None
+        self._pcontext = None
+        rdzv_run_id = spec.rdzv_handler.get_run_id()
+        self._log_dir = self._make_log_dir(log_dir, rdzv_run_id)
+
+    def _make_log_dir(self, log_dir: Optional[str], rdzv_run_id: str):
+        base_log_dir = log_dir or os.path.join(tempfile.gettempdir(), "torchelastic")
+        os.makedirs(base_log_dir, exist_ok=True)
+        dir = tempfile.mkdtemp(prefix=f"{rdzv_run_id}_", dir=base_log_dir)
+        log.info(f"log directory set to: {dir}")
+        return dir
 
     @prof
     def _stop_workers(self, worker_group: WorkerGroup) -> None:
-        self._process_context.terminate()
+        self._pcontext.close()
 
     @prof
     def _start_workers(self, worker_group: WorkerGroup) -> Dict[int, Any]:
@@ -199,102 +126,83 @@ class LocalElasticAgent(SimpleElasticAgent):
         master_addr, master_port = super()._get_master_addr_port(store)
         restart_count = spec.max_restarts - self._remaining_restarts
 
-        dist_infos: Dict[int, _DistInfo] = {}
-
+        args: Dict[int, Tuple] = {}
+        envs: Dict[int, Dict[str, str]] = {}
         for worker in worker_group.workers:
             local_rank = worker.local_rank
-            dist_infos[local_rank] = _DistInfo(
-                worker.global_rank,
-                worker_group.group_rank,
-                worker.role_rank,
-                spec.local_world_size,
-                worker.role_world_size,
-                worker.world_size,
-                master_addr,
-                master_port,
-                restart_count,
-                spec.max_restarts,
-                spec.rdzv_handler.get_run_id(),
-                spec.role,
-            )
+            worker_env = {
+                "LOCAL_RANK": str(local_rank),
+                "RANK": str(worker.global_rank),
+                "GROUP_RANK": str(worker_group.group_rank),
+                "ROLE_RANK": str(worker.role_rank),
+                "ROLE_NAME": spec.role,
+                "LOCAL_WORLD_SIZE": str(spec.local_world_size),
+                "WORLD_SIZE": str(worker.world_size),
+                "ROLE_WORLD_SIZE": str(worker.role_world_size),
+                "MASTER_ADDR": master_addr,
+                "MASTER_PORT": str(master_port),
+                "TORCHELASTIC_RESTART_COUNT": str(restart_count),
+                "TORCHELASTIC_MAX_RESTARTS": str(spec.max_restarts),
+                "TORCHELASTIC_RUN_ID": spec.rdzv_handler.get_run_id(),
+            }
+            if "OMP_NUM_THREADS" in os.environ:
+                worker_env["OMP_NUM_THREADS"] = os.environ["OMP_NUM_THREADS"]
+            envs[local_rank] = worker_env
+            args[local_rank] = spec.args
 
-        if spec.fn:
-            self._process_context = self._start_mp(dist_infos, spec)
-        else:
-            self._process_context = self._start_sp(dist_infos, spec)
+        # scaling events do not count towards restarts (gets same attempt #)
+        # remove existing log dir if this restart is due to a scaling event
+        attempt_log_dir = os.path.join(self._log_dir, f"attempt_{restart_count}")
+        shutil.rmtree(attempt_log_dir, ignore_errors=True)
+        os.makedirs(attempt_log_dir)
 
-        return {
-            local_rank: pid
-            for local_rank, pid in enumerate(self._process_context.pids())
-        }
-
-    def _start_mp(
-        self, dist_infos: Dict[int, _DistInfo], spec: WorkerSpec
-    ) -> BaseProcessContext:
-        proc_params = [
-            MpParameters(fn=_wrap, args=(dist_infos, spec.fn, spec.args))
-        ] * spec.local_world_size
-        run_id = spec.max_restarts - self._remaining_restarts
-        return start_processes(
-            proc_params,
+        self._pcontext = start_processes(
+            name=spec.role,
+            entrypoint=spec.entrypoint,
+            args=args,
+            envs=envs,
+            log_dir=attempt_log_dir,
             start_method=self._start_method,
-            run_id=run_id,
+            redirects=spec.redirects,
+            tee=spec.tee,
         )
 
-    def _start_sp(
-        self, dist_infos: Dict[int, _DistInfo], spec: WorkerSpec
-    ) -> BaseProcessContext:
-        proc_params = []
-        for local_rank, dist_info in dist_infos.items():
-            env = _get_worker_env(dist_info, local_rank)
-            env.update(os.environ)
-            proc_params.append(
-                SubprocessParameters(
-                    args=spec.cmd,
-                    env=env,
-                )
-            )
-        run_id = spec.max_restarts - self._remaining_restarts
-        return start_subprocesses(proc_params, run_id=run_id)
+        return self._pcontext.pids()
 
     @prof
     def _monitor_workers(self, worker_group: WorkerGroup) -> RunResult:
         role = worker_group.spec.role
-
-        # torch process context join() isn't really a join in the
-        # traditional sense, it returns True if all the workers have
-        # successfully finished, False if some/all are still running
-        # and throws an Exception if some/all of them failed
-        # passing timeout < 0 means check worker status and return immediately
-
         worker_pids = {w.id for w in worker_group.workers}
-        pc_pids = set(self._process_context.pids())
+        pc_pids = set(self._pcontext.pids().values())
         if worker_pids != pc_pids:
-            log.error(f"[{role}] worker pids do not match process_context pids")
+            log.error(
+                f"[{role}] worker pids do not match process_context pids."
+                f" Expected: {worker_pids}, actual: {pc_pids}"
+            )
             return RunResult(state=WorkerState.UNKNOWN)
 
-        proc_group_result = self._process_context.wait(timeout=1)
-        if proc_group_result:
-            if proc_group_result.is_failed():
+        result = self._pcontext.wait(0)
+        if result:
+            if result.is_failed():
                 log.error(f"[{role}] Worker group failed")
+                # map local rank failure to global rank
+                worker_failures = {}
+                for local_rank, failure in result.failures.items():
+                    worker = worker_group.workers[local_rank]
+                    worker_failures[worker.global_rank] = failure
                 return RunResult(
                     state=WorkerState.FAILED,
-                    return_values={},
-                    failures={
-                        w.global_rank: proc_group_result.failure
-                        for w in worker_group.workers
-                    },
+                    failures=worker_failures,
                 )
             else:
                 # copy ret_val_queue into a map with a global ranks
                 workers_ret_vals = {}
-                for local_rank, ret_val in proc_group_result.return_values.items():
+                for local_rank, ret_val in result.return_values.items():
                     worker = worker_group.workers[local_rank]
                     workers_ret_vals[worker.global_rank] = ret_val
                 return RunResult(
                     state=WorkerState.SUCCEEDED,
                     return_values=workers_ret_vals,
-                    failures={},
                 )
         else:
             return RunResult(state=WorkerState.HEALTHY)

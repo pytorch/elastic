@@ -11,6 +11,7 @@ import multiprocessing
 import queue
 import socket
 import uuid
+from typing import List
 
 
 def is_asan():
@@ -39,6 +40,13 @@ def _get_or_raise(qout, qerr):
             raise qerr.get(False, 0.001)
         except queue.Empty:
             pass
+
+
+def start_methods() -> List[str]:
+    """
+    Returns the start methods to test
+    """
+    return ["fork", "spawn", "forkserver"]
 
 
 def find_free_port():

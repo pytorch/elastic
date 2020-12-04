@@ -1,109 +1,102 @@
 #!/usr/bin/env python3
+import filecmp
 import json
 import os
 import shutil
 import tempfile
 import unittest
+from unittest.mock import patch
 
-from torchelastic.multiprocessing.errors.error_handler import (
-    ErrorHandler,
-    ProcessFailure,
-)
+from torchelastic.multiprocessing.errors.error_handler import ErrorHandler, _write_error
+from torchelastic.multiprocessing.errors.handlers import get_error_handler
 
 
-def raise_exception():
-    raise RuntimeError("test error")
+def raise_exception_fn():
+    raise RuntimeError("foobar")
+
+
+class GetErrorHandlerTest(unittest.TestCase):
+    def test_get_error_handler(self):
+        self.assertTrue(isinstance(get_error_handler(), ErrorHandler))
 
 
 class ErrorHandlerTest(unittest.TestCase):
     def setUp(self):
-        self.test_dir = tempfile.mkdtemp()
-        os.environ.pop("TORCHELASTIC_ERROR_FILE", None)
+        self.test_dir = tempfile.mkdtemp(prefix=self.__class__.__name__)
+        self.test_error_file = os.path.join(self.test_dir, "error.json")
 
     def tearDown(self):
         shutil.rmtree(self.test_dir)
 
+    @patch("faulthandler.enable")
+    def test_initialize(self, fh_enable_mock):
+        ErrorHandler().initialize()
+        fh_enable_mock.assert_called_once()
+
+    @patch("faulthandler.enable", side_effect=RuntimeError)
+    def test_initialize_error(self, fh_enable_mock):
+        # makes sure that initialize handles errors gracefully
+        ErrorHandler().initialize()
+        fh_enable_mock.assert_called_once()
+
     def test_record_exception(self):
-        error_handler = ErrorHandler()
-        error_handler.error_file = os.path.join(self.test_dir, "error.log")
-        try:
-            raise_exception()
-        except Exception as e:
-            error_handler.record_exception(e)
-        error_file = error_handler.error_file
-        self.assertTrue(os.path.exists(error_file))
-        with open(error_file, "r") as f:
-            data = json.load(f)
-        self.assertTrue("RuntimeError: test error" in data["message"])
+        with patch.dict(os.environ, {"TORCHELASTIC_ERROR_FILE": self.test_error_file}):
+            eh = ErrorHandler()
+            eh.initialize()
 
-    def test_get_failed_result(self):
-        child_rank = 0
-        # worker
-        error_handler = ErrorHandler()
-        error_handler.error_file = os.path.join(
-            self.test_dir, str(child_rank), "error.log_0"
-        )
-        error_handler.configure()
-        try:
-            raise_exception()
-        except Exception as e:
-            error_handler.record_exception(e)
+            try:
+                raise_exception_fn()
+            except Exception as e:
+                eh.record_exception(e)
 
-        # agent
-        error_handler = ErrorHandler()
-        error_handler.error_file = os.path.join(self.test_dir, "error.log")
-        failed_result = error_handler.get_failed_result(child_rank, os.getpid(), 0)
-        self.assertEqual(child_rank, failed_result.rank)
-        self.assertEqual(os.getpid(), failed_result.pid)
-        self.assertEqual(0, failed_result.exit_code)
-        self.assertTrue(os.path.exists(failed_result.error_file))
-        with open(failed_result.error_file, "r") as f:
-            data = json.load(f)
-        self.assertTrue("RuntimeError: test error" in data["message"])
+            with open(self.test_error_file, "r") as fp:
+                err = json.load(fp)
+                # error file content example:
+                # {
+                #   "message": {
+                #     "message": "RuntimeError: foobar",
+                #     "extraInfo": {
+                #       "py_callstack": "Traceback (most recent call last):\n  <... OMITTED ...>",
+                #       "timestamp": "1605774851"
+                #     }
+                #   }
+            self.assertIsNotNone(err["message"]["message"])
+            self.assertIsNotNone(err["message"]["extraInfo"]["py_callstack"])
+            self.assertIsNotNone(err["message"]["extraInfo"]["timestamp"])
 
-    def test_get_failed_result_no_file(self):
-        child_rank = 0
-        # worker
-        error_handler = ErrorHandler()
-        error_handler.error_file = os.path.join(
-            self.test_dir, str(child_rank), "error.log"
-        )
-        error_handler.configure()
-        try:
-            raise_exception()
-        except Exception as e:
-            error_handler.record_exception(e)
+    def test_record_exception_no_error_file(self):
+        # make sure record does not fail when no error file is specified in env vars
+        with patch.dict(os.environ, {}):
+            eh = ErrorHandler()
+            eh.initialize()
+            try:
+                raise_exception_fn()
+            except Exception as e:
+                eh.record_exception(e)
 
-        # agent
-        error_handler = ErrorHandler()
-        error_handler.error_file = os.path.join(self.test_dir, "some_dir", "error.log")
-        error_handler.configure()
-        failed_result = error_handler.get_failed_result(child_rank, os.getpid(), 0)
-        self.assertIsNone(failed_result.error_file)
+    def test_copy_error_file(self):
+        src_error_file = os.path.join(self.test_dir, "src_error.json")
+        _write_error(RuntimeError("foobar"), src_error_file)
 
-    def test_process_failure_no_child_file(self):
-        error_handler = ErrorHandler()
-        error_handler.configure()
+        with patch.dict(os.environ, {"TORCHELASTIC_ERROR_FILE": self.test_error_file}):
+            eh = ErrorHandler()
+            eh.copy_error_file(src_error_file)
+            self.assertTrue(filecmp.cmp(src_error_file, self.test_error_file))
 
-        failre = ProcessFailure("non_existent", 0, 0, 0, 0)
+        with patch.dict(os.environ, {}):
+            eh = ErrorHandler()
+            eh.copy_error_file(src_error_file)
+            # just validate that copy_error_file works when
+            # my error file is not set
+            # should just log an error with src_error_file pretty printed
 
-        error_handler.process_failure(failre)
+    def test_copy_error_file_overwrite_existing(self):
+        dst_error_file = os.path.join(self.test_dir, "dst_error.json")
+        src_error_file = os.path.join(self.test_dir, "src_error.json")
+        _write_error(RuntimeError("foo"), dst_error_file)
+        _write_error(RuntimeError("bar"), src_error_file)
 
-    def test_process_failure(self):
-        error_handler = ErrorHandler()
-        error_handler.configure()
-        error_handler.error_file = f"{self.test_dir}/error.log"
-        child_error_file = f"{self.test_dir}/child_error.log"
-        data = {"message": "test error"}
-        with open(child_error_file, "w") as f:
-            json.dump(data, f)
-        failre = ProcessFailure(child_error_file, 0, 0, 0, 0)
-        error_handler.process_failure(failre)
-        self.assertTrue(os.path.exists(error_handler.error_file))
-
-    def test_cleanup(self):
-        error_handler = ErrorHandler()
-        error_handler.configure()
-        self.assertTrue(os.path.exists(error_handler.temp_dir))
-        error_handler.cleanup()
-        self.assertFalse(os.path.exists(error_handler.temp_dir))
+        with patch.dict(os.environ, {"TORCHELASTIC_ERROR_FILE": dst_error_file}):
+            eh = ErrorHandler()
+            eh.copy_error_file(src_error_file)
+            self.assertTrue(filecmp.cmp(src_error_file, dst_error_file))

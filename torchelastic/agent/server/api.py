@@ -9,17 +9,19 @@
 import abc
 import functools
 import json
+import os
 import socket
 import time
+import warnings
 from contextlib import closing
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import torchelastic.rendezvous as rdzv
 import torchelastic.utils.store as store_util
 from torchelastic.metrics import prof, put_metric
-from torchelastic.multiprocessing.errors import ProcessFailure
+from torchelastic.multiprocessing import ProcessFailure, Std
 from torchelastic.utils.logging import get_logger
 
 
@@ -29,76 +31,69 @@ DEFAULT_ROLE = "default"
 log = get_logger()
 
 
+@dataclass
 class WorkerSpec:
     """
     Contains blueprint information about a particular type of worker.
     For a given role, there must only exist a single worker spec.
     Worker spec is expected to be homogenous across all nodes (machine),
     that is each node runs the same number of workers for a particular spec.
+
+    Arguments:
+        role: user-defined role for the workers with this spec
+        local_world_size: number local workers to run
+        fn: (deprecated use entrypoint instead)
+        entrypoint: worker function or command
+        args: arguments to pass to ``entrypoint``
+        rdzv_handler: handles rdzv for this set of workers
+        max_restarts: number of max retries for the workers
+        monitor_interval: monitor status of workers every ``n`` seconds
+        master_port: fixed port to run the c10d store on rank 0
+                     if not specified then will chose a random free port
+        redirects: redirect std streams to a file,
+                   selectively redirect for a particular
+                   local rank by passing a map
+        tee: tees the specified std stream(s) to console + file,
+             selectively tee for a particular local rank by passing a map,
+             takes precedence over ``redirects`` settings.
+
     """
 
-    __slots__ = [
-        "role",
-        "local_world_size",
-        "fn",
-        "cmd",
-        "args",
-        "rdzv_handler",
-        "max_restarts",
-        "monitor_interval",
-        "master_port",
-    ]
+    role: str
+    local_world_size: int
+    rdzv_handler: rdzv.RendezvousHandler
+    fn: Optional[Callable] = None
+    # TODO @kiuk - make entrypoint a required field
+    entrypoint: Union[Callable, str, None] = None
+    args: Tuple = ()
+    max_restarts: int = 3
+    monitor_interval: float = 30.0
+    master_port: Optional[int] = None
+    redirects: Union[Std, Dict[int, Std]] = Std.NONE
+    tee: Union[Std, Dict[int, Std]] = Std.NONE
 
-    def __init__(
-        self,
-        role: str,
-        local_world_size: int,
-        rdzv_handler: rdzv.RendezvousHandler,
-        args: Optional[Tuple] = None,
-        fn: Optional[Callable] = None,
-        cmd: Optional[List[str]] = None,
-        max_restarts: int = 3,
-        monitor_interval: float = 30.0,
-        master_port=None,
-    ):
-        r"""
+    def __post_init__(self):
+        assert self.local_world_size > 0
+        assert self.monitor_interval > 0
 
-        Arguments:
-            role (str): user-defined role for the workers with this spec
-            local_world_size (int): number local workers to run
-            fn (Optional[Callable]): worker main entry point function. If fn is passed
-                cmd should not be passed
-            cmd (Optional[List[str]]): cmd that is used to launch processes. If cmd
-                is passed, fn should not be passed.
-            args (Optional[Tuple]): arguments to pass to ``fn(args)``
-            rdzv_handler (RendezvousHandler): handles rdzv for this set of workers
-            max_restarts (int): number of max retries for the workers
-            monitor_interval (int): monitor status of workers every ``n`` seconds
-            master_port (int): fixed port to run the c10d store on rank 0
-                               if not specified then will chose a random free port
+        if self.fn:
+            warnings.warn(
+                "WorkerSpec.fn will be deprecated,"
+                " please use WorkerSpec.entrypoint instead",
+                category=DeprecationWarning,
+            )
+            self.entrypoint = self.fn
+        assert self.entrypoint
+
+    def get_entrypoint_name(self):
         """
-
-        assert local_world_size > 0
-        assert max_restarts >= 0
-        assert monitor_interval > 0
-
-        if cmd and fn:
-            raise AssertionError("Both cmd and fn args provided, please specify one")
-
-        if not cmd and not fn:
-            raise AssertionError("No cmd or fn specified, please specify one")
-
-        # Note: role is not used for data parallel, every worker has the same role
-        # wiring it in to handle more elaborate situations later
-        self.role = role
-        self.local_world_size = local_world_size
-        self.fn = fn
-        self.cmd = cmd
-        self.args = args
-        self.rdzv_handler = rdzv_handler
-        self.max_restarts = max_restarts
-        self.monitor_interval = monitor_interval
-        self.master_port = master_port
+        If the entrypoint is a function (e.g. ``Callable``) returns its ``__qualname__``,
+        else if the entrypoint is a binary (e.g. ``str``), returns the binary name.
+        """
+        if isinstance(self.entrypoint, str):
+            return os.path.basename(self.entrypoint)
+        else:
+            return self.entrypoint.__qualname__
 
 
 class Worker:
@@ -222,8 +217,8 @@ class WorkerState(Enum):
     def is_running(state: "WorkerState") -> bool:
         """
         Returns:
-             `` True`` if the worker state represents workers still running
-              (e.g. that the process exists but not necessarily healthy).
+             True if the worker state represents workers still running
+             (e.g. that the process exists but not necessarily healthy).
         """
         return state in {WorkerState.HEALTHY, WorkerState.UNHEALTHY}
 
@@ -310,18 +305,27 @@ class _RoleInstanceInfo:
 @dataclass
 class RunResult:
     """
-    Results returned by the worker executions. The ``return_values`` and ``failures`` are mutually exclusive.
-    If all workers succeed the ``results`` field will contain output results and ``failures`` will be empty.
-    If any worker fails, ``failures`` will contain failed workers and ``results`` will
-    be empty.
+    Results returned by the worker executions. Run results follow an "all-or-nothing" policy
+    where the run is successful if and only if ALL local workers managed by this agent
+    complete successfully.
 
-    ``state = SUCCEEDED`` will have ``ret_val``.
-    ``state = FAILED`` will have ``exceptions``.
-    For other states both these fields will be empty.
+    If the result is successful (e.g. ``is_failed() = False``) then the ``return_values``
+    field contains the outputs (return values) of the workers managed by THIS agent mapped
+    by their GLOBAL ranks. That is ``result.return_values[0]`` is the return value of
+    global rank 0.
 
-    .. note: Currently ``failures`` will contain N instances of the first worker that is failed.
-             This behavior may change in later versions.
+    .. note:: ``return_values`` are only meaningful for when the worker entrypoint
+              is a function. Workers specified as a binary entrypoint do not canonically
+              have a return value and the ``return_values`` field is meaningless and
+              may be empty.
 
+    If ``is_failed()`` returns ``True`` then the ``failures`` field contains the
+    failure information, again, mapped by the GLOBAL rank of the worker that failed.
+
+    The keys in ``return_values`` and ``failures`` are mutually exclusive, that is,
+    a worker's final state can only be one of: succeeded, failed. Workers intentionally
+    terminated by the agent according to the agent's restart policy, are not represented
+    in either ``return_values`` nor ``failures``.
     """
 
     state: WorkerState
@@ -444,11 +448,7 @@ class SimpleElasticAgent(ElasticAgent):
         self._store = None
         self._exit_barrier_timeout = exit_barrier_timeout
 
-    # pyre-fixme[14]: `get_worker_group` overrides method defined in `ElasticAgent`
-    #  inconsistently.
-    def get_worker_group(self) -> WorkerGroup:
-        # TODO return an RO copy (need to create an ROWorkerGroup and ROWorkerSpec
-        # since both these classes contain non-pure-data pointers - e.g. rdzv_handler)
+    def get_worker_group(self, role: str = DEFAULT_ROLE) -> WorkerGroup:
         return self._worker_group
 
     @abc.abstractmethod
@@ -518,22 +518,19 @@ class SimpleElasticAgent(ElasticAgent):
             self._set_master_addr_port(store, spec.master_port)
         master_addr, master_port = self._get_master_addr_port(store)
         restart_count = spec.max_restarts - self._remaining_restarts
-        workers_info = {
-            "local_ranks": [worker.local_rank for worker in workers],
-            "global_ranks": [worker.global_rank for worker in workers],
-            "role_ranks": [worker.role_rank for worker in workers],
-            "world_size": workers[0].world_size,
-            "role_world_size": workers[0].role_world_size,
-        }
+
         log.info(
-            f"[{spec.role}] Rendezvous complete for workers.\n"
-            f"Result:\n"
-            f"\trestart_count={restart_count}\n"
-            f"\tgroup_rank={group_rank}\n"
-            f"\tgroup_world_size={group_world_size}\n"
-            f"\tmaster_addr={master_addr}\n"
-            f"\tmaster_port={master_port}\n"
-            f"\tworkers={workers_info}\n"
+            f"[{spec.role}] Rendezvous complete for workers. Result:\n"
+            f"  restart_count={restart_count}\n"
+            f"  master_addr={master_addr}\n"
+            f"  master_port={master_port}\n"
+            f"  group_rank={group_rank}\n"
+            f"  group_world_size={group_world_size}\n"
+            f"  local_ranks={[worker.local_rank for worker in workers]}\n"
+            f"  role_ranks={[worker.role_rank for worker in workers]}\n"
+            f"  global_ranks={[worker.global_rank for worker in workers]}\n"
+            f"  role_world_sizes={[worker.role_world_size for worker in workers]}\n"
+            f"  global_world_sizes={[worker.world_size for worker in workers]}\n"
         )
 
     def _get_ranks(
@@ -648,9 +645,9 @@ class SimpleElasticAgent(ElasticAgent):
 
         log.info(f"[{role}] Starting worker group")
         worker_ids = self._start_workers(worker_group)
-        for local_rank, id in worker_ids.items():
+        for local_rank, w_id in worker_ids.items():
             worker = worker_group.workers[local_rank]
-            worker.id = id
+            worker.id = w_id
 
         worker_group.state = WorkerState.HEALTHY
 
@@ -716,10 +713,9 @@ class SimpleElasticAgent(ElasticAgent):
         spec = self._worker_group.spec
         role = spec.role
 
-        if spec.fn:
-            log.info(f"[{role}] starting workers for function: {spec.fn.__name__}")
-        else:
-            log.info(f"[{role}] starting workers for cmd: {spec.cmd}")
+        log.info(
+            f"[{role}] starting workers for entrypoint: {spec.get_entrypoint_name()}"
+        )
 
         self._initialize_workers(self._worker_group)
         monitor_interval = spec.monitor_interval

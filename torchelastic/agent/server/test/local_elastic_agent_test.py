@@ -5,13 +5,18 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
-import multiprocessing
+import json
+import multiprocessing as mp
 import os
 import shutil
+import signal
 import tempfile
 import time
 import unittest
 import uuid
+from dataclasses import dataclass
+from typing import Callable, Dict, List, Optional, Tuple
+from unittest import mock
 from unittest.mock import patch
 
 import torch
@@ -19,9 +24,10 @@ import torch.distributed as dist
 import torch.distributed.rpc as rpc
 import torchelastic.rendezvous.registry as rdzv_registry
 from torch.distributed.rpc.backend_registry import BackendType
-from torchelastic.agent.server.api import WorkerSpec, WorkerState
+from torchelastic.agent.server.api import RunResult, WorkerSpec, WorkerState
 from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
-from torchelastic.multiprocessing.errors import record
+from torchelastic.multiprocessing import Std
+from torchelastic.multiprocessing.errors import ChildFailedError, record
 from torchelastic.rendezvous import RendezvousParameters
 from torchelastic.rendezvous.etcd_server import EtcdServer
 from torchelastic.test.test_utils import is_tsan
@@ -33,12 +39,6 @@ def _happy_function():
 
 def _sad_function():
     raise RuntimeError("sad because i throw")
-
-
-def _transient_bug():
-    run_id = int(os.environ["TORCHELASTIC_RESTART_COUNT"])
-    if run_id == 0:
-        raise RuntimeError("transient error")
 
 
 def _fatal_signal_function(expected_error_index: int, sig: int):
@@ -55,7 +55,7 @@ def _bipolar_function():
         _sad_function()
 
 
-def _distributed_sum(wait):
+def _dist_sum(wait=0):
     rank = int(os.environ["RANK"])
     world_size = int(os.environ["WORLD_SIZE"])
     dist.init_process_group(backend="gloo")
@@ -70,93 +70,71 @@ def _distributed_sum(wait):
         raise RuntimeError(f"Expected rank sum {expected_sum}, got {actual}")
 
 
-def _simulate_work(wait):
-    time.sleep(wait)
-    rank = int(os.environ["RANK"])
-    return rank
+def _sleep(sleep_sec) -> int:
+    time.sleep(sleep_sec)
+    return int(os.environ["RANK"])
 
 
-def _check_rank_assignment():
-    group_rank = int(os.environ["GROUP_RANK"])
+@dataclass
+class RankInfo:
+    rank: int
+    role_rank: int
+    group_rank: int
+    role_world_size: int
+    world_size: int
+
+
+def _get_role_info() -> RankInfo:
     rank = int(os.environ["RANK"])
-    world_size = int(os.environ["WORLD_SIZE"])
     role_rank = int(os.environ["ROLE_RANK"])
+    group_rank = int(os.environ["GROUP_RANK"])
     role_world_size = int(os.environ["ROLE_WORLD_SIZE"])
-    return (group_rank, rank, world_size, role_rank, role_world_size)
+    world_size = int(os.environ["WORLD_SIZE"])
+    return RankInfo(rank, role_rank, group_rank, role_world_size, world_size)
 
 
-def _get_env_var(env_var: str):
-    return os.environ[env_var]
-
-
-def echo(msg):
+def _echo(msg):
     return msg
-
-
-def _return_rank_times(a):
-    return int(os.environ["RANK"]) * a
 
 
 def _check_env_function():
     # just check these env vars exist, os.environ[...] will naturally throw
     # if the variable does not exist
-    os.environ["RANK"]
-    os.environ["LOCAL_RANK"]
-    os.environ["ROLE_RANK"]
-    os.environ["ROLE_NAME"]
-    os.environ["GROUP_RANK"]
-    os.environ["LOCAL_WORLD_SIZE"]
-    os.environ["ROLE_WORLD_SIZE"]
-    os.environ["WORLD_SIZE"]
-    os.environ["MASTER_ADDR"]
-    os.environ["MASTER_PORT"]
-    os.environ["TORCHELASTIC_RESTART_COUNT"]
-    os.environ["TORCHELASTIC_MAX_RESTARTS"]
-    os.environ["TORCHELASTIC_RUN_ID"]
+    env_vars = [
+        "RANK",
+        "LOCAL_RANK",
+        "ROLE_RANK",
+        "ROLE_NAME",
+        "GROUP_RANK",
+        "LOCAL_WORLD_SIZE",
+        "ROLE_WORLD_SIZE",
+        "WORLD_SIZE",
+        "MASTER_ADDR",
+        "MASTER_PORT",
+        "TORCHELASTIC_RESTART_COUNT",
+        "TORCHELASTIC_MAX_RESTARTS",
+        "TORCHELASTIC_RUN_ID",
+    ]
+    for var in env_vars:
+        _ = os.environ[var]
 
 
-def _run_agent(
-    run_id,
-    etcd_host,
-    etcd_port,
-    min_size,
-    max_size,
-    func_to_run,
-    args,
-    local_world_size=8,
-    role="test_trainer",
-    output_dict=None,
-    agent_barrier_timeout=300,
-):
-    rdzv_params = RendezvousParameters(
-        backend="etcd",
-        endpoint=f"{etcd_host}:{etcd_port}",
-        run_id=run_id,
-        min_nodes=min_size,
-        max_nodes=max_size,
-    )
-    rdzv_handler = rdzv_registry.get_rendezvous_handler(rdzv_params)
+@dataclass
+class Conf:
+    """
+    Holds arguments to launch an agent (e.g. simulates an agent run on a node).
 
-    spec = WorkerSpec(
-        role=role,
-        local_world_size=local_world_size,
-        fn=func_to_run,
-        args=args,
-        rdzv_handler=rdzv_handler,
-        max_restarts=2,
-        monitor_interval=1,
-    )
+    """
 
-    agent = LocalElasticAgent(
-        spec, start_method="fork", exit_barrier_timeout=agent_barrier_timeout
-    )
-
-    res = agent.run()
-    if output_dict is not None:
-        key = str(uuid.uuid4().int)
-        output_dict[key] = (role, res)
+    entrypoint: Callable
+    local_world_size: int
+    args: Tuple = ()
+    role: str = "default"
+    redirects: Std = Std.NONE
+    tee: Std = Std.NONE
 
 
+@unittest.skipIf(is_tsan(), "tests incompatible with tsan")
 class LocalElasticAgentTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -170,286 +148,334 @@ class LocalElasticAgentTest(unittest.TestCase):
         cls._etcd_server.stop()
 
     def setUp(self):
-        # clear env vars
-        os.environ.pop("TORCHELASTIC_ERROR_FILE", None)
+        self._test_dir = tempfile.mkdtemp(prefix=self.__class__.__name__)
+        self._run_id = str(uuid.uuid4()).split("-")[0]
 
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
-    def test_run_happy_function(self):
-        spec = self._get_worker_spec(fn=_happy_function)
-        agent = LocalElasticAgent(spec, start_method="fork")
-        agent.run()
+    def tearDown(self):
+        shutil.rmtree(self._test_dir)
 
-    def _get_worker_spec(
+    def log_dir(self) -> str:
+        return tempfile.mkdtemp(prefix="torchelastic_", dir=self._test_dir)
+
+    def get_worker_spec(
         self,
-        fn=None,
-        cmd=None,
-        args=(),
-        max_restarts=1,
-        num_agents=1,
-        monitor_interval=0.1,
-        local_world_size=8,
+        node_config: Conf,
+        min_nodes=1,
+        max_nodes=1,
+        max_restarts=0,
+        monitor_interval=0.01,
     ):
-        run_id = str(uuid.uuid4().int)
-
         rdzv_params = RendezvousParameters(
             backend="etcd",
-            endpoint=f"{self._etcd_server.get_endpoint()}",
-            run_id=run_id,
-            min_nodes=num_agents,
-            max_nodes=num_agents,
+            endpoint=self._etcd_server.get_endpoint(),
+            run_id=self._run_id,
+            min_nodes=min_nodes,
+            max_nodes=max_nodes,
         )
         rdzv_handler = rdzv_registry.get_rendezvous_handler(rdzv_params)
-        spec = WorkerSpec(
-            role="test_trainer",
-            local_world_size=local_world_size,
-            fn=fn,
-            cmd=cmd,
-            args=args,
+        return WorkerSpec(
+            role=node_config.role,
+            local_world_size=node_config.local_world_size,
+            entrypoint=node_config.entrypoint,
+            args=node_config.args,
             rdzv_handler=rdzv_handler,
             max_restarts=max_restarts,
             monitor_interval=monitor_interval,
+            redirects=node_config.redirects,
+            tee=node_config.tee,
         )
-        return spec
 
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
-    def test_check_role_name(self):
-        spec = self._get_worker_spec(fn=_get_env_var, args=("ROLE_NAME",))
-        agent = LocalElasticAgent(spec, start_method="fork")
-        group_result = agent.run()
-        results = group_result.return_values
-        for role_name in results.values():
-            self.assertEquals(spec.role, role_name)
+    def get_agent(
+        self, spec: WorkerSpec, start_method: str = "fork", exit_barrier_timeout=5
+    ) -> LocalElasticAgent:
+        return LocalElasticAgent(
+            spec,
+            start_method=start_method,
+            exit_barrier_timeout=exit_barrier_timeout,
+            log_dir=self.log_dir(),
+        )
 
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
-    def test_run_distributed_sum(self):
-        spec = self._get_worker_spec(fn=_distributed_sum, args=(0,))
-        agent = LocalElasticAgent(spec, start_method="fork")
-        agent.run()
+    @record
+    def run_agent(
+        self,
+        conf: Conf,
+        agent_results: Optional[mp.Queue] = None,  # (role, agent_result)
+        min_nodes=1,
+        max_nodes=1,
+        start_method: str = "fork",
+        max_restarts: int = 0,
+        exit_barrier_timeout=5,
+    ) -> Optional[RunResult]:
+        """
+        Runs a single agent. This method can be called either on a separate process
+        or the main test process. When calling this method on a sparate process make
+        sure to pass the ``agent_results`` multiprocessing Queue so that the agent's
+        run results can be returned. If ``agent_results`` is omitted, then the
+        run result is returned from the method.
+        """
 
-    class RoleConfig:
-        __slots__ = ["role", "workers", "num_agents", "workers_num", "role_size"]
+        spec = self.get_worker_spec(
+            node_config=conf,
+            min_nodes=min_nodes,
+            max_nodes=max_nodes,
+            max_restarts=max_restarts,
+        )
+        agent = self.get_agent(
+            spec=spec,
+            start_method=start_method,
+            exit_barrier_timeout=exit_barrier_timeout,
+        )
+        result = agent.run()
+        if agent_results:
+            agent_results.put((conf.role, result))
 
-        def __init__(
-            self, role: str, workers=None, num_agents: int = 0, workers_num: int = 0
-        ):
-            self.role = role
-            self.workers = workers
-            if workers_num != 0 and num_agents != 0:
-                self.workers = [workers_num] * num_agents
-            self.role_size = sum(self.workers)
+        if result.is_failed():
+            raise ChildFailedError(spec.get_entrypoint_name(), result.failures)
+        else:
+            if not agent_results:
+                return result
 
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
-    def test_correct_rank_assignment_heterogeneous(self):
-        roles_config = [
-            self.RoleConfig("trainer", workers=[1, 2, 3, 4]),
-            self.RoleConfig("ps", workers=[5, 2]),
-            # split configuration to run the last one on the main process
-            self.RoleConfig("master", workers=[8]),
-        ]
-        self.run_configuration(roles_config, 25)
+    def run_job(
+        self, node_configs: List[Conf], exit_barrier_timeout: int = 5
+    ) -> Dict[str, List[RunResult]]:
+        """
+        Simulates running a distributed job by running multiple agents
+        (one on each process). Agent 0 is run on the main process for
+        test coverage and ease of debugging
+        """
 
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
-    def test_correct_rank_assignment_homogeneous(self):
-        num_workers = 4
-        roles_config = [
-            self.RoleConfig("trainer", num_agents=4, workers_num=num_workers),
-            self.RoleConfig("ps", num_agents=2, workers_num=num_workers),
-            # split configuration to run the last one on the main process
-            self.RoleConfig("master", num_agents=1, workers_num=num_workers),
-        ]
-        self.run_configuration(roles_config, 28)
+        nnodes = len(node_configs)
 
-    def run_configuration(self, roles_config, expected_world_size):
-        host = self._etcd_server.get_host()
-        port = self._etcd_server.get_port()
-        nnodes = sum(len(cfg.workers) for cfg in roles_config)
-        run_id = str(uuid.uuid4().int)
+        # each element in this queue holds a tuple (role, RunResult) for each agent
+        agent_results = mp.Queue()
 
+        # run first agent of first config on main process for test coverage + ease of debugging
+        # it is important we loop in reverse order b/c running fn on the main process blocks
         procs = []
-        manager = multiprocessing.Manager()
-        return_dict = manager.dict()
-        default_args = (run_id, host, port, nnodes, nnodes, _check_rank_assignment, ())
-        for ind in range(len(roles_config) - 1):
-            config = roles_config[ind]
-            for num_workers in config.workers:
-                p = multiprocessing.Process(
-                    target=_run_agent,
-                    args=(*default_args, num_workers, config.role, return_dict),
-                )
+        for node_idx in reversed(range(len(node_configs))):
+            conf = node_configs[node_idx]
+            run_agent_args = {
+                "conf": conf,
+                "agent_results": agent_results,
+                "min_nodes": nnodes,
+                "max_nodes": nnodes,
+                "start_method": "fork",
+                "max_restarts": 0,
+                "exit_barrier_timeout": exit_barrier_timeout,
+            }
+            if node_idx == 0:
+                self.run_agent(**run_agent_args)
+            else:
+                p = mp.Process(target=self.run_agent, kwargs=run_agent_args)
                 procs.append(p)
                 p.start()
-
-        # run one on the main process for debugging
-        config = roles_config[len(roles_config) - 1]
-        _run_agent(*default_args, config.workers[0], config.role, return_dict)
-
-        for i in range(nnodes - 1):
-            p = procs[i]
+        for p in procs:
             p.join()
-            self.assertEqual(0, p.exitcode)
-        role_info_dict = {role_info.role: role_info for role_info in roles_config}
-        self.verify_rank_consistency(return_dict, role_info_dict, expected_world_size)
 
-    def verify_rank_consistency(self, return_dict, role_info_dict, expected_world_size):
-        role_ranks = {}
-        global_ranks = []
-        grouped_ranks = {}
-        for role, group_result in return_dict.values():
-            res = group_result.return_values
-            for (
-                group_rank,
-                rank,
-                world_size,
-                role_rank,
-                role_world_size,
-            ) in res.values():
-                role_info_config = role_info_dict[role]
-                self.assertEqual(expected_world_size, world_size)
-                self.assertEqual(role_info_config.role_size, role_world_size)
-                if group_rank not in grouped_ranks:
-                    grouped_ranks[group_rank] = []
-                grouped_ranks[group_rank].append((rank, role_rank))
-                global_ranks.append(rank)
-                if role not in role_ranks:
-                    role_ranks[role] = []
-                role_ranks[role].append(role_rank)
+        results: Dict[str, List[RunResult]] = {}
+        while not agent_results.empty():
+            role, run_result = agent_results.get()
+            results.setdefault(role, []).append(run_result)
+        return results
+
+    def test_run_happy_function(self):
+        res = self.run_agent(Conf(entrypoint=_happy_function, local_world_size=2))
+        self.assertFalse(res.is_failed())
+        self.assertIsNone(res.return_values[0])
+        self.assertIsNone(res.return_values[1])
+
+    def test_run_check_env_function(self):
+        # just checks that all env vars that we need to set on the user script
+        # is actually set
+        res = self.run_agent(Conf(entrypoint=_check_env_function, local_world_size=1))
+        self.assertFalse(res.is_failed())
+
+    def test_run_function_with_return_value(self):
+        res = self.run_agent(Conf(entrypoint=_echo, args=("foo",), local_world_size=2))
+        self.assertFalse(res.is_failed())
+        self.assertEqual("foo", res.return_values[0])
+        self.assertEqual("foo", res.return_values[1])
+
+    def test_run_distributed_sum_homogeneous(self):
+        node_configs = [
+            Conf(role="sum", entrypoint=_dist_sum, local_world_size=4),
+            Conf(role="sum", entrypoint=_dist_sum, local_world_size=4),
+        ]
+        res = self.run_job(node_configs)
+        self.assertEqual(2, len(res["sum"]))
+        ranks = set()
+        for run_results in res["sum"]:
+            self.assertFalse(run_results.is_failed())
+            ranks.update(run_results.return_values.keys())
+        self.assertSetEqual(set(range(4 + 4)), ranks)
+
+    def test_run_distributed_sum_heterogenous(self):
+        # sums all ranks on 3 agents; each running 1, 2, 3 workers respectively
+        # sum should be equal to 0 + (1 + 2) + (3 + 4 + 5) = 15
+        # sum asserted inside _dist_sum()
+        node_configs = [
+            Conf(role="sum", entrypoint=_dist_sum, local_world_size=1),
+            Conf(role="sum", entrypoint=_dist_sum, local_world_size=2),
+            Conf(role="sum", entrypoint=_dist_sum, local_world_size=3),
+        ]
+        res = self.run_job(node_configs)
+        self.assertEqual(3, len(res["sum"]))
+        ranks = set()
+        for run_results in res["sum"]:
+            self.assertFalse(run_results.is_failed())
+            ranks.update(run_results.return_values.keys())
+        self.assertSetEqual(set(range(1 + 2 + 3)), ranks)
+
+    def test_run_sad_function(self):
+        """
+        checks error propagation logic
+        """
+        replyfile = os.path.join(self._test_dir, "error.json")
+        with mock.patch.dict(os.environ, {"TORCHELASTIC_ERROR_FILE": replyfile}):
+            with self.assertRaises(ChildFailedError) as cm:
+                self.run_agent(Conf(entrypoint=_sad_function, local_world_size=2))
+
+            rank, failure = cm.exception.get_first_failure()
+            failure_data = failure.error_file_data["message"]
+            with open(replyfile, "r") as fp:
+                data = json.load(fp)["message"]
+
+                # ran two; both failed; first failure is either rank 0 or 1
+                self.assertTrue(rank in {0, 1})
+                self.assertTrue(failure.local_rank in {0, 1})
+                self.assertEqual(1, failure.exitcode)
+                self.assertEqual(data["message"], failure_data["message"])
+                self.assertEqual(int(data["extraInfo"]["timestamp"]), failure.timestamp)
+
+    def test_run_bipolar_function(self):
+        """
+        checks agent failure handling logic
+        """
+        node_conf = Conf(entrypoint=_bipolar_function, local_world_size=4)
+        spec = self.get_worker_spec(node_conf, max_restarts=2)
+        agent = self.get_agent(spec)
+        run_result = agent.run()
+        self.assertTrue(run_result.is_failed())
+        self.assertEqual(0, agent._remaining_restarts)
+        self.assertEqual(WorkerState.FAILED, agent.get_worker_group().state)
+
+    def test_correct_rank_assignment_heterogeneous(self):
+        node_configs = [
+            Conf(role="master", entrypoint=_get_role_info, local_world_size=8),
+            Conf(role="trainer", entrypoint=_get_role_info, local_world_size=1),
+            Conf(role="trainer", entrypoint=_get_role_info, local_world_size=2),
+            Conf(role="trainer", entrypoint=_get_role_info, local_world_size=3),
+            Conf(role="trainer", entrypoint=_get_role_info, local_world_size=4),
+            Conf(role="ps", entrypoint=_get_role_info, local_world_size=5),
+            Conf(role="ps", entrypoint=_get_role_info, local_world_size=2),
+        ]
+        results = self.run_job(node_configs)
+        self.assertEqual(1, len(results["master"]))
+        self.assertEqual(4, len(results["trainer"]))
+        self.assertEqual(2, len(results["ps"]))
+        self.assert_rank_consistency(
+            results,
+            expected_role_world_sizes={
+                "master": 8,
+                "trainer": 1 + 2 + 3 + 4,
+                "ps": 5 + 2,
+            },
+        )
+
+    def test_correct_rank_assignment_homogeneous(self):
+        node_configs = [
+            Conf(role="master", entrypoint=_get_role_info, local_world_size=1),
+            Conf(role="trainer", entrypoint=_get_role_info, local_world_size=4),
+            Conf(role="trainer", entrypoint=_get_role_info, local_world_size=4),
+            Conf(role="trainer", entrypoint=_get_role_info, local_world_size=4),
+            Conf(role="trainer", entrypoint=_get_role_info, local_world_size=4),
+            Conf(role="ps", entrypoint=_get_role_info, local_world_size=3),
+            Conf(role="ps", entrypoint=_get_role_info, local_world_size=3),
+        ]
+        results = self.run_job(node_configs)
+        self.assertEqual(1, len(results["master"]))
+        self.assertEqual(4, len(results["trainer"]))
+        self.assertEqual(2, len(results["ps"]))
+        self.assert_rank_consistency(
+            results,
+            expected_role_world_sizes={"master": 1, "trainer": 4 * 4, "ps": 3 * 2},
+        )
+
+    def assert_rank_consistency(
+        self,
+        run_results: Dict[str, List[RunResult]],
+        expected_role_world_sizes: Dict[str, int],
+    ):
+        """
+        Asserts that ranks are consecutive w.r.t role_rank. If local world sizes are 4:
+        role_rank_0 -> ranks: 0,1,2,3
+        role_rank_1 -> ranks: 4,5,6,7
+        ... etc ...
+        """
+
+        global_ranks: List[int] = []
+        # role -> [role_rank,...]
+        role_ranks: Dict[str, List[int]] = {}
+        # group rank -> [(rank, role_rank),...]
+        grouped_ranks: Dict[int, List[Tuple[int, int]]] = {}
+
+        # global world size == sum of all the role world sizes
+        expected_world_size = sum(expected_role_world_sizes.values())
+        for role, run_results in run_results.items():
+            for result in run_results:
+                res = result.return_values
+                for role_info in res.values():
+                    rank = role_info.rank
+                    role_rank = role_info.role_rank
+                    group_rank = role_info.group_rank
+                    role_world_size = role_info.role_world_size
+                    world_size = role_info.world_size
+
+                    self.assertEqual(expected_world_size, world_size)
+                    self.assertEqual(expected_role_world_sizes[role], role_world_size)
+                    grouped_ranks.setdefault(group_rank, []).append((rank, role_rank))
+                    role_ranks.setdefault(role, []).append(role_rank)
+                    global_ranks.append(rank)
+
         global_ranks = sorted(global_ranks)
-        self.assertEqual(list(range(0, expected_world_size)), global_ranks)
-        for role, role_config_info in role_info_dict.items():
+        self.assertEqual(list(range(expected_world_size)), global_ranks)
+        for role, expected_role_world_size in expected_role_world_sizes.items():
             self.assertEqual(
-                list(range(0, role_config_info.role_size)), sorted(role_ranks[role])
+                list(range(expected_role_world_size)), sorted(role_ranks[role])
             )
-        # Make sure that each agent assignes consecutive ranks to workes
+        # Make sure that each agent assigns consecutive ranks to workers
         # The first argument is the global_rank and the second argument
         # is role_rank
         for ranks_lst in grouped_ranks.values():
-            self.verify_ranks_sequential(ranks_lst, 0)
-            self.verify_ranks_sequential(ranks_lst, 1)
+            self.assert_ranks_sequential(ranks_lst, 0)
+            self.assert_ranks_sequential(ranks_lst, 1)
 
-    def verify_ranks_sequential(self, ranks_pairs, rank_idx):
+    def assert_ranks_sequential(self, ranks_pairs, rank_idx):
         ranks = sorted(rank_pair[rank_idx] for rank_pair in ranks_pairs)
         start_rank, end_rank = ranks[0], ranks[-1]
         self.assertEqual(list(range(start_rank, end_rank + 1)), ranks)
 
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
-    def test_run_distributed_sum_heterogenous(self):
-        host = self._etcd_server.get_host()
-        port = self._etcd_server.get_port()
-        nnodes = 4
-        run_id = str(uuid.uuid4().int)
-
-        procs = []
-        default_args = (run_id, host, port, nnodes, nnodes, _distributed_sum, (0,))
-        for ind in range(nnodes - 1):
-            p = multiprocessing.Process(
-                target=_run_agent, args=(*default_args, ind + 1)
-            )
-            procs.append(p)
-            p.start()
-
-        # run one on the main process for debugging
-        _run_agent(*default_args, 8)
-
-        for i in range(nnodes - 1):
-            p = procs[i]
-            p.join()
-            self.assertEqual(0, p.exitcode)
-
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
-    def test_run_sad_function(self):
-        self._test_run_sad_function()
-
-    @record
-    def _test_run_sad_function(self):
-        spec = self._get_worker_spec(fn=_sad_function, max_restarts=0)
-        agent = LocalElasticAgent(spec, start_method="fork")
-        group_results = agent.run()
-        failed_results = group_results.failures
-        self.assertEqual(spec.local_world_size, len(failed_results))
-        # all ranks will have the same result
-        for result in failed_results.values():
-            self.assertTrue(os.path.exists(result.error_file))
-            with open(result.error_file, "r") as f:
-                data = f.read().replace("\n", "")
-                self.assertTrue("RuntimeError: sad because i throw" in data)
-
-        self.assertEqual(WorkerState.FAILED, agent.get_worker_group().state)
-        self.assertEqual(0, agent._remaining_restarts)
-
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
-    def test_run_bipolar_function(self):
-        spec = self._get_worker_spec(fn=_bipolar_function, max_restarts=2)
-        agent = LocalElasticAgent(spec, start_method="fork")
-        agent.run()
-        self.assertEqual(WorkerState.FAILED, agent.get_worker_group().state)
-        self.assertEqual(0, agent._remaining_restarts)
-
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
-    def test_run_check_env_function(self):
-        spec = self._get_worker_spec(fn=_check_env_function, max_restarts=2)
-        agent = LocalElasticAgent(spec, start_method="fork")
-        agent.run()
-
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
-    def test_run_check_run_id(self):
-        def return_run_id():
-            return os.environ["TORCHELASTIC_RUN_ID"]
-
-        spec = self._get_worker_spec(fn=return_run_id, max_restarts=0)
-        agent = LocalElasticAgent(spec, start_method="fork")
-        group_result = agent.run()
-        results = group_result.return_values
-
-        for i in range(spec.local_world_size):
-            self.assertEqual(spec.rdzv_handler.get_run_id(), results[i])
-
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
-    def test_get_worker_return_values(self):
-        spec = self._get_worker_spec(fn=_return_rank_times, args=(2,))
-        agent = LocalElasticAgent(spec, start_method="fork")
-        group_result = agent.run()
-        results = group_result.return_values
-
-        self.assertEqual(spec.local_world_size, len(results))
-        for i in range(spec.local_world_size):
-            self.assertEqual(i * 2, results[i])
-
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
-    def test_double_agent_happy(self):
-        host = self._etcd_server.get_host()
-        port = self._etcd_server.get_port()
-        nnodes = 2
-        run_id = str(uuid.uuid4().int)
-
-        procs = []
-        for _ in range(nnodes - 1):
-            p = multiprocessing.Process(
-                target=_run_agent,
-                args=(run_id, host, port, nnodes, nnodes, _distributed_sum, (0,)),
-            )
-            procs.append(p)
-            p.start()
-
-        # run one on the main process for debugging
-        _run_agent(run_id, host, port, nnodes, nnodes, _distributed_sum, (0,))
-
-        for i in range(nnodes - 1):
-            p = procs[i]
-            p.join()
-            self.assertEqual(0, p.exitcode)
-
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_double_agent_fault_tolerance(self):
-        host = self._etcd_server.get_host()
-        port = self._etcd_server.get_port()
+        """
+        start ``nnodes`` agents, kill and restart odd ones, validate fault-tolerance works
+        """
         nnodes = 2
-        run_id = str(uuid.uuid4().int)
+        wait = 2
+        node_conf = Conf(entrypoint=_dist_sum, args=(wait,), local_world_size=2)
+        agent_results = mp.Queue()
+        agent_args = {
+            "conf": node_conf,
+            "agent_results": agent_results,
+            "min_nodes": nnodes,
+            "max_nodes": nnodes,
+            "max_restarts": 2,
+        }
 
         procs = []
         for _ in range(nnodes):
-            p = multiprocessing.Process(
-                target=_run_agent,
-                args=(run_id, host, port, nnodes, nnodes, _distributed_sum, (0,)),
+            p = mp.Process(
+                target=self.run_agent,
+                kwargs=agent_args,
             )
             procs.append(p)
             p.start()
@@ -458,9 +484,9 @@ class LocalElasticAgentTest(unittest.TestCase):
         for i in range(nnodes):
             if i % 2 != 0:
                 procs[i].kill()
-                p = multiprocessing.Process(
-                    target=_run_agent,
-                    args=(run_id, host, port, nnodes, nnodes, _distributed_sum, (0,)),
+                p = mp.Process(
+                    target=self.run_agent,
+                    kwargs=agent_args,
                 )
                 procs[i] = p
                 p.start()
@@ -470,35 +496,46 @@ class LocalElasticAgentTest(unittest.TestCase):
             p.join()
             self.assertEqual(0, p.exitcode)
 
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_double_agent_elastic(self):
-        host = self._etcd_server.get_host()
-        port = self._etcd_server.get_port()
-        min_size = 1
-        max_size = 2
-        run_id = str(uuid.uuid4().int)
+        """
+        start ``nnodes`` agents, kill odd ones (do not restart), validate
+        elasticity (scale-down) works. (scale-up covered in fault_tolerance test)
+        """
+        min_nodes = 1
+        max_nodes = 2
+        wait = 2
+        node_conf = Conf(entrypoint=_dist_sum, args=(wait,), local_world_size=2)
+        agent_results = mp.Queue()
+        agent_args = {
+            "conf": node_conf,
+            "agent_results": agent_results,
+            "min_nodes": min_nodes,
+            "max_nodes": max_nodes,
+            "max_restarts": 2,
+        }
 
         procs = []
-        for _ in range(max_size):
-            p = multiprocessing.Process(
-                target=_run_agent,
-                args=(run_id, host, port, min_size, max_size, _distributed_sum, (0,)),
+        for _ in range(max_nodes):
+            p = mp.Process(
+                target=self.run_agent,
+                kwargs=agent_args,
             )
             procs.append(p)
             p.start()
 
         # kill odd agents
-        for i in range(max_size):
+        for i in range(max_nodes):
             if i % 2 != 0:
                 procs[i].kill()
 
-        for i in range(max_size):
+        for i in range(max_nodes):
+            p = procs[i]
+            p.join()
             if i % 2 == 0:
-                p = procs[i]
-                p.join()
                 self.assertEqual(0, p.exitcode)
+            else:
+                self.assertEqual(-signal.SIGKILL, p.exitcode)
 
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_torch_rpc(self):
         """
         Simple torch rpc example with torchelastic.
@@ -507,176 +544,93 @@ class LocalElasticAgentTest(unittest.TestCase):
         worker1.
         """
 
-        # TODO upstream this to torch.distributed.rpc so that users do not have
-        # to redundantly set rank as part of name (e.g. worker0) AND also pass
-        # it explicitly as an argument to rpc.init_rpc
-        def init_rpc(name_prefix, backend):
+        def init_rpc(name, backend):
             rank = int(os.environ["RANK"])
             world_size = int(os.environ["WORLD_SIZE"])
             rpc.init_rpc(
-                name=f"{name_prefix}{rank}",
+                name=name,
                 backend=backend,
                 rank=rank,
                 world_size=world_size,
             )
 
-        def worker_0(queue, msg):
-            init_rpc("worker", BackendType.PROCESS_GROUP)
-            ret = rpc.rpc_sync(to="worker1", func=echo, args=(msg,))
-            queue.put(ret)
+        def master(msg):
+            init_rpc("master", BackendType.TENSORPIPE)
+            ret = rpc.rpc_sync(to="worker", func=_echo, args=(msg,))
+            rpc.shutdown()
+            return f"{ret} from worker"
+
+        def worker():
+            init_rpc("worker", BackendType.TENSORPIPE)
             rpc.shutdown()
 
-        def worker_1():
-            init_rpc("worker", BackendType.PROCESS_GROUP)
-            rpc.shutdown()
-
-        def run_agent(
-            run_id, etcd_host, etcd_port, start_method, worker_fn, worker_args=()
-        ):
-            rdzv_params = RendezvousParameters(
-                backend="etcd",
-                endpoint=f"{etcd_host}:{etcd_port}",
-                run_id=run_id,
-                min_nodes=2,
-                max_nodes=2,
-            )
-            rdzv_handler = rdzv_registry.get_rendezvous_handler(rdzv_params)
-
-            spec = WorkerSpec(
-                role="test_trainer",
-                local_world_size=1,
-                fn=worker_fn,
-                args=worker_args,
-                rdzv_handler=rdzv_handler,
-                max_restarts=3,
-                monitor_interval=1,
-            )
-
-            agent = LocalElasticAgent(spec, start_method)
-            agent.run()
-
-        run_id = str(uuid.uuid4().int)
-        host = self._etcd_server.get_host()
-        port = self._etcd_server.get_port()
-        start_method = "fork"
         msg = "hello world"
-        mp_queue = multiprocessing.get_context(start_method).Queue()
+        node_configs = [
+            Conf(
+                role="master",
+                entrypoint=master,
+                args=(msg,),
+                local_world_size=1,
+                tee=Std.ALL,
+            ),
+            Conf(
+                role="worker",
+                entrypoint=worker,
+                args=(),
+                local_world_size=1,
+                tee=Std.ALL,
+            ),
+        ]
 
-        agent0 = multiprocessing.Process(
-            target=run_agent,
-            args=(run_id, host, port, start_method, worker_0, (mp_queue, msg)),
-        )
-        agent1 = multiprocessing.Process(
-            target=run_agent, args=(run_id, host, port, start_method, worker_1, ())
-        )
+        results = self.run_job(node_configs)
+        master_retvals = results["master"][0].return_values
+        # there is only one master but the global rank is not stable
+        # so compare the master return value as a collection
+        self.assertEqual([f"{msg} from worker"], list(master_retvals.values()))
 
-        agent0.start()
-        agent1.start()
-
-        agent0.join()
-        agent1.join()
-
-        self.assertEqual(msg, mp_queue.get())
-
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_workers_drift_success(self):
+        """
+        two agents (one worker each) finishes within ``sec`` seconds of each other,
+        exit barrier timeout set to ``sec * 2 * 2``.
+        """
 
-        host = self._etcd_server.get_host()
-        port = self._etcd_server.get_port()
-        nnodes = 2
-        run_id = str(uuid.uuid4().int)
+        sec = 1
+        node_configs = [
+            Conf(role="zzz", entrypoint=_sleep, args=(0 * sec,), local_world_size=1),
+            Conf(role="zzz", entrypoint=_sleep, args=(2 * sec,), local_world_size=1),
+        ]
+        results = self.run_job(node_configs, exit_barrier_timeout=2 * 2 * sec)
+        for i in range(2):
+            run_results = results["zzz"][i]
+            self.assertFalse(run_results.is_failed())
+            for rank, output in run_results.return_values.items():
+                # _sleep() returns its own rank
+                self.assertEqual(rank, output)
 
-        procs = []
-        default_args = (run_id, host, port, nnodes, nnodes, _simulate_work)
-        for _ in range(nnodes - 1):
-            p = multiprocessing.Process(
-                target=_run_agent,
-                args=(*default_args, (10,), 2, "test_trainer", {}, 30),
-            )
-            procs.append(p)
-            p.start()
-
-        _run_agent(*default_args, (1,), 2, "test_trainer", {}, 30)
-
-        for i in range(nnodes - 1):
-            p = procs[i]
-            p.join()
-            self.assertEqual(0, p.exitcode)
-
-    @patch("torchelastic.utils.store.barrier")
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
-    def test_workers_drift_fail(self, barrier_mock):
-
-        host = self._etcd_server.get_host()
-        port = self._etcd_server.get_port()
-        nnodes = 2
-        run_id = str(uuid.uuid4().int)
-
-        procs = []
-        default_args = (run_id, host, port, nnodes, nnodes, _simulate_work)
-        for _ in range(nnodes - 1):
-            p = multiprocessing.Process(
-                target=_run_agent,
-                args=(*default_args, (60,), 2, "test_trainer", {}, 10),
-            )
-            procs.append(p)
-            p.start()
-
-        _run_agent(*default_args, (1,), 2, "test_trainer", {}, 10)
-        barrier_mock.assert_called_once()
+    def test_workers_drift_fail(self):
+        """
+        two agents (one worker each) finishes within ``4 x sec`` seconds of each other,
+        exit barrier timeout set to 0. Exit barriers should NOT fail the job.
+        """
+        sec = 1
+        node_configs = [
+            Conf(role="zzz", entrypoint=_sleep, args=(0 * sec,), local_world_size=1),
+            Conf(role="zzz", entrypoint=_sleep, args=(4 * sec,), local_world_size=1),
+        ]
+        results = self.run_job(node_configs, exit_barrier_timeout=0)
+        for i in range(2):
+            run_results = results["zzz"][i]
+            self.assertFalse(run_results.is_failed())
+            for rank, output in run_results.return_values.items():
+                # _sleep() returns its own rank
+                self.assertEqual(rank, output)
 
     @patch("torchelastic.utils.store.barrier")
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_barrier_failed(self, barrier_mock):
+        """
+        Failure during the barrier should NOT fail the job.
+        """
         barrier_mock.side_effect = RuntimeError("test error")
-        spec = self._get_worker_spec(fn=_happy_function)
-        agent = LocalElasticAgent(spec, start_method="fork")
-        agent.run()
+        res = self.run_agent(Conf(entrypoint=_happy_function, local_world_size=1))
+        self.assertFalse(res.is_failed())
         barrier_mock.assert_called_once()
-
-    def test_provide_fn_and_cmd(self):
-        with self.assertRaises(AssertionError):
-            self._get_worker_spec(
-                fn=_bipolar_function, cmd=["test.bin"], max_restarts=2
-            )
-
-    def test_provide_none(self):
-        with self.assertRaises(AssertionError):
-            self._get_worker_spec(max_restarts=2)
-
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
-    def test_failed_result_with_run_id(self):
-        temp_dir = tempfile.mkdtemp()
-        os.environ["TORCHELASTIC_ERROR_FILE"] = f"{temp_dir}/error.log"
-        self._test_failed_result_with_run_id()
-        shutil.rmtree(temp_dir)
-
-    @record
-    def _test_failed_result_with_run_id(self):
-        max_restarts = 3
-        spec = self._get_worker_spec(fn=_sad_function, max_restarts=max_restarts)
-        agent = LocalElasticAgent(spec, start_method="fork")
-        run_result = agent.run()
-        for failure in run_result.failures.values():
-            error_file = failure.error_file
-            self.assertTrue(error_file.endswith(f"_{max_restarts}"))
-
-    @unittest.skipIf(is_tsan(), "test incompatible with tsan")
-    def test_transient_bug(self):
-        temp_dir = tempfile.mkdtemp()
-        os.environ["TORCHELASTIC_ERROR_FILE"] = f"{temp_dir}/error.log"
-        self._test_transient_bug(temp_dir)
-        shutil.rmtree(temp_dir)
-
-    @record
-    def _test_transient_bug(self, error_dir: str):
-        max_restarts = 3
-        spec = self._get_worker_spec(fn=_transient_bug, max_restarts=max_restarts)
-        agent = LocalElasticAgent(spec, start_method="fork")
-        run_result = agent.run()
-        self.assertEqual(WorkerState.SUCCEEDED, run_result.state)
-        for rank in range(len(run_result.return_values)):
-            error_file_0 = os.path.join(error_dir, str(rank), "error.log_0")
-            self.assertTrue(os.path.exists(error_file_0))
-            error_file_1 = os.path.join(error_dir, str(rank), "error.log_1")
-            self.assertFalse(os.path.exists(error_file_1))

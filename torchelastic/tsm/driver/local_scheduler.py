@@ -11,8 +11,8 @@ import abc
 import ctypes
 import json
 import os
+import pprint
 import re
-import shutil
 import signal
 import subprocess
 import sys
@@ -21,7 +21,7 @@ import time
 import warnings
 from dataclasses import dataclass
 from datetime import datetime
-from typing import IO, Any, Dict, Iterable, List, Optional
+from typing import IO, Any, Dict, Iterable, List, Optional, Tuple
 from uuid import uuid4
 
 from torchelastic.tsm.driver.api import (
@@ -116,7 +116,6 @@ class _LocalReplica:
     stdout: Optional[IO]  # None means no log_dir (out to console)
     stderr: Optional[IO]  # None means no log_dir (out to console)
     error_file: str
-    cleanup_resources: bool
 
     def terminate(self) -> None:
         """
@@ -144,10 +143,6 @@ class _LocalReplica:
         else:
             return self.proc.returncode != 0
 
-    def cleanup(self) -> None:
-        if self.cleanup_resources and os.path.exists(self.error_file):
-            shutil.rmtree(os.path.dirname(self.error_file))
-
 
 class _LocalApplication:
     """
@@ -156,11 +151,12 @@ class _LocalApplication:
     process and has a pid.
     """
 
-    def __init__(self, name: str, id: str, log_dir: Optional[str]):
+    def __init__(self, name: str, id: str, log_dir: str, redirect_std: bool):
         self.name = name
         self.id = id
-        # None or cfg.get("log_dir")/<session_name>/<app_id>
+        # cfg.get("log_dir")/<session_name>/<app_id> or /tmp/tsm/<session_name>/<app_id>
         self.log_dir = log_dir
+        self.redirect_std = redirect_std
         # role name -> [replicas, ...]
         self.role_replicas: Dict[RoleName, List[_LocalReplica]] = {}
         self.state: AppState = AppState.PENDING
@@ -186,14 +182,6 @@ class _LocalApplication:
             for r in replicas:
                 r.terminate()
 
-    def __del__(self):
-        self.cleanup()
-
-    def cleanup(self) -> None:
-        for replicas in self.role_replicas.values():
-            for replica in replicas:
-                replica.cleanup()
-
     def _get_error_file(self) -> Optional[str]:
         error_file = None
         min_timestamp = sys.maxsize
@@ -208,10 +196,10 @@ class _LocalApplication:
         return error_file
 
     def get_structured_error_msg(self) -> str:
-        msg = "<NONE>"
         error_file = self._get_error_file()
         if not error_file:
-            return msg
+            return "<N/A>"
+
         with open(error_file, "r") as f:
             return json.dumps(json.load(f))
 
@@ -226,6 +214,12 @@ class _LocalApplication:
         """
         self.terminate()
 
+        def _fmt_io_filename(std_io: Optional[IO]):
+            if std_io:
+                return std_io.name
+            else:
+                return "<CONSOLE>"
+
         # drop a SUCCESS file in the log dir to signal that
         # the log file handles have all been closed properly
         # and that they can reliably be read
@@ -237,28 +231,24 @@ class _LocalApplication:
                     "replica_id": replica.replica_id,
                     "pid": replica.proc.pid,
                     "exitcode": replica.proc.returncode,
+                    "stdout": _fmt_io_filename(replica.stdout),
+                    "stderr": _fmt_io_filename(replica.stderr),
+                    "error_file": replica.error_file,
                 }
-                if self.log_dir:
-                    # pyre-ignore [16] replica.stdout|stderr is a file handle if log_dir
-                    replica_info["stdout"] = replica.stdout.name
-                    replica_info["stderr"] = replica.stderr.name
                 replicas_info.append(replica_info)
             roles_info[role_name] = replicas_info
         app_info = {
             "app_name": self.name,
             "app_id": self.id,
-            "log_dir": self.log_dir or "<None>",
+            "log_dir": self.log_dir,
             "final_state": self.state.name,
             "last_updated": self.last_updated,
             "roles": roles_info,
         }
-        info_str = json.dumps(app_info, indent=2)
 
-        if self.log_dir:
-            # pyre-ignore [6]: app.log_dir nullchecked above
-            with open(os.path.join(self.log_dir, "SUCCESS"), "w") as fp:
-                fp.write(info_str)
-        self.cleanup()
+        info_str = json.dumps(app_info, indent=2)
+        with open(os.path.join(self.log_dir, "SUCCESS"), "w") as fp:
+            fp.write(info_str)
 
         log.info(f"Successfully closed app_id: {self.id}.\n{info_str}")
 
@@ -321,20 +311,12 @@ class LocalScheduler(Scheduler):
             "log_dir",
             type_=str,
             default=None,
-            help="dir to write stdout/stderr log files of replicas (defaults to stdout|err PIPE)",
+            help="dir to write stdout/stderr log files of replicas",
         )
         return opts
 
     def _img_fetchers(self) -> Dict[str, ImageFetcher]:
         return {"dir": LocalDirectoryImageFetcher()}
-
-    def _get_app_log_dir(self, app_id: str, cfg: RunConfig) -> Optional[str]:
-        # pyre-ignore [6]: type check already done by runopt.resolve
-        log_dir: str = cfg.get("log_dir")
-        if log_dir:
-            return os.path.join(log_dir, self.session_name, app_id)
-        else:
-            return None
 
     def _get_img_fetcher(self, cfg: RunConfig) -> ImageFetcher:
         img_fetcher_type = cfg.get("image_fetcher")
@@ -394,33 +376,22 @@ class LocalScheduler(Scheduler):
         os.makedirs(os.path.dirname(file), exist_ok=True)
         return open(file, mode="w")
 
-    def _popen(
-        self, role_name: str, replica_id: int, log_dir: Optional[str], **popen_kwargs
-    ) -> _LocalReplica:
+    def _popen(self, role_name: str, replica_id: int, **popen_kwargs) -> _LocalReplica:
         """
         Same as ``subprocess.Popen(**popen_kwargs)`` but is able to take ``stdout`` and ``stderr``
         as file name ``str`` rather than a file-like obj.
         """
         stdout_ = self._get_file_io(popen_kwargs.pop("stdout", None))
         stderr_ = self._get_file_io(popen_kwargs.pop("stderr", None))
-        if log_dir:
-            cleanup_resources = False
-            error_file = os.path.join(log_dir, role_name, str(replica_id), "error.json")
-            os.makedirs(os.path.dirname(error_file), exist_ok=True)
-        else:
-            cleanup_resources = True
-            error_file = os.path.join(tempfile.mkdtemp(), "error.json")
-        proc_envs = {"TORCHELASTIC_ERROR_FILE": error_file}
-        if "env" in popen_kwargs:
-            popen_kwargs["env"].update(proc_envs)
-        else:
-            # The standard behavior of subprocess.Popen when no env is provided
-            # is to copy the parent process env. variables.
-            env = {}
-            env.update(os.environ)
-            env.update(proc_envs)
-            popen_kwargs["env"] = env
+        user_def_envs = popen_kwargs.pop("env", {})
 
+        # inherit parent's env vars since 99.9% of the time we want this behavior
+        # just make sure we override the parent's env vars with the user_defined ones
+        env = os.environ.copy()
+        env.update(user_def_envs)
+        popen_kwargs["env"] = env
+
+        error_file = popen_kwargs["env"]["TORCHELASTIC_ERROR_FILE"]
         proc = subprocess.Popen(
             **popen_kwargs,
             stdout=stdout_,
@@ -434,8 +405,24 @@ class LocalScheduler(Scheduler):
             stdout=stdout_,
             stderr=stderr_,
             error_file=error_file,
-            cleanup_resources=cleanup_resources,
         )
+
+    def _get_app_log_dir(self, app_id: str, cfg: RunConfig) -> Tuple[str, bool]:
+        """
+        Returns the log dir and a bool (should_redirect_std). We redirect stdout/err
+        to a log file ONLY if the log_dir is user-provided in the cfg
+
+        1. if cfg.get("log_dir") -> (user-specified log dir, True)
+        2. if not cfg.get("log_dir") -> (autogen tmp log dir, False)
+        """
+
+        base_log_dir = cfg.get("log_dir")
+        redirect_std = True
+        if not base_log_dir:
+            base_log_dir = tempfile.mkdtemp(prefix="tsm_")
+            redirect_std = False
+
+        return os.path.join(str(base_log_dir), self.session_name, app_id), redirect_std
 
     def _submit(self, app: Application, cfg: RunConfig) -> str:
         if len(self._apps) == self._cache_size:
@@ -449,18 +436,21 @@ class LocalScheduler(Scheduler):
             app_id not in self._apps
         ), "no app_id collisons expected since uuid4 suffix is used"
 
-        local_app = _LocalApplication(
-            app.name, app_id, self._get_app_log_dir(app_id, cfg)
-        )
+        app_log_dir, redirect_std = self._get_app_log_dir(app_id, cfg)
+        local_app = _LocalApplication(app.name, app_id, app_log_dir, redirect_std)
 
-        for role_popen_args in self._to_app_popen_args(app_id, app.roles, cfg):
+        for role_popen_args in self._to_app_popen_args(
+            app_id, app.roles, app_log_dir, redirect_std, cfg, dryrun=False
+        ):
             for role_name, replica_popen_args in role_popen_args.items():
                 for replica_id, replica_popen_arg in enumerate(replica_popen_args):
-                    log.info(f"Running {role_name} ({replica_id}): {replica_popen_arg}")
+                    args_pfmt = pprint.pformat(replica_popen_arg, indent=2, width=80)
+                    log.info(
+                        f"Running {role_name} (replica {replica_id}):\n {args_pfmt}"
+                    )
                     replica = self._popen(
                         role_name,
                         replica_id,
-                        self._get_app_log_dir(app_id, cfg),
                         **replica_popen_arg,
                     )
                     local_app.add_replica(role_name, replica)
@@ -469,14 +459,25 @@ class LocalScheduler(Scheduler):
         return app_id
 
     def _submit_dryrun(self, app: Application, cfg: RunConfig) -> AppDryRunInfo:
-        app_popen_args = self._to_app_popen_args(f"{app.name}_##", app.roles, cfg)
-        import pprint
+        app_id = f"{app.name}_##"
+        app_log_dir, redirect_std = self._get_app_log_dir(app_id, cfg)
+        app_popen_args = self._to_app_popen_args(
+            app_id, app.roles, app_log_dir, redirect_std, cfg
+        )
 
         return AppDryRunInfo(
             app_popen_args, lambda p: pprint.pformat(p, indent=2, width=80)
         )
 
-    def _to_app_popen_args(self, app_id: str, roles: List[Role], cfg: RunConfig):
+    def _to_app_popen_args(
+        self,
+        app_id: str,
+        roles: List[Role],
+        app_log_dir: str,
+        redirect_std: bool,
+        cfg: RunConfig,
+        dryrun: bool = True,
+    ):
         """
         returns the popen args for all processes that needs to be created for the app
 
@@ -521,24 +522,26 @@ class LocalScheduler(Scheduler):
                     role.args, img_root, app_id, str(replica_id)
                 )
                 replica_popen_params = role_popen_params.setdefault(role.name, [])
-                env_vars = {**self._default_role_envs(), **role.env}
+                replica_log_dir = os.path.join(app_log_dir, role.name, str(replica_id))
+                if not dryrun:
+                    os.makedirs(replica_log_dir)
+                env_vars = {
+                    # this is the top level (agent if using elastic role) error file
+                    # a.k.a scheduler reply file
+                    "TORCHELASTIC_ERROR_FILE": os.path.join(
+                        replica_log_dir, "error.json"
+                    ),
+                    **role.env,
+                }
                 params: Dict[str, Any] = {"args": args, "env": env_vars}
-                app_log_dir = self._get_app_log_dir(app_id, cfg)
-                if app_log_dir:
-                    base_log_dir = os.path.join(app_log_dir, role.name, str(replica_id))
-                    params["stdout"] = os.path.join(base_log_dir, "stdout.log")
-                    params["stderr"] = os.path.join(base_log_dir, "stderr.log")
+                if redirect_std:
+                    params["stdout"] = os.path.join(replica_log_dir, "stdout.log")
+                    params["stderr"] = os.path.join(replica_log_dir, "stderr.log")
 
                 replica_popen_params.append(params)
 
             app_popen_params.append(role_popen_params)
         return app_popen_params
-
-    def _default_role_envs(self) -> Dict[str, str]:
-        """
-        Returns default env vars that should be passed to the role's replica subprocesses.
-        """
-        return {}
 
     def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
         if app_id not in self._apps:
@@ -574,6 +577,7 @@ class LocalScheduler(Scheduler):
         resp.structured_error_msg = structured_error_msg
         resp.state = state
         resp.num_restarts = 0
+        resp.ui_url = f"file://{local_app.log_dir}"
         return resp
 
     def log_iter(
@@ -592,13 +596,12 @@ class LocalScheduler(Scheduler):
             )
 
         app = self._apps[app_id]
-        if not app.log_dir:
+        if not app.redirect_std:
             raise RuntimeError(
                 f"app: {app_id} was not configured to log into a file."
                 f" Did you run it with log_dir set in RunConfig?"
             )
 
-        # pyre-ignore [6]: app.log_dir nullchecked above
         log_file = os.path.join(app.log_dir, role_name, str(k), "stderr.log")
         return LogIterator(app_id, regex or ".*", log_file, self)
 

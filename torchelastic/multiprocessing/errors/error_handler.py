@@ -5,150 +5,102 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
-# Multiprocessing error-reporting module
-
+import faulthandler
 import json
 import logging
 import os
 import shutil
-import signal
-import tempfile
 import time
 import traceback
-from dataclasses import dataclass
+import warnings
 from typing import Optional
 
 
-logger: logging.Logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
-@dataclass
-class ProcessFailure:
-    """
-    Represents the failed process result. When the worker process fails,
-    it may record failure root cause into the file.
-    """
+def _write_error(e: BaseException, error_file: Optional[str]):
+    data = {
+        "message": {
+            "message": f"{type(e).__name__}: {e}",
+            "extraInfo": {
+                "py_callstack": traceback.format_exc(),
+                "timestamp": str(int(time.time())),
+            },
+        }
+    }
 
-    error_file: Optional[str]
-    timestamp: int  # seconds
-    pid: int
-    rank: int
-    exit_code: int
-
-    def get_signal_name(self) -> Optional[str]:
-        if self.exit_code < 0:
-            return signal.Signals(-self.exit_code).name
-        else:
-            return None
+    if error_file:
+        with open(error_file, "w") as fp:
+            json.dump(data, fp)
+    else:
+        log.error(json.dumps(data, indent=2))
 
 
 class ErrorHandler:
-    def __init__(self):
-        self.error_file = ""
-        self.temp_dir = ""
-
-    def configure(self) -> None:
+    def _get_error_file_path(self) -> Optional[str]:
         """
-        Configures necessary behavior on the process. This is a separate
-        from the constructor since child and parent processes
-        can call this method with different arguments
+        Returns the error file path. May return ``None`` to have the
+        structured error be logged only.
         """
-        if "TORCHELASTIC_ERROR_FILE" in os.environ:
-            self.error_file = os.environ["TORCHELASTIC_ERROR_FILE"]
-        elif not self.error_file:
-            self.temp_dir = tempfile.mkdtemp()
-            self.error_file = os.path.join(self.temp_dir, "error.log")
-        self._try_create_dirs(os.path.dirname(self.error_file))
+        return os.environ.get("TORCHELASTIC_ERROR_FILE", None)
 
-    def _try_create_dirs(self, dir: str):
+    def initialize(self) -> None:
+        """
+        Called prior to running code that we wish to capture errors/exceptions.
+        Typically registers signal/fault handlers. Users can override this
+        function to add custom initialization/registrations that aid in
+        propagation/information of errors/signals/exceptions/faults.
+        """
         try:
-            os.makedirs(dir, exist_ok=True)
+            faulthandler.enable(all_threads=True)
         except Exception as e:
-            logger.info(f"Wasn't able to create {dir}. Failed with: {e}")
-
-    def get_failed_result(
-        self,
-        child_rank: int,
-        child_pid: int,
-        exit_code: int = 1,
-        run_id: int = 0,
-    ) -> Optional[ProcessFailure]:
-        """
-        Returns failed result. Tries to retrieve the child error file,
-        if no file exists on the path: ``os.path.join(error_dir, rank, error.log)``,
-        the error_file will have ``None`` value, otherwise it will contain the path.
-        """
-        child_error_file = self.get_error_file(child_rank, run_id)
-        if child_error_file and os.path.exists(child_error_file):
-            error_file = child_error_file
-            timestamp = int(os.path.getmtime(child_error_file) * 1000)
-        else:
-            error_file = None
-            timestamp = int(time.time() * 1000)
-        return ProcessFailure(
-            error_file=error_file,
-            timestamp=timestamp,
-            pid=child_pid,
-            rank=child_rank,
-            exit_code=exit_code,
-        )
-
-    def get_error_file(self, rank: int, run_id: int = 0) -> str:
-        """
-        Returns the error dir that should be the same across parent and child processes.
-        """
-        if not self.error_file:
-            return ""
-        error_dir = os.path.dirname(self.error_file)
-        return os.path.join(error_dir, str(rank), f"error.log_{run_id}")
-
-    def process_failure(self, failure: ProcessFailure) -> None:
-        """
-        Tries to retrieve the error from the file in ``ProcessFailure.error_file``
-        and copy-pastes the content to the parent error file.
-        """
-        child_error_file = failure.error_file
-        if (
-            child_error_file is None
-            or not self.error_file
-            or not os.path.exists(child_error_file)
-        ):
-            logger.warning(
-                f"Worker {failure.rank} exited with exit_code: {failure.exit_code}, but no {child_error_file} found"
-            )
-        elif self.error_file and os.path.exists(self.error_file):
-            logger.warning(f"Error file {self.error_file} already exists, skipping")
-        else:
-            self._process_failure(child_error_file)
-
-    def _process_failure(self, child_error_file: str):
-        logger.info(
-            f"Copying worker error file {child_error_file} to {self.error_file}"
-        )
-        with open(child_error_file, "r") as f:
-            data = json.load(f)
-        with open(self.error_file, "w") as f:
-            json.dump(data, f)
-
-    def _get_failure_message(self, failure: ProcessFailure) -> str:
-        msg = f"Worker {failure.rank} failed with exit_code: {failure.exit_code} "
-        if failure.get_signal_name():
-            msg += f";signal name: {failure.get_signal_name()}"
-        return msg
+            warnings.warn(f"Unable to enable fault handler. {type(e).__name__}: {e}")
 
     def record_exception(self, e: BaseException) -> None:
         """
-        Records the exception that can be retrieved later by the parent process
+        Writes a structured information about the exception into an error file in
+        JSON format. If the error file cannot be determined, then logs the content
+        that would have been written to the error file.
         """
-        if not self.error_file:
-            logger.warning(f"Error file not set for process {os.getpid()}")
-            return
-        message = traceback.format_exc()
-        data = {"message": message}
-        with open(self.error_file, "w") as f:
-            json.dump(data, f)
+        _write_error(e, self._get_error_file_path())
 
-    def cleanup(self) -> None:
-        if self.temp_dir and os.path.exists(self.temp_dir):
-            logger.info(f"Cleaning up resources at: {self.temp_dir}")
-            shutil.rmtree(self.temp_dir)
+    def copy_error_file(self, rootcause_error_file: str):
+        with open(rootcause_error_file, "r") as fp:
+            log.info(
+                f"child error file ({rootcause_error_file}) contents:\n"
+                f"{json.dumps(json.load(fp), indent=2)}"
+            )
+
+        my_error_file = self._get_error_file_path()
+        if my_error_file:
+            # Guard against existing error files
+            # This can happen when the child is created using multiprocessing
+            # and the same env var (TORCHELASTIC_ERROR_FILE) is used on the
+            # parent and child to specify the error files (respectively)
+            # because the env vars on the child is set in the wrapper function
+            # and by default the child inherits the parent's env vars, if the child
+            # process receives a signal before the wrapper function kicks in
+            # and the signal handler writes to the error file, then the child
+            # will write to the parent's error file. In this case just log the
+            # original error file contents and overwrite the error file.
+            self._rm(my_error_file)
+            shutil.copyfile(rootcause_error_file, my_error_file)
+            log.info(
+                f"copied child error file to parent's ({rootcause_error_file} -> {my_error_file}"
+            )
+        else:
+            log.error(
+                f"no error file defined for parent, to copy child error file ({rootcause_error_file})"
+            )
+
+    def _rm(self, my_error_file):
+        if os.path.isfile(my_error_file):
+            with open(my_error_file, "r") as fp:
+                original = json.dumps(json.load(fp), indent=2)
+                log.warning(
+                    f"{my_error_file} already exists"
+                    f" and will be overwritten."
+                    f" Original contents:\n{original}"
+                )
+            os.remove(my_error_file)

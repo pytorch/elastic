@@ -229,12 +229,8 @@ from torchelastic import metrics
 from torchelastic.agent.server.api import WorkerSpec
 from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
 from torchelastic.distributed.argparse_util import check_env, env
-from torchelastic.multiprocessing.errors import (
-    cleanup,
-    get_failure_message,
-    process_failure,
-    record,
-)
+from torchelastic.multiprocessing import Std
+from torchelastic.multiprocessing.errors import ChildFailedError, record
 from torchelastic.rendezvous import RendezvousParameters
 from torchelastic.rendezvous.etcd_server import EtcdServer
 from torchelastic.utils.logging import get_logger
@@ -349,6 +345,36 @@ def parse_args(args):
         "it directly. Useful when the script is not a Python script.",
     )
 
+    parser.add_argument(
+        "--log_dir",
+        action=env,
+        type=str,
+        default=None,
+        help="base dir to use for log files (e.g. /var/log/torchelastic)"
+        " can reuse the same dir for multiple runs "
+        "(a unique job-level subdir is created with rdzv_id as the prefix)",
+    )
+
+    parser.add_argument(
+        "-r",
+        "--redirects",
+        action=env,
+        type=str,
+        default="0",
+        help="std streams to redirect into a log file in the log_dir"
+        " (e.g. [-r 3] redirects both stdout+stderr for all workers,"
+        " [-r 0:1,1:2] redirects stdout for local rank 0 and stderr for local rank 1)",
+    )
+
+    parser.add_argument(
+        "-t",
+        "--tee",
+        action=env,
+        type=str,
+        default="0",
+        help="tee std streams into a log file and also to console (see --redirects for format)",
+    )
+
     # positional
     parser.add_argument(
         "training_script",
@@ -409,7 +435,7 @@ def determine_local_world_size(nproc_per_node: str):
         return num_proc
 
 
-@record()
+@record
 def main(args=None):
     # If ``args`` not passed, defaults to ``sys.argv[:1]``
     args = parse_args(args)
@@ -434,7 +460,6 @@ def main(args=None):
         )
 
     nproc_per_node = determine_local_world_size(args.nproc_per_node)
-    omp_num_threads = None
     if "OMP_NUM_THREADS" not in os.environ and nproc_per_node > 1:
         omp_num_threads = 1
         print(
@@ -479,37 +504,32 @@ def main(args=None):
         spec = WorkerSpec(
             role=args.role,
             local_world_size=nproc_per_node,
-            cmd=cmd,
+            entrypoint=cmd[0],
+            args=(*cmd[1:],),
             rdzv_handler=rdzv_handler,
             max_restarts=args.max_restarts,
             monitor_interval=args.monitor_interval,
+            redirects=Std.from_str(args.redirects),
+            tee=Std.from_str(args.tee),
         )
         metrics.initialize_metrics()
-        elastic_agent = LocalElasticAgent(spec, start_method=args.start_method)
-        group_result = elastic_agent.run(spec.role)
-        if group_result.is_failed():
-            min_rank = min(group_result.failures.keys())
-            failure = group_result.failures[min_rank]
-            # Note: this line will raise an exception to indicate to the
-            # scheduler process that something went wrong.
-            # If any workers wrote the error file, it will be propagated
-            # to the scheduler specific destination.
-            process_failure(failure)
-            msg = f"""
-*********************************************************************** \n
-***********************USER CODE FAILED WITH ERROR****************** \n\n
-{get_failure_message(failure)} \n
-******************************************************************** \n\n
-******************************************************************** \n
-            """
-            log.warning(msg)
-            # Expected (0-127), 0 - success, anything else - failure
-            sys.exit(abs(failure.exit_code))
+        elastic_agent = LocalElasticAgent(
+            spec=spec, start_method=args.start_method, log_dir=args.log_dir
+        )
+        run_result = elastic_agent.run(spec.role)
+        if run_result.is_failed():
+            # ChildFailedError is treated specially by @record
+            # if the error files for the failed children exist
+            # @record will copy the first error (root cause)
+            # to the error file of the launcher process
+            raise ChildFailedError(
+                name=args.training_script,
+                failures=run_result.failures,
+            )
     finally:
         rdzv_handler.shutdown()
         if args.standalone:
             etcd_server.stop()
-        cleanup()
 
 
 def _parse_rdzv_conf(conf_str: str):

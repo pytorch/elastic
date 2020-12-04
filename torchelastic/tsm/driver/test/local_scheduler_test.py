@@ -12,7 +12,9 @@ import tempfile
 import time
 import unittest
 from datetime import datetime
+from os.path import join
 from typing import Optional
+from unittest import mock
 from unittest.mock import patch
 
 from torchelastic.tsm.driver.api import (
@@ -43,6 +45,7 @@ class LocalDirImageFetcherTest(unittest.TestCase):
     def setUp(self):
         self.test_dir = tempfile.mkdtemp(prefix="LocalDirImageFetcherTest")
         self.test_dir_name = os.path.basename(self.test_dir)
+        self.maxDiff = None  # get full diff on assertion error
 
     def tearDown(self):
         shutil.rmtree(self.test_dir)
@@ -57,7 +60,7 @@ class LocalDirImageFetcherTest(unittest.TestCase):
             fetcher.fetch(self.test_dir_name)
 
     def test_fetch_does_not_exist_should_throw(self):
-        non_existent_dir = os.path.join(self.test_dir, "non_existent_dir")
+        non_existent_dir = join(self.test_dir, "non_existent_dir")
         fetcher = LocalDirectoryImageFetcher()
         with self.assertRaises(ValueError):
             fetcher.fetch(non_existent_dir)
@@ -65,21 +68,23 @@ class LocalDirImageFetcherTest(unittest.TestCase):
 
 LOCAL_SCHEDULER_MAKE_UNIQUE = "torchelastic.tsm.driver.local_scheduler.make_unique"
 
+ERR_FILE_ENV = "TORCHELASTIC_ERROR_FILE"
+
 
 class LocalSchedulerTest(unittest.TestCase):
     def setUp(self):
-        self.test_dir = tempfile.mkdtemp("LocalSchedulerTest")
+        self.test_dir = tempfile.mkdtemp(prefix=f"{self.__class__.__name__}_")
         write_shell_script(self.test_dir, "touch.sh", ["touch $1"])
         write_shell_script(self.test_dir, "fail.sh", ["exit 1"])
         write_shell_script(self.test_dir, "sleep.sh", ["sleep $1"])
-        write_shell_script(self.test_dir, "echo.sh", ["echo $1"])
+        write_shell_script(self.test_dir, "echo_stdout.sh", ["echo $1"])
         write_shell_script(self.test_dir, "echo_stderr.sh", ["echo $1 1>&2"])
         write_shell_script(
             self.test_dir,
             "echo_range.sh",
             ["for i in $(seq 0 $1); do echo $i 1>&2; sleep $2; done"],
         )
-
+        write_shell_script(self.test_dir, "echo_env_foo.sh", ["echo $FOO 1>&2"])
         self.scheduler = LocalScheduler(session_name="test_session")
         self.test_container = Container(image=self.test_dir)
 
@@ -121,14 +126,14 @@ class LocalSchedulerTest(unittest.TestCase):
         num_replicas = 2
         role = (
             Role("role1")
-            .runs("touch.sh", os.path.join(f"{macros.img_root}", test_file_name))
+            .runs("touch.sh", join(f"{macros.img_root}", test_file_name))
             .on(self.test_container)
             .replicas(num_replicas)
         )
         app = Application(name="test_app").of(role)
         expected_app_id = make_unique(app.name)
         with patch(LOCAL_SCHEDULER_MAKE_UNIQUE, return_value=expected_app_id):
-            cfg = RunConfig()
+            cfg = RunConfig({"log_dir": self.test_dir})
             app_id = self.scheduler.submit(app, cfg)
 
         self.assertEqual(f"{expected_app_id}", app_id)
@@ -136,7 +141,7 @@ class LocalSchedulerTest(unittest.TestCase):
 
         for i in range(num_replicas):
             self.assertTrue(
-                os.path.isfile(os.path.join(self.test_dir, f"{expected_app_id}_{i}"))
+                os.path.isfile(join(self.test_dir, f"{expected_app_id}_{i}"))
             )
 
         role = Role("role1").runs("fail.sh").on(self.test_container).replicas(2)
@@ -148,72 +153,74 @@ class LocalSchedulerTest(unittest.TestCase):
         self.assertEqual(f"{expected_app_id}", app_id)
         self.assertEqual(AppState.FAILED, self.wait(app_id).state)
 
+    @mock.patch.dict(os.environ, {"FOO": "bar"})
+    def test_submit_inherit_parent_envs(self):
+        role = Role("echo_foo").runs("echo_env_foo.sh").on(self.test_container)
+        app = Application(name="check_foo_env_var").of(role)
+        app_id = self.scheduler.submit(app, RunConfig({"log_dir": self.test_dir}))
+        for line in self.scheduler.log_iter(app_id, "echo_foo"):
+            self.assertEqual("bar", line)
+
+        desc = self.wait(app_id, self.scheduler)
+        self.assertEqual(AppState.SUCCEEDED, desc.state)
+
+    @mock.patch.dict(os.environ, {"FOO": "bar"})
+    def test_submit_override_parent_env(self):
+        role = (
+            Role("echo_foo")
+            .runs("echo_env_foo.sh", FOO="new_bar")
+            .on(self.test_container)
+        )
+        app = Application(name="check_foo_env_var").of(role)
+        app_id = self.scheduler.submit(app, RunConfig({"log_dir": self.test_dir}))
+        for line in self.scheduler.log_iter(app_id, "echo_foo"):
+            self.assertEqual("new_bar", line)
+
+        desc = self.wait(app_id, self.scheduler)
+        self.assertEqual(AppState.SUCCEEDED, desc.state)
+
     def _assert_file_content(self, filename: str, expected: str):
         with open(filename, "r") as f:
             self.assertEqual(expected, f.read())
 
     def test_submit_with_log_dir_stdout(self):
         num_replicas = 2
-        role = (
-            Role("role1")
-            .runs("echo.sh", "hello_world")
-            .on(self.test_container)
-            .replicas(num_replicas)
-        )
 
-        log_dir = os.path.join(self.test_dir, "log")
-        cfg = RunConfig({"log_dir": log_dir})
-        app = Application(name="test_app").of(role)
-        app_id = self.scheduler.submit(app, cfg)
-        self.wait(app_id)
+        for std_stream in ["stdout", "stderr"]:
+            with self.subTest(std_stream=std_stream):
+                log_dir = join(self.test_dir, f"test_{std_stream}_log")
+                cfg = RunConfig({"log_dir": log_dir})
 
-        success_file = os.path.join(
-            log_dir, self.scheduler.session_name, app_id, "SUCCESS"
-        )
-        with open(success_file, "r") as f:
-            sf_json = json.load(f)
-            self.assertEqual(app_id, sf_json["app_id"])
-            self.assertEqual("test_app", sf_json["app_name"])
+                role = (
+                    Role("role1")
+                    .runs(f"echo_{std_stream}.sh", "hello_world")
+                    .on(self.test_container)
+                    .replicas(num_replicas)
+                )
+                app = Application(name="test_app").of(role)
 
-            for replica_id in range(num_replicas):
-                replica_info = sf_json["roles"]["role1"][replica_id]
-                self._assert_file_content(replica_info["stdout"], "hello_world\n")
-                self._assert_file_content(replica_info["stderr"], "")
+                app_id = self.scheduler.submit(app, cfg)
+                self.wait(app_id)
 
-    def test_submit_with_log_dir_stderr(self):
-        num_replicas = 2
-        role = (
-            Role("role1")
-            .runs("echo_stderr.sh", "hello_world")
-            .on(self.test_container)
-            .replicas(num_replicas)
-        )
+                success_file = join(
+                    log_dir, self.scheduler.session_name, app_id, "SUCCESS"
+                )
+                with open(success_file, "r") as f:
+                    sf_json = json.load(f)
+                    self.assertEqual(app_id, sf_json["app_id"])
+                    self.assertEqual("test_app", sf_json["app_name"])
 
-        log_dir = os.path.join(self.test_dir, "log")
-        cfg = RunConfig({"log_dir": log_dir})
-        app = Application(name="test_app").of(role)
-        app_id = self.scheduler.submit(app, cfg)
-        self.wait(app_id)
-
-        success_file = os.path.join(
-            log_dir, self.scheduler.session_name, app_id, "SUCCESS"
-        )
-
-        with open(success_file, "r") as f:
-            sf_json = json.load(f)
-            self.assertEqual(app_id, sf_json["app_id"])
-            self.assertEqual("test_app", sf_json["app_name"])
-
-            for replica_id in range(num_replicas):
-                replica_info = sf_json["roles"]["role1"][replica_id]
-                self._assert_file_content(replica_info["stdout"], "")
-                self._assert_file_content(replica_info["stderr"], "hello_world\n")
+                    for replica_id in range(num_replicas):
+                        replica_info = sf_json["roles"]["role1"][replica_id]
+                        self._assert_file_content(
+                            replica_info[std_stream], "hello_world\n"
+                        )
 
     @patch(
         LOCAL_DIR_IMAGE_FETCHER_FETCH,
         return_value="",
     )
-    def test_submit_dryrun(self, img_fetcher_fetch_mock):
+    def test_submit_dryrun_without_log_dir_cfg(self, img_fetcher_fetch_mock):
         master = (
             Role("master")
             .runs("master.par", "arg1", ENV_VAR_1="VAL1")
@@ -228,56 +235,76 @@ class LocalSchedulerTest(unittest.TestCase):
         info = self.scheduler.submit_dryrun(app, cfg)
         print(info)
         self.assertEqual(2, len(info.request))
+
         master_info = info.request[0]["master"]
         trainer_info = info.request[1]["trainer"]
+
+        # log dir not specified in run cfg a tmp dir is created
+        # we know that the app log dir is error file location
+        # minus {role}/{replica_idx}/error.json"
+        app_log_dir = master_info[0]["env"][ERR_FILE_ENV]
+        for _ in range(3):
+            app_log_dir = os.path.dirname(app_log_dir)
+
         self.assertEqual(1, len(master_info))
         self.assertEqual(2, len(trainer_info))
-        self.assertEqual(
-            {
-                "args": ["master.par", "arg1"],
-                "env": {
-                    "ENV_VAR_1": "VAL1",
-                },
-            },
-            master_info[0],
-        )
-        self.assertEqual({"args": ["trainer.par"], "env": {}}, trainer_info[0])
-        self.assertEqual({"args": ["trainer.par"], "env": {}}, trainer_info[1])
+
+        for i, role in enumerate(app.roles):
+            role_name = role.name
+            role_info = info.request[i][role_name]
+            for j in range(role.num_replicas):
+                replica_log_dir = join(app_log_dir, role_name, str(j))
+                # dryrun should NOT create any directories
+                self.assertFalse(os.path.isdir(replica_log_dir))
+                self.assertEqual(
+                    {
+                        "args": [role.entrypoint, *role.args],
+                        "env": {
+                            ERR_FILE_ENV: join(replica_log_dir, "error.json"),
+                            **role.env,
+                        },
+                    },
+                    role_info[j],  # replica_info
+                )
 
     @patch(
         LOCAL_DIR_IMAGE_FETCHER_FETCH,
         return_value="",
     )
-    def test_submit_dryrun_with_log_dir(self, img_fetcher_fetch_mock):
+    def test_submit_dryrun_with_log_dir_cfg(self, img_fetcher_fetch_mock):
         trainer = (
             Role("trainer").runs("trainer.par").on(self.test_container).replicas(2)
         )
 
         app = Application(name="test_app").of(trainer)
-        cfg = RunConfig({"log_dir": "/tmp"})
+        cfg = RunConfig({"log_dir": self.test_dir})
         info = self.scheduler.submit_dryrun(app, cfg)
         print(info)
         trainer_info = info.request[0]["trainer"]
+
         self.assertEqual(2, len(trainer_info))
 
-        self.assertEqual(
-            {
-                "args": ["trainer.par"],
-                "env": {},
-                "stdout": f"/tmp/{self.scheduler.session_name}/test_app_##/trainer/0/stdout.log",
-                "stderr": f"/tmp/{self.scheduler.session_name}/test_app_##/trainer/0/stderr.log",
-            },
-            trainer_info[0],
-        )
-        self.assertEqual(
-            {
-                "args": ["trainer.par"],
-                "env": {},
-                "stdout": f"/tmp/{self.scheduler.session_name}/test_app_##/trainer/1/stdout.log",
-                "stderr": f"/tmp/{self.scheduler.session_name}/test_app_##/trainer/1/stderr.log",
-            },
-            trainer_info[1],
-        )
+        app_log_dir = join(self.test_dir, self.scheduler.session_name, "test_app_##")
+
+        for i, role in enumerate(app.roles):
+            role_name = role.name
+            role_info = info.request[i][role_name]
+            for j in range(role.num_replicas):
+                replica_log_dir = join(app_log_dir, role_name, str(j))
+                # dryrun should NOT create any directories
+                self.assertFalse(os.path.isdir(replica_log_dir))
+                self.assertEqual(
+                    {
+                        "args": [role.entrypoint, *role.args],
+                        "env": {
+                            ERR_FILE_ENV: join(replica_log_dir, "error.json"),
+                            **role.env,
+                        },
+                        "stdout": join(replica_log_dir, "stdout.log"),
+                        "stderr": join(replica_log_dir, "stderr.log"),
+                    },
+                    role_info[j],  # replica_info
+                )
 
     def test_log_iterator(self):
         role = (
@@ -287,7 +314,7 @@ class LocalSchedulerTest(unittest.TestCase):
             .replicas(1)
         )
 
-        log_dir = os.path.join(self.test_dir, "log")
+        log_dir = join(self.test_dir, "log")
         cfg = RunConfig({"log_dir": log_dir})
         app = Application(name="test_app").of(role)
         app_id = self.scheduler.submit(app, cfg)
@@ -323,8 +350,8 @@ class LocalSchedulerTest(unittest.TestCase):
             self.scheduler.log_iter(app_id, "role1", k=0)
 
     def test_submit_multiple_roles(self):
-        test_file1 = os.path.join(self.test_dir, "test_file_1")
-        test_file2 = os.path.join(self.test_dir, "test_file_2")
+        test_file1 = join(self.test_dir, "test_file_1")
+        test_file2 = join(self.test_dir, "test_file_2")
         role1 = (
             Role("role1")
             .runs("touch.sh", test_file1)
@@ -338,7 +365,7 @@ class LocalSchedulerTest(unittest.TestCase):
             .replicas(1)
         )
         app = Application(name="test_app").of(role1, role2)
-        cfg = RunConfig()
+        cfg = RunConfig({"log_dir": self.test_dir})
         app_id = self.scheduler.submit(app, cfg)
 
         self.assertEqual(AppState.SUCCEEDED, self.wait(app_id).state)
@@ -348,7 +375,7 @@ class LocalSchedulerTest(unittest.TestCase):
     def test_describe(self):
         role = Role("role1").runs("sleep.sh", "2").on(self.test_container).replicas(1)
         app = Application(name="test_app").of(role)
-        cfg = RunConfig()
+        cfg = RunConfig({"log_dir": self.test_dir})
         self.assertIsNone(self.scheduler.describe("test_app_0"))
         app_id = self.scheduler.submit(app, cfg)
         desc = self.scheduler.describe(app_id)
@@ -358,7 +385,7 @@ class LocalSchedulerTest(unittest.TestCase):
     def test_cancel(self):
         role = Role("role1").runs("sleep.sh", "10").on(self.test_container).replicas(1)
         app = Application(name="test_app").of(role)
-        cfg = RunConfig()
+        cfg = RunConfig({"log_dir": self.test_dir})
         app_id = self.scheduler.submit(app, cfg)
         desc = self.scheduler.describe(app_id)
         self.assertEqual(AppState.RUNNING, desc.state)
@@ -368,7 +395,7 @@ class LocalSchedulerTest(unittest.TestCase):
     def test_exists(self):
         role = Role("role1").runs("sleep.sh", "10").on(self.test_container).replicas(1)
         app = Application(name="test_app").of(role)
-        cfg = RunConfig()
+        cfg = RunConfig({"log_dir": self.test_dir})
         app_id = self.scheduler.submit(app, cfg)
 
         self.assertTrue(self.scheduler.exists(app_id))
@@ -387,20 +414,20 @@ class LocalSchedulerTest(unittest.TestCase):
 
         role = Role("role1").runs("sleep.sh", "10").on(self.test_container).replicas(1)
         app = Application(name="test_app").of(role)
-        cfg = RunConfig()
+        cfg = RunConfig({"log_dir": self.test_dir})
         scheduler.submit(app, cfg)
         with self.assertRaises(IndexError):
             scheduler.submit(app, cfg)
 
     def test_cache_evict(self):
         scheduler = LocalScheduler(session_name="test_session", cache_size=1)
-        test_file1 = os.path.join(self.test_dir, "test_file_1")
-        test_file2 = os.path.join(self.test_dir, "test_file_2")
+        test_file1 = join(self.test_dir, "test_file_1")
+        test_file2 = join(self.test_dir, "test_file_2")
         role1 = Role("role1").runs("touch.sh", test_file1).on(self.test_container)
         role2 = Role("role2").runs("touch.sh", test_file2).on(self.test_container)
         app1 = Application(name="touch_test_file1").of(role1)
         app2 = Application(name="touch_test_file2").of(role2)
-        cfg = RunConfig()
+        cfg = RunConfig({"log_dir": self.test_dir})
 
         app_id1 = scheduler.submit(app1, cfg)
         self.assertEqual(AppState.SUCCEEDED, self.wait(app_id1, scheduler).state)
