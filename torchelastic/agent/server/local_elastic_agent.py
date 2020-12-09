@@ -144,6 +144,7 @@ class LocalElasticAgent(SimpleElasticAgent):
                 "TORCHELASTIC_RESTART_COUNT": str(restart_count),
                 "TORCHELASTIC_MAX_RESTARTS": str(spec.max_restarts),
                 "TORCHELASTIC_RUN_ID": spec.rdzv_handler.get_run_id(),
+                "NCCL_ASYNC_ERROR_HANDLING": str(1),
             }
             if "OMP_NUM_THREADS" in os.environ:
                 worker_env["OMP_NUM_THREADS"] = os.environ["OMP_NUM_THREADS"]
