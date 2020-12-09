@@ -117,7 +117,7 @@ class LocalElasticAgent(SimpleElasticAgent):
 
     @prof
     def _stop_workers(self, worker_group: WorkerGroup) -> None:
-        self._pcontext.close()
+        self._shutdown()
 
     @prof
     def _start_workers(self, worker_group: WorkerGroup) -> Dict[int, Any]:
@@ -168,6 +168,10 @@ class LocalElasticAgent(SimpleElasticAgent):
         )
 
         return self._pcontext.pids()
+
+    def _shutdown(self) -> None:
+        if self._pcontext:
+            self._pcontext.close()
 
     @prof
     def _monitor_workers(self, worker_group: WorkerGroup) -> RunResult:

@@ -138,6 +138,9 @@ class TestAgent(SimpleElasticAgent):
     def _monitor_workers(self, worker_group: WorkerGroup) -> RunResult:
         raise NotImplementedError("mock this method")
 
+    def _shutdown(self):
+        pass
+
 
 def monres(state: WorkerState):
     if state == WorkerState.SUCCEEDED:
@@ -221,12 +224,14 @@ class SimpleElasticAgentTest(unittest.TestCase):
 
     @patch.object(TestAgent, "_invoke_run")
     @patch.object(TestAgent, "_record_metrics")
-    def test_invoke_run(self, record_metrics_mock, invoke_run_mock):
+    @patch.object(TestAgent, "_shutdown")
+    def test_invoke_run(self, shutdown_mock, record_metrics_mock, invoke_run_mock):
         spec = self._get_worker_spec(max_restarts=1)
         agent = TestAgent(spec)
         agent.run()
         invoke_run_mock.assert_called_once()
         record_metrics_mock.assert_called_once()
+        shutdown_mock.assert_called_once()
 
     @patch("torchelastic.agent.server.api.put_metric")
     def test_record_metrics_success_no_retries(self, put_metric_mock):

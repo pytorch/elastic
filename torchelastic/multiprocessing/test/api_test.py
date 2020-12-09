@@ -589,6 +589,16 @@ class StartProcessesTest(unittest.TestCase):
         self.assertEqual("<NONE>", failure.error_file_data["message"])
         self.assertEqual("<N/A>", failure.signal_name())
 
+    def test_binary_incorrect_entrypoint(self):
+        with self.assertRaises(FileNotFoundError):
+            start_processes(
+                name="echo",
+                entrypoint="does_not_exist.py",
+                args={0: ("foo"), 1: ("bar",)},
+                envs={0: {}, 1: {}},
+                log_dir=self.log_dir(),
+            )
+
     def test_binary_signal(self):
         pc = start_processes(
             name="echo",

@@ -229,7 +229,7 @@ def start_processes(
         envs[local_rank]["TORCHELASTIC_ERROR_FILE"] = error_file
 
     if isinstance(entrypoint, str):
-        return SubprocessContext(
+        context = SubprocessContext(
             name=name,
             entrypoint=entrypoint,
             args=args,
@@ -241,7 +241,7 @@ def start_processes(
             error_files=error_files,
         )
     else:
-        return MultiprocessContext(
+        context = MultiprocessContext(
             name=name,
             entrypoint=entrypoint,
             args=args,
@@ -253,3 +253,10 @@ def start_processes(
             error_files=error_files,
             start_method=start_method,
         )
+
+    try:
+        context.start()
+        return context
+    except Exception:
+        context.close()
+        raise

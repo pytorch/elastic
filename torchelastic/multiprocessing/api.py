@@ -24,7 +24,6 @@ from torchelastic.multiprocessing.errors import ProcessFailure, record
 from torchelastic.multiprocessing.redirects import redirect_stderr, redirect_stdout
 from torchelastic.multiprocessing.tail_log import TailLog
 
-
 log = logging.getLogger(__name__)
 
 
@@ -171,8 +170,23 @@ class PContext(abc.ABC):
         self.error_files = error_files
         self.nprocs = nprocs
 
-        self._stdout_tail = TailLog(name, tee_stdouts, sys.stdout).start()
-        self._stderr_tail = TailLog(name, tee_stderrs, sys.stderr).start()
+        self._stdout_tail = TailLog(name, tee_stdouts, sys.stdout)
+        self._stderr_tail = TailLog(name, tee_stderrs, sys.stderr)
+
+    def start(self) -> None:
+        """
+        Start processes using parameters defined in the constructor.
+        """
+        self._start()
+        self._stdout_tail.start()
+        self._stderr_tail.start()
+
+    @abc.abstractmethod
+    def _start(self) -> None:
+        """
+        Start processes using strategy defined in a particular context.
+        """
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def _poll(self) -> Optional[RunProcsResult]:
@@ -226,8 +240,10 @@ class PContext(abc.ABC):
 
     def close(self) -> None:
         self._close()
-        self._stdout_tail.stop()
-        self._stderr_tail.stop()
+        if self._stdout_tail:
+            self._stdout_tail.stop()
+        if self._stderr_tail:
+            self._stderr_tail.stop()
 
 
 def _wrap(
@@ -288,23 +304,38 @@ class MultiprocessContext(PContext):
             error_files,
         )
 
+        self.start_method = start_method
         # each ret_val queue will always contain a single element.
         self._ret_vals = {
-            local_rank: mp.get_context(start_method).SimpleQueue()
+            local_rank: mp.get_context(self.start_method).SimpleQueue()
             for local_rank in range(self.nprocs)
         }
-        self._pc: mp.ProcessContext = mp.start_processes(
-            fn=_wrap,
-            args=(entrypoint, args, envs, stdouts, stderrs, self._ret_vals),
-            nprocs=self.nprocs,
-            join=False,
-            daemon=False,
-            start_method=start_method,
-        )
-        self.start_method = start_method
 
         # see comments in ``join()`` for what this is
         self._return_values: Dict[int, Any] = {}
+        # pyre-fixme[8]: The attribute is defined in _start method
+        self._pc: mp.ProcessContext = None
+
+    def _start(self):
+        if self._pc:
+            raise ValueError(
+                "The process context already initialized. Most likely the start method got called twice."
+            )
+        self._pc: mp.ProcessContext = mp.start_processes(
+            fn=_wrap,
+            args=(
+                self.entrypoint,
+                self.args,
+                self.envs,
+                self.stdouts,
+                self.stderrs,
+                self._ret_vals,
+            ),
+            nprocs=self.nprocs,
+            join=False,
+            daemon=False,
+            start_method=self.start_method,
+        )
 
     def _poll(self) -> Optional[RunProcsResult]:
         try:
@@ -371,9 +402,10 @@ class MultiprocessContext(PContext):
         return {local_rank: pid for local_rank, pid in enumerate(self._pc.pids())}
 
     def _close(self) -> None:
-        for proc in self._pc.processes:
-            proc.terminate()
-            proc.join()
+        if self._pc:
+            for proc in self._pc.processes:
+                proc.terminate()
+                proc.join()
 
 
 class SubprocessHandler:
@@ -445,20 +477,28 @@ class SubprocessContext(PContext):
             error_files,
         )
 
+        # state vector; _vdone[local_rank] -> is local_rank finished or not
+        self._running_local_ranks: Set[int] = set(range(self.nprocs))
+        self._failures: Dict[int, ProcessFailure] = {}
+        # pyre-fixme[8]: The attribute is defined in _start method
+        self.subprocess_handlers: Dict[int, SubprocessHandler] = None
+
+    def _start(self):
+        if self.subprocess_handlers:
+            raise ValueError(
+                "The subprocess handlers already initialized. Most likely the start method got called twice."
+            )
         self.subprocess_handlers: Dict[int, SubprocessHandler] = {
             local_rank: SubprocessHandler(
-                entrypoint=entrypoint,
-                args=args[local_rank],
-                env=envs[local_rank],
+                entrypoint=self.entrypoint,
+                args=self.args[local_rank],
+                env=self.envs[local_rank],
                 preexec_fn=mp._prctl_pr_set_pdeathsig(signal.SIGTERM),
                 stdout=self.stdouts[local_rank],
                 stderr=self.stderrs[local_rank],
             )
             for local_rank in range(self.nprocs)
         }
-        # state vector; _vdone[local_rank] -> is local_rank finished or not
-        self._running_local_ranks: Set[int] = set(range(self.nprocs))
-        self._failures: Dict[int, ProcessFailure] = {}
 
     def _poll(self) -> Optional[RunProcsResult]:
         done_local_ranks = set()
@@ -504,5 +544,6 @@ class SubprocessContext(PContext):
         }
 
     def _close(self) -> None:
-        for handler in self.subprocess_handlers.values():
-            handler.close()
+        if self.subprocess_handlers:
+            for handler in self.subprocess_handlers.values():
+                handler.close()

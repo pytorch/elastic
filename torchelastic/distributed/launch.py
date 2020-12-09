@@ -499,7 +499,6 @@ def main(args=None):
     )
 
     rdzv_handler = rdzv_registry.get_rendezvous_handler(rdzv_parameters)
-
     try:
         spec = WorkerSpec(
             role=args.role,

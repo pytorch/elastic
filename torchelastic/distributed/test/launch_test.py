@@ -366,7 +366,7 @@ class LaunchTest(unittest.TestCase):
             launch.parse_min_max_nnodes("2:20:30")
 
     @patch("torchelastic.distributed.launch.LocalElasticAgent")
-    def test_launch_rdzv_shutdown(self, agent_mock_cls):
+    def test_launch_shutdown(self, agent_mock_cls):
         nnodes = 1
         nproc_per_node = 4
         args = [

@@ -479,6 +479,13 @@ class SimpleElasticAgent(ElasticAgent):
         """
         raise NotImplementedError()
 
+    @abc.abstractmethod
+    def _shutdown(self) -> None:
+        """
+        Cleans up any resources that were allocated during the agent's work.
+        """
+        raise NotImplementedError()
+
     @staticmethod
     def _set_master_addr_port(store, master_port):
         if master_port is None:
@@ -665,9 +672,12 @@ class SimpleElasticAgent(ElasticAgent):
 
     @prof
     def run(self, role: str = DEFAULT_ROLE) -> RunResult:
-        result = self._invoke_run(role)
-        self._record_metrics(result)
-        return result
+        try:
+            result = self._invoke_run(role)
+            self._record_metrics(result)
+            return result
+        finally:
+            self._shutdown()
 
     def _record_metrics(self, group_results: RunResult):
         is_failed = group_results.is_failed()

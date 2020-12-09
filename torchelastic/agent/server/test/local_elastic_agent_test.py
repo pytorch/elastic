@@ -17,7 +17,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Tuple
 from unittest import mock
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 import torch
 import torch.distributed as dist
@@ -634,3 +634,18 @@ class LocalElasticAgentTest(unittest.TestCase):
         res = self.run_agent(Conf(entrypoint=_happy_function, local_world_size=1))
         self.assertFalse(res.is_failed())
         barrier_mock.assert_called_once()
+
+    @patch("torchelastic.agent.server.local_elastic_agent.start_processes")
+    def test_shutdown_called(self, start_processes_mock):
+        pcontext_mock = Mock()
+        pcontext_mock.pids.return_value = {0: 0}
+        start_processes_mock.return_value = pcontext_mock
+        node_conf = Conf(entrypoint=_happy_function, local_world_size=1)
+        spec = self.get_worker_spec(node_conf, max_restarts=0)
+        agent = self.get_agent(spec)
+        with patch.object(agent, "_monitor_workers") as monitor_mock:
+            monitor_mock.return_value = RunResult(
+                state=WorkerState.SUCCEEDED, return_values={0: 0}
+            )
+            agent.run("worker")
+        pcontext_mock.close.assert_called_once()
