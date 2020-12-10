@@ -152,11 +152,12 @@ class StartProcessesTest(unittest.TestCase):
     def log_dir(self):
         return tempfile.mkdtemp(dir=self.test_dir)
 
-    def assert_file_equal(self, expected: List[str], filename: str) -> None:
+    def assert_in_file(self, expected: List[str], filename: str) -> None:
         expected = [f"{line.rstrip()}\n" for line in expected]
         with open(filename, "r") as fp:
             actual = fp.readlines()
-            self.assertEqual(expected, actual)
+            for line in expected:
+                self.assertIn(line, actual)
 
     def assert_pids_noexist(self, pids: Dict[int, int]):
         for local_rank, pid in pids.items():
@@ -199,9 +200,9 @@ class StartProcessesTest(unittest.TestCase):
             )
             self.assertEqual("hello_0", queue.get())
             if stdout_redir:
-                self.assert_file_equal(["hello stdout from 0"], stdout_log)
+                self.assert_in_file(["hello stdout from 0"], stdout_log)
             if stderr_redir:
-                self.assert_file_equal(["hello stderr from 0"], stderr_log)
+                self.assert_in_file(["hello stderr from 0"], stderr_log)
 
     def test_invalid_log_dir(self):
         with tempfile.NamedTemporaryFile(dir=self.test_dir) as not_a_dir:
@@ -311,11 +312,11 @@ class StartProcessesTest(unittest.TestCase):
                     if redirs & Std.ERR != Std.ERR:
                         self.assertFalse(results.stderrs[i])
                     if redirs & Std.OUT == Std.OUT:
-                        self.assert_file_equal(
+                        self.assert_in_file(
                             [f"hello stdout from {i}"], results.stdouts[i]
                         )
                     if redirs & Std.ERR == Std.ERR:
-                        self.assert_file_equal(
+                        self.assert_in_file(
                             [f"hello stderr from {i}"], results.stderrs[i]
                         )
 
@@ -359,7 +360,7 @@ class StartProcessesTest(unittest.TestCase):
                 )
                 self.assertLessEqual(failure.timestamp, int(time.time()))
 
-                self.assert_file_equal([f"exit {FAIL} from 0"], results.stderrs[0])
+                self.assert_in_file([f"exit {FAIL} from 0"], results.stderrs[0])
                 self.assertFalse(results.stdouts[0])
                 self.assertFalse(results.stderrs[1])
                 self.assertFalse(results.stdouts[1])
@@ -493,9 +494,9 @@ class StartProcessesTest(unittest.TestCase):
                 result = pc.wait()
 
                 self.assertFalse(result.is_failed())
-                self.assert_file_equal(["hello stdout from 0"], pc.stdouts[0])
-                self.assert_file_equal(["hello stderr from 0"], pc.stderrs[0])
-                self.assert_file_equal(["world stderr from 1"], pc.stderrs[1])
+                self.assert_in_file(["hello stdout from 0"], pc.stdouts[0])
+                self.assert_in_file(["hello stderr from 0"], pc.stderrs[0])
+                self.assert_in_file(["world stderr from 1"], pc.stderrs[1])
                 self.assertFalse(pc.stdouts[1])
                 self.assertTrue(pc._stderr_tail.stopped())
                 self.assertTrue(pc._stdout_tail.stopped())
@@ -534,11 +535,11 @@ class StartProcessesTest(unittest.TestCase):
                     if redirs & Std.ERR != Std.ERR:
                         self.assertFalse(results.stderrs[i])
                     if redirs & Std.OUT == Std.OUT:
-                        self.assert_file_equal(
+                        self.assert_in_file(
                             [f"hello stdout from {i}"], results.stdouts[i]
                         )
                     if redirs & Std.ERR == Std.ERR:
-                        self.assert_file_equal(
+                        self.assert_in_file(
                             [f"hello stderr from {i}"], results.stderrs[i]
                         )
 
@@ -562,8 +563,8 @@ class StartProcessesTest(unittest.TestCase):
         self.assertEqual(138, failure.exitcode)
         self.assertEqual("<N/A>", failure.signal_name())
         self.assertEqual("<NONE>", failure.error_file_data["message"])
-        self.assert_file_equal([f"exit {FAIL} from 0"], results.stderrs[0])
-        self.assert_file_equal([], results.stdouts[0])
+        self.assert_in_file([f"exit {FAIL} from 0"], results.stderrs[0])
+        self.assert_in_file([], results.stdouts[0])
         self.assertFalse(results.stderrs[1])
         self.assertFalse(results.stdouts[1])
         self.assertTrue(pc._stderr_tail.stopped())
@@ -634,9 +635,9 @@ class StartProcessesTest(unittest.TestCase):
         result = pc.wait()
 
         self.assertFalse(result.is_failed())
-        self.assert_file_equal(["hello stdout from 0"], pc.stdouts[0])
-        self.assert_file_equal(["hello stderr from 0"], pc.stderrs[0])
-        self.assert_file_equal(["world stderr from 1"], pc.stderrs[1])
+        self.assert_in_file(["hello stdout from 0"], pc.stdouts[0])
+        self.assert_in_file(["hello stderr from 0"], pc.stderrs[0])
+        self.assert_in_file(["world stderr from 1"], pc.stderrs[1])
         self.assertFalse(pc.stdouts[1])
         self.assertTrue(pc._stderr_tail.stopped())
         self.assertTrue(pc._stdout_tail.stopped())
