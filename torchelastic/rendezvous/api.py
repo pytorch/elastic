@@ -56,7 +56,6 @@ class RendezvousHandler(abc.ABC):
     def next_rendezvous(
         self,
         # pyre-ignore[11]: Annotation `Store` is not defined as a type.
-        # pyre-ignore[10]: Name `torch` is used but not defined.
     ) -> Tuple["torch.distributed.Store", int, int]:  # noqa: F821
         """
         Main entry-point into the rendezvous barrier.
