@@ -22,7 +22,7 @@ to one or more such ``Roles``.
  train_project_dir = tsm.Container(image=f"/home/{username}/pytorch_trainer")
  reader_project_dir = tsm.Container(image=f"/home/{username}/pytorch_reader")
 
- trainer = tsm.Role(name="trainer")
+ trainer = tsm.ElasticRole(name="trainer", nprocs_per_node=2, nnodes="4:4")
               .runs("train_main.py", "--epochs", "50", MY_ENV_VAR="foobar")
               .on(train_project_dir)
               .replicas(4)
@@ -39,25 +39,26 @@ to one or more such ``Roles``.
 
  app = tsm.Application(name="my_train_job").of(trainer, ps, reader)
 
- session = tsm.session(name="my_session", scheduler_backend="local")
- app_id = session.run(app)
+ session = tsm.session(name="my_session")
+ app_id = session.run(app, scheduler="local")
  session.wait(app_id)
 
 In the example above, we have done a few things:
 
-1. Created and ran a distributed training application that runs a total of
+#. Created and ran a distributed training application that runs a total of
    4 + 10 + 1 = 15 containers (just processes since we used a ``local`` scheduler).
-2. The ``trainer`` and ``ps`` run from the same container:
-   ``/home/$USER/pytorch_trainer`` and the reader runs from a container:
-   ``/home/$USER/pytorch_reader``. The containers map to a local directory
+#. ``trainer`` run wrapped with TorchElastic.
+#. The ``trainer`` and ``ps`` run from the same image (but different containers):
+   ``/home/$USER/pytorch_trainer`` and the reader runs from the image:
+   ``/home/$USER/pytorch_reader``. The images map to a local directory
    because we are using a local scheduler. For other non-trivial schedulers
    a container could map to a Docker image, tarball, rpm, etc.
-3. The main entrypoints are relative to the container image's root dir.
+#. The main entrypoints are relative to the container image's root dir.
    For example, the trainer runs ``/home/$USER/pytorch_trainer/train_main.py``.
-4. Arguments to each role entrypoint are passed as ``*args`` after the entrypoint CMD.
-5. Environment variables to each role entrypoint are passed as ``**kwargs``
+#. Arguments to each role entrypoint are passed as ``*args`` after the entrypoint CMD.
+#. Environment variables to each role entrypoint are passed as ``**kwargs``
    after the arguments.
-6. The ``session`` object has action APIs on the app: ``run``, ``describe``, and ``wait``.
+#. The ``session`` object has action APIs on the app (see :class:`Session`).
 
 
 """

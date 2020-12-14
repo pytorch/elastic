@@ -18,10 +18,15 @@ Usage Overview
 
 .. automodule:: torchelastic.tsm.driver
 
-User API Documentation
+API Documentation
 --------------------------
 
 .. currentmodule:: torchelastic.tsm.driver.api
+
+Session
+~~~~~~~~~~~~~~~
+.. autoclass:: Session
+   :members:
 
 Containers and Resource
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -33,15 +38,18 @@ Roles and Applications
 .. autoclass:: Role
 .. autoclass:: ElasticRole
 .. autoclass:: macros
+.. autoclass:: RetryPolicy
+.. autoclass:: DeploymentPreference
 .. autoclass:: Application
 
-Session
-~~~~~~~~~~~~~~~
-.. autoclass:: Session
-   :members:
-
-Developer API Documentation
+Extending TSM
 -----------------------------------
+TSM is built in a "plug-n-play" manner. While it ships out-of-the-box
+with certain schedulers and session implementations, you can implement
+your own to fit the needs of your PyTorch application and infrastructure.
+This section introduces the interfaces that were meant to be subclassed
+and extended.
+
 .. currentmodule:: torchelastic.tsm.driver.api
 
 Scheduler
@@ -52,5 +60,6 @@ Scheduler
 .. autoclass:: torchelastic.tsm.driver.local_scheduler.LocalScheduler
    :members:
 
-Session Builder
-~~~~~~~~~~~~~~~~
+
+
+

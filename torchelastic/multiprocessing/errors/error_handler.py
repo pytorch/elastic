@@ -38,6 +38,17 @@ def _write_error(e: BaseException, error_file: Optional[str]):
 
 
 class ErrorHandler:
+    """
+    Writes the provided exception object along with some other metadata about
+    the error in a structured way in JSON format to an error file specified by the
+    environment variable: ``TORCHELASTIC_ERROR_FILE``. If this environment
+    variable is not set, then simply logs the contents of what would have been
+    written to the error file.
+
+    This handler may be subclassed to customize the handling of the error.
+    Subclasses should override ``initialize()`` and ``record_exception()``.
+    """
+
     def _get_error_file_path(self) -> Optional[str]:
         """
         Returns the error file path. May return ``None`` to have the

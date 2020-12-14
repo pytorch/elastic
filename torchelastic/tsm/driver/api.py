@@ -210,11 +210,11 @@ class RetryPolicy(str, Enum):
               Please refer to the scheduler's documentation for more information
               on the retry policies they support and behavior caveats (if any).
 
-    1. REPLICA - Replaces the replica instance. Surviving replicas are untouched.
-                 Use with ``ElasticRole`` to have torchelastic coordinate restarts
-                 and membership changes. Otherwise, it is up to the application to
-                 deal with failed replica departures and replacement replica admittance.
-    2. APPLICATION - Restarts the entire application.
+    1. REPLICA: Replaces the replica instance. Surviving replicas are untouched.
+                Use with ``ElasticRole`` to have torchelastic coordinate restarts
+                and membership changes. Otherwise, it is up to the application to
+                deal with failed replica departures and replacement replica admittance.
+    2. APPLICATION: Restarts the entire application.
 
     """
 
@@ -283,16 +283,16 @@ class Role:
                  .replicas(4)
 
     Arguments:
-            name - name of the role
-            entrypoint - command (within the container) to invoke the role
-            args - commandline arguments to the entrypoint cmd
-            env - environment variable mappings
-            container - container to run in
-            replicas - number of container replicas to run
-            max_retries - max number of retries before giving up
-            retry_policy - retry behavior upon replica failures
-            deployment_preference - hint to the scheduler on how to best
-                                    deploy and manage replicas of this role
+            name: name of the role
+            entrypoint: command (within the container) to invoke the role
+            args: commandline arguments to the entrypoint cmd
+            env: environment variable mappings
+            container: container to run in
+            replicas: number of container replicas to run
+            max_retries: max number of retries before giving up
+            retry_policy: retry behavior upon replica failures
+            deployment_preference: hint to the scheduler on how to best
+                                   deploy and manage replicas of this role
 
     """
 
@@ -356,17 +356,16 @@ class ElasticRole(Role):
 
     ::
 
+     elastic_trainer = ElasticRole("trainer", nproc_per_node=8, nnodes="2:4", max_restarts=3)
+                        .runs("my_train_script.py", "--script_arg", "foo", "--another_arg", "bar")
+                        .on(container)
+                        .replicas(2)
      # effectively runs:
      #    python -m torchelastic.distributed.launch
      #        --nproc_per_node 8
      #        --nnodes 2:4
      #        --max_restarts 3
      #        my_train_script.py --script_arg foo --another_arg bar
-
-     elastic_trainer = ElasticRole("trainer", nproc_per_node=8, nnodes="2:4", max_restarts=3)
-                        .runs("my_train_script.py", "--script_arg", "foo", "--another_arg", "bar")
-                        .on(container)
-                        .replicas(2)
 
     """
 
@@ -1145,7 +1144,7 @@ class Session(abc.ABC):
                   otherwise it will be ``FAILED``.
 
         Raises:
-            SessionMismatchException - if the app handle does not belong to this session
+            SessionMismatchException: if the app handle does not belong to this session
         """
         raise NotImplementedError()
 
@@ -1176,9 +1175,8 @@ class Session(abc.ABC):
         """
         Returns an iterator over the log lines of the specified job container.
 
-        .. note:: ``k`` is the node (host) id NOT the ``rank``.
-
-        .. note:: ``since`` and ``until`` need not always be honored (depends on scheduler).
+        .. note:: #. ``k`` is the node (host) id NOT the ``rank``.
+                  #. ``since`` and ``until`` need not always be honored (depends on scheduler).
 
         .. warning:: The semantics and guarantees of the returned iterator is highly
                      scheduler dependent. See ``torchelastic.tsm.driver.api.Scheduler.log_iter``
@@ -1204,33 +1202,31 @@ class Session(abc.ABC):
 
         ::
 
-         # DO NOT DO THIS!!!!
+         # DO NOT DO THIS!
          # parses accuracy metric from log and reports it for this experiment run
-
          accuracy = -1
          for line in session.log_lines(app_handle, "trainer", k=0):
             if matches_regex(line, "final model_accuracy:[0-9]*"):
                 accuracy = parse_accuracy(line)
                 break
-
          report(experiment_name, accuracy)
 
         Arguments:
-            app_handle - application handle
-            role_name - role within the app (e.g. "trainer")
-            k - k^th replica of the role to fetch the logs for
-            regex - optional regex filter, returns all lines if left empty
-            since - datetime based start cursor. If left empty begins from the
+            app_handle: application handle
+            role_name: role within the app (e.g. trainer)
+            k: k-th replica of the role to fetch the logs for
+            regex: optional regex filter, returns all lines if left empty
+            since: datetime based start cursor. If left empty begins from the
                     first log line (start of job).
-            until - datetime based end cursor. If left empty, follows the log output
+            until: datetime based end cursor. If left empty, follows the log output
                     until the job completes and all log lines have been consumed.
 
         Returns:
-             An iterator over the role's ``k``th replica of the specified application.
+             An iterator over the role k-th replica of the specified application.
 
         Raise:
-            UnknownAppException - if the app does not exist in the scheduler
-            SessionMismatchException - if the app handle does not belong to this session
+            UnknownAppException: if the app does not exist in the scheduler
+            SessionMismatchException: if the app handle does not belong to this session
 
         """
         raise NotImplementedError()

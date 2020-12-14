@@ -3,29 +3,20 @@
 TorchElastic
 ==================
 
-TorchElastic enables distributed PyTorch training jobs to be executed
-in a fault tolerant and elastic manner.
+Makes distributed PyTorch fault-tolerant and elastic.
 
-Use cases:
-
-#. Fault Tolerance: jobs that run on infrastructure where nodes get replaced
-   frequently, either due to flaky hardware or by design. Or mission critical
-   production grade jobs that need to be run with resilience to failures.
-
-#. Dynamic Capacity Management: jobs that run on leased capacity that can be
-   taken away at any time (e.g. AWS spot instances) or shared pools where the
-   pool size can change dynamically based on demand.
-
-Documentation
+Get Started
 ---------------
-
 .. toctree::
    :maxdepth: 1
-   :caption: Get Started
+   :caption: Usage
 
    quickstart
    train_script
    examples
+
+Documentation
+---------------
 
 .. toctree::
    :maxdepth: 1
@@ -33,8 +24,10 @@ Documentation
 
    distributed
    agent
-   timer
+   multiprocessing
+   errors
    rendezvous
+   timer
    metrics
    events
 
@@ -51,9 +44,10 @@ Documentation
    kubernetes
    runtime
 
+Experimental
+---------------
 .. toctree::
    :maxdepth: 1
    :caption: Experimental
 
    tsm_driver
-   multiprocessing

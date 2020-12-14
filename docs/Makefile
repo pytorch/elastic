@@ -1,4 +1,4 @@
-  
+
 # Minimal makefile for Sphinx documentation
 # Usage:
 #    make html

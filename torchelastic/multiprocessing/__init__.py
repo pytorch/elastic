@@ -51,11 +51,18 @@ Usage 2: Launching 2 echo workers as a binary
  ctx = start_processes(
          name="echo"
          entrypoint="echo",
+         log_dir="/tmp/foobar",
          args={0: "hello", 1: "world"},
          redirects={1: Std:OUT},
         )
 
+Just like ``torch.multiprocessing``, the return value of the function
+:func:`start_processes` is a process context (:class:`api.PContext`). If a function
+was launched, a :class:`api.MultiprocessContext` is returned and if a binary
+was launched a :class:`api.SubprocessContext` is returned. Both are specific
+implementations of the parent :class:`api.PContext` class.
 """
+
 import os
 from typing import Callable, Dict, Tuple, Union
 
@@ -111,9 +118,9 @@ def start_processes(
 
     For each process, the ``log_dir`` will contain:
 
-    1. ``{local_rank}/error.json`` - if the process failed, a file with the error info
-    2. ``{local_rank}/stdout.json`` - if ``redirect & STDOUT == STDOUT``
-    2. ``{local_rank}/stderr.json`` - if ``redirect & STDERR == STDERR``
+    #. ``{local_rank}/error.json``: if the process failed, a file with the error info
+    #. ``{local_rank}/stdout.json``: if ``redirect & STDOUT == STDOUT``
+    #. ``{local_rank}/stderr.json``: if ``redirect & STDERR == STDERR``
 
     .. note:: It is expected that the ``log_dir`` exists, is empty, and is a directory.
 

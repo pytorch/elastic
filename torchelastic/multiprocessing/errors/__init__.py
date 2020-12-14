@@ -6,6 +6,48 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+"""
+Each host in a distributed PyTorch job runs with a single TorchElastic agent,
+and multiple workers (as children processes of the TorchElastic agent).
+Since the workers are user-provided (your PyTorch script/job), TorchElastic
+has a way to propagate errors on the trainers through the agent and up to the
+scheduler, which ultimately informs the end-user about the state of the job
+and applies any retry policies.
+
+TorchElastic categorizes errors into 3 categories:
+
++----------------+----------------+--------------------------------------------------------------+
+| Category       | Sub-Category   |  Description                                                 |
++================+================+==============================================================+
+| User Error     | Input Error    | invalid inputs to TorchElastic APIs (e.g. min > max nodes)   |
+|                +----------------+--------------------------------------------------------------+
+|                | Worker Failure | any failures on the worker child process                     |
++----------------+----------------+--------------------------------------------------------------+
+| Platform Error |      n/a       | failures caused by the agent                                 |
++----------------+----------------+--------------------------------------------------------------+
+| Infra Error    |      n/a       | failures outside the domain of the agent and workers         |
+|                |                | (e.g. host failures)                                         |
++----------------+----------------+--------------------------------------------------------------+
+
+All errors other than "Worker Failure" are either raised canonically from the
+agent process or implicitly or explicitly crash the agent process. So the
+standard language (python) provided exception handling strategies apply.
+
+Worker Failures are special because the exception/failure originates on a different
+process from the agent so the error needs to be propagated inter-process
+(e.g. the agent cannot simply ``try-catch`` an exception raised on the worker process).
+
+TorchElastic agents use :func:`torchelastic.multiprocessing.start_processes`
+to launch the workers which has a simple file based inter-process error propagation
+built-in.
+
+Any function or binary entrypoint decorated with :func:`record`
+will write uncaught exceptions (with the trace information) to a file specified by the
+environment variable ``TORCHELASTIC_ERROR_FILE``. The parent process (e.g. agent)
+sets this env var on each child it launches, then aggregates the error files for all
+children, and propagates the one with the **smallest** timestamp (e.g. the **first** error).
+"""
+
 import json
 import os
 import signal
@@ -244,9 +286,12 @@ def record(fn, error_handler: Optional[ErrorHandler] = None):
      error_handler.initialize()
      try:
         foobar()
+     except ChildFailedError as e:
+        error_handler.copy_error_file(e.get_first_failure())
+        raise
      except Exception as e:
         error_handler.record(e)
-
+        raise
 
     .. important:: use this decorator once per process at the top level method,
                    typically this is the main method.
