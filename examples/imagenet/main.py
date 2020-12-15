@@ -153,11 +153,6 @@ def main():
     torch.cuda.set_device(device_id)
     print(f"=> set cuda device = {device_id}")
 
-    # when using NCCL, on failures, surviving nodes will deadlock on NCCL ops
-    # because NCCL uses a spin-lock on the device. Set this env var and
-    # to enable a watchdog thread that will destroy stale NCCL communicators
-    os.environ["NCCL_BLOCKING_WAIT"] = "1"
-
     dist.init_process_group(
         backend=args.dist_backend, init_method="env://", timeout=timedelta(seconds=10)
     )
