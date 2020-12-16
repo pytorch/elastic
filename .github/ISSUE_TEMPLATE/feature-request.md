@@ -16,10 +16,10 @@ about: Submit a proposal/request for a new feature or enhancement
 
 
 ## Alternatives
-<!-- discuss the alternativese considered and their pros/cons -->
+<!-- discuss the alternatives considered and their pros/cons -->
 
 
 ## Additional context/links
-<!-- link to code, documentation, etc -->
+<!-- link to code, documentation, etc. -->
 
 
