@@ -80,7 +80,11 @@ class TailLog:
     """
 
     def __init__(
-        self, name: str, log_files: Dict[int, str], dst: TextIO, interval_sec: float = 2
+        self,
+        name: str,
+        log_files: Dict[int, str],
+        dst: TextIO,
+        interval_sec: float = 0.1,
     ):
         n = len(log_files)
         self._threadpool = None
