@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
-
 # Copyright (c) Facebook, Inc. and its affiliates.
 # All rights reserved.
 #
-import time
-
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
+
+import time
 from datetime import datetime
 from typing import Dict, Iterable, List, Optional, Tuple
 
@@ -75,24 +74,12 @@ class StandaloneSession(Session):
         scheduler = self._scheduler(scheduler_backend)
         return scheduler, app_id
 
-    def run(
-        self,
-        app: Application,
-        scheduler: SchedulerBackend = "default",
-        cfg: Optional[RunConfig] = None,
-    ) -> AppHandle:
-        return super().run(app, scheduler, cfg)
-
-    def _run(
-        self,
-        app: Application,
-        scheduler: SchedulerBackend,
-        cfg: RunConfig,
-    ) -> str:
-        sched = self._scheduler(scheduler)
-        app_id = sched.submit(app, cfg)
-        app_handle = make_app_handle(scheduler, self._name, app_id)
-        self._apps[app_handle] = app
+    def schedule(self, dryrun_info: AppDryRunInfo) -> AppHandle:
+        scheduler_backend = dryrun_info._scheduler
+        sched = self._scheduler(scheduler_backend)
+        app_id = sched.schedule(dryrun_info)
+        app_handle = make_app_handle(scheduler_backend, self._name, app_id)
+        self._apps[app_handle] = dryrun_info._app
         return app_handle
 
     def _dryrun(

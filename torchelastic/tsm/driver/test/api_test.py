@@ -15,6 +15,7 @@ from unittest.mock import MagicMock
 
 from torchelastic.tsm.driver.api import (
     _TERMINAL_STATES,
+    ALL,
     MISSING,
     NULL_CONTAINER,
     NULL_RESOURCE,
@@ -119,32 +120,27 @@ class ContainerBuilderTest(unittest.TestCase):
         res1 = Resource(cpu=1, gpu=2, memMB=128)
         container = Container("torch").require(res1)
         self.assertEqual(1, len(container.resources))
-        self.assertEqual(res1, container.resources[Container._ALL])
+        self.assertEqual(res1, container.resources[ALL])
 
-    def test_get_resource(self):
+    def test_get_resource_mapping(self):
         res1 = Resource(cpu=1, gpu=2, memMB=128)
         res2 = Resource(cpu=1, gpu=2, memMB=256)
-        container = Container("torch").require({"default": res1, Container._ALL: res2})
+        container = Container("torch").require({"default": res1, ALL: res2})
         self.assertEqual(2, len(container.resources))
         self.assertEqual(res1, container.get_resource("default"))
-        self.assertEqual(res2, container.get_resource(Container._ALL))
+        self.assertEqual(res2, container.get_resource(ALL))
         self.assertEqual(res2, container.get_resource("unknown_scheduler"))
 
-    def test_get_resource_none(self):
-        res1 = Resource(cpu=1, gpu=2, memMB=128)
-        res2 = Resource(cpu=1, gpu=2, memMB=256)
-        container = Container("torch").require(
-            {"default": res1, "test_scheduler": res2}
-        )
-        self.assertEqual(NULL_RESOURCE, container.get_resource("non-existent"))
+    def test_get_resource_all(self):
+        res = Resource(cpu=1, gpu=2, memMB=128)
+        container = Container("torch").require(res)
+        self.assertEqual(res, container.get_resource("any_scheduler"))
 
-    def test_get_resource_incorrect_input(self):
-        res1 = Resource(cpu=1, gpu=2, memMB=128)
-        res2 = Resource(cpu=1, gpu=2, memMB=256)
-        with self.assertRaises(ValueError):
-            Container("torch").require(
-                {"default": res1, "test_scheduler": res2}, "new_scheduler"
-            )
+    def test_get_resource_specific(self):
+        res = Resource(cpu=1, gpu=2, memMB=128)
+        container = Container("torch").require(res, scheduler="foobar")
+        self.assertEqual(res, container.get_resource("foobar"))
+        self.assertEqual(NULL_RESOURCE, container.get_resource("any_scheduler"))
 
 
 class RoleBuilderTest(unittest.TestCase):
@@ -378,10 +374,13 @@ class SessionTest(unittest.TestCase):
         def __init__(self):
             super().__init__("mock session")
 
-        def _run(
+        def schedule(self, dryrun_info: AppDryRunInfo) -> str:
+            return dryrun_info._app.name
+
+        def _dryrun(
             self, app: Application, scheduler: SchedulerBackend, cfg: RunConfig
-        ) -> str:
-            return app.name
+        ) -> AppDryRunInfo:
+            return AppDryRunInfo("<mock request>", lambda r: r)
 
         def status(self, app_handle: AppHandle) -> Optional[AppStatus]:
             return None
@@ -591,8 +590,8 @@ class SchedulerTest(unittest.TestCase):
         def __init__(self, session_name):
             super().__init__(session_name)
 
-        def _submit(self, app: Application, cfg: RunConfig) -> str:
-            return app.name
+        def schedule(self, dryrun_info: AppDryRunInfo) -> str:
+            return dryrun_info._app.name
 
         def _submit_dryrun(self, app: Application, cfg: RunConfig) -> AppDryRunInfo:
             return AppDryRunInfo(None, lambda t: "None")

@@ -68,6 +68,9 @@ class Resource:
 # sentinel value used for cases when resource does not matter (e.g. ignored)
 NULL_RESOURCE: Resource = Resource(cpu=-1, gpu=-1, memMB=-1)
 
+# used as "*" scheduler backend
+ALL: SchedulerBackend = "all"
+
 
 @dataclass
 class Container:
@@ -107,25 +110,17 @@ class Container:
     resources: Dict[SchedulerBackend, Resource] = field(default_factory=dict)
     port_map: Dict[str, int] = field(default_factory=dict)
 
-    _ALL = "all"
-
     def require(
         self,
         resources: Union[Resource, Dict[SchedulerBackend, Resource]],
-        scheduler: Optional[SchedulerBackend] = None,
+        scheduler: SchedulerBackend = ALL,
     ) -> "Container":
         """
         Sets resource requirements on the container.
         """
         if isinstance(resources, Resource):
-            scheduler = scheduler or self._ALL
             self.resources[scheduler] = resources
         else:
-            if scheduler is not None:
-                raise ValueError(
-                    "Incorrect parameters. Both resource map as well as scheduler type were provided."
-                    "Provide either map or resource with scheduler type"
-                )
             self.resources.update(resources)
         return self
 
@@ -136,13 +131,11 @@ class Container:
         self.port_map.update({**kwargs})
         return self
 
-    def get_resource(self, scheduler: Optional[SchedulerBackend] = None) -> Resource:
+    def get_resource(self, scheduler: SchedulerBackend) -> Resource:
         """
         Retrieves resource for the specified ``scheduler``. Returns `None` if none found.
         """
-        if scheduler and scheduler in self.resources:
-            return self.resources[scheduler]
-        return self.resources.get(self._ALL, NULL_RESOURCE)
+        return self.resources.get(scheduler, self.resources.get(ALL, NULL_RESOURCE))
 
 
 # sentinel value used to represent missing string attributes, such as image or entrypoint
@@ -453,6 +446,9 @@ def is_terminal(state: AppState) -> bool:
     return state in _TERMINAL_STATES
 
 
+NONE: str = "<NONE>"
+
+
 @dataclass
 class AppStatus:
     """
@@ -465,7 +461,7 @@ class AppStatus:
     state: AppState
     num_restarts: int = 0
     msg: str = ""
-    structured_error_msg: str = "<NONE>"
+    structured_error_msg: str = NONE
     ui_url: Optional[str] = None
 
     def is_terminal(self) -> bool:
@@ -474,10 +470,10 @@ class AppStatus:
     def __repr__(self):
         app_status_dict = asdict(self)
         structured_error_msg = app_status_dict.pop("structured_error_msg")
-        if structured_error_msg != "<NONE>":
+        if structured_error_msg != NONE:
             structured_error_msg_parsed = json.loads(structured_error_msg)
         else:
-            structured_error_msg_parsed = "<NONE>"
+            structured_error_msg_parsed = NONE
         app_status_dict["structured_error_msg"] = structured_error_msg_parsed
         return json.dumps(app_status_dict, indent=2)
 
@@ -504,32 +500,11 @@ class DescribeAppResponse:
     app_id: str = "<NOT_SET>"
     state: AppState = AppState.UNSUBMITTED
     num_restarts: int = -1
-    msg: str = "<NONE>"
-    structured_error_msg: str = "<NONE>"
+    msg: str = NONE
+    structured_error_msg: str = NONE
     ui_url: Optional[str] = None
 
     roles: List[Role] = field(default_factory=list)
-
-
-T = TypeVar("T")
-
-
-class AppDryRunInfo(Generic[T]):
-    """
-    Returned by ``Scheduler.submit_dryrun``. Represents the
-    request that would have been made to the scheduler.
-    The ``fmt_str()`` method of this object should return a
-    pretty formatted string representation of the underlying
-    request object such that ``print(info)`` yields a human
-    readable representation of the underlying request.
-    """
-
-    def __init__(self, request: T, fmt: Callable[[T], str]):
-        self.request = request
-        self._fmt = fmt
-
-    def __repr__(self):
-        return self._fmt(self.request)
 
 
 # valid ``RunConfig`` values; only support primitives (str, int, float, bool)
@@ -590,6 +565,39 @@ class RunConfig:
 
     def __repr__(self):
         return self.cfgs.__repr__()
+
+
+T = TypeVar("T")
+
+
+class AppDryRunInfo(Generic[T]):
+    """
+    Returned by ``Scheduler.submit_dryrun``. Represents the
+    request that would have been made to the scheduler.
+    The ``fmt_str()`` method of this object should return a
+    pretty formatted string representation of the underlying
+    request object such that ``print(info)`` yields a human
+    readable representation of the underlying request.
+    """
+
+    def __init__(self, request: T, fmt: Callable[[T], str]):
+        self.request = request
+        self._fmt = fmt
+
+        # fields below are only meant to be used by
+        # Scheduler or Session implementations
+        # and are back references to the parameters
+        # to dryrun() that returned this AppDryRunInfo object
+        # thus they are set in Session.dryrun() manually
+        # rather than through constructor arguments
+        # DO NOT create getters or make these public
+        # unless there is a good reason to
+        self._app = None
+        self._cfg = None
+        self._scheduler = None
+
+    def __repr__(self):
+        return self._fmt(self.request)
 
 
 class runopts:
@@ -738,13 +746,22 @@ class Scheduler(abc.ABC):
         Returns:
             The application id that uniquely identifies the submitted app.
         """
-        return self._submit(app, self.run_opts().resolve(cfg))
+        dryrun_info = self.submit_dryrun(app, cfg)
+        return self.schedule(dryrun_info)
 
     @abc.abstractmethod
-    def _submit(self, app: Application, cfg: RunConfig) -> str:
+    def schedule(self, dryrun_info: AppDryRunInfo) -> str:
         """
-        Actually performs the submit action, implementors should implement
-        this method rather than ``submit``.
+        Same as ``submit`` except that it takes an ``AppDryrunInfo``.
+        Implementors are encouraged to implement this method rather than
+        directly implementing ``submit`` since ``submit`` can be trivially
+        implemented by:
+
+        ::
+
+         dryrun_info = self.submit_dryrun(app, cfg)
+         return schedule(dryrun_info)
+
         """
 
         raise NotImplementedError()
@@ -985,13 +1002,72 @@ class Session(abc.ABC):
         """
         Runs the given application in the specified mode.
 
+        .. note:: sub-classes of ``Session`` should implement ``schedule`` method
+                  rather than overriding this method directly.
+
         Returns:
             An application handle that is used to call other action APIs on the app.
 
         Raises:
-            AppNotReRunnableException - if the session/scheduler does not support re-running attached apps
+            AppNotReRunnableException: if the session/scheduler does not support re-running attached apps
         """
 
+        dryrun_info = self.dryrun(app, scheduler, cfg)
+        return self.schedule(dryrun_info)
+
+    @abc.abstractmethod
+    def schedule(self, dryrun_info: AppDryRunInfo) -> AppHandle:
+        """
+        Actually runs the application from the given dryrun info.
+        Useful when one needs to overwrite a parameter in the scheduler
+        request that is not configurable from one of the object APIs.
+
+        .. warning:: Use sparingly since abusing this method to overwrite
+                     many parameters in the raw scheduler request may
+                     lead to your usage of TSM going out of compliance
+                     in the long term. This method is intended to
+                     unblock the user from experimenting with certain
+                     scheduler-specific features in the short term without
+                     having to wait until TSM exposes scheduler features
+                     in its APIs.
+
+        .. note:: It is recommended that sub-classes of ``Session`` implement
+                  this method instead of directly implementing the ``run`` method.
+
+        Usage:
+
+        ::
+
+         dryrun_info = session.dryrun(app, scheduler="default", cfg)
+
+         # overwrite parameter "foo" to "bar"
+         dryrun_info.request.foo = "bar"
+
+         app_handle = session.submit(dryrun_info)
+
+        """
+        raise NotImplementedError()
+
+    def dryrun(
+        self,
+        app: Application,
+        scheduler: SchedulerBackend = "default",
+        cfg: Optional[RunConfig] = None,
+    ) -> AppDryRunInfo:
+        """
+        Dry runs an app on the given scheduler with the provided run configs.
+        Does not actually submit the app but rather returns what would have been
+        submitted. The returned ``AppDryRunInfo`` is pretty formatted and can
+        be printed or logged directly.
+
+        Usage:
+
+        ::
+
+         dryrun_info = session.dryrun(app, scheduler="local", cfg)
+         print(dryrun_info)
+
+        """
         # input validation
         if not app.roles:
             raise ValueError(
@@ -1024,44 +1100,16 @@ class Session(abc.ABC):
                     f" Did you forget to call container.require(resources)"
                 )
 
-        return self._run(app, scheduler, cfg or RunConfig())
+        dryrun_info = self._dryrun(app, scheduler, cfg or RunConfig())
+        dryrun_info._app = app
+        dryrun_info._cfg = cfg
+        dryrun_info._scheduler = scheduler
+        return dryrun_info
 
     @abc.abstractmethod
-    def _run(
-        self,
-        app: Application,
-        scheduler: SchedulerBackend,
-        cfg: RunConfig,
-    ) -> AppHandle:
-        """
-        The actual run logic.
-        Implementors of ``Session`` should implement this method rather than ``run``.
-        """
-        raise NotImplementedError()
-
-    def dryrun(
-        self,
-        app: Application,
-        scheduler: SchedulerBackend = "default",
-        cfg: Optional[RunConfig] = None,
+    def _dryrun(
+        self, app: Application, scheduler: SchedulerBackend, cfg: RunConfig
     ) -> AppDryRunInfo:
-        """
-        Dry runs an app on the given scheduler with the provided run configs.
-        Does not actually submit the app but rather returns what would have been
-        submitted. The returned ``AppDryRunInfo`` is pretty formatted and can
-        be printed or logged directly.
-
-        Usage:
-
-        ::
-
-         dryrun_info = session.dryrun(app, scheduler="local", cfg)
-         print(dryrun_info)
-
-        """
-        return self._dryrun(app, scheduler, cfg or RunConfig())
-
-    def _dryrun(self, app: Application, scheduler: SchedulerBackend, cfg: RunConfig):
         """
         The actual dryrun logic.
         Implementors of ``Session`` should implement this method rather than ``dryrun``.

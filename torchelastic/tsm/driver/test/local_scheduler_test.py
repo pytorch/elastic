@@ -208,7 +208,11 @@ class LocalSchedulerTest(unittest.TestCase):
                 with open(success_file, "r") as f:
                     sf_json = json.load(f)
                     self.assertEqual(app_id, sf_json["app_id"])
-                    self.assertEqual("test_app", sf_json["app_name"])
+                    self.assertEqual(
+                        join(log_dir, self.scheduler.session_name, app_id),
+                        sf_json["log_dir"],
+                    )
+                    self.assertEqual(AppState.SUCCEEDED.name, sf_json["final_state"])
 
                     for replica_id in range(num_replicas):
                         replica_info = sf_json["roles"]["role1"][replica_id]
@@ -216,10 +220,7 @@ class LocalSchedulerTest(unittest.TestCase):
                             replica_info[std_stream], "hello_world\n"
                         )
 
-    @patch(
-        LOCAL_DIR_IMAGE_FETCHER_FETCH,
-        return_value="",
-    )
+    @patch(LOCAL_DIR_IMAGE_FETCHER_FETCH, return_value="")
     def test_submit_dryrun_without_log_dir_cfg(self, img_fetcher_fetch_mock):
         master = (
             Role("master")
@@ -233,44 +234,46 @@ class LocalSchedulerTest(unittest.TestCase):
         app = Application(name="test_app").of(master, trainer)
         cfg = RunConfig()
         info = self.scheduler.submit_dryrun(app, cfg)
+        # intentional print (to make sure it actually prints with no errors)
         print(info)
-        self.assertEqual(2, len(info.request))
 
-        master_info = info.request[0]["master"]
-        trainer_info = info.request[1]["trainer"]
+        request = info.request
+        role_params = request.role_params
+        role_log_dirs = request.role_log_dirs
+        self.assertEqual(2, len(role_params))
+        self.assertEqual(2, len(role_log_dirs))
 
-        # log dir not specified in run cfg a tmp dir is created
-        # we know that the app log dir is error file location
-        # minus {role}/{replica_idx}/error.json"
-        app_log_dir = master_info[0]["env"][ERR_FILE_ENV]
-        for _ in range(3):
-            app_log_dir = os.path.dirname(app_log_dir)
+        master_params = role_params["master"]
+        trainer_params = role_params["trainer"]
 
-        self.assertEqual(1, len(master_info))
-        self.assertEqual(2, len(trainer_info))
+        app_log_dir = request.log_dir
 
-        for i, role in enumerate(app.roles):
-            role_name = role.name
-            role_info = info.request[i][role_name]
+        self.assertEqual(1, len(master_params))
+        self.assertEqual(2, len(trainer_params))
+
+        for role in app.roles:
+            replica_params = role_params[role.name]
+            replica_log_dirs = role_log_dirs[role.name]
+
             for j in range(role.num_replicas):
-                replica_log_dir = join(app_log_dir, role_name, str(j))
+                replica_param = replica_params[j]
+                replica_log_dir = replica_log_dirs[j]
+
                 # dryrun should NOT create any directories
                 self.assertFalse(os.path.isdir(replica_log_dir))
+                self.assertTrue(replica_log_dir.startswith(app_log_dir))
+                self.assertEqual([role.entrypoint, *role.args], replica_param.args)
                 self.assertEqual(
                     {
-                        "args": [role.entrypoint, *role.args],
-                        "env": {
-                            ERR_FILE_ENV: join(replica_log_dir, "error.json"),
-                            **role.env,
-                        },
+                        ERR_FILE_ENV: join(replica_log_dir, "error.json"),
+                        **role.env,
                     },
-                    role_info[j],  # replica_info
+                    replica_param.env,
                 )
+                self.assertIsNone(replica_param.stdout)
+                self.assertIsNone(replica_param.stderr)
 
-    @patch(
-        LOCAL_DIR_IMAGE_FETCHER_FETCH,
-        return_value="",
-    )
+    @patch(LOCAL_DIR_IMAGE_FETCHER_FETCH, return_value="")
     def test_submit_dryrun_with_log_dir_cfg(self, img_fetcher_fetch_mock):
         trainer = (
             Role("trainer").runs("trainer.par").on(self.test_container).replicas(2)
@@ -279,32 +282,43 @@ class LocalSchedulerTest(unittest.TestCase):
         app = Application(name="test_app").of(trainer)
         cfg = RunConfig({"log_dir": self.test_dir})
         info = self.scheduler.submit_dryrun(app, cfg)
+        # intentional print (to make sure it actually prints with no errors)
         print(info)
-        trainer_info = info.request[0]["trainer"]
 
-        self.assertEqual(2, len(trainer_info))
+        request = info.request
+        role_params = request.role_params
+        role_log_dirs = request.role_log_dirs
+        self.assertEqual(1, len(role_params))
+        self.assertEqual(1, len(role_log_dirs))
 
-        app_log_dir = join(self.test_dir, self.scheduler.session_name, "test_app_##")
+        trainer_params = role_params["trainer"]
 
-        for i, role in enumerate(app.roles):
-            role_name = role.name
-            role_info = info.request[i][role_name]
+        app_log_dir = request.log_dir
+
+        self.assertEqual(2, len(trainer_params))
+
+        for role in app.roles:
+            replica_params = role_params[role.name]
+            replica_log_dirs = role_log_dirs[role.name]
+
             for j in range(role.num_replicas):
-                replica_log_dir = join(app_log_dir, role_name, str(j))
+                replica_param = replica_params[j]
+                replica_log_dir = replica_log_dirs[j]
                 # dryrun should NOT create any directories
                 self.assertFalse(os.path.isdir(replica_log_dir))
+                self.assertTrue(replica_log_dir.startswith(app_log_dir))
+                self.assertEqual([role.entrypoint, *role.args], replica_param.args)
                 self.assertEqual(
                     {
-                        "args": [role.entrypoint, *role.args],
-                        "env": {
-                            ERR_FILE_ENV: join(replica_log_dir, "error.json"),
-                            **role.env,
-                        },
-                        "stdout": join(replica_log_dir, "stdout.log"),
-                        "stderr": join(replica_log_dir, "stderr.log"),
+                        ERR_FILE_ENV: join(replica_log_dir, "error.json"),
+                        **role.env,
                     },
-                    role_info[j],  # replica_info
+                    replica_param.env,
                 )
+                stdout_path = join(replica_log_dir, "stdout.log")
+                stderr_path = join(replica_log_dir, "stderr.log")
+                self.assertEqual(stdout_path, replica_param.stdout)
+                self.assertEqual(stderr_path, replica_param.stderr)
 
     def test_log_iterator(self):
         role = (
