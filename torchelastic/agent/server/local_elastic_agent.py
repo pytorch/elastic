@@ -109,7 +109,7 @@ class LocalElasticAgent(SimpleElasticAgent):
         self._log_dir = self._make_log_dir(log_dir, rdzv_run_id)
 
     def _make_log_dir(self, log_dir: Optional[str], rdzv_run_id: str):
-        base_log_dir = log_dir or os.path.join(tempfile.gettempdir(), "torchelastic")
+        base_log_dir = log_dir or tempfile.mkdtemp(prefix="torchelastic_")
         os.makedirs(base_log_dir, exist_ok=True)
         dir = tempfile.mkdtemp(prefix=f"{rdzv_run_id}_", dir=base_log_dir)
         log.info(f"log directory set to: {dir}")
