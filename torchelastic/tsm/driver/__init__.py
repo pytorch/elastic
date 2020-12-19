@@ -101,8 +101,8 @@ except ModuleNotFoundError:
     pass
 
 
-def _gen_session_name(session_backend: str):
-    return f"tsm_{session_backend}_{get_owner()}"
+def _gen_session_name():
+    return f"tsm_{get_owner()}"
 
 
 def session(name: Optional[str] = None, backend: str = "standalone", **scheduler_args):
@@ -112,7 +112,7 @@ def session(name: Optional[str] = None, backend: str = "standalone", **scheduler
         )
 
     if not name:
-        name = _gen_session_name(backend)
+        name = _gen_session_name()
 
     scheduler_args["session_name"] = name
     return StandaloneSession(name=name, schedulers=get_schedulers(**scheduler_args))
