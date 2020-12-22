@@ -25,7 +25,7 @@ class ElasticDistributedSampler(DistributedSampler):
     .. note::
         Dataset is assumed to be of constant size.
 
-    Arguments:
+    Args:
         dataset: Dataset used for sampling.
         num_replicas (optional): Number of processes participating in
             distributed training.

@@ -167,7 +167,7 @@ def start_processes(
         log_dir=log_dir
       )
 
-    Arguments:
+    Args:
         name: a human readable short name that describes what the processes are
               (used as header when tee'ing stdout/stderr outputs)
         entrypoint: either a ``Callable`` (function) or ``cmd`` (binary)

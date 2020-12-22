@@ -20,7 +20,7 @@ def get_logger(name: Optional[str] = None):
     env. variable or INFO as default. The function will use the
     module name of the caller if no name is provided.
 
-    Arguments:
+    Args:
         name: Name of the logger. If no name provided, the name will
               be derived from the call stack.
     """
@@ -43,7 +43,7 @@ def _derive_module_name(depth: int = 1) -> Optional[str]:
     """
     Derives the name of the caller module from the stack frames.
 
-    Arguments:
+    Args:
         depth: The position of the frame in the stack.
     """
     try:
