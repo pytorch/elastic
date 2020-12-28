@@ -39,7 +39,7 @@ class WorkerSpec:
     Worker spec is expected to be homogenous across all nodes (machine),
     that is each node runs the same number of workers for a particular spec.
 
-    Arguments:
+    Args:
         role: user-defined role for the workers with this spec
         local_world_size: number local workers to run
         fn: (deprecated use entrypoint instead)
@@ -108,7 +108,7 @@ class Worker:
     agent, it could be the ``pid (int)`` of the worker, for a remote
     agent it could be encoded as ``host:port (string)``.
 
-    Arguments:
+    Args:
         id (Any): uniquely identifies a worker (interpreted by the agent)
         local_rank (int): local rank of the worker
         global_rank (int): global rank of the worker
@@ -257,7 +257,7 @@ class _RoleInstanceInfo:
     def __init__(self, role: str, rank: int, local_world_size: int):
         r"""
 
-        Arguments:
+        Args:
             role (str): user-defined role for the workers with this spec
             rank (int): the rank of the agent
             local_world_size (int): number of local workers to run

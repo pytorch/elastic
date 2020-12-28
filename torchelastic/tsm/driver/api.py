@@ -36,7 +36,7 @@ class Resource:
     """
     Represents resource requirements for a ``Container``.
 
-    Arguments:
+    Args:
             cpu: number of cpu cores (note: not hyper threads)
             gpu: number of gpus
             memMB: MB of ram
@@ -275,7 +275,7 @@ class Role:
                  .on(container)
                  .replicas(4)
 
-    Arguments:
+    Args:
             name: name of the role
             entrypoint: command (within the container) to invoke the role
             args: commandline arguments to the entrypoint cmd
@@ -1261,7 +1261,7 @@ class Session(abc.ABC):
                 break
          report(experiment_name, accuracy)
 
-        Arguments:
+        Args:
             app_handle: application handle
             role_name: role within the app (e.g. trainer)
             k: k-th replica of the role to fetch the logs for
