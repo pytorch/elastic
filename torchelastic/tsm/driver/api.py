@@ -588,8 +588,8 @@ class AppDryRunInfo(Generic[T]):
         # Scheduler or Session implementations
         # and are back references to the parameters
         # to dryrun() that returned this AppDryRunInfo object
-        # thus they are set in Session.dryrun() manually
-        # rather than through constructor arguments
+        # thus they are set in Session.dryrun() and Scheduler.submit_dryrun()
+        # manually rather than through constructor arguments
         # DO NOT create getters or make these public
         # unless there is a good reason to
         self._app = None
@@ -775,7 +775,11 @@ class Scheduler(abc.ABC):
         to the scheduler implementation's documentation regarding
         the actual return type.
         """
-        return self._submit_dryrun(app, self.run_opts().resolve(cfg))
+        resolved_cfg = self.run_opts().resolve(cfg)
+        dryrun_info = self._submit_dryrun(app, resolved_cfg)
+        dryrun_info._app = app
+        dryrun_info._cfg = resolved_cfg
+        return dryrun_info
 
     def _submit_dryrun(self, app: Application, cfg: RunConfig) -> AppDryRunInfo:
         raise NotImplementedError()
@@ -1101,8 +1105,6 @@ class Session(abc.ABC):
                 )
 
         dryrun_info = self._dryrun(app, scheduler, cfg or RunConfig())
-        dryrun_info._app = app
-        dryrun_info._cfg = cfg
         dryrun_info._scheduler = scheduler
         return dryrun_info
 
