@@ -25,7 +25,6 @@ from torchelastic.tsm.driver.api import (
     AppState,
     AppStatus,
     Container,
-    DeploymentPreference,
     DescribeAppResponse,
     ElasticRole,
     InvalidRunConfigException,
@@ -154,7 +153,6 @@ class RoleBuilderTest(unittest.TestCase):
         self.assertEqual(1, default.num_replicas)
         self.assertEqual(0, default.max_retries)
         self.assertEqual(RetryPolicy.APPLICATION, default.retry_policy)
-        self.assertEqual(DeploymentPreference.JOB, default.deployment_preference)
 
     def test_build_role(self):
         # runs: ENV_VAR_1=FOOBAR /bin/echo hello world
@@ -166,7 +164,6 @@ class RoleBuilderTest(unittest.TestCase):
             .on(container)
             .replicas(2)
             .with_retry_policy(RetryPolicy.REPLICA, max_retries=5)
-            .with_deployment_preference(DeploymentPreference.SERVICE)
         )
 
         self.assertEqual("trainer", trainer.name)
@@ -177,7 +174,6 @@ class RoleBuilderTest(unittest.TestCase):
         self.assertEqual(2, trainer.num_replicas)
         self.assertEqual(5, trainer.max_retries)
         self.assertEqual(RetryPolicy.REPLICA, trainer.retry_policy)
-        self.assertEqual(DeploymentPreference.SERVICE, trainer.deployment_preference)
 
 
 class ElasticRoleBuilderTest(unittest.TestCase):

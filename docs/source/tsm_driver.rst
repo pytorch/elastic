@@ -39,7 +39,6 @@ Roles and Applications
 .. autoclass:: ElasticRole
 .. autoclass:: macros
 .. autoclass:: RetryPolicy
-.. autoclass:: DeploymentPreference
 .. autoclass:: Application
 
 Extending TSM
@@ -59,7 +58,3 @@ Scheduler
 
 .. autoclass:: torchelastic.tsm.driver.local_scheduler.LocalScheduler
    :members:
-
-
-
-
