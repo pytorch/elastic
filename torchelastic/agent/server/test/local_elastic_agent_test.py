@@ -370,6 +370,7 @@ class LocalElasticAgentTest(unittest.TestCase):
             Conf(role="ps", entrypoint=_get_role_info, local_world_size=2),
         ]
         results = self.run_job(node_configs)
+        print(f"heterogeneous job result: {results}")
         self.assertEqual(1, len(results["master"]))
         self.assertEqual(4, len(results["trainer"]))
         self.assertEqual(2, len(results["ps"]))
@@ -393,6 +394,7 @@ class LocalElasticAgentTest(unittest.TestCase):
             Conf(role="ps", entrypoint=_get_role_info, local_world_size=3),
         ]
         results = self.run_job(node_configs)
+        print(f"homogeneous job result: {results}")
         self.assertEqual(1, len(results["master"]))
         self.assertEqual(4, len(results["trainer"]))
         self.assertEqual(2, len(results["ps"]))

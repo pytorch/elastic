@@ -897,6 +897,10 @@ class EtcdRendezvous(object):
                     client.refresh(path, ttl=ttl)
                 except etcd.EtcdKeyNotFound:
                     break
+                except ConnectionRefusedError:
+                    # This error usually occurs during test when the server already got terminated but the
+                    # python garbage collector have not yet invoked the __del__ method.
+                    break
 
                 if stop_event.wait(timeout=ttl / 2):
                     break
