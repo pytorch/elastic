@@ -13,6 +13,7 @@ import socket
 import subprocess
 import tempfile
 import time
+from typing import Optional
 
 import etcd
 from torchelastic.utils.logging import get_logger
@@ -59,14 +60,15 @@ def find_free_port():
     raise RuntimeError("Failed to create a socket")
 
 
-def stop_etcd(subprocess, data_dir):
+def stop_etcd(subprocess, data_dir: Optional[str] = None):
     if subprocess and subprocess.poll() is None:
         log.info(f"stopping etcd server")
         subprocess.terminate()
         subprocess.wait()
 
-    log.info(f"deleting etcd data dir: {data_dir}")
-    shutil.rmtree(data_dir, ignore_errors=True)
+    if data_dir:
+        log.info(f"deleting etcd data dir: {data_dir}")
+        shutil.rmtree(data_dir, ignore_errors=True)
 
 
 class EtcdServer:
@@ -101,7 +103,7 @@ class EtcdServer:
         etcd_binary_path: path of etcd server binary (see above for fallback path)
     """
 
-    def __init__(self):
+    def __init__(self, data_dir: Optional[str] = None):
         self._port = -1
         self._host = "localhost"
 
@@ -113,7 +115,9 @@ class EtcdServer:
         if not os.path.isfile(self._etcd_binary_path):
             self._etcd_binary_path = "etcd"
 
-        self._data_dir = tempfile.mkdtemp(prefix="torchelastic_etcd_data")
+        self._base_data_dir = (
+            data_dir if data_dir else tempfile.mkdtemp(prefix="torchelastic_etcd_data")
+        )
         self._etcd_cmd = None
         self._etcd_proc = None
 
@@ -152,19 +156,24 @@ class EtcdServer:
         Raises:
             TimeoutError: if the server is not ready within the specified timeout
         """
+        curr_retries = 0
         while True:
             try:
-                return self._start(timeout)
+                data_dir = os.path.join(self._base_data_dir, str(curr_retries))
+                os.makedirs(data_dir, exist_ok=True)
+                return self._start(data_dir, timeout)
             except Exception as e:
-                num_retries -= 1
+                curr_retries += 1
+                stop_etcd(self._etcd_proc)
                 log.warning(
                     f"Failed to start etcd server, got error: {str(e)}, retrying"
                 )
-                if num_retries <= 0:
+                if curr_retries >= num_retries:
+                    shutil.rmtree(self._base_data_dir, ignore_errors=True)
                     raise
-        atexit.register(stop_etcd, self._etcd_proc, self._data_dir)
+        atexit.register(stop_etcd, self._etcd_proc, self._base_data_dir)
 
-    def _start(self, timeout: int = 60) -> None:
+    def _start(self, data_dir: str, timeout: int = 60) -> None:
         sock = find_free_port()
         sock_peer = find_free_port()
         self._port = sock.getsockname()[1]
@@ -176,7 +185,7 @@ class EtcdServer:
                     self._etcd_binary_path,
                     "--enable-v2",
                     "--data-dir",
-                    self._data_dir,
+                    data_dir,
                     "--listen-client-urls",
                     f"http://{self._host}:{self._port}",
                     "--advertise-client-urls",
@@ -228,4 +237,4 @@ class EtcdServer:
         Stops the server and cleans up auto generated resources (e.g. data dir)
         """
         log.info("EtcdServer stop method called")
-        stop_etcd(self._etcd_proc, self._data_dir)
+        stop_etcd(self._etcd_proc, self._base_data_dir)
