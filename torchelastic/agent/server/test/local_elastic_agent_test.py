@@ -19,6 +19,8 @@ from typing import Callable, Dict, List, Optional, Tuple
 from unittest import mock
 from unittest.mock import patch, Mock
 
+import common.thread_safe_fork  # noqa: F401
+
 import torch
 import torch.distributed as dist
 import torch.distributed.rpc as rpc
