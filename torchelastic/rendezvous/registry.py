@@ -17,4 +17,8 @@ from torchelastic.rendezvous import (
 def get_rendezvous_handler(rdzv_params: RendezvousParameters) -> RendezvousHandler:
     factory = RendezvousHandlerFactory()
     factory.register("etcd", etcd_rdzv.create_rdzv_handler)
-    return factory.create_rdzv_handler(rdzv_params)
+    rdzv_handler = factory.create_rdzv_handler(rdzv_params)
+    # Assert that string representation of rdzv handler is the same
+    # as in registry
+    assert rdzv_params.backend == rdzv_handler.get_backend()
+    return rdzv_handler

@@ -58,3 +58,20 @@ class EtcdRendezvousTest(unittest.TestCase):
 
         self.assertIsNotNone(etcd_rdzv)
         self.assertEqual(run_id, etcd_rdzv.get_run_id())
+
+    def test_get_backend(self):
+        run_id = str(uuid.uuid4())
+        rdzv_params = RendezvousParameters(
+            backend="etcd",
+            endpoint=f"{self._etcd_server.get_endpoint()}",
+            run_id=run_id,
+            min_nodes=1,
+            max_nodes=1,
+            timeout=60,
+            last_call_timeout=30,
+            protocol="http",
+        )
+
+        etcd_rdzv = create_rdzv_handler(rdzv_params)
+
+        self.assertEqual("etcd", etcd_rdzv.get_backend())

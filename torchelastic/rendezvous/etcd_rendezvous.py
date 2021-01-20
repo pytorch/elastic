@@ -153,6 +153,9 @@ class EtcdRendezvousHandler(RendezvousHandler):
         # TODO: look into using weakref here instead.
         del self._rdzv_impl
 
+    def get_backend(self) -> str:
+        return "etcd"
+
     def next_rendezvous(self):
         rdzv_version, rank, world_size = self._rdzv_impl.rendezvous_barrier()
 

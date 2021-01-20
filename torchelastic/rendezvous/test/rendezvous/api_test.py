@@ -26,6 +26,9 @@ class MockRendezvousHandler(RendezvousHandler):
     ) -> Tuple["torch.distributed.Store", int, int]:  # noqa F821
         raise NotImplementedError()
 
+    def get_backend(self) -> str:
+        return "mock"
+
     def is_closed(self) -> bool:
         return False
 

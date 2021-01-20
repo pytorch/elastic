@@ -53,6 +53,13 @@ class RendezvousHandler(abc.ABC):
     """
 
     @abc.abstractmethod
+    def get_backend(self) -> str:
+        """
+        Return the string representation of the rendezvous handler.
+        """
+        pass
+
+    @abc.abstractmethod
     def next_rendezvous(
         self,
         # pyre-ignore[11]: Annotation `Store` is not defined as a type.
