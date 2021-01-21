@@ -524,8 +524,8 @@ class StartProcessesTest(unittest.TestCase):
                 results = pc.wait(period=0.1)
 
                 self.assert_pids_noexist(pc.pids())
-                # binaries are not functions hence do not have return values
-                self.assertEqual(0, len(results.return_values))
+                # currently binaries return {rank: None}
+                self.assertEqual(2, len(results.return_values))
                 self.assertFalse(results.is_failed())
 
                 nprocs = pc.nprocs

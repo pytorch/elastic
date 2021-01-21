@@ -225,8 +225,8 @@ from argparse import REMAINDER, ArgumentParser
 
 import torch
 import torchelastic.rendezvous.registry as rdzv_registry
-from torchelastic import metrics
-from torchelastic.agent.server.api import WorkerSpec
+from torchelastic import metrics, events
+from torchelastic.agent.server.api import WorkerSpec, WorkerState
 from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
 from torchelastic.distributed.argparse_util import check_env, env
 from torchelastic.multiprocessing import Std
@@ -435,14 +435,26 @@ def determine_local_world_size(nproc_per_node: str):
         return num_proc
 
 
+def _construct_event(args) -> events.Event:
+    metadata = {
+        "rdzv_backend": args.rdzv_backend,
+        "run_id": args.run_id,
+        "role": args.role,
+    }
+    return events.Event(
+        name="torchelastic.main", source=events.EventSource.AGENT, metadata=metadata
+    )
+
+
 @record
 def main(args=None):
     # If ``args`` not passed, defaults to ``sys.argv[:1]``
     args = parse_args(args)
-
     min_nodes, max_nodes = parse_min_max_nnodes(args.nnodes)
     assert 0 < min_nodes <= max_nodes
     assert args.max_restarts >= 0
+
+    elastic_agent = None
 
     if args.standalone:
         etcd_server = EtcdServer()
@@ -516,6 +528,7 @@ def main(args=None):
             spec=spec, start_method=args.start_method, log_dir=args.log_dir
         )
         run_result = elastic_agent.run(spec.role)
+        events.record(elastic_agent.get_agent_status_event(WorkerState.SUCCEEDED))
         if run_result.is_failed():
             # ChildFailedError is treated specially by @record
             # if the error files for the failed children exist
@@ -525,6 +538,14 @@ def main(args=None):
                 name=args.training_script,
                 failures=run_result.failures,
             )
+    except ChildFailedError:
+        raise
+    except Exception:
+        if elastic_agent:
+            events.record(elastic_agent.get_agent_status_event(WorkerState.FAILED))
+        else:
+            events.record(_construct_event(args))
+        raise
     finally:
         rdzv_handler.shutdown()
         if args.standalone:

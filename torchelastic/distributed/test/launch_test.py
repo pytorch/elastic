@@ -18,6 +18,7 @@ from unittest.mock import Mock, patch
 import torchelastic.distributed.launch as launch
 import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
 from torchelastic.agent.server.api import RunResult, WorkerState
+from torchelastic.multiprocessing.errors import ChildFailedError
 from torchelastic.rendezvous.etcd_server import EtcdServer
 from torchelastic.test.test_utils import is_tsan
 
@@ -241,8 +242,9 @@ class LaunchTest(unittest.TestCase):
             {str(i) for i in range(world_size)}, set(os.listdir(self.test_dir))
         )
 
+    @mock.patch("torchelastic.events.record")
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
-    def test_launch_elastic_worker_raise_exception(self):
+    def test_launch_elastic_worker_raise_exception(self, record_mock):
         """
         Asserts that when the worker program fails and lancher raieses exception
         to indicate that worker process failed
@@ -264,14 +266,15 @@ class LaunchTest(unittest.TestCase):
             path("bin/test_script.py"),
             "--fail",
         ]
-        proc = mp.Process(target=launch_in_proc, args=(args,))
-        proc.start()
-        proc.join()
-        self.assertEqual(1, proc.exitcode)
+        with self.assertRaises(ChildFailedError):
+            launch.main(args)
+
+        record_mock.assert_called_once()
 
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     @mock.patch("torchelastic.agent.server.local_elastic_agent.LocalElasticAgent.run")
-    def test_launch_elastic_agent_raise_exception(self, mock_agent_run):
+    @mock.patch("torchelastic.events.record")
+    def test_launch_elastic_agent_raise_exception(self, record_mock, mock_agent_run):
         """
         Asserts that when the agent raises an exception
         the launcher re-raises the original exception
@@ -296,6 +299,7 @@ class LaunchTest(unittest.TestCase):
         mock_agent_run.side_effect = MockException
         with self.assertRaises(MockException):
             launch.main(args)
+        record_mock.assert_called_once()
 
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_launch_standalone(self):

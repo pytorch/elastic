@@ -121,10 +121,6 @@ class TestAgent(SimpleElasticAgent):
         # workers are fake, nothing to stop; just clear the rdzv info
         worker_group.group_rank = None
         worker_group.group_world_size = None
-        for w in worker_group.workers:
-            w.id = None
-            w.global_rank = None
-            w.world_size = None
         self.stop_workers_call_count += 1
 
     def _start_workers(self, worker_group: WorkerGroup) -> Dict[int, Any]:
@@ -224,13 +220,17 @@ class SimpleElasticAgentTest(unittest.TestCase):
 
     @patch.object(TestAgent, "_invoke_run")
     @patch.object(TestAgent, "_record_metrics")
+    @patch.object(TestAgent, "_record_worker_events")
     @patch.object(TestAgent, "_shutdown")
-    def test_invoke_run(self, shutdown_mock, record_metrics_mock, invoke_run_mock):
+    def test_invoke_run(
+        self, shutdown_mock, record_events_mock, record_metrics_mock, invoke_run_mock
+    ):
         spec = self._get_worker_spec(max_restarts=1)
         agent = TestAgent(spec)
         agent.run()
         invoke_run_mock.assert_called_once()
         record_metrics_mock.assert_called_once()
+        record_events_mock.assert_called_once()
         shutdown_mock.assert_called_once()
 
     @patch("torchelastic.agent.server.api.put_metric")
@@ -362,7 +362,8 @@ class SimpleElasticAgentTest(unittest.TestCase):
             monres(WorkerState.SUCCEEDED),
         ],
     )
-    def test_run_happy_path(self, mock_monitor_workers):
+    @patch.object(TestAgent, "_record_worker_events")
+    def test_run_happy_path(self, record_events_mock, mock_monitor_workers):
         # worker starts
         # is always healthy
         # then succeeds
@@ -374,6 +375,7 @@ class SimpleElasticAgentTest(unittest.TestCase):
 
         # no failure, no membership changes -> no retries
         self.assertEquals(max_restarts, agent._remaining_restarts)
+        record_events_mock.assert_called_once()
 
     @patch.object(TestAgent, "_initialize_workers", side_effect=RuntimeError())
     def test_run_initialization_failure(self, mock_initialize_workers):
@@ -415,13 +417,17 @@ class SimpleElasticAgentTest(unittest.TestCase):
         ],
     )
     @patch.object(RendezvousHandler, "num_nodes_waiting", side_effect=[1, 1, 0])
-    def test_run_membership_change(self, mock_monitor_workers, mock_num_nodes_waiting):
+    @patch.object(TestAgent, "_record_worker_events")
+    def test_run_membership_change(
+        self, record_events_mock, mock_num_nodes_waiting, mock_monitor_workers
+    ):
         spec = self._get_worker_spec(max_restarts=1, monitor_interval=0.1)
         agent = TestAgent(spec)
         worker_group = agent._worker_group
 
         agent.run()
         self.assertEquals(WorkerState.SUCCEEDED, worker_group.state)
+        record_events_mock.assert_called_once()
 
     @patch.object(
         TestAgent, "_monitor_workers", return_value=monres(WorkerState.UNKNOWN)
@@ -524,3 +530,25 @@ class SimpleElasticAgentTest(unittest.TestCase):
         expected_info = _RoleInstanceInfo(spec.role, 1, spec.local_world_size)
         self.assertEquals(expected_info.serialize(), store.value)
         store_mock.assert_called_once()
+
+    def test_get_agent_status_event(self):
+        spec = self._get_worker_spec(max_restarts=1)
+        agent = TestAgent(spec)
+        actual_event = agent.get_agent_status_event(state=WorkerState.SUCCEEDED)
+        self.assertEqual("AGENT", actual_event.source)
+        self.assertEqual("etcd", actual_event.metadata["rdzv_backend"])
+        self.assertEqual(WorkerState.SUCCEEDED.value, actual_event.metadata["state"])
+        self.assertEqual(spec.role, actual_event.metadata["role"])
+
+    def test_get_worker_status_event(self):
+        spec = self._get_worker_spec(max_restarts=1)
+        agent = TestAgent(spec)
+        actual_event = agent._construct_event(
+            state=WorkerState.SUCCEEDED.value,
+            source="WORKER",
+            worker=agent._worker_group.workers[0],
+        )
+        self.assertEqual("WORKER", actual_event.source)
+        self.assertEqual("etcd", actual_event.metadata["rdzv_backend"])
+        self.assertEqual(WorkerState.SUCCEEDED.value, actual_event.metadata["state"])
+        self.assertEqual(spec.role, actual_event.metadata["role"])

@@ -533,6 +533,12 @@ class SubprocessContext(PContext):
                     f" local_rank: {first_failure.local_rank} (pid: {first_failure.pid})"
                     f" of binary: {self.entrypoint}"
                 )
+            else:
+                # Populate return with dummy values. This provides consistency with MultiprocessingHandler
+                result.return_values = {
+                    local_rank: None for local_rank in range(self.nprocs)
+                }
+
             return result
         else:  # there are no failures and procs still running
             return None

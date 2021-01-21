@@ -12,6 +12,7 @@ import json
 import os
 import socket
 import time
+import traceback
 import warnings
 from contextlib import closing
 from dataclasses import dataclass, field
@@ -20,6 +21,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import torchelastic.rendezvous as rdzv
 import torchelastic.utils.store as store_util
+from torchelastic.events import record, Event, EventSource
 from torchelastic.metrics import prof, put_metric
 from torchelastic.multiprocessing import ProcessFailure, Std
 from torchelastic.utils.logging import get_logger
@@ -170,7 +172,7 @@ class Worker:
         return str(self)
 
 
-class WorkerState(Enum):
+class WorkerState(str, Enum):
     """
     State of the ``WorkerGroup``. Workers in a worker group change state as a unit.
     If a single worker in a worker group fails the entire set is considered
@@ -205,13 +207,13 @@ class WorkerState(Enum):
     self terminating and allowing the job manager to retry the node.
     """
 
-    UNKNOWN = 0
-    INIT = 1
-    HEALTHY = 2
-    UNHEALTHY = 4
-    STOPPED = 8
-    SUCCEEDED = 16
-    FAILED = 32
+    UNKNOWN = "UNKNOWN"
+    INIT = "INIT"
+    HEALTHY = "HEALTHY"
+    UNHEALTHY = "UNHEALTHY"
+    STOPPED = "STOPPED"
+    SUCCEEDED = "SUCCEEDED"
+    FAILED = "FAILED"
 
     @staticmethod
     def is_running(state: "WorkerState") -> bool:
@@ -447,6 +449,7 @@ class SimpleElasticAgent(ElasticAgent):
         self._remaining_restarts = self._worker_group.spec.max_restarts
         self._store = None
         self._exit_barrier_timeout = exit_barrier_timeout
+        self._total_execution_time = 0
 
     def get_worker_group(self, role: str = DEFAULT_ROLE) -> WorkerGroup:
         return self._worker_group
@@ -672,12 +675,78 @@ class SimpleElasticAgent(ElasticAgent):
 
     @prof
     def run(self, role: str = DEFAULT_ROLE) -> RunResult:
+        start_time = time.monotonic()
         try:
             result = self._invoke_run(role)
+            self._total_execution_time = int(time.monotonic() - start_time)
             self._record_metrics(result)
+            self._record_worker_events(result)
             return result
         finally:
             self._shutdown()
+
+    def get_agent_status_event(self, state: WorkerState) -> Event:
+        raw_error = traceback.format_exc() if state == WorkerState.FAILED else None
+        return self._construct_event(
+            state.value, EventSource.AGENT, raw_error=raw_error
+        )
+
+    def _record_worker_events(self, result: RunResult) -> None:
+        for worker in self._worker_group.workers:
+            failure = result.failures.get(worker.global_rank)
+            state: str = self._get_worker_state(worker, result)
+            raw_error = json.dumps(failure.error_file_data) if failure else None
+            record(self._construct_event(state, EventSource.WORKER, worker, raw_error))
+
+    def _get_worker_state(self, worker: Worker, result: RunResult) -> str:
+        failure = result.failures.get(worker.global_rank)
+        if result.state in {WorkerState.UNHEALTHY, WorkerState.FAILED} and not failure:
+            # The worker got terminated by the torchelastic agent via SIGTERM signal
+            return "TERMINATED"
+        elif failure or worker.global_rank in result.return_values:
+            return result.state.value
+        else:
+            raise ValueError(f"Unknow worker: {worker.global_rank}")
+
+    def _construct_event(
+        self,
+        state: str,
+        source: EventSource,
+        worker: Optional[Worker] = None,
+        raw_error: Optional[str] = None,
+    ) -> Event:
+        wg = self._worker_group
+        spec = wg.spec
+        md = {
+            "group_world_size": wg.group_world_size,
+            "entry_point": spec.get_entrypoint_name(),
+        }
+        if worker:
+            md["local_rank"] = (worker.local_rank,)
+            md["role_rank"] = (worker.role_rank,)
+            md["role_world_size"] = (worker.role_world_size,)
+            global_rank = worker.global_rank
+            worker_id = str(worker.id)
+        else:
+            global_rank = None
+            worker_id = None
+        md_str = json.dumps(md)
+        metadata = {
+            "run_id": spec.rdzv_handler.get_run_id(),
+            "global_rank": global_rank,
+            "group_rank": wg.group_rank,
+            "worker_id": worker_id,
+            "role": spec.role,
+            "state": state,
+            "total_run_time": self._total_execution_time,
+            "rdzv_backend": spec.rdzv_handler.get_backend(),
+            "raw_error": raw_error,
+            "metadata": md_str,
+            "agent_restarts": spec.max_restarts,
+        }
+        return Event(
+            f"torchelastic.worker.status.{state}", source=source, metadata=metadata
+        )
 
     def _record_metrics(self, group_results: RunResult):
         is_failed = group_results.is_failed()
