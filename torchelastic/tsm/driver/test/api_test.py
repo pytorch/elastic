@@ -420,14 +420,6 @@ class SessionTest(unittest.TestCase):
             app = Application("no container").of(role)
             session.run(app)
 
-    def test_validate_no_resource(self):
-        session = self.MockSession()
-        with self.assertRaises(ValueError):
-            container = Container("no resource")
-            role = Role("no resource").runs("echo", "hello_world").on(container)
-            app = Application("no resource").of(role)
-            session.run(app)
-
     def test_validate_invalid_replicas(self):
         session = self.MockSession()
         with self.assertRaises(ValueError):

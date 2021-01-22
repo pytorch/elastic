@@ -30,6 +30,7 @@ from torchelastic.tsm.driver.api import (
     AppState,
     DescribeAppResponse,
     InvalidRunConfigException,
+    SchedulerBackend,
     Role,
     RunConfig,
     Scheduler,
@@ -344,6 +345,10 @@ class LocalScheduler(Scheduler):
             help="dir to write stdout/stderr log files of replicas",
         )
         return opts
+
+    def _validate(self, app: Application, scheduler: SchedulerBackend) -> None:
+        # Skip validation step for local application
+        pass
 
     def _img_fetchers(self) -> Dict[str, ImageFetcher]:
         return {"dir": LocalDirectoryImageFetcher()}

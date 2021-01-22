@@ -850,6 +850,20 @@ class Scheduler(abc.ABC):
             f"{self.__class__.__qualname__} does not support application log iteration"
         )
 
+    def _validate(self, app: Application, scheduler: SchedulerBackend) -> None:
+        """
+        Validates whether application is consistent with the scheduler.
+
+        Raises:
+            ValueError: if application is not compatible with scheduler
+        """
+        for role in app.roles:
+            if role.container.get_resource(scheduler) == NULL_RESOURCE:
+                raise ValueError(
+                    f"No resources for container: {role.container.image}."
+                    f" Did you forget to call container.require(resources)"
+                )
+
 
 class MalformedAppHandleException(Exception):
     """
@@ -1045,15 +1059,6 @@ class Session(abc.ABC):
                 raise ValueError(
                     f"No container for role: {role.name}."
                     f" Did you forget to call role.on(container)"
-                )
-            # TODO(aivanou) t79202235 Move scheduler specific logic to schedulers
-            if (
-                scheduler != "local"
-                and role.container.get_resource(scheduler) == NULL_RESOURCE
-            ):
-                raise ValueError(
-                    f"No resources for container: {role.container.image}."
-                    f" Did you forget to call container.require(resources)"
                 )
 
         dryrun_info = self._dryrun(app, scheduler, cfg or RunConfig())

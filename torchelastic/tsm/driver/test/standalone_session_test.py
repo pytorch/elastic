@@ -79,6 +79,7 @@ class StandaloneSessionTest(unittest.TestCase):
         app = Application("name").of(role)
         session.dryrun(app, "default", cfg=self.cfg)
         scheduler_mock.submit_dryrun.assert_called_once_with(app, self.cfg)
+        scheduler_mock._validate.assert_called_once()
 
     def test_describe(self):
         session = StandaloneSession(

@@ -89,6 +89,7 @@ class StandaloneSession(Session):
         cfg: RunConfig,
     ) -> AppDryRunInfo:
         sched = self._scheduler(scheduler)
+        sched._validate(app, scheduler)
         return sched.submit_dryrun(app, cfg)
 
     def run_opts(self) -> Dict[str, runopts]:
