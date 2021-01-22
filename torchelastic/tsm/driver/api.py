@@ -107,21 +107,18 @@ class Container:
     """
 
     image: str
-    resources: Dict[SchedulerBackend, Resource] = field(default_factory=dict)
+    resources: Resource = NULL_RESOURCE
     port_map: Dict[str, int] = field(default_factory=dict)
 
     def require(
         self,
-        resources: Union[Resource, Dict[SchedulerBackend, Resource]],
+        resources: Resource,
         scheduler: SchedulerBackend = ALL,
     ) -> "Container":
         """
         Sets resource requirements on the container.
         """
-        if isinstance(resources, Resource):
-            self.resources[scheduler] = resources
-        else:
-            self.resources.update(resources)
+        self.resources = resources
         return self
 
     def ports(self, **kwargs: int) -> "Container":
@@ -130,12 +127,6 @@ class Container:
         """
         self.port_map.update({**kwargs})
         return self
-
-    def get_resource(self, scheduler: SchedulerBackend) -> Resource:
-        """
-        Retrieves resource for the specified ``scheduler``. Returns `None` if none found.
-        """
-        return self.resources.get(scheduler, self.resources.get(ALL, NULL_RESOURCE))
 
 
 # sentinel value used to represent missing string attributes, such as image or entrypoint
@@ -858,7 +849,7 @@ class Scheduler(abc.ABC):
             ValueError: if application is not compatible with scheduler
         """
         for role in app.roles:
-            if role.container.get_resource(scheduler) == NULL_RESOURCE:
+            if role.container.resources == NULL_RESOURCE:
                 raise ValueError(
                     f"No resources for container: {role.container.image}."
                     f" Did you forget to call container.require(resources)"
@@ -1060,7 +1051,6 @@ class Session(abc.ABC):
                     f"No container for role: {role.name}."
                     f" Did you forget to call role.on(container)"
                 )
-
         dryrun_info = self._dryrun(app, scheduler, cfg or RunConfig())
         dryrun_info._scheduler = scheduler
         return dryrun_info

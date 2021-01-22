@@ -24,6 +24,7 @@ from torchelastic.tsm.driver.api import (
     DescribeAppResponse,
     Role,
     RunConfig,
+    NULL_RESOURCE,
     is_terminal,
     macros,
 )

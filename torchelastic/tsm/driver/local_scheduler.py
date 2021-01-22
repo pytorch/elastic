@@ -21,13 +21,15 @@ import time
 import warnings
 from dataclasses import asdict, dataclass
 from datetime import datetime
-from typing import IO, Any, Dict, Iterable, List, Optional, Tuple
+from typing import IO, Dict, Iterable, List, Optional, Tuple
 from uuid import uuid4
 
 from torchelastic.tsm.driver.api import (
     AppDryRunInfo,
+    Resource,
     Application,
     AppState,
+    NULL_RESOURCE,
     DescribeAppResponse,
     InvalidRunConfigException,
     SchedulerBackend,

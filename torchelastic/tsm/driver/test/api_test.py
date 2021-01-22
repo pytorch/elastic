@@ -10,7 +10,7 @@ import json
 import os
 import unittest
 from datetime import datetime
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable, List, Optional, Union
 from unittest.mock import MagicMock
 
 from torchelastic.tsm.driver.api import (
@@ -101,45 +101,12 @@ class ContainerBuilderTest(unittest.TestCase):
         container = (
             Container("torch").require(res1, "default").require(res2, "test_scheduler")
         )
-        self.assertEqual(2, len(container.resources))
-        self.assertEqual(res1, container.resources["default"])
-        self.assertEqual(res2, container.resources["test_scheduler"])
-
-    def test_create_container_with_resource(self):
-        res1 = Resource(cpu=1, gpu=2, memMB=128)
-        res2 = Resource(cpu=1, gpu=2, memMB=256)
-        container = Container("torch").require(
-            {"default": res1, "test_scheduler": res2}
-        )
-        self.assertEqual(2, len(container.resources))
-        self.assertEqual(res1, container.resources["default"])
-        self.assertEqual(res2, container.resources["test_scheduler"])
+        self.assertEqual(res2, container.resources)
 
     def test_create_container_no_backend(self):
         res1 = Resource(cpu=1, gpu=2, memMB=128)
         container = Container("torch").require(res1)
-        self.assertEqual(1, len(container.resources))
-        self.assertEqual(res1, container.resources[ALL])
-
-    def test_get_resource_mapping(self):
-        res1 = Resource(cpu=1, gpu=2, memMB=128)
-        res2 = Resource(cpu=1, gpu=2, memMB=256)
-        container = Container("torch").require({"default": res1, ALL: res2})
-        self.assertEqual(2, len(container.resources))
-        self.assertEqual(res1, container.get_resource("default"))
-        self.assertEqual(res2, container.get_resource(ALL))
-        self.assertEqual(res2, container.get_resource("unknown_scheduler"))
-
-    def test_get_resource_all(self):
-        res = Resource(cpu=1, gpu=2, memMB=128)
-        container = Container("torch").require(res)
-        self.assertEqual(res, container.get_resource("any_scheduler"))
-
-    def test_get_resource_specific(self):
-        res = Resource(cpu=1, gpu=2, memMB=128)
-        container = Container("torch").require(res, scheduler="foobar")
-        self.assertEqual(res, container.get_resource("foobar"))
-        self.assertEqual(NULL_RESOURCE, container.get_resource("any_scheduler"))
+        self.assertEqual(res1, container.resources)
 
 
 class RoleBuilderTest(unittest.TestCase):
@@ -286,10 +253,10 @@ class ElasticRoleBuilderTest(unittest.TestCase):
         utility to make it easy for users to create a Role with the entrypoint
         being ``torchelastic.distributed.launch``
         """
-        resource = Resource(cpu=1, gpu=0, memMB=512)
-        container = Container(
-            image="user_image", resources={"default": resource}
-        ).ports(tensorboard=8080)
+        resources = Resource(cpu=1, gpu=0, memMB=512)
+        container = Container(image="user_image", resources=resources).ports(
+            tensorboard=8080
+        )
         elastic_role = (
             ElasticRole(
                 "test_role", nnodes="2:4", rdzv_backend="etcd", rdzv_id="foobar"
@@ -302,10 +269,8 @@ class ElasticRoleBuilderTest(unittest.TestCase):
         # this is effectively JSON
         elastic_json = dataclasses.asdict(elastic_role)
         container_json = elastic_json.pop("container")
-        resources_json = container_json.pop("resources")
-        container_json["resources"] = {}
-        for sched, resource_json in resources_json.items():
-            container_json["resources"][sched] = Resource(**resource_json)
+        resource_json = container_json.pop("resources")
+        container_json["resources"] = Resource(**resource_json)
 
         role = Role(
             **elastic_json,
@@ -605,6 +570,9 @@ class SchedulerTest(unittest.TestCase):
             opts = runopts()
             opts.add("foo", type_=str, required=True, help="required option")
             return opts
+
+        def resolve_resource(self, resource: Union[str, Resource]) -> Resource:
+            return NULL_RESOURCE
 
     def test_invalid_run_cfg(self):
         scheduler_mock = SchedulerTest.MockScheduler("test_session")
