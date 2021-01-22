@@ -19,8 +19,6 @@ from typing import Callable, Dict, List, Optional, Tuple
 from unittest import mock
 from unittest.mock import patch, Mock
 
-import common.thread_safe_fork  # noqa: F401
-
 import torch
 import torch.distributed as dist
 import torch.distributed.rpc as rpc
@@ -33,6 +31,29 @@ from torchelastic.multiprocessing.errors import ChildFailedError, record
 from torchelastic.rendezvous import RendezvousParameters
 from torchelastic.rendezvous.etcd_server import EtcdServer
 from torchelastic.test.test_utils import is_tsan
+
+
+def init_rpc(name, backend):
+    rank = int(os.environ["RANK"])
+    world_size = int(os.environ["WORLD_SIZE"])
+    rpc.init_rpc(
+        name=name,
+        backend=backend,
+        rank=rank,
+        world_size=world_size,
+    )
+
+
+def rpc_master(msg):
+    init_rpc("master", BackendType.TENSORPIPE)
+    ret = rpc.rpc_sync(to="worker", func=_echo, args=(msg,))
+    rpc.shutdown()
+    return f"{ret} from worker"
+
+
+def rpc_worker():
+    init_rpc("worker", BackendType.TENSORPIPE)
+    rpc.shutdown()
 
 
 def _happy_function():
@@ -188,7 +209,7 @@ class LocalElasticAgentTest(unittest.TestCase):
         )
 
     def get_agent(
-        self, spec: WorkerSpec, start_method: str = "fork", exit_barrier_timeout=5
+        self, spec: WorkerSpec, start_method: str = "spawn", exit_barrier_timeout=5
     ) -> LocalElasticAgent:
         return LocalElasticAgent(
             spec,
@@ -204,7 +225,7 @@ class LocalElasticAgentTest(unittest.TestCase):
         agent_results: Optional[mp.Queue] = None,  # (role, agent_result)
         min_nodes=1,
         max_nodes=1,
-        start_method: str = "fork",
+        start_method: str = "spawn",
         max_restarts: int = 0,
         exit_barrier_timeout=5,
     ) -> Optional[RunResult]:
@@ -261,16 +282,13 @@ class LocalElasticAgentTest(unittest.TestCase):
                 "agent_results": agent_results,
                 "min_nodes": nnodes,
                 "max_nodes": nnodes,
-                "start_method": "fork",
+                "start_method": "spawn",
                 "max_restarts": 0,
                 "exit_barrier_timeout": exit_barrier_timeout,
             }
-            if node_idx == 0:
-                self.run_agent(**run_agent_args)
-            else:
-                p = mp.Process(target=self.run_agent, kwargs=run_agent_args)
-                procs.append(p)
-                p.start()
+            p = mp.Process(target=self.run_agent, kwargs=run_agent_args)
+            procs.append(p)
+            p.start()
         for p in procs:
             p.join()
 
@@ -303,6 +321,10 @@ class LocalElasticAgentTest(unittest.TestCase):
             Conf(role="sum", entrypoint=_dist_sum, local_world_size=4),
             Conf(role="sum", entrypoint=_dist_sum, local_world_size=4),
         ]
+        # When the process method is spawn, the coverage collector hangs
+        # due to getting stuck on the _dist_sum in waiting for TCPStore workers
+        # to join the cluster
+        # TODO(aivanou): t83447589 come up with the proper fix
         res = self.run_job(node_configs)
         self.assertEqual(2, len(res["sum"]))
         ranks = set()
@@ -320,6 +342,10 @@ class LocalElasticAgentTest(unittest.TestCase):
             Conf(role="sum", entrypoint=_dist_sum, local_world_size=2),
             Conf(role="sum", entrypoint=_dist_sum, local_world_size=3),
         ]
+        # When the process method is spawn, the coverage collector hangs
+        # due to getting stuck on the _dist_sum in waiting for TCPStore workers
+        # to join the cluster
+        # TODO(aivanou): t83447589 come up with the proper fix
         res = self.run_job(node_configs)
         self.assertEqual(3, len(res["sum"]))
         ranks = set()
@@ -547,39 +573,18 @@ class LocalElasticAgentTest(unittest.TestCase):
         each agent runs a single worker. worker0 calls an rpc_sync on
         worker1.
         """
-
-        def init_rpc(name, backend):
-            rank = int(os.environ["RANK"])
-            world_size = int(os.environ["WORLD_SIZE"])
-            rpc.init_rpc(
-                name=name,
-                backend=backend,
-                rank=rank,
-                world_size=world_size,
-            )
-
-        def master(msg):
-            init_rpc("master", BackendType.TENSORPIPE)
-            ret = rpc.rpc_sync(to="worker", func=_echo, args=(msg,))
-            rpc.shutdown()
-            return f"{ret} from worker"
-
-        def worker():
-            init_rpc("worker", BackendType.TENSORPIPE)
-            rpc.shutdown()
-
         msg = "hello world"
         node_configs = [
             Conf(
                 role="master",
-                entrypoint=master,
+                entrypoint=rpc_master,
                 args=(msg,),
                 local_world_size=1,
                 tee=Std.ALL,
             ),
             Conf(
                 role="worker",
-                entrypoint=worker,
+                entrypoint=rpc_worker,
                 args=(),
                 local_world_size=1,
                 tee=Std.ALL,
