@@ -23,7 +23,7 @@ import logging
 
 from torchelastic.events.handlers import get_logging_handler
 
-from .api import Event, EventSource, EventMetadataValue  # noqa F401
+from .api import Event, EventSource, TsmEvent, EventMetadataValue  # noqa F401
 
 _events_logger = None
 
@@ -54,4 +54,8 @@ def _get_or_create_logger(destination: str = "null") -> logging.Logger:
 
 
 def record(event: Event, destination: str = "console") -> None:
+    _get_or_create_logger(destination).info(event.serialize())
+
+
+def record_tsm(event: TsmEvent, destination: str = "console") -> None:
     _get_or_create_logger(destination).info(event.serialize())

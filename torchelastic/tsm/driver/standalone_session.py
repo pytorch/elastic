@@ -6,10 +6,16 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import abc
+import getpass
+import json
+import socket
 import time
+import traceback
 from datetime import datetime
 from typing import Dict, Iterable, List, Optional, Tuple
 
+from torchelastic.events import record_tsm, TsmEvent
 from torchelastic.tsm.driver.api import (
     AppDryRunInfo,
     AppHandle,
@@ -27,7 +33,185 @@ from torchelastic.tsm.driver.api import (
 )
 
 
-class StandaloneSession(Session):
+class LoggingSession(Session):
+    def __init__(
+        self,
+        name: str,
+    ):
+        super().__init__(name)
+
+    def schedule(self, dryrun_info: AppDryRunInfo) -> AppHandle:
+        scheduler_backend = dryrun_info._scheduler
+        runcfg = json.dumps(dryrun_info._cfg.cfgs) if dryrun_info._cfg else None
+        tsm_event = self._generate_tsm_event(
+            "schedule",
+            scheduler_backend,
+            runcfg=runcfg,
+        )
+        try:
+            app_handle = self._schedule(dryrun_info)
+            _, _, app_id = parse_app_handle(app_handle)
+            tsm_event.app_id = app_id
+            # TODO(avivanou): t81936552 each action corresponds to a method call
+            # as a result instead of repeatedly log events in each method, we
+            # can log them implicitly via footsteps lib
+            record_tsm(tsm_event)
+            return app_handle
+        except Exception:
+            tsm_event.raw_exception = traceback.format_exc()
+            record_tsm(tsm_event)
+            raise
+
+    def status(self, app_handle: AppHandle) -> Optional[AppStatus]:
+        # allow status checks of apps from other sessions
+        scheduler_backend, _, app_id = parse_app_handle(app_handle)
+        tsm_event = self._generate_tsm_event(
+            "status",
+            scheduler_backend,
+            app_id,
+        )
+        try:
+            app_status = self._status(app_handle)
+            record_tsm(tsm_event)
+            return app_status
+        except Exception:
+            tsm_event.raw_exception = traceback.format_exc()
+            record_tsm(tsm_event)
+            raise
+
+    def wait(self, app_handle: AppHandle) -> Optional[AppStatus]:
+        scheduler_backend, _, app_id = parse_app_handle(app_handle)
+        tsm_event = self._generate_tsm_event("wait", scheduler_backend, app_id)
+        try:
+            record_tsm(tsm_event)
+            return self._wait(app_handle)
+        except Exception:
+            tsm_event.raw_exception = traceback.format_exc()
+            record_tsm(tsm_event)
+            raise
+
+    def list(self) -> Dict[AppHandle, Application]:
+        tsm_event = self._generate_tsm_event("list", "")
+        try:
+            res = self._list()
+            record_tsm(tsm_event)
+            return res
+        except Exception:
+            tsm_event.raw_exception = traceback.format_exc()
+            record_tsm(tsm_event)
+            raise
+
+    def stop(self, app_handle: AppHandle) -> None:
+        scheduler_backend, _, app_id = parse_app_handle(app_handle)
+        tsm_event = self._generate_tsm_event(
+            "stop",
+            scheduler_backend,
+            app_id,
+        )
+        try:
+            self._stop(app_handle)
+            record_tsm(tsm_event)
+        except Exception:
+            tsm_event.raw_exception = traceback.format_exc()
+            record_tsm(tsm_event)
+            raise
+
+    def describe(self, app_handle: AppHandle) -> Optional[Application]:
+        scheduler_backend, _, app_id = parse_app_handle(app_handle)
+
+        tsm_event = self._generate_tsm_event(
+            "describe",
+            scheduler_backend,
+            app_id,
+        )
+        try:
+            res = self._describe(app_handle)
+            record_tsm(tsm_event)
+            return res
+        except Exception:
+            tsm_event.raw_exception = traceback.format_exc()
+            record_tsm(tsm_event)
+            raise
+
+    def log_lines(
+        self,
+        app_handle: AppHandle,
+        role_name: str,
+        k: int = 0,
+        regex: Optional[str] = None,
+        since: Optional[datetime] = None,
+        until: Optional[datetime] = None,
+    ) -> Iterable:
+        scheduler_backend, _, app_id = parse_app_handle(app_handle)
+        tsm_event = self._generate_tsm_event(
+            "log_lines",
+            scheduler_backend,
+            app_id,
+        )
+        try:
+            log_iter = self._log_lines(app_handle, role_name, k, regex, since, until)
+            record_tsm(tsm_event)
+            return log_iter
+        except Exception:
+            tsm_event.raw_exception = traceback.format_exc()
+            record_tsm(tsm_event)
+            raise
+
+    @abc.abstractmethod
+    def _schedule(self, dryrun_info: AppDryRunInfo) -> AppHandle:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def _status(self, app_handle: AppHandle) -> Optional[AppStatus]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def _wait(self, app_handle: AppHandle) -> Optional[AppStatus]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def _list(self) -> Dict[AppHandle, Application]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def _stop(self, app_handle: AppHandle) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def _describe(self, app_handle: AppHandle) -> Optional[Application]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def _log_lines(
+        self,
+        app_handle: AppHandle,
+        role_name: str,
+        k: int = 0,
+        regex: Optional[str] = None,
+        since: Optional[datetime] = None,
+        until: Optional[datetime] = None,
+    ) -> Iterable:
+        raise NotImplementedError()
+
+    def _generate_tsm_event(
+        self,
+        api: str,
+        scheduler: str,
+        app_id: Optional[str] = None,
+        runcfg: Optional[str] = None,
+    ) -> TsmEvent:
+        return TsmEvent(
+            session=self.name(),
+            scheduler=scheduler,
+            api=api,
+            unix_user=getpass.getuser(),
+            source_hostname=socket.getfqdn(socket.gethostname()),
+            app_id=app_id,
+            runcfg=runcfg,
+        )
+
+
+class StandaloneSession(LoggingSession):
     def __init__(
         self,
         name: str,
@@ -42,7 +226,6 @@ class StandaloneSession(Session):
         super().__init__(name)
         self._schedulers = schedulers
         self._wait_interval = wait_interval
-
         # TODO T72035686 implement an LRU cache (see local_scheduler.py) and use it here and also in local_scheduler
         self._apps: Dict[AppHandle, Application] = {}
 
@@ -56,7 +239,7 @@ class StandaloneSession(Session):
 
     def _scheduler_app_id(
         self, app_handle: AppHandle, check_session: bool = True
-    ) -> Tuple[Scheduler, str]:
+    ) -> Tuple[Scheduler, str, str]:
         """
         Returns the scheduler and app_id from the app_handle.
         Set ``check_session`` to validate that the session name in the app handle
@@ -72,9 +255,9 @@ class StandaloneSession(Session):
         if check_session and self._name != session_name:
             raise SessionMismatchException(app_handle, self._name)
         scheduler = self._scheduler(scheduler_backend)
-        return scheduler, app_id
+        return scheduler, scheduler_backend, app_id
 
-    def schedule(self, dryrun_info: AppDryRunInfo) -> AppHandle:
+    def _schedule(self, dryrun_info: AppDryRunInfo) -> AppHandle:
         scheduler_backend = dryrun_info._scheduler
         sched = self._scheduler(scheduler_backend)
         app_id = sched.schedule(dryrun_info)
@@ -101,9 +284,11 @@ class StandaloneSession(Session):
     def scheduler_backends(self) -> List[SchedulerBackend]:
         return list(self._schedulers.keys())
 
-    def status(self, app_handle: AppHandle) -> Optional[AppStatus]:
+    def _status(self, app_handle: AppHandle) -> Optional[AppStatus]:
         # allow status checks of apps from other sessions
-        scheduler, app_id = self._scheduler_app_id(app_handle, check_session=False)
+        scheduler, scheduler_backend, app_id = self._scheduler_app_id(
+            app_handle, check_session=False
+        )
         desc = scheduler.describe(app_id)
         if not desc:
             # app does not exist on the scheduler
@@ -115,10 +300,14 @@ class StandaloneSession(Session):
         app_status = AppStatus(
             desc.state, desc.num_restarts, desc.msg, desc.structured_error_msg
         )
-        app_status.ui_url = desc.ui_url
+        if app_status:
+            app_status.ui_url = desc.ui_url
         return app_status
 
-    def wait(self, app_handle: AppHandle) -> Optional[AppStatus]:
+    def _wait(self, app_handle: AppHandle) -> Optional[AppStatus]:
+        scheduler, scheduler_backend, app_id = self._scheduler_app_id(
+            app_handle, check_session=False
+        )
         while True:
             app_status = self.status(app_handle)
 
@@ -129,7 +318,7 @@ class StandaloneSession(Session):
             else:
                 time.sleep(self._wait_interval)
 
-    def list(self) -> Dict[AppHandle, Application]:
+    def _list(self) -> Dict[AppHandle, Application]:
         # opportunistically query for each app's status to update the app
         # copy the keys (app ids) since status(app_id) mutates self._apps
         app_ids = list(self._apps.keys())
@@ -137,16 +326,18 @@ class StandaloneSession(Session):
             self.status(app_id)
         return self._apps
 
-    def stop(self, app_handle: AppHandle) -> None:
-        scheduler, app_id = self._scheduler_app_id(app_handle)
+    def _stop(self, app_handle: AppHandle) -> None:
+        scheduler, scheduler_backend, app_id = self._scheduler_app_id(app_handle)
         status = self.status(app_handle)
         if status is None or status.is_terminal():
             return  # do nothing; app does not exist or has already finished
         else:
             scheduler.cancel(app_id)
 
-    def describe(self, app_handle: AppHandle) -> Optional[Application]:
-        scheduler, app_id = self._scheduler_app_id(app_handle, check_session=False)
+    def _describe(self, app_handle: AppHandle) -> Optional[Application]:
+        scheduler, scheduler_backend, app_id = self._scheduler_app_id(
+            app_handle, check_session=False
+        )
 
         # if the app is in the apps list, then short circuit everything and return it
         app = self._apps.get(app_handle, None)
@@ -159,7 +350,7 @@ class StandaloneSession(Session):
         else:
             return Application(name=app_id).of(*desc.roles)
 
-    def log_lines(
+    def _log_lines(
         self,
         app_handle: AppHandle,
         role_name: str,
@@ -170,6 +361,9 @@ class StandaloneSession(Session):
     ) -> Iterable:
         if not self.status(app_handle):
             raise UnknownAppException(app_handle)
+        scheduler, scheduler_backend, app_id = self._scheduler_app_id(
+            app_handle, check_session=False
+        )
 
-        scheduler, app_id = self._scheduler_app_id(app_handle, check_session=False)
-        return scheduler.log_iter(app_id, role_name, k, regex, since, until)
+        log_iter = scheduler.log_iter(app_id, role_name, k, regex, since, until)
+        return log_iter
