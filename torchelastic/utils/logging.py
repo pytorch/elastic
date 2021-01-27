@@ -32,9 +32,6 @@ def get_logger(name: Optional[str] = None):
 
 def _setup_logger(name: Optional[str] = None):
     log = logging.getLogger(name)
-    if len(log.handlers) == 0:
-        # Add default handler that writes messages to stderr
-        log.addHandler(logging.StreamHandler())
     log.setLevel(os.environ.get("LOGLEVEL", "INFO"))
     return log
 

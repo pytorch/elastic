@@ -52,12 +52,6 @@ class StoreUtilTest(unittest.TestCase):
 
 
 class UtilTest(unittest.TestCase):
-    def test_get_logger_same(self):
-        logger1 = get_logger(__name__)
-        logger2 = get_logger(__name__)
-        self.assertEqual(1, len(logger1.handlers))
-        self.assertEqual(logger1, logger2)
-
     def test_get_logger_different(self):
         logger1 = get_logger("name1")
         logger2 = get_logger("name2")
