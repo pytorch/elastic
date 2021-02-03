@@ -98,9 +98,7 @@ class ContainerBuilderTest(unittest.TestCase):
     def test_create_container_with_resource(self):
         res1 = Resource(cpu=1, gpu=2, memMB=128)
         res2 = Resource(cpu=1, gpu=2, memMB=256)
-        container = (
-            Container("torch").require(res1, "default").require(res2, "test_scheduler")
-        )
+        container = Container("torch").require(res1).require(res2)
         self.assertEqual(res2, container.resources)
 
     def test_create_container_no_backend(self):

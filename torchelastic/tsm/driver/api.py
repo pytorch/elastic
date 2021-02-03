@@ -110,11 +110,7 @@ class Container:
     resources: Resource = NULL_RESOURCE
     port_map: Dict[str, int] = field(default_factory=dict)
 
-    def require(
-        self,
-        resources: Resource,
-        scheduler: SchedulerBackend = ALL,
-    ) -> "Container":
+    def require(self, resources: Resource) -> "Container":
         """
         Sets resource requirements on the container.
         """
