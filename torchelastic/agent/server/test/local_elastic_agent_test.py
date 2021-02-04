@@ -386,6 +386,7 @@ class LocalElasticAgentTest(unittest.TestCase):
         self.assertTrue(run_result.is_failed())
         self.assertEqual(0, agent._remaining_restarts)
         self.assertEqual(WorkerState.FAILED, agent.get_worker_group().state)
+        self.assertTrue(agent._total_execution_time > 0)
 
     def test_correct_rank_assignment_heterogeneous(self):
         node_configs = [

@@ -683,6 +683,8 @@ class SimpleElasticAgent(ElasticAgent):
             self._record_worker_events(result)
             return result
         finally:
+            # record the execution time in case there were any exceptions during run.
+            self._total_execution_time = int(time.monotonic() - start_time)
             self._shutdown()
 
     def get_agent_status_event(self, state: WorkerState) -> Event:
