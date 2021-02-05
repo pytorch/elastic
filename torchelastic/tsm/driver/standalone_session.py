@@ -65,11 +65,7 @@ class LoggingSession(Session):
     def status(self, app_handle: AppHandle) -> Optional[AppStatus]:
         # allow status checks of apps from other sessions
         scheduler_backend, _, app_id = parse_app_handle(app_handle)
-        tsm_event = self._generate_tsm_event(
-            "status",
-            scheduler_backend,
-            app_id,
-        )
+        tsm_event = self._generate_tsm_event("status", scheduler_backend, app_id)
         try:
             app_status = self._status(app_handle)
             record_tsm(tsm_event)
@@ -298,7 +294,11 @@ class StandaloneSession(LoggingSession):
             return None
 
         app_status = AppStatus(
-            desc.state, desc.num_restarts, desc.msg, desc.structured_error_msg
+            desc.state,
+            desc.num_restarts,
+            desc.msg,
+            desc.structured_error_msg,
+            replicas=desc.replicas,
         )
         if app_status:
             app_status.ui_url = desc.ui_url

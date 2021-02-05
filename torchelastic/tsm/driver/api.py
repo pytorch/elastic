@@ -27,6 +27,27 @@ from typing import (
     Union,
 )
 
+_APP_STATUS_FORMAT_TEMPLATE = """
+state: ${state}
+num_restarts: ${num_restarts}
+msg: ${msg}
+Replicas: ${replicas}
+"""
+
+_ROLE_REPLICA_FORMAT_TEMPLATE = """
+- Role: [${role}]:
+${replicas}
+"""
+
+
+_REPLICA_FORMAT_TEMPLATE = """
+- [${role}:${replica_id}]
+  timestamp: ${timestamp}
+  exit_code: ${exit_code}
+  state: ${state}
+  error_msg: ${error_msg}
+"""
+
 
 SchedulerBackend = str
 
@@ -389,12 +410,52 @@ NONE: str = "<NONE>"
 
 
 @dataclass
+class RoleReplicaStatus:
+    """
+    The status of the replica during the job execution.
+
+    Args:
+        replica_id: The node rank, note: this is not a worker rank.
+        state: The current state of the node.
+        exit_code: `None`` if still running
+        role: The role name
+        end_time: Timestamp value if the node finished execution, None otherwise
+        error_msg: Error message if any, None if job succeeded.
+    """
+
+    replica_id: int
+    state: AppState
+    role: str
+    exit_code: Optional[int] = None
+    end_time: Optional[int] = None
+    error_msg: Optional[str] = None
+
+    def get_formatted_str(self) -> str:
+        """
+        Return human readable status representation.
+        """
+        return Template(_REPLICA_FORMAT_TEMPLATE).substitute(
+            timestamp=self.end_time,
+            replica_id=self.replica_id,
+            exit_code=self.exit_code,
+            state=self.state,
+            role=self.role,
+            error_msg=self.error_msg,
+        )
+
+
+@dataclass
 class AppStatus:
     """
     The runtime status of the ``Application``. The scheduler can
     return an arbitrary text message (msg field).
     If any error occurs, scheduler can populate ``structured_error_msg``
-    with json response
+    with json response.
+
+    ``replicas`` represent the statuses of the replicas in the job. If the job
+    runs with multiple retries, the parameter will contain the statuses of the
+    most recent retry. Note: if the previous retries failed, but the most recent
+    retry succeeded or in progress, ``replicas`` will not contain ocurred errors.
     """
 
     state: AppState
@@ -402,6 +463,7 @@ class AppStatus:
     msg: str = ""
     structured_error_msg: str = NONE
     ui_url: Optional[str] = None
+    replicas: Dict[str, List[RoleReplicaStatus]] = field(default_factory=dict)
 
     def is_terminal(self) -> bool:
         return is_terminal(self.state)
@@ -415,6 +477,38 @@ class AppStatus:
             structured_error_msg_parsed = NONE
         app_status_dict["structured_error_msg"] = structured_error_msg_parsed
         return json.dumps(app_status_dict, indent=2)
+
+    def _get_role_replicas(
+        self, state_filter: Optional[AppState] = None
+    ) -> Dict[str, List[RoleReplicaStatus]]:
+        if not state_filter:
+            return self.replicas
+        filterred_replicas = {}
+        for role, role_replicas in self.replicas.items():
+            filterred_replicas[role] = [
+                replica for replica in role_replicas if replica.state == state_filter
+            ]
+        return filterred_replicas
+
+    def get_formatted_str(self, state_filter: Optional[AppState] = None) -> str:
+        """
+        Return a human readable representation of the AppStatus.
+        """
+        role_replicas = ""
+        filterred_replicas = self._get_role_replicas(state_filter)
+        for role, role_replics in filterred_replicas.items():
+            replicas_str = "".join(
+                replica.get_formatted_str() for replica in role_replics
+            )
+            role_replicas += Template(_ROLE_REPLICA_FORMAT_TEMPLATE).substitute(
+                role=role, replicas=replicas_str
+            )
+        return Template(_APP_STATUS_FORMAT_TEMPLATE).substitute(
+            state=self.state,
+            num_restarts=self.num_restarts,
+            msg=self.msg,
+            replicas=role_replicas,
+        )
 
 
 @dataclass
@@ -444,6 +538,7 @@ class DescribeAppResponse:
     ui_url: Optional[str] = None
 
     roles: List[Role] = field(default_factory=list)
+    replicas: Dict[str, List[RoleReplicaStatus]] = field(default_factory=dict)
 
 
 # valid ``RunConfig`` values; only support primitives (str, int, float, bool)
