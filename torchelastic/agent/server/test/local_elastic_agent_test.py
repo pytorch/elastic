@@ -30,7 +30,7 @@ from torchelastic.multiprocessing import Std
 from torchelastic.multiprocessing.errors import ChildFailedError, record
 from torchelastic.rendezvous import RendezvousParameters
 from torchelastic.rendezvous.etcd_server import EtcdServer
-from torchelastic.test.test_utils import is_tsan
+from torchelastic.test.test_utils import is_asan_or_tsan
 
 
 def init_rpc(name, backend):
@@ -157,7 +157,6 @@ class Conf:
     tee: Std = Std.NONE
 
 
-@unittest.skipIf(is_tsan(), "tests incompatible with tsan")
 class LocalElasticAgentTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -298,24 +297,28 @@ class LocalElasticAgentTest(unittest.TestCase):
             results.setdefault(role, []).append(run_result)
         return results
 
+    @unittest.skipIf(is_asan_or_tsan(), "tests incompatible with tsan or asan")
     def test_run_happy_function(self):
         res = self.run_agent(Conf(entrypoint=_happy_function, local_world_size=2))
         self.assertFalse(res.is_failed())
         self.assertIsNone(res.return_values[0])
         self.assertIsNone(res.return_values[1])
 
+    @unittest.skipIf(is_asan_or_tsan(), "tests incompatible with tsan or asan")
     def test_run_check_env_function(self):
         # just checks that all env vars that we need to set on the user script
         # is actually set
         res = self.run_agent(Conf(entrypoint=_check_env_function, local_world_size=1))
         self.assertFalse(res.is_failed())
 
+    @unittest.skipIf(is_asan_or_tsan(), "tests incompatible with tsan or asan")
     def test_run_function_with_return_value(self):
         res = self.run_agent(Conf(entrypoint=_echo, args=("foo",), local_world_size=2))
         self.assertFalse(res.is_failed())
         self.assertEqual("foo", res.return_values[0])
         self.assertEqual("foo", res.return_values[1])
 
+    @unittest.skipIf(is_asan_or_tsan(), "tests incompatible with tsan or asan")
     def test_run_distributed_sum_homogeneous(self):
         node_configs = [
             Conf(role="sum", entrypoint=_dist_sum, local_world_size=4),
@@ -333,6 +336,7 @@ class LocalElasticAgentTest(unittest.TestCase):
             ranks.update(run_results.return_values.keys())
         self.assertSetEqual(set(range(4 + 4)), ranks)
 
+    @unittest.skipIf(is_asan_or_tsan(), "tests incompatible with tsan or asan")
     def test_run_distributed_sum_heterogenous(self):
         # sums all ranks on 3 agents; each running 1, 2, 3 workers respectively
         # sum should be equal to 0 + (1 + 2) + (3 + 4 + 5) = 15
@@ -354,6 +358,7 @@ class LocalElasticAgentTest(unittest.TestCase):
             ranks.update(run_results.return_values.keys())
         self.assertSetEqual(set(range(1 + 2 + 3)), ranks)
 
+    @unittest.skipIf(is_asan_or_tsan(), "tests incompatible with tsan or asan")
     def test_run_sad_function(self):
         """
         checks error propagation logic
@@ -388,6 +393,7 @@ class LocalElasticAgentTest(unittest.TestCase):
         self.assertEqual(WorkerState.FAILED, agent.get_worker_group().state)
         self.assertTrue(agent._total_execution_time > 0)
 
+    @unittest.skipIf(is_asan_or_tsan(), "tests incompatible with tsan or asan")
     def test_correct_rank_assignment_heterogeneous(self):
         node_configs = [
             Conf(role="master", entrypoint=_get_role_info, local_world_size=8),
@@ -412,6 +418,7 @@ class LocalElasticAgentTest(unittest.TestCase):
             },
         )
 
+    @unittest.skipIf(is_asan_or_tsan(), "tests incompatible with tsan or asan")
     def test_correct_rank_assignment_homogeneous(self):
         node_configs = [
             Conf(role="master", entrypoint=_get_role_info, local_world_size=1),
@@ -486,6 +493,7 @@ class LocalElasticAgentTest(unittest.TestCase):
         start_rank, end_rank = ranks[0], ranks[-1]
         self.assertEqual(list(range(start_rank, end_rank + 1)), ranks)
 
+    @unittest.skipIf(is_asan_or_tsan(), "tests incompatible with tsan or asan")
     def test_double_agent_fault_tolerance(self):
         """
         start ``nnodes`` agents, kill and restart odd ones, validate fault-tolerance works
@@ -527,6 +535,7 @@ class LocalElasticAgentTest(unittest.TestCase):
             p.join()
             self.assertEqual(0, p.exitcode)
 
+    @unittest.skipIf(is_asan_or_tsan(), "tests incompatible with tsan or asan")
     def test_double_agent_elastic(self):
         """
         start ``nnodes`` agents, kill odd ones (do not restart), validate
@@ -567,6 +576,7 @@ class LocalElasticAgentTest(unittest.TestCase):
             else:
                 self.assertEqual(-signal.SIGKILL, p.exitcode)
 
+    @unittest.skipIf(is_asan_or_tsan(), "tests incompatible with tsan or asan")
     def test_torch_rpc(self):
         """
         Simple torch rpc example with torchelastic.
@@ -598,6 +608,7 @@ class LocalElasticAgentTest(unittest.TestCase):
         # so compare the master return value as a collection
         self.assertEqual([f"{msg} from worker"], list(master_retvals.values()))
 
+    @unittest.skipIf(is_asan_or_tsan(), "tests incompatible with tsan or asan")
     def test_workers_drift_success(self):
         """
         two agents (one worker each) finishes within ``sec`` seconds of each other,
@@ -617,6 +628,7 @@ class LocalElasticAgentTest(unittest.TestCase):
                 # _sleep() returns its own rank
                 self.assertEqual(rank, output)
 
+    @unittest.skipIf(is_asan_or_tsan(), "tests incompatible with tsan or asan")
     def test_workers_drift_fail(self):
         """
         two agents (one worker each) finishes within ``4 x sec`` seconds of each other,
@@ -635,6 +647,7 @@ class LocalElasticAgentTest(unittest.TestCase):
                 # _sleep() returns its own rank
                 self.assertEqual(rank, output)
 
+    @unittest.skipIf(is_asan_or_tsan(), "tests incompatible with tsan or asan")
     @patch("torchelastic.utils.store.barrier")
     def test_barrier_failed(self, barrier_mock):
         """

@@ -18,10 +18,18 @@ from itertools import product
 from typing import Dict, List
 from unittest import mock
 
+import torch.multiprocessing as mp
 from torchelastic.multiprocessing import ProcessFailure, start_processes
-from torchelastic.multiprocessing.api import RunProcsResult, Std, _wrap, to_map
+from torchelastic.multiprocessing.api import (
+    RunProcsResult,
+    Std,
+    MultiprocessContext,
+    _wrap,
+    to_map,
+    _validate_full_rank,
+)
 from torchelastic.multiprocessing.errors.error_handler import _write_error
-from torchelastic.test.test_utils import is_tsan, start_methods
+from torchelastic.test.test_utils import is_asan_or_tsan, start_methods
 
 
 class RunProcResultsTest(unittest.TestCase):
@@ -141,7 +149,6 @@ def redirects() -> List[Std]:
     ]
 
 
-@unittest.skipIf(is_tsan(), "tests incompatible with tsan")
 class StartProcessesTest(unittest.TestCase):
     def setUp(self):
         self.test_dir = tempfile.mkdtemp(prefix=f"{self.__class__.__name__}_")
@@ -285,6 +292,7 @@ class StartProcessesTest(unittest.TestCase):
     ########################################
     # start_processes as binary tests
     ########################################
+    @unittest.skipIf(is_asan_or_tsan(), "tests incompatible with tsan or asan")
     def test_function(self):
         for start_method, redirs in product(start_methods(), redirects()):
             with self.subTest(start_method=start_method, redirs=redirs):
@@ -320,6 +328,7 @@ class StartProcessesTest(unittest.TestCase):
                             [f"hello stderr from {i}"], results.stderrs[i]
                         )
 
+    @unittest.skipIf(is_asan_or_tsan(), "tests incompatible with tsan or asan")
     def test_function_exit(self):
         """
         run 2x copies of echo1 fail (exit) the first
@@ -367,6 +376,7 @@ class StartProcessesTest(unittest.TestCase):
                 self.assertTrue(pc._stderr_tail.stopped())
                 self.assertTrue(pc._stdout_tail.stopped())
 
+    @unittest.skipIf(is_asan_or_tsan(), "tests incompatible with tsan or asan")
     def test_function_signal(self):
         """
         run 2x copies of echo3, induce a segfault on first
@@ -399,6 +409,7 @@ class StartProcessesTest(unittest.TestCase):
                 self.assertEqual(pc.pids()[0], failure.pid)
                 self.assertEqual(os.path.join(log_dir, "0", "error.json"), error_file)
 
+    @unittest.skipIf(is_asan_or_tsan(), "tests incompatible with tsan or asan")
     def test_void_function(self):
         for start_method in start_methods():
             with self.subTest(start_method=start_method):
@@ -414,6 +425,7 @@ class StartProcessesTest(unittest.TestCase):
                 results = pc.wait(period=0.1)
                 self.assertEqual({0: None, 1: None}, results.return_values)
 
+    @unittest.skipIf(is_asan_or_tsan(), "tests incompatible with tsan or asan")
     def test_function_large_ret_val(self):
         # python multiprocessing.queue module uses pipes and actually PipedQueues
         # This means that if a single object is greater than a pipe size
@@ -437,6 +449,7 @@ class StartProcessesTest(unittest.TestCase):
                 for i in range(pc.nprocs):
                     self.assertEqual(size, len(results.return_values[i]))
 
+    @unittest.skipIf(is_asan_or_tsan(), "tests incompatible with tsan or asan")
     def test_function_raise(self):
         """
         run 2x copies of echo2, raise an exception on the first
@@ -641,3 +654,33 @@ class StartProcessesTest(unittest.TestCase):
         self.assertFalse(pc.stdouts[1])
         self.assertTrue(pc._stderr_tail.stopped())
         self.assertTrue(pc._stdout_tail.stopped())
+
+    def test_validate_full_rank(self):
+        with self.assertRaises(RuntimeError):
+            _validate_full_rank({}, 10, "")
+
+    def test_multiprocessing_context_poll_raises_exception(self):
+        mp_context = MultiprocessContext(
+            name="test_mp",
+            entrypoint=echo0,
+            args={0: (0, 1)},
+            envs={},
+            stdouts={0: {}},
+            stderrs={0: {}},
+            tee_stdouts={0: "tee_stdout"},
+            tee_stderrs={0: "tee_stderr"},
+            error_files={0: "test_file"},
+            start_method="spawn",
+        )
+        mp_context._pc = mock.Mock()
+        # Using mock since we cannot just set exitcode on process
+        mock_process = mock.Mock()
+        mock_process.exitcode = -1
+        mp_context._pc.processes = [mock_process]
+        e = mp.ProcessRaisedException(msg="test msg", error_index=0, error_pid=123)
+        mp_context._pc.join.side_effect = e
+        with mock.patch.object(mp_context, "close"):
+            run_result = mp_context._poll()
+            self.assertEqual(1, len(run_result.failures))
+            failure = run_result.failures[0]
+            self.assertEqual("Signal 1 (SIGHUP) received by PID 123", failure.message)
