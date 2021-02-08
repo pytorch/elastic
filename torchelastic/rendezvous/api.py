@@ -7,7 +7,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import abc
-from typing import Any, Callable, Dict, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 
 
 class RendezvousClosedException(Exception):
@@ -145,11 +145,9 @@ class RendezvousHandler(abc.ABC):
 
 class RendezvousParameters(object):
     """
-    Data object holding necessary and sufficient configuration parameters to
-    construct a ``RendezvousHandler`` specified by the ``rdzv_backend``.
+    The data object holding necessary configuration parameters to construct a
+    ``RendezvousHandler`` specified by the ``rdzv_backend``.
     """
-
-    __slots__ = ("backend", "endpoint", "run_id", "min_nodes", "max_nodes", "configs")
 
     def __init__(
         self,
@@ -169,48 +167,75 @@ class RendezvousParameters(object):
         max_nodes: The max amount of nodes that are allowed to join the rendezvous.
         **kwargs: Additional configurations for the particular rdzv backend as key, value pairs
         """
+        if backend is None:
+            raise ValueError("The backend cannot be None.")
+
+        if min_nodes < 1:
+            raise ValueError("The minimum number of nodes must be greater than zero.")
+        if max_nodes < min_nodes:
+            raise ValueError(
+                "The maximum number of nodes must be greater than or equal to the minimum number of nodes."
+            )
+
         self.backend = backend
         self.endpoint = endpoint
         self.run_id = run_id
         self.min_nodes = min_nodes
         self.max_nodes = max_nodes
 
-        self.configs = {}
-        for (key, val) in kwargs.items():
-            self.configs[key] = val
-
-        assert 0 < min_nodes <= max_nodes
-        assert backend is not None
+        self.configs = kwargs
 
     def get(self, config_key: str, default_value: Any = None) -> Any:
         """
-        Returns the the config value from the configs map
-        if one exits or the ``default_value``. Checks for ``None`` values,
-        so if the config key exists in ``configs``, but maps to ``None``, then
-        the ``default_value`` is returned.
+        Returns the config value from the configs map if one exits or the
+        ``default_value``. Checks for ``None`` values, so if the config key
+        exists in ``configs``, but maps to ``None``, then the ``default_value``
+        is returned.
 
-        If the default_value is not specified (or is ``None``) then this method
-        interprets the config key as a required config and will raise a ``KeyError``
-        if the config key is either not found or maps to ``None``
+        If the ``default_value`` is not specified (or is ``None``) then this
+        method interprets the config key as a required config and will raise a
+        ``KeyError`` if the config key is either not found or maps to ``None``.
         """
-        if config_key not in self.configs:
+        try:
+            val = self.configs[config_key]
+        except KeyError:
+            val = None
+        if val is None:
             if default_value is None:
                 raise KeyError(
-                    f"required config: {config_key} not found, and a default was not provided"
+                    f"The '{config_key}' rendezvous config is not found and a default value was not provided."
                 )
-            else:
-                return default_value
+            val = default_value
+        return val
 
-        val = self.configs[config_key]
+    def get_bool(self, config_key: str, default_value: bool = False) -> bool:
+        """
+        Returns the configuration value as a boolean.
+        """
+        val = self.get(config_key, default_value)
+        if isinstance(val, int) or isinstance(val, bool):
+            return True if val else False
+        if isinstance(val, str):
+            return val.lower() in ["1", "true", "t", "yes", "y"]
+        raise KeyError(
+            f"The '{config_key}' rendezvous config does not represent a valid boolean value."
+        )
+
+    def get_int(
+        self, config_key: str, default_value: Optional[int] = None
+    ) -> Optional[int]:
+        """
+        Returns the configuration value as an integer.
+        """
+        val = self.get(config_key, default_value)
         if val is None:
-            if default_value is not None:
-                return default_value
-            else:
-                raise KeyError(
-                    f"required config: {config_key} maps to None, and a default was not provided"
-                )
-        else:
             return val
+        try:
+            return int(val)
+        except ValueError:
+            raise KeyError(
+                f"The '{config_key}' rendezvous config does not represent a valid integer value."
+            )
 
 
 class RendezvousHandlerFactory:

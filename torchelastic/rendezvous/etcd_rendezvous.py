@@ -28,6 +28,11 @@ from torchelastic.rendezvous import (
     RendezvousTimeoutException,
 )
 
+from .utils import (
+    _DEFAULT_RDZV_TIMEOUT,
+    _DEFAULT_RDZV_LAST_CALL_TIMEOUT,
+    _parse_hostname_and_port,
+)
 
 _log_fmt = logging.Formatter("%(levelname)s %(asctime)s %(message)s")
 _log_handler = logging.StreamHandler(sys.stderr)
@@ -52,13 +57,6 @@ class EtcdRendezvousRetryableFailure(Exception):
 class EtcdRendezvousRetryImmediately(Exception):
     pass
 
-
-# Default overall timeout for rendezvous barrier.
-CONST_DEFAULT_OVERALL_TIMEOUT = 600
-
-# Additional waiting amount after reaching num_min_workers,
-# for the case rendezvous is elastic (min != max):
-CONST_DEFAULT_LAST_CALL_TIMEOUT = 30
 
 # Various constants used internally in EtcdRendezvous
 CONST_ETCD_SETUP_TTL = 5
@@ -1239,16 +1237,8 @@ def create_rdzv_handler(rdzv_params: RendezvousParameters):
         cert - client cert to access etcd, only makes sense with https.
         key - client key to access etcd, only makes sense with https.
     """
-    import re
-
-    # Etcd endpoints. (Current url format only allows a single host)
-    endpoint = rdzv_params.endpoint
-    match = re.match(r"(.+):(\d+)$", endpoint)  # check if port was provided
-    if match:
-        etcd_endpoints = ((match.group(1), int(match.group(2))),)
-    else:
-        # Use default etcd port
-        etcd_endpoints = ((endpoint, 2379),)
+    # Etcd endpoints. Note that the current format only allows a single host.
+    etcd_endpoints = (_parse_hostname_and_port(rdzv_params.endpoint, 2379),)
 
     # Run ID value -> unique identifier of this training job instance:
     # typically a job_id or name assigned by the scheduler or user
@@ -1264,9 +1254,9 @@ def create_rdzv_handler(rdzv_params: RendezvousParameters):
         max_workers >= min_workers
     ), "Max number of workers cannot be less than min number of workers"
 
-    timeout = rdzv_params.get("timeout", CONST_DEFAULT_OVERALL_TIMEOUT)
+    timeout = rdzv_params.get("timeout", _DEFAULT_RDZV_TIMEOUT)
     last_call_timeout = rdzv_params.get(
-        "last_call_timeout", CONST_DEFAULT_LAST_CALL_TIMEOUT
+        "last_call_timeout", _DEFAULT_RDZV_LAST_CALL_TIMEOUT
     )
 
     kwargs = _parse_etcd_client_params(rdzv_params.configs)

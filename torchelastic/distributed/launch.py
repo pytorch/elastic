@@ -554,11 +554,16 @@ def main(args=None):
 
 def _parse_rdzv_conf(conf_str: str):
     rdzv_conf = {}
+
+    if not conf_str:
+        return rdzv_conf
+
     confs = conf_str.split(",")
     for kvs in confs:
-        key = kvs.split("=")[0]
-        value = kvs.split("=")[1:]
-        rdzv_conf[key] = value
+        key, *values = kvs.split("=", 1)
+        if not values:
+            raise ValueError(f"The '{key}' rendezvous config has no value specified.")
+        rdzv_conf[key] = values[0]
     return rdzv_conf
 
 
