@@ -233,6 +233,7 @@ from torchelastic.multiprocessing import Std
 from torchelastic.multiprocessing.errors import ChildFailedError, record
 from torchelastic.rendezvous import RendezvousParameters
 from torchelastic.rendezvous.etcd_server import EtcdServer
+from torchelastic.rendezvous.utils import _parse_rendezvous_config
 from torchelastic.utils.logging import get_logger
 
 
@@ -507,7 +508,7 @@ def main(args=None):
         run_id=args.rdzv_id,
         min_nodes=min_nodes,
         max_nodes=max_nodes,
-        **_parse_rdzv_conf(args.rdzv_conf),
+        **_parse_rendezvous_config(args.rdzv_conf),
     )
 
     rdzv_handler = rdzv_registry.get_rendezvous_handler(rdzv_parameters)
@@ -550,21 +551,6 @@ def main(args=None):
         rdzv_handler.shutdown()
         if args.standalone:
             etcd_server.stop()
-
-
-def _parse_rdzv_conf(conf_str: str):
-    rdzv_conf = {}
-
-    if not conf_str:
-        return rdzv_conf
-
-    confs = conf_str.split(",")
-    for kvs in confs:
-        key, *values = kvs.split("=", 1)
-        if not values:
-            raise ValueError(f"The '{key}' rendezvous config has no value specified.")
-        rdzv_conf[key] = values[0]
-    return rdzv_conf
 
 
 if __name__ == "__main__":

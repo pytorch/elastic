@@ -28,11 +28,7 @@ from torchelastic.rendezvous import (
     RendezvousTimeoutException,
 )
 
-from .utils import (
-    _DEFAULT_RDZV_TIMEOUT,
-    _DEFAULT_RDZV_LAST_CALL_TIMEOUT,
-    _parse_hostname_and_port,
-)
+from .utils import _parse_hostname_and_port
 
 _log_fmt = logging.Formatter("%(levelname)s %(asctime)s %(message)s")
 _log_handler = logging.StreamHandler(sys.stderr)
@@ -1249,17 +1245,10 @@ def create_rdzv_handler(rdzv_params: RendezvousParameters):
     min_workers = rdzv_params.min_nodes
     max_workers = rdzv_params.max_nodes
 
-    assert min_workers >= 1, "Min number of workers should be at least 1"
-    assert (
-        max_workers >= min_workers
-    ), "Max number of workers cannot be less than min number of workers"
+    timeout = rdzv_params.timeout
+    last_call_timeout = rdzv_params.last_call_timeout
 
-    timeout = rdzv_params.get("timeout", _DEFAULT_RDZV_TIMEOUT)
-    last_call_timeout = rdzv_params.get(
-        "last_call_timeout", _DEFAULT_RDZV_LAST_CALL_TIMEOUT
-    )
-
-    kwargs = _parse_etcd_client_params(rdzv_params.configs)
+    kwargs = _parse_etcd_client_params(rdzv_params.config)
 
     # Etcd rendezvous implementation
     etcd_rdzv = EtcdRendezvous(

@@ -1,5 +1,3 @@
-#!/usr/bin/env/python3
-
 # Copyright (c) Facebook, Inc. and its affiliates.
 # All rights reserved.
 #
@@ -10,30 +8,39 @@ import abc
 from typing import Any, Callable, Dict, Optional, Tuple
 
 
-class RendezvousClosedException(Exception):
+class RendezvousException(Exception):
     """
-    Raised when a rendezvous for the specified run_id is closed.
+    Represents the base type for rendezvous exceptions.
+    """
+
+    pass
+
+
+class RendezvousClosedException(RendezvousException):
+    """
+    Raised when a rendezvous is closed.
+
     This is used to signal completion to nodes that arrive late.
     """
 
     pass
 
 
-class RendezvousTimeoutException(Exception):
+class RendezvousTimeoutException(RendezvousException):
     """
-    Raised from ``RendezvousHandler.next_rendezvous()`` to signal that the
-    rendezvous did not
-    succeed within the allocated time. This is meant to be interpreted
-    as a non-retryable type of failure.
+    Raised to signal that a rendezvous did not succeed within the allocated
+    time.
+
+    This is a non-retryable type of failure.
     """
 
     pass
 
 
-class RendezvousNonRetryableError(Exception):
+class RendezvousNonRetryableError(RendezvousException):
     """
-    Raised from any of the ``RendezvousHandler`` methods when a failure
-    occured that should not be retried with the same worker process.
+    Raised when a failure occured that should not be retried within the same
+    worker process.
     """
 
     pass
@@ -143,11 +150,17 @@ class RendezvousHandler(abc.ABC):
         pass
 
 
-class RendezvousParameters(object):
+class RendezvousParameters:
     """
-    The data object holding necessary configuration parameters to construct a
-    ``RendezvousHandler`` specified by the ``rdzv_backend``.
+    The data object holding parameters to construct a ``RendezvousHandler``.
     """
+
+    # Default timeout for the rendezvous.
+    _DEFAULT_TIMEOUT: int = 600  # 10 minutes
+
+    # Additional waiting time after reaching the minimum number of nodes
+    # in case the rendezvous is elastic (min != max).
+    _DEFAULT_LAST_CALL_TIMEOUT: int = 30  # 30 seconds
 
     def __init__(
         self,
@@ -159,13 +172,14 @@ class RendezvousParameters(object):
         **kwargs,
     ):
         """
-        backend: The rdzv_backend that is used to register rendezvous, e.g. etcd
-        endpoint: The rdzv_endpoint of the rendezvous. Usually it is a string
-                    in the format host:port
-        run_id: The unique job id that is used in rendezvous.
-        min_nodes: The min number of nodes required to complete rendezvous.
-        max_nodes: The max amount of nodes that are allowed to join the rendezvous.
-        **kwargs: Additional configurations for the particular rdzv backend as key, value pairs
+        Args:
+            backend: The backend that is used to register the rendezvous.
+            endpoint: The endpoint of the rendezvous. Usually it is a string in the format
+                <hostname>:<port>.
+            run_id: The id of the rendezvous.
+            min_nodes: The minimum number of nodes required to complete the rendezvous.
+            max_nodes: The maximum number of nodes that are allowed to join the rendezvous.
+            **kwargs: Additional parameters for the specified backend.
         """
         if backend is None:
             raise ValueError("The backend cannot be None.")
@@ -182,89 +196,103 @@ class RendezvousParameters(object):
         self.run_id = run_id
         self.min_nodes = min_nodes
         self.max_nodes = max_nodes
+        self.config = kwargs
 
-        self.configs = kwargs
-
-    def get(self, config_key: str, default_value: Any = None) -> Any:
+    @property
+    def timeout(self):
         """
-        Returns the config value from the configs map if one exits or the
-        ``default_value``. Checks for ``None`` values, so if the config key
-        exists in ``configs``, but maps to ``None``, then the ``default_value``
-        is returned.
-
-        If the ``default_value`` is not specified (or is ``None``) then this
-        method interprets the config key as a required config and will raise a
-        ``KeyError`` if the config key is either not found or maps to ``None``.
+        Gets the timeout for the rendezvous.
         """
-        try:
-            val = self.configs[config_key]
-        except KeyError:
-            val = None
+        return self.get_as_int("timeout", self._DEFAULT_TIMEOUT)
+
+    @property
+    def last_call_timeout(self):
+        """
+        Gets additional waiting time after reaching the minimum number of nodes
+        in case the rendezvous is elastic (min != max).
+        """
+        return self.get_as_int("last_call_timeout", self._DEFAULT_LAST_CALL_TIMEOUT)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        """
+        Returns the value for ``key`` if ``key`` exists, else ``default``.
+        """
+        return self.config.get(key, default)
+
+    def get_as_bool(self, key: str, default: Optional[bool] = None) -> Optional[bool]:
+        """
+        Returns the value for ``key`` as a ``bool`` if ``key`` exists.
+        """
+        val = self.get(key, default)
         if val is None:
-            if default_value is None:
-                raise KeyError(
-                    f"The '{config_key}' rendezvous config is not found and a default value was not provided."
-                )
-            val = default_value
-        return val
-
-    def get_bool(self, config_key: str, default_value: bool = False) -> bool:
-        """
-        Returns the configuration value as a boolean.
-        """
-        val = self.get(config_key, default_value)
+            return val
         if isinstance(val, int) or isinstance(val, bool):
             return True if val else False
         if isinstance(val, str):
             return val.lower() in ["1", "true", "t", "yes", "y"]
-        raise KeyError(
-            f"The '{config_key}' rendezvous config does not represent a valid boolean value."
+        raise ValueError(
+            f"The '{key}' rendezvous config does not represent a valid boolean value."
         )
 
-    def get_int(
-        self, config_key: str, default_value: Optional[int] = None
-    ) -> Optional[int]:
+    def get_as_int(self, key: str, default: Optional[int] = None) -> Optional[int]:
         """
-        Returns the configuration value as an integer.
+        Returns the value for ``key`` as an ``int`` if ``key`` exists.
         """
-        val = self.get(config_key, default_value)
+        val = self.get(key, default)
         if val is None:
             return val
         try:
             return int(val)
         except ValueError:
-            raise KeyError(
-                f"The '{config_key}' rendezvous config does not represent a valid integer value."
+            raise ValueError(
+                f"The '{key}' rendezvous config does not represent a valid integer value."
             )
+
+
+RendezvousHandlerCreator = Callable[[RendezvousParameters], RendezvousHandler]
 
 
 class RendezvousHandlerFactory:
+    """
+    Creates ``RendezvousHandler`` instances for supported rendezvous backends.
+    """
+
     def __init__(self):
-        self._factory_method_registry: Dict[
-            str, Callable[[RendezvousParameters], RendezvousHandler]
-        ] = {}
+        self._registry: Dict[str, RendezvousHandlerCreator] = {}
 
-    def register(
-        self,
-        rdzv_backend: str,
-        factory_method: Callable[[RendezvousParameters], RendezvousHandler],
-    ):
-        if rdzv_backend in self._factory_method_registry:
-            fn = self._factory_method_registry[rdzv_backend]
+    def register(self, backend: str, creator: RendezvousHandlerCreator):
+        """
+        Registers a new rendezvous backend.
+        """
+        try:
+            current_creator = self._registry[backend]
+        except KeyError:
+            current_creator = None
+
+        if current_creator is not None:
             raise ValueError(
-                f"cannot double register rdzv_backend: {rdzv_backend} "
-                f"to {factory_method.__module__}.{factory_method.__name__},"
-                f" already registered with: {fn.__module__}.{fn.__name__}"
+                f"The rendezvous backend '{backend}' cannot be registered with '{creator.__module__}.{creator.__name__}' as it is already registered with '{current_creator.__module__}.{current_creator.__name__}'."
             )
 
-        self._factory_method_registry[rdzv_backend] = factory_method
+        self._registry[backend] = creator
 
-    def create_rdzv_handler(self, rdzv_params: RendezvousParameters):
-        backend = rdzv_params.backend
-        if backend not in self._factory_method_registry:
+    def create_handler(self, params: RendezvousParameters) -> RendezvousHandler:
+        """
+        Creates a new ``RendezvousHandler`` instance for the specified backend.
+        """
+        try:
+            creator = self._registry[params.backend]
+        except KeyError:
             raise ValueError(
-                f"no factory method found for rdzv_backend: {backend},"
-                f" did you forget to call {self.register.__name__}?"
+                f"The rendezvous backend '{params.backend}' is not registered. Did you forget to call {self.register.__name__}?"
             )
 
-        return self._factory_method_registry[backend](rdzv_params)
+        handler = creator(params)
+
+        # Do some sanity check.
+        if handler.get_backend() != params.backend:
+            raise RuntimeError(
+                f"The rendezvous handler backend '{handler.get_backend()}' does not match the requested backend '{params.backend}'."
+            )
+
+        return handler

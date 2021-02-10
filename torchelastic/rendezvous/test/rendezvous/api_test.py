@@ -56,16 +56,16 @@ class RendezvousHandlerFactoryTest(unittest.TestCase):
         )
 
         with self.assertRaises(ValueError):
-            factory.create_rdzv_handler(rdzv_params)
+            factory.create_handler(rdzv_params)
 
-    def test_create_rdzv_handler(self):
+    def test_create_handler(self):
         rdzv_params = RendezvousParameters(
             backend="mock", endpoint="", run_id="foobar", min_nodes=1, max_nodes=2
         )
 
         factory = RendezvousHandlerFactory()
         factory.register("mock", create_mock_rdzv_handler)
-        mock_rdzv_handler = factory.create_rdzv_handler(rdzv_params)
+        mock_rdzv_handler = factory.create_handler(rdzv_params)
         self.assertTrue(isinstance(mock_rdzv_handler, MockRendezvousHandler))
 
 
@@ -78,28 +78,8 @@ class RendezvousParametersTest(unittest.TestCase):
             run_id="1234",
             min_nodes=1,
             max_nodes=1,
-            timeout1=None,
-            timeout2=10,
-        )
-        self.assertEqual(30, params.get("timeout1", 30))
-        self.assertEqual(10, params.get("timeout2", 20))
-        self.assertEqual(60, params.get("timeout3", 60))
-
-    def test_get(self):
-        params = RendezvousParameters(
-            backend="foobar",
-            endpoint="localhost",
-            run_id="1234",
-            min_nodes=1,
-            max_nodes=1,
-            timeout1=None,
-            timeout2=10,
+            timeout1=10,
         )
 
-        with self.assertRaises(KeyError):
-            params.get("timeout3")
-
-        with self.assertRaises(KeyError):
-            params.get("timeout1")
-
-        self.assertEqual(10, params.get("timeout2"))
+        self.assertEqual(10, params.get("timeout1", 20))
+        self.assertEqual(60, params.get("timeout2", 60))

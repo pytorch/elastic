@@ -103,6 +103,7 @@ process:
 
 from .api import (  # noqa: F401
     RendezvousClosedException,
+    RendezvousException,
     RendezvousHandler,
     RendezvousHandlerFactory,
     RendezvousNonRetryableError,
