@@ -8,6 +8,7 @@
 
 import unittest
 
+import etcd
 from torchelastic.rendezvous.etcd_rendezvous import (
     EtcdRendezvous,
     EtcdRendezvousHandler,
@@ -35,8 +36,10 @@ class EtcdServerTest(unittest.TestCase):
         server = EtcdServer()
         server.start()
 
+        client = etcd.Client(server.get_host(), server.get_port())
+
         rdzv = EtcdRendezvous(
-            endpoints=((server.get_host(), server.get_port()),),
+            client=client,
             prefix="test",
             run_id=1,
             num_min_workers=1,

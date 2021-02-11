@@ -204,15 +204,17 @@ class EtcdRendezvous(object):
 
     def __init__(
         self,
-        endpoints,
+        client,
         prefix,
         run_id,
         num_min_workers,
         num_max_workers,
         timeout,
         last_call_timeout,
-        **kwargs,
     ):
+        self.client = client
+        log.info("Etcd machines: " + str(self.client.machines))
+
         self._prefix = prefix
         self._run_id = run_id
         self._num_min_workers = num_min_workers
@@ -226,9 +228,6 @@ class EtcdRendezvous(object):
 
         if not self._prefix.endswith("/"):
             self._prefix += "/"
-
-        self.client = etcd.Client(host=endpoints, allow_reconnect=True, **kwargs)
-        log.info("Etcd machines: " + str(self.client.machines))
 
         # Setup a permanent prefix dir, if didn't exist
         if self._prefix != "/":
@@ -1165,26 +1164,44 @@ class EtcdStore(Store):
                 continue
 
 
-# Helper for _etcd_rendezvous_handler(url)
-def _parse_etcd_client_params(params):
-    kwargs = {}
-    if "protocol" in params:
-        protocol = params["protocol"]
-        assert protocol in ["http", "https"], "Protocol must be http or https."
-        kwargs["protocol"] = protocol
-    if "cacert" in params:
-        kwargs["ca_cert"] = params["cacert"]
-    if "cert" in params:
-        if "key" in params:
-            # python-etcd client expects key as a second element of `cert` tuple
-            kwargs["cert"] = (params["cert"], params["key"])
-        else:
-            kwargs["cert"] = params["cert"]
-    return kwargs
+def _create_etcd_client(params: RendezvousParameters) -> etcd.Client:
+    """
+    Creates a new ``etcd.Client`` from the specified ``RendezvousParameters``.
+    """
+    hostname, port = _parse_hostname_and_port(params.endpoint, 2379)
+
+    # The communication protocol
+    protocol = params.config.get("protocol")
+    if protocol is None:
+        protocol = "http"
+    else:
+        if protocol != "http" and protocol != "https":
+            raise ValueError("The etcd protocol must be HTTP or HTTPS.")
+
+    # The SSL client certificate
+    ssl_cert = params.config.get("cert")
+    if ssl_cert is not None:
+        cert_key = params.config.get("key")
+        if cert_key is not None:
+            # The etcd client expects the certificate key as the second element
+            # of the `cert` tuple.
+            ssl_cert = (ssl_cert, cert_key)
+
+    # The root certificate
+    ca_cert = params.config.get("cacert")
+
+    return etcd.Client(
+        hostname,
+        port,
+        protocol=protocol,
+        cert=ssl_cert,
+        ca_cert=ca_cert,
+        allow_reconnect=True,
+    )
 
 
 # Handler for torch.distributed "static" registration
-def create_rdzv_handler(rdzv_params: RendezvousParameters):
+def create_rdzv_handler(params: RendezvousParameters) -> RendezvousHandler:
     """
     Usage:
 
@@ -1233,32 +1250,17 @@ def create_rdzv_handler(rdzv_params: RendezvousParameters):
         cert - client cert to access etcd, only makes sense with https.
         key - client key to access etcd, only makes sense with https.
     """
-    # Etcd endpoints. Note that the current format only allows a single host.
-    etcd_endpoints = (_parse_hostname_and_port(rdzv_params.endpoint, 2379),)
+    client = _create_etcd_client(params)
 
-    # Run ID value -> unique identifier of this training job instance:
-    # typically a job_id or name assigned by the scheduler or user
-    run_id = rdzv_params.run_id
+    etcd_prefix = params.get("etcd_prefix", "/torchelastic/p2p")
 
-    # Parse all of query parameters:
-    etcd_prefix = rdzv_params.get("etcd_prefix", "/torchelastic/p2p")
-    min_workers = rdzv_params.min_nodes
-    max_workers = rdzv_params.max_nodes
-
-    timeout = rdzv_params.timeout
-    last_call_timeout = rdzv_params.last_call_timeout
-
-    kwargs = _parse_etcd_client_params(rdzv_params.config)
-
-    # Etcd rendezvous implementation
-    etcd_rdzv = EtcdRendezvous(
-        endpoints=etcd_endpoints,
+    rdzv = EtcdRendezvous(
+        client=client,
         prefix=etcd_prefix,
-        run_id=run_id,
-        num_min_workers=min_workers,
-        num_max_workers=max_workers,
-        timeout=timeout,
-        last_call_timeout=last_call_timeout,
-        **kwargs,
+        run_id=params.run_id,
+        num_min_workers=params.min_nodes,
+        num_max_workers=params.max_nodes,
+        timeout=params.timeout,
+        last_call_timeout=params.last_call_timeout,
     )
-    return EtcdRendezvousHandler(rdzv_impl=etcd_rdzv)
+    return EtcdRendezvousHandler(rdzv_impl=rdzv)
