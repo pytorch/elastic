@@ -739,6 +739,7 @@ class SimpleElasticAgent(ElasticAgent):
             "group_rank": wg.group_rank,
             "worker_id": worker_id,
             "role": spec.role,
+            "hostname": _get_fq_hostname(),
             "state": state,
             "total_run_time": self._total_execution_time,
             "rdzv_backend": spec.rdzv_handler.get_backend(),
