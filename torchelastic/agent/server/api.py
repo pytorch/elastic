@@ -745,7 +745,7 @@ class SimpleElasticAgent(ElasticAgent):
             "rdzv_backend": spec.rdzv_handler.get_backend(),
             "raw_error": raw_error,
             "metadata": md_str,
-            "agent_restarts": spec.max_restarts,
+            "agent_restarts": spec.max_restarts - self._remaining_restarts,
         }
         return Event(
             f"torchelastic.worker.status.{state}", source=source, metadata=metadata

@@ -541,8 +541,9 @@ class SimpleElasticAgentTest(unittest.TestCase):
         self.assertEqual(spec.role, actual_event.metadata["role"])
 
     def test_get_worker_status_event(self):
-        spec = self._get_worker_spec(max_restarts=1)
+        spec = self._get_worker_spec(max_restarts=4)
         agent = TestAgent(spec)
+        agent._remaining_restarts = spec.max_restarts - 2
         actual_event = agent._construct_event(
             state=WorkerState.SUCCEEDED.value,
             source="WORKER",
@@ -552,3 +553,4 @@ class SimpleElasticAgentTest(unittest.TestCase):
         self.assertEqual("etcd", actual_event.metadata["rdzv_backend"])
         self.assertEqual(WorkerState.SUCCEEDED.value, actual_event.metadata["state"])
         self.assertEqual(spec.role, actual_event.metadata["role"])
+        self.assertEqual(2, actual_event.metadata["agent_restarts"])
