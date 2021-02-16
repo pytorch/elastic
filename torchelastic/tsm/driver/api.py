@@ -28,24 +28,22 @@ from typing import (
 )
 
 _APP_STATUS_FORMAT_TEMPLATE = """
-state: ${state}
-num_restarts: ${num_restarts}
-msg: ${msg}
+State: ${state} ; Num Restarts: ${num_restarts}
+Msg: ${msg}
 Replicas: ${replicas}
 """
+
 
 _ROLE_REPLICA_FORMAT_TEMPLATE = """
 - Role: [${role}]:
 ${replicas}
 """
 
-
 _REPLICA_FORMAT_TEMPLATE = """
 - [${role}:${replica_id}]
-  timestamp: ${timestamp}
-  exit_code: ${exit_code}
-  state: ${state}
-  error_msg: ${error_msg}
+  Timestamp: ${timestamp}; Exit Code: ${exit_code}
+  State: ${state}
+  Error Message: ${error_msg}
 """
 
 
@@ -367,7 +365,7 @@ class Application:
         return self
 
 
-class AppState(str, Enum):
+class AppState(int, Enum):
     """
     State of the application. An application starts from an initial
     ``UNSUBMITTED`` state and moves through ``SUBMITTED``, ``PENDING``,
@@ -390,13 +388,16 @@ class AppState(str, Enum):
     7. CANCELLED - app was cancelled before completing
     """
 
-    UNSUBMITTED = 0
-    SUBMITTED = 1
-    PENDING = 2
-    RUNNING = 3
-    SUCCEEDED = 4
-    FAILED = 5
-    CANCELLED = 6
+    UNSUBMITTED = 2 ** 0
+    SUBMITTED = 2 ** 1
+    PENDING = 2 ** 2
+    RUNNING = 2 ** 3
+    SUCCEEDED = 2 ** 4
+    FAILED = 2 ** 5
+    CANCELLED = 2 ** 6
+
+    def __str__(self) -> str:
+        return self.name
 
 
 _TERMINAL_STATES = [AppState.SUCCEEDED, AppState.FAILED, AppState.CANCELLED]
@@ -479,26 +480,28 @@ class AppStatus:
         return json.dumps(app_status_dict, indent=2)
 
     def _get_role_replicas(
-        self, state_filter: Optional[AppState] = None
+        self, state_mask_filter: int = 0xFF
     ) -> Dict[str, List[RoleReplicaStatus]]:
-        if not state_filter:
-            return self.replicas
         filterred_replicas = {}
         for role, role_replicas in self.replicas.items():
             filterred_replicas[role] = [
-                replica for replica in role_replicas if replica.state == state_filter
+                replica
+                for replica in role_replicas
+                if replica.state.value | state_mask_filter == state_mask_filter
             ]
         return filterred_replicas
 
-    def get_formatted_str(self, state_filter: Optional[AppState] = None) -> str:
+    def get_formatted_str(self, state_mask_filter: int = 0xFF) -> str:
         """
         Return a human readable representation of the AppStatus.
         """
         role_replicas = ""
-        filterred_replicas = self._get_role_replicas(state_filter)
-        for role, role_replics in filterred_replicas.items():
+        filterred_replicas = self._get_role_replicas(state_mask_filter)
+        for role, filterred_role_replicas in filterred_replicas.items():
+            if len(filterred_role_replicas) == 0:
+                continue
             replicas_str = "".join(
-                replica.get_formatted_str() for replica in role_replics
+                replica.get_formatted_str() for replica in filterred_role_replicas
             )
             role_replicas += Template(_ROLE_REPLICA_FORMAT_TEMPLATE).substitute(
                 role=role, replicas=replicas_str

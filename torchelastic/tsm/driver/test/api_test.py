@@ -90,9 +90,8 @@ class ApplicationStatusTest(unittest.TestCase):
 
         formatted_str = status.get_formatted_str()
         expected_str = (
-            "\nstate: AppState.FAILED\nnum_restarts: 0\nmsg: "
-            "\nReplicas: \n- Role: [worker1]:\n\n- [worker1:id1]\n  "
-            "timestamp: None\n  exit_code: 3\n  state: AppState.FAILED\n  error_msg: None\n\n\n"
+            "\nState: FAILED ; Num Restarts: 0\nMsg: \nReplicas: \n- Role: [worker1]:\n\n- [worker1:id1]\n  "
+            "Timestamp: None; Exit Code: 3\n  State: FAILED\n  Error Message: None\n\n\n"
         )
         self.assertEqual(expected_str, formatted_str)
 
