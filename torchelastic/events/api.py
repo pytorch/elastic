@@ -6,11 +6,10 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-import abc
 import json
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from enum import Enum
-from typing import Dict, Union, Optional
+from typing import Dict, Optional, Union
 
 
 EventMetadataValue = Union[str, int, float, bool, None]

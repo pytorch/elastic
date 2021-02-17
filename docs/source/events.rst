@@ -5,25 +5,23 @@ Events
 
 .. automodule:: torchelastic.events
 
-Event Handlers
+API Methods
+------------
+
+.. autofunction:: torchelastic.events.record
+
+.. autofunction:: torchelastic.events.get_logging_handler
+
+Event Objects
 -----------------
 
 .. currentmodule:: torchelastic.events.api
 
 .. autoclass:: Event
 
-.. autoclass:: EventHandler
+.. autoclass:: EventSource
 
-.. autoclass:: ConsoleEventHandler
-
-.. autoclass:: NullEventHandler
+.. autoclass:: EventMetadataValue
 
 
-API Methods
-------------
 
-.. autofunction:: torchelastic.events.configure
-
-.. autofunction:: torchelastic.events.record
-
-.. autofunction:: torchelastic.events.record_event
