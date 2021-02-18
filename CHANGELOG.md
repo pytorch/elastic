@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## 0.2.2 (Feb 18, 2021)
+
+> **_NOTE:_** This is the last release for torchelastic! We are upstreaming TorchElastic into
+> pytorch. See [pytorch issue-50621](https://github.com/pytorch/pytorch/issues/50621).
+
+### PyTorch Elastic
+
+* (new) `torchelastic.multiprocessing`, drop in replacement for `torch.multiprocessing` that supports:
+   * both function and binary launches
+   * inter-process exception propagation
+   * piping worker stdout/stderr to separate log files
+   * tail worker log files to main console with `{role}_{rank}:` prefix on each line
+* Improvements to `torchelastic.events`
+* `NCCL_ASYNC_ERROR_HANDLING` set by default in torchelastic agent
+* Implemented shutdown barrier on agent to reduce exit time variance
+* Minor cosmetic improvements to rendezvous configuration
+* Non functional refactoring of `EtcdRendezvous`
+* TSM API improvements
+
 ## 0.2.1 (October 05, 2020)
 
 ### PyTorch Elastic
