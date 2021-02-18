@@ -1,0 +1,1947 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>torchelastic.tsm.driver.api &mdash; PyTorch/Elastic master documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <!-- <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/katex-math.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+
+  
+  <script src="../../../../_static/js/modernizr.min.js"></script>
+
+  <!-- Preload the theme fonts -->
+
+<link rel="preload" href="../../../../_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../../_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../../_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../../_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../../_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../../_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+
+<!-- Preload the katex fonts -->
+
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Math-Italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size1-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size4-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size2-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size3-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Caligraphic-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.2/css/all.css" integrity="sha384-vSIIfh2YWi9wW0r9iZe7RJPrKwp6bG+s9QZMoITbCckVJqGCCRhc+ccxNcdpHuYu" crossorigin="anonymous">
+</head>
+
+<div class="container-fluid header-holder tutorials-header" id="header-holder">
+  <div class="container">
+    <div class="header-container">
+      <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-orange-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/audio/stable/index.html">
+                  <span class="dropdown-title">torchaudio</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/text/stable/index.html">
+                  <span class="dropdown-title">torchtext</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/vision/stable/index.html">
+                  <span class="dropdown-title">torchvision</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/elastic/">
+                  <span class="dropdown-title">TorchElastic</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
+                  <span class="dropdown-title">TorchServe</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/xla">
+                  <span class="dropdown-title">PyTorch on XLA Devices</span>
+                  <p></p>
+                </a>
+            </div>
+          </li>
+
+          <li>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
+                Resources
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class="dropdown-title">About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class="dropdown-title">Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class="dropdown-title">Developer Resources</span>
+                  <p>Find resources and get questions answered</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class="dropdown-title">Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub">
+                  <span class="dropdown-title">Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">Github</a>
+          </li>
+        </ul>
+      </div>
+
+      <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
+    </div>
+  </div>
+</div>
+
+<body class="pytorch-body">
+
+   
+
+    
+
+    <div class="table-of-contents-link-wrapper">
+      <span>Table of Contents</span>
+      <a href="#" class="toggle-table-of-contents" data-behavior="toggle-table-of-contents"></a>
+    </div>
+
+    <nav data-toggle="wy-nav-shift" class="pytorch-left-menu" id="pytorch-left-menu">
+      <div class="pytorch-side-scroll">
+        <div class="pytorch-menu pytorch-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          <div class="pytorch-left-menu-search">
+            
+
+            
+              
+              
+                <div class="version">
+                  v0.2.2
+                </div>
+              
+            
+
+            
+
+
+  
+
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search Docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+            
+          </div>
+
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../train_script.html">Train script</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples.html">Examples</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../distributed.html">Elastic Launch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../agent.html">Elastic Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../multiprocessing.html">Multiprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../errors.html">Error Propagation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rendezvous.html">Rendezvous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../timer.html">Expiration Timers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../events.html">Events</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Advanced</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../customization.html">Customization</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../kubernetes.html">TorchElastic Kubernetes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../runtime.html">Cloud Provider Support (Deprecated)</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Experimental</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tsm_driver.html">Training Session Manager (TSM)</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <div class="pytorch-container">
+      <div class="pytorch-page-level-bar" id="pytorch-page-level-bar">
+        <div class="pytorch-breadcrumbs-wrapper">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="pytorch-breadcrumbs">
+    
+      <li>
+        <a href="../../../../index.html">
+          
+            Docs
+          
+        </a> &gt;
+      </li>
+
+        
+          <li><a href="../../../index.html">Module code</a> &gt;</li>
+        
+      <li>torchelastic.tsm.driver.api</li>
+    
+    
+      <li class="pytorch-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+</div>
+        </div>
+
+        <div class="pytorch-shortcuts-wrapper" id="pytorch-shortcuts-wrapper">
+          Shortcuts
+        </div>
+      </div>
+
+      <section data-toggle="wy-nav-shift" id="pytorch-content-wrap" class="pytorch-content-wrap">
+        <div class="pytorch-content-left">
+
+        
+          
+          <div class="rst-content">
+          
+            <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
+             <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
+              
+  <h1>Source code for torchelastic.tsm.driver.api</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+
+<span class="c1"># Copyright (c) Facebook, Inc. and its affiliates.</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># This source code is licensed under the BSD-style license found in the</span>
+<span class="c1"># LICENSE file in the root directory of this source tree.</span>
+
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">asdict</span><span class="p">,</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span> <span class="nn">string</span> <span class="kn">import</span> <span class="n">Template</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">Generic</span><span class="p">,</span>
+    <span class="n">Iterable</span><span class="p">,</span>
+    <span class="n">List</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Tuple</span><span class="p">,</span>
+    <span class="n">Type</span><span class="p">,</span>
+    <span class="n">TypeVar</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">_APP_STATUS_FORMAT_TEMPLATE</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">State: $</span><span class="si">{state}</span><span class="s2"> ; Num Restarts: $</span><span class="si">{num_restarts}</span><span class="s2"></span>
+<span class="s2">Msg: $</span><span class="si">{msg}</span><span class="s2"></span>
+<span class="s2">Replicas: $</span><span class="si">{replicas}</span><span class="s2"></span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+
+<span class="n">_ROLE_REPLICA_FORMAT_TEMPLATE</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">- Role: [$</span><span class="si">{role}</span><span class="s2">]:</span>
+<span class="s2">$</span><span class="si">{replicas}</span><span class="s2"></span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">_REPLICA_FORMAT_TEMPLATE</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">- [$</span><span class="si">{role}</span><span class="s2">:$</span><span class="si">{replica_id}</span><span class="s2">]</span>
+<span class="s2">  Timestamp: $</span><span class="si">{timestamp}</span><span class="s2">; Exit Code: $</span><span class="si">{exit_code}</span><span class="s2"></span>
+<span class="s2">  State: $</span><span class="si">{state}</span><span class="s2"></span>
+<span class="s2">  Error Message: $</span><span class="si">{error_msg}</span><span class="s2"></span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+
+<span class="n">SchedulerBackend</span> <span class="o">=</span> <span class="nb">str</span>
+
+
+<div class="viewcode-block" id="Resource"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Resource">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Resource</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents resource requirements for a ``Container``.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">            cpu: number of cpu cores (note: not hyper threads)</span>
+<span class="sd">            gpu: number of gpus</span>
+<span class="sd">            memMB: MB of ram</span>
+<span class="sd">            capabilities: additional hardware specs (interpreted by scheduler)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">cpu</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">gpu</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">memMB</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">capabilities</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="n">original</span><span class="p">:</span> <span class="s2">&quot;Resource&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">capabilities</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Copies a resource and applies new capabilities. If the same capabilities</span>
+<span class="sd">        are present in the original resource and as parameter, the one from parameter</span>
+<span class="sd">        will be used.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res_capabilities</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">original</span><span class="o">.</span><span class="n">capabilities</span><span class="p">)</span>
+        <span class="n">res_capabilities</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">capabilities</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Resource</span><span class="p">(</span>
+            <span class="n">cpu</span><span class="o">=</span><span class="n">original</span><span class="o">.</span><span class="n">cpu</span><span class="p">,</span>
+            <span class="n">gpu</span><span class="o">=</span><span class="n">original</span><span class="o">.</span><span class="n">gpu</span><span class="p">,</span>
+            <span class="n">memMB</span><span class="o">=</span><span class="n">original</span><span class="o">.</span><span class="n">memMB</span><span class="p">,</span>
+            <span class="n">capabilities</span><span class="o">=</span><span class="n">res_capabilities</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<span class="c1"># sentinel value used for cases when resource does not matter (e.g. ignored)</span>
+<span class="n">NULL_RESOURCE</span><span class="p">:</span> <span class="n">Resource</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span><span class="n">cpu</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">gpu</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">memMB</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># used as &quot;*&quot; scheduler backend</span>
+<span class="n">ALL</span><span class="p">:</span> <span class="n">SchedulerBackend</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span>
+
+
+<div class="viewcode-block" id="Container"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Container">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Container</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents the specifications of the container that instances of ``Roles``</span>
+<span class="sd">    run on. Maps to the container abstraction that the underlying scheduler</span>
+<span class="sd">    supports. This could be an actual container (e.g. Docker) or a physical</span>
+<span class="sd">    instance depending on the scheduler.</span>
+
+<span class="sd">    An ``image`` is a software bundle that is installed on a ``Container``.</span>
+<span class="sd">    The container on the scheduler dictates what an image actually is.</span>
+<span class="sd">    An image could be as simple as a tar-ball or map to a docker image.</span>
+<span class="sd">    The scheduler typically knows how to &quot;pull&quot; the image given an</span>
+<span class="sd">    image name (str), which could be a simple name (e.g. docker image) or a url</span>
+<span class="sd">    (e.g. s3://path/my_image.tar).</span>
+
+<span class="sd">    A ``Resource`` can be bound to a specific scheduler backend or ``SchedulerBackend.ALL`` (default)</span>
+<span class="sd">    to specify that the same ``Resource`` is to be used for all schedulers.</span>
+
+<span class="sd">    Usage:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">     # define resource for all schedulers</span>
+<span class="sd">     my_container = Container(image=&quot;pytorch/torch:1&quot;)</span>
+<span class="sd">                       .require(Resource(cpu=1, gpu=1, memMB=500))</span>
+<span class="sd">                       .ports(tcp_store=8080, tensorboard=8081)</span>
+
+<span class="sd">     # define resource for a specific scheduler</span>
+<span class="sd">     my_container = Container(image=&quot;pytorch/torch:1&quot;)</span>
+<span class="sd">                       .require(Resource(cpu=1, gpu=1, memMB=500), &quot;custom_scheduler&quot;)</span>
+<span class="sd">                       .ports(tcp_store=8080, tensorboard=8081)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">image</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">resources</span><span class="p">:</span> <span class="n">Resource</span> <span class="o">=</span> <span class="n">NULL_RESOURCE</span>
+    <span class="n">port_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">require</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resources</span><span class="p">:</span> <span class="n">Resource</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Container&quot;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets resource requirements on the container.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resources</span> <span class="o">=</span> <span class="n">resources</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">ports</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Container&quot;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds a port mapping for the container</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">port_map</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="o">**</span><span class="n">kwargs</span><span class="p">})</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<span class="c1"># sentinel value used to represent missing string attributes, such as image or entrypoint</span>
+<span class="n">MISSING</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&lt;MISSING&gt;&quot;</span>
+
+<span class="c1"># sentinel value used as the &quot;zero&quot; element in the container group</span>
+<span class="n">NULL_CONTAINER</span><span class="p">:</span> <span class="n">Container</span> <span class="o">=</span> <span class="n">Container</span><span class="p">(</span><span class="n">image</span><span class="o">=</span><span class="n">MISSING</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="macros"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.macros">[docs]</a><span class="k">class</span> <span class="nc">macros</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Defines macros that can be used with ``Role.entrypoint`` and ``Role.args``.</span>
+<span class="sd">    The macros will be substituted at runtime to their actual values.</span>
+
+<span class="sd">    Available macros:</span>
+
+<span class="sd">    1. ``img_root`` - root directory of the pulled image on the container</span>
+<span class="sd">    2. ``app_id`` - application id as assigned by the scheduler</span>
+<span class="sd">    3. ``replica_id`` - unique id for each instance of a replica of a Role,</span>
+<span class="sd">                        for instance a role with 3 replicas could have the 0, 1, 2</span>
+<span class="sd">                        as replica ids. Note that when the container fails and is</span>
+<span class="sd">                        replaced, the new container will have the same ``replica_id``</span>
+<span class="sd">                        as the one it is replacing. For instance if node 1 failed and</span>
+<span class="sd">                        was replaced by the scheduler the replacing node will also</span>
+<span class="sd">                        have ``replica_id=1``.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">     # runs: hello_world.py --app_id ${app_id}</span>
+<span class="sd">     trainer = Role(name=&quot;trainer&quot;).runs(&quot;hello_world.py&quot;, &quot;--app_id&quot;, macros.app_id)</span>
+<span class="sd">     app = Application(&quot;train_app&quot;).of(trainer)</span>
+<span class="sd">     app_handle = session.run(app, scheduler=&quot;local&quot;, cfg=RunConfig())</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">img_root</span> <span class="o">=</span> <span class="s2">&quot;$</span><span class="si">{img_root}</span><span class="s2">&quot;</span>
+    <span class="n">app_id</span> <span class="o">=</span> <span class="s2">&quot;$</span><span class="si">{app_id}</span><span class="s2">&quot;</span>
+    <span class="n">replica_id</span> <span class="o">=</span> <span class="s2">&quot;$</span><span class="si">{replica_id}</span><span class="s2">&quot;</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">substitute</span><span class="p">(</span><span class="n">args</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">img_root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">replica_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">args_sub</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="n">sub</span> <span class="o">=</span> <span class="n">Template</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span><span class="o">.</span><span class="n">safe_substitute</span><span class="p">(</span>
+                <span class="n">img_root</span><span class="o">=</span><span class="n">img_root</span><span class="p">,</span> <span class="n">app_id</span><span class="o">=</span><span class="n">app_id</span><span class="p">,</span> <span class="n">replica_id</span><span class="o">=</span><span class="n">replica_id</span>
+            <span class="p">)</span>
+            <span class="n">args_sub</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">args_sub</span></div>
+
+
+<div class="viewcode-block" id="RetryPolicy"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.RetryPolicy">[docs]</a><span class="k">class</span> <span class="nc">RetryPolicy</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Defines the retry policy for the ``Roles`` in the ``Application``.</span>
+<span class="sd">    The policy defines the behavior when the role replica encounters a failure:</span>
+
+<span class="sd">    1. unsuccessful (non zero) exit code</span>
+<span class="sd">    2. hardware/host crashes</span>
+<span class="sd">    3. preemption</span>
+<span class="sd">    4. eviction</span>
+
+<span class="sd">    .. note:: Not all retry policies are supported by all schedulers.</span>
+<span class="sd">              However all schedulers must support ``RetryPolicy.APPLICATION``.</span>
+<span class="sd">              Please refer to the scheduler&#39;s documentation for more information</span>
+<span class="sd">              on the retry policies they support and behavior caveats (if any).</span>
+
+<span class="sd">    1. REPLICA: Replaces the replica instance. Surviving replicas are untouched.</span>
+<span class="sd">                Use with ``ElasticRole`` to have torchelastic coordinate restarts</span>
+<span class="sd">                and membership changes. Otherwise, it is up to the application to</span>
+<span class="sd">                deal with failed replica departures and replacement replica admittance.</span>
+<span class="sd">    2. APPLICATION: Restarts the entire application.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">REPLICA</span> <span class="o">=</span> <span class="s2">&quot;REPLICA&quot;</span>
+    <span class="n">APPLICATION</span> <span class="o">=</span> <span class="s2">&quot;APPLICATION&quot;</span></div>
+
+
+<div class="viewcode-block" id="Role"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Role">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Role</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A set of nodes that perform a specific duty within the ``Application``.</span>
+<span class="sd">    Examples:</span>
+
+<span class="sd">    1. Distributed data parallel app - made up of a single role (trainer).</span>
+
+<span class="sd">    2. App with parameter server - made up of multiple roles (trainer, ps).</span>
+
+<span class="sd">    Usage:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">     trainer = Role(name=&quot;trainer&quot;)</span>
+<span class="sd">                 .runs(&quot;my_trainer.py&quot;, &quot;--arg&quot;, &quot;foo&quot;, ENV_VAR=&quot;FOOBAR&quot;)</span>
+<span class="sd">                 .on(container)</span>
+<span class="sd">                 .replicas(4)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">            name: name of the role</span>
+<span class="sd">            entrypoint: command (within the container) to invoke the role</span>
+<span class="sd">            args: commandline arguments to the entrypoint cmd</span>
+<span class="sd">            env: environment variable mappings</span>
+<span class="sd">            container: container to run in</span>
+<span class="sd">            replicas: number of container replicas to run</span>
+<span class="sd">            max_retries: max number of retries before giving up</span>
+<span class="sd">            retry_policy: retry behavior upon replica failures</span>
+<span class="sd">            deployment_preference: hint to the scheduler on how to best</span>
+<span class="sd">                                   deploy and manage replicas of this role</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">entrypoint</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">MISSING</span>
+    <span class="n">args</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">env</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">container</span><span class="p">:</span> <span class="n">Container</span> <span class="o">=</span> <span class="n">NULL_CONTAINER</span>
+    <span class="n">num_replicas</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">max_retries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">retry_policy</span><span class="p">:</span> <span class="n">RetryPolicy</span> <span class="o">=</span> <span class="n">RetryPolicy</span><span class="o">.</span><span class="n">APPLICATION</span>
+
+    <span class="k">def</span> <span class="nf">runs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entrypoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Role&quot;</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entrypoint</span> <span class="o">=</span> <span class="n">entrypoint</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">+=</span> <span class="p">[</span><span class="o">*</span><span class="n">args</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="o">**</span><span class="n">kwargs</span><span class="p">})</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">on</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">container</span><span class="p">:</span> <span class="n">Container</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Role&quot;</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">container</span> <span class="o">=</span> <span class="n">container</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">replicas</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">replicas</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Role&quot;</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_replicas</span> <span class="o">=</span> <span class="n">replicas</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">with_retry_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">retry_policy</span><span class="p">:</span> <span class="n">RetryPolicy</span><span class="p">,</span> <span class="n">max_retries</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Role&quot;</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">retry_policy</span> <span class="o">=</span> <span class="n">retry_policy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_retries</span> <span class="o">=</span> <span class="n">max_retries</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="ElasticRole"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.ElasticRole">[docs]</a><span class="k">class</span> <span class="nc">ElasticRole</span><span class="p">(</span><span class="n">Role</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A ``Role`` for which the user provided ``entrypoint`` is executed with the</span>
+<span class="sd">    torchelastic agent (in the container). Note that the torchelastic agent</span>
+<span class="sd">    invokes multiple copies of ``entrypoint``.</span>
+
+<span class="sd">    For more information about torchelastic see</span>
+<span class="sd">    `torchelastic quickstart docs &lt;http://pytorch.org/elastic/0.2.0/quickstart.html&gt;`__.</span>
+
+<span class="sd">    .. important:: It is the responsibility of the user to ensure that the</span>
+<span class="sd">                   container&#39;s image includes torchelastic. Since TSM has no</span>
+<span class="sd">                   control over the build process of the image, it cannot</span>
+<span class="sd">                   automatically include torchelastic in the container&#39;s image.</span>
+
+<span class="sd">    The following example launches 2 ``replicas`` (nodes) of an elastic ``my_train_script.py``</span>
+<span class="sd">    that is allowed to scale between 2 to 4 nodes. Each node runs 8 workers which are allowed</span>
+<span class="sd">    to fail and restart a maximum of 3 times.</span>
+
+<span class="sd">    .. warning:: ``replicas`` MUST BE an integer between (inclusive) ``nnodes``. That is,</span>
+<span class="sd">                   ``ElasticRole(&quot;trainer&quot;, nnodes=&quot;2:4&quot;).replicas(5)`` is invalid and will</span>
+<span class="sd">                   result in undefined behavior.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">     elastic_trainer = ElasticRole(&quot;trainer&quot;, nproc_per_node=8, nnodes=&quot;2:4&quot;, max_restarts=3)</span>
+<span class="sd">                        .runs(&quot;my_train_script.py&quot;, &quot;--script_arg&quot;, &quot;foo&quot;, &quot;--another_arg&quot;, &quot;bar&quot;)</span>
+<span class="sd">                        .on(container)</span>
+<span class="sd">                        .replicas(2)</span>
+<span class="sd">     # effectively runs:</span>
+<span class="sd">     #    python -m torchelastic.distributed.launch</span>
+<span class="sd">     #        --nproc_per_node 8</span>
+<span class="sd">     #        --nnodes 2:4</span>
+<span class="sd">     #        --max_restarts 3</span>
+<span class="sd">     #        my_train_script.py --script_arg foo --another_arg bar</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">launch_kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entrypoint</span> <span class="o">=</span> <span class="s2">&quot;python&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-m&quot;</span><span class="p">,</span> <span class="s2">&quot;torchelastic.distributed.launch&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">torchelastic_launch_args</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">launch_kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;rdzv_backend&quot;</span><span class="p">,</span> <span class="s2">&quot;etcd&quot;</span><span class="p">)</span>
+        <span class="n">launch_kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;rdzv_id&quot;</span><span class="p">,</span> <span class="n">macros</span><span class="o">.</span><span class="n">app_id</span><span class="p">)</span>
+        <span class="n">launch_kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;role&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="ow">in</span> <span class="n">launch_kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+                <span class="c1"># treat boolean kwarg as a flag</span>
+                <span class="k">if</span> <span class="n">val</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">torchelastic_launch_args</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;--</span><span class="si">{</span><span class="n">arg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">torchelastic_launch_args</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;--</span><span class="si">{</span><span class="n">arg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">)]</span>
+
+    <span class="k">def</span> <span class="nf">runs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entrypoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;ElasticRole&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isabs</span><span class="p">(</span><span class="n">entrypoint</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">entrypoint</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">macros</span><span class="o">.</span><span class="n">img_root</span><span class="p">):</span>
+            <span class="c1"># make entrypoint relative to {img_root} ONLY if it is not an absolute path</span>
+            <span class="n">entrypoint</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">macros</span><span class="o">.</span><span class="n">img_root</span><span class="p">,</span> <span class="n">entrypoint</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">torchelastic_launch_args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">+=</span> <span class="p">[</span><span class="n">entrypoint</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="o">**</span><span class="n">kwargs</span><span class="p">})</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="Application"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Application">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Application</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents a distributed application made up of multiple ``Roles``.</span>
+<span class="sd">    Contains the necessary information for the driver to submit this</span>
+<span class="sd">    app to the scheduler.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">roles</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Role</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">of</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">roles</span><span class="p">:</span> <span class="n">Role</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Application&quot;</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">roles</span> <span class="o">+=</span> <span class="p">[</span><span class="o">*</span><span class="n">roles</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<span class="k">class</span> <span class="nc">AppState</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    State of the application. An application starts from an initial</span>
+<span class="sd">    ``UNSUBMITTED`` state and moves through ``SUBMITTED``, ``PENDING``,</span>
+<span class="sd">    ``RUNNING`` states finally reaching a terminal state:</span>
+<span class="sd">    ``SUCCEEDED``,``FAILED``, ``CANCELLED``.</span>
+
+<span class="sd">    If the scheduler supports preemption, the app moves from a ``RUNNING``</span>
+<span class="sd">    state to ``PENDING`` upon preemption.</span>
+
+<span class="sd">    If the user stops the application, then the application state moves</span>
+<span class="sd">    to ``STOPPED``, then to ``CANCELLED`` when the job is actually cancelled</span>
+<span class="sd">    by the scheduler.</span>
+
+<span class="sd">    1. UNSUBMITTED - app has not been submitted to the scheduler yet</span>
+<span class="sd">    2. SUBMITTED - app has been successfully submitted to the scheduler</span>
+<span class="sd">    3. PENDING - app has been submitted to the scheduler pending allocation</span>
+<span class="sd">    4. RUNNING - app is running</span>
+<span class="sd">    5. SUCCEEDED - app has successfully completed</span>
+<span class="sd">    6. FAILED - app has unsuccessfully completed</span>
+<span class="sd">    7. CANCELLED - app was cancelled before completing</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">UNSUBMITTED</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="mi">0</span>
+    <span class="n">SUBMITTED</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="mi">1</span>
+    <span class="n">PENDING</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="n">RUNNING</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="mi">3</span>
+    <span class="n">SUCCEEDED</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="mi">4</span>
+    <span class="n">FAILED</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="mi">5</span>
+    <span class="n">CANCELLED</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="mi">6</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+
+
+<span class="n">_TERMINAL_STATES</span> <span class="o">=</span> <span class="p">[</span><span class="n">AppState</span><span class="o">.</span><span class="n">SUCCEEDED</span><span class="p">,</span> <span class="n">AppState</span><span class="o">.</span><span class="n">FAILED</span><span class="p">,</span> <span class="n">AppState</span><span class="o">.</span><span class="n">CANCELLED</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">is_terminal</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">AppState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">_TERMINAL_STATES</span>
+
+
+<span class="n">NONE</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&lt;NONE&gt;&quot;</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">RoleReplicaStatus</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The status of the replica during the job execution.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        replica_id: The node rank, note: this is not a worker rank.</span>
+<span class="sd">        state: The current state of the node.</span>
+<span class="sd">        exit_code: `None`` if still running</span>
+<span class="sd">        role: The role name</span>
+<span class="sd">        end_time: Timestamp value if the node finished execution, None otherwise</span>
+<span class="sd">        error_msg: Error message if any, None if job succeeded.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">replica_id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">state</span><span class="p">:</span> <span class="n">AppState</span>
+    <span class="n">role</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">exit_code</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">end_time</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">error_msg</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">get_formatted_str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return human readable status representation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Template</span><span class="p">(</span><span class="n">_REPLICA_FORMAT_TEMPLATE</span><span class="p">)</span><span class="o">.</span><span class="n">substitute</span><span class="p">(</span>
+            <span class="n">timestamp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">end_time</span><span class="p">,</span>
+            <span class="n">replica_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">replica_id</span><span class="p">,</span>
+            <span class="n">exit_code</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span><span class="p">,</span>
+            <span class="n">state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
+            <span class="n">role</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">role</span><span class="p">,</span>
+            <span class="n">error_msg</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">error_msg</span><span class="p">,</span>
+        <span class="p">)</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">AppStatus</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The runtime status of the ``Application``. The scheduler can</span>
+<span class="sd">    return an arbitrary text message (msg field).</span>
+<span class="sd">    If any error occurs, scheduler can populate ``structured_error_msg``</span>
+<span class="sd">    with json response.</span>
+
+<span class="sd">    ``replicas`` represent the statuses of the replicas in the job. If the job</span>
+<span class="sd">    runs with multiple retries, the parameter will contain the statuses of the</span>
+<span class="sd">    most recent retry. Note: if the previous retries failed, but the most recent</span>
+<span class="sd">    retry succeeded or in progress, ``replicas`` will not contain ocurred errors.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">state</span><span class="p">:</span> <span class="n">AppState</span>
+    <span class="n">num_restarts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">msg</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">structured_error_msg</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">NONE</span>
+    <span class="n">ui_url</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">replicas</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">RoleReplicaStatus</span><span class="p">]]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">is_terminal</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">is_terminal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">app_status_dict</span> <span class="o">=</span> <span class="n">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">structured_error_msg</span> <span class="o">=</span> <span class="n">app_status_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;structured_error_msg&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">structured_error_msg</span> <span class="o">!=</span> <span class="n">NONE</span><span class="p">:</span>
+            <span class="n">structured_error_msg_parsed</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">structured_error_msg</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">structured_error_msg_parsed</span> <span class="o">=</span> <span class="n">NONE</span>
+        <span class="n">app_status_dict</span><span class="p">[</span><span class="s2">&quot;structured_error_msg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">structured_error_msg_parsed</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">app_status_dict</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_role_replicas</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">state_mask_filter</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mh">0xFF</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">RoleReplicaStatus</span><span class="p">]]:</span>
+        <span class="n">filterred_replicas</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">role</span><span class="p">,</span> <span class="n">role_replicas</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">replicas</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">filterred_replicas</span><span class="p">[</span><span class="n">role</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">replica</span>
+                <span class="k">for</span> <span class="n">replica</span> <span class="ow">in</span> <span class="n">role_replicas</span>
+                <span class="k">if</span> <span class="n">replica</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">value</span> <span class="o">|</span> <span class="n">state_mask_filter</span> <span class="o">==</span> <span class="n">state_mask_filter</span>
+            <span class="p">]</span>
+        <span class="k">return</span> <span class="n">filterred_replicas</span>
+
+    <span class="k">def</span> <span class="nf">get_formatted_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_mask_filter</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mh">0xFF</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a human readable representation of the AppStatus.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">role_replicas</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">filterred_replicas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_role_replicas</span><span class="p">(</span><span class="n">state_mask_filter</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">role</span><span class="p">,</span> <span class="n">filterred_role_replicas</span> <span class="ow">in</span> <span class="n">filterred_replicas</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">filterred_role_replicas</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">replicas_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">replica</span><span class="o">.</span><span class="n">get_formatted_str</span><span class="p">()</span> <span class="k">for</span> <span class="n">replica</span> <span class="ow">in</span> <span class="n">filterred_role_replicas</span>
+            <span class="p">)</span>
+            <span class="n">role_replicas</span> <span class="o">+=</span> <span class="n">Template</span><span class="p">(</span><span class="n">_ROLE_REPLICA_FORMAT_TEMPLATE</span><span class="p">)</span><span class="o">.</span><span class="n">substitute</span><span class="p">(</span>
+                <span class="n">role</span><span class="o">=</span><span class="n">role</span><span class="p">,</span> <span class="n">replicas</span><span class="o">=</span><span class="n">replicas_str</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">Template</span><span class="p">(</span><span class="n">_APP_STATUS_FORMAT_TEMPLATE</span><span class="p">)</span><span class="o">.</span><span class="n">substitute</span><span class="p">(</span>
+            <span class="n">state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
+            <span class="n">num_restarts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_restarts</span><span class="p">,</span>
+            <span class="n">msg</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">msg</span><span class="p">,</span>
+            <span class="n">replicas</span><span class="o">=</span><span class="n">role_replicas</span><span class="p">,</span>
+        <span class="p">)</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">DescribeAppResponse</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Response object returned by ``Scheduler.describe(app)`` API. Contains</span>
+<span class="sd">    the status and description of the application as known by the scheduler.</span>
+<span class="sd">    For some schedulers implementations this response object has necessary</span>
+<span class="sd">    and sufficient information to recreate an ``Application`` object in the</span>
+<span class="sd">    absence of the hosting ``Session``. For these types of schedulers,</span>
+<span class="sd">    the user can re-``run()`` the attached application. Otherwise the user</span>
+<span class="sd">    can only call non-creating methods (e.g. ``wait()``, ``status()``, etc).</span>
+
+<span class="sd">    Since this class is a data class and contains many member variables we</span>
+<span class="sd">    keep the usage simple and provide a no-args constructor and chose to</span>
+<span class="sd">    access the member vars directly rather than provide accessors.</span>
+
+<span class="sd">    If scheduler returns arbitrary message, the ``msg`` field should be populated.</span>
+<span class="sd">    If scheduler returns a structured json, the ``structured_error_msg`` field should be populated.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&lt;NOT_SET&gt;&quot;</span>
+    <span class="n">state</span><span class="p">:</span> <span class="n">AppState</span> <span class="o">=</span> <span class="n">AppState</span><span class="o">.</span><span class="n">UNSUBMITTED</span>
+    <span class="n">num_restarts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">msg</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">NONE</span>
+    <span class="n">structured_error_msg</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">NONE</span>
+    <span class="n">ui_url</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">roles</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Role</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">replicas</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">RoleReplicaStatus</span><span class="p">]]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+
+
+<span class="c1"># valid ``RunConfig`` values; only support primitives (str, int, float, bool)</span>
+<span class="n">ConfigValue</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">bool</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+
+
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">RunConfig</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Additional run configs for the app. These are typically</span>
+<span class="sd">    scheduler runtime configs/arguments that do not bind</span>
+<span class="sd">    to ``Application`` nor the ``Scheduler``. For example</span>
+<span class="sd">    a particular cluster (within the scheduler) the application</span>
+<span class="sd">    should be submitted to. Since the same app can be launched</span>
+<span class="sd">    into multiple types of clusters (devo, prod) the</span>
+<span class="sd">    cluster id config does not bind to the app. Neither</span>
+<span class="sd">    does this bind to the scheduler since the cluster can</span>
+<span class="sd">    be partitioned by size of the instances (S, M, L) or by</span>
+<span class="sd">    a preemption setting (e.g. on-demand vs spot).</span>
+
+<span class="sd">    Since ``Session`` allows the application to be submitted</span>
+<span class="sd">    to multiple schedulers, users who want to submit the same</span>
+<span class="sd">    app into multiple schedulers from the same session can</span>
+<span class="sd">    union all the ``RunConfig``s into a single object. The</span>
+<span class="sd">    scheduler implementation will selectively read the configs</span>
+<span class="sd">    it needs.</span>
+
+<span class="sd">    This class is intended to be trivially serialized and</span>
+<span class="sd">    passed around or saved hence only allow primitives</span>
+<span class="sd">    as config values. Should the scheduler need more than</span>
+<span class="sd">    simple primitives (e.g. list of str) it is up to the</span>
+<span class="sd">    scheduler to document a way to encode thie value as a</span>
+<span class="sd">    str and parse it (e.g. representing list of str as</span>
+<span class="sd">    comma delimited str).</span>
+
+<span class="sd">    Usage:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">     # write</span>
+<span class="sd">     config = RunConfig()</span>
+<span class="sd">     config.set(&quot;run_as_user&quot;, prod&quot;)</span>
+<span class="sd">     config.set(&quot;priority&quot;, 10)</span>
+
+<span class="sd">     # read</span>
+<span class="sd">     config.get(&quot;run_as_user&quot;) # &quot;prod&quot;</span>
+<span class="sd">     config.get(&quot;priority&quot;) # 10</span>
+<span class="sd">     config.get(&quot;never_set&quot;) # None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">cfgs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ConfigValue</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cfg_val</span><span class="p">:</span> <span class="n">ConfigValue</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cfgs</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg_val</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConfigValue</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfgs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfgs</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span>
+
+
+<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">AppDryRunInfo</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returned by ``Scheduler.submit_dryrun``. Represents the</span>
+<span class="sd">    request that would have been made to the scheduler.</span>
+<span class="sd">    The ``fmt_str()`` method of this object should return a</span>
+<span class="sd">    pretty formatted string representation of the underlying</span>
+<span class="sd">    request object such that ``print(info)`` yields a human</span>
+<span class="sd">    readable representation of the underlying request.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span> <span class="n">fmt</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">T</span><span class="p">],</span> <span class="nb">str</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">request</span> <span class="o">=</span> <span class="n">request</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fmt</span> <span class="o">=</span> <span class="n">fmt</span>
+
+        <span class="c1"># fields below are only meant to be used by</span>
+        <span class="c1"># Scheduler or Session implementations</span>
+        <span class="c1"># and are back references to the parameters</span>
+        <span class="c1"># to dryrun() that returned this AppDryRunInfo object</span>
+        <span class="c1"># thus they are set in Session.dryrun() and Scheduler.submit_dryrun()</span>
+        <span class="c1"># manually rather than through constructor arguments</span>
+        <span class="c1"># DO NOT create getters or make these public</span>
+        <span class="c1"># unless there is a good reason to</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_app</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cfg</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fmt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">runopts</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Holds the accepted scheduler run configuration</span>
+<span class="sd">    keys, default value (if any), and help message string.</span>
+<span class="sd">    These options are provided by the ``Scheduler`` and validated</span>
+<span class="sd">    in ``Session.run`` against user provided ``RunConfig``.</span>
+<span class="sd">    Allows ``None`` default values. Required opts must NOT have a</span>
+<span class="sd">    non-None default.</span>
+
+<span class="sd">    .. important:: This class has no accessors because it is intended to</span>
+<span class="sd">                   be constructed and returned by ``Scheduler.run_config_options``</span>
+<span class="sd">                   and printed out as a &quot;help&quot; tool or as part of an exception msg.</span>
+<span class="sd">    Usage:</span>
+
+<span class="sd">    ::</span>
+<span class="sd">     opts = runopts()</span>
+
+<span class="sd">     opts.add(&quot;run_as_user&quot;, type_=str, help=&quot;user to run the job as&quot;)</span>
+<span class="sd">     opts.add(&quot;cluster_id&quot;, type_=int, help=&quot;cluster to submit the job&quot;, required=True)</span>
+<span class="sd">     opts.add(&quot;priority&quot;, type_=float, default=0.5, help=&quot;job priority&quot;)</span>
+<span class="sd">     opts.add(&quot;preemptible&quot;, type_=bool, default=False, help=&quot;is the job preemptible&quot;)</span>
+
+<span class="sd">     # invalid</span>
+<span class="sd">     opts.add(&quot;illegal&quot;, default=10, required=True)</span>
+<span class="sd">     opts.add(&quot;bad_type&quot;, type=str, default=10)</span>
+
+<span class="sd">     opts.check(RunConfig)</span>
+<span class="sd">     print(opts)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ConfigValue</span><span class="p">,</span> <span class="n">Type</span><span class="p">[</span><span class="n">ConfigValue</span><span class="p">],</span> <span class="nb">bool</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cfg_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">type_</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">ConfigValue</span><span class="p">],</span>
+        <span class="n">help</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">default</span><span class="p">:</span> <span class="n">ConfigValue</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds the ``config`` option with the given help string and ``default``</span>
+<span class="sd">        value (if any). If the ``default`` is not specified then this option</span>
+<span class="sd">        is a required option.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">required</span> <span class="ow">and</span> <span class="n">default</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Required option: </span><span class="si">{</span><span class="n">cfg_key</span><span class="si">}</span><span class="s2"> must not specify default value. Given: </span><span class="si">{</span><span class="n">default</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">default</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="n">type_</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Option: </span><span class="si">{</span><span class="n">cfg_key</span><span class="si">}</span><span class="s2">, must be of type: </span><span class="si">{</span><span class="n">type_</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot; Given: </span><span class="si">{</span><span class="n">default</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">default</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">)&quot;</span>
+                <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="n">type_</span><span class="p">,</span> <span class="n">required</span><span class="p">,</span> <span class="n">help</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">RunConfig</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks the given config against this ``runopts`` and sets default configs</span>
+<span class="sd">        if not set.</span>
+
+<span class="sd">        .. warning:: This method mutates the provided config!</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># make a copy; don&#39;t need to be deep b/c the values are primitives</span>
+        <span class="n">resolved_cfg</span> <span class="o">=</span> <span class="n">RunConfig</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">cfgs</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">cfg_key</span><span class="p">,</span> <span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="n">type_</span><span class="p">,</span> <span class="n">required</span><span class="p">,</span> <span class="n">_help</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">resolved_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cfg_key</span><span class="p">)</span>
+
+            <span class="c1"># check required opt</span>
+            <span class="k">if</span> <span class="n">required</span> <span class="ow">and</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">InvalidRunConfigException</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Required run option: </span><span class="si">{</span><span class="n">cfg_key</span><span class="si">}</span><span class="s2">, must be provided and not None&quot;</span><span class="p">,</span>
+                    <span class="n">config</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="p">,</span>
+                <span class="p">)</span>
+
+            <span class="c1"># check type (None matches all types)</span>
+            <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">type_</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">InvalidRunConfigException</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Run option: </span><span class="si">{</span><span class="n">cfg_key</span><span class="si">}</span><span class="s2">, must be of type: </span><span class="si">{</span><span class="n">type_</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">,&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot; but was: </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
+                    <span class="n">config</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="p">,</span>
+                <span class="p">)</span>
+
+            <span class="c1"># not required and not set, set to default</span>
+            <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">resolved_cfg</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">cfg_key</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">resolved_cfg</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># make it a pretty printable dict</span>
+        <span class="n">pretty_opts</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">cfg_key</span><span class="p">,</span> <span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="n">type_</span><span class="p">,</span> <span class="n">required</span><span class="p">,</span> <span class="n">help</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;*</span><span class="si">{</span><span class="n">cfg_key</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">required</span> <span class="k">else</span> <span class="n">cfg_key</span>
+            <span class="n">opt</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">type_</span><span class="o">.</span><span class="vm">__name__</span><span class="p">}</span>
+            <span class="k">if</span> <span class="n">required</span><span class="p">:</span>
+                <span class="n">opt</span><span class="p">[</span><span class="s2">&quot;required&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">opt</span><span class="p">[</span><span class="s2">&quot;default&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">default</span>
+            <span class="n">opt</span><span class="p">[</span><span class="s2">&quot;help&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">help</span>
+
+            <span class="n">pretty_opts</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">opt</span>
+        <span class="kn">import</span> <span class="nn">pprint</span>
+
+        <span class="k">return</span> <span class="n">pprint</span><span class="o">.</span><span class="n">pformat</span><span class="p">(</span>
+            <span class="n">pretty_opts</span><span class="p">,</span>
+            <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">width</span><span class="o">=</span><span class="mi">80</span><span class="p">,</span>
+        <span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">InvalidRunConfigException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Raised when the supplied ``RunConfig`` does not satisfy the</span>
+<span class="sd">    ``runopts``, either due to missing required configs or value</span>
+<span class="sd">    type mismatch.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">invalid_reason</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">run_config</span><span class="p">:</span> <span class="n">RunConfig</span><span class="p">,</span> <span class="n">runopts</span><span class="p">:</span> <span class="s2">&quot;runopts&quot;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">invalid_reason</span><span class="si">}</span><span class="s2">. Given: </span><span class="si">{</span><span class="n">run_config</span><span class="si">}</span><span class="s2">, Expected: </span><span class="si">{</span><span class="n">runopts</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Scheduler"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Scheduler">[docs]</a><span class="k">class</span> <span class="nc">Scheduler</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An interface abstracting functionalities of a scheduler.</span>
+<span class="sd">    Implementors need only implement those methods annotated with</span>
+<span class="sd">    ``@abc.abstractmethod``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session_name</span> <span class="o">=</span> <span class="n">session_name</span>
+
+<div class="viewcode-block" id="Scheduler.submit"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Scheduler.submit">[docs]</a>    <span class="k">def</span> <span class="nf">submit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Application</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">RunConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Submits the application to be run by the scheduler.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The application id that uniquely identifies the submitted app.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dryrun_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">submit_dryrun</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule</span><span class="p">(</span><span class="n">dryrun_info</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Scheduler.schedule"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Scheduler.schedule">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dryrun_info</span><span class="p">:</span> <span class="n">AppDryRunInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Same as ``submit`` except that it takes an ``AppDryrunInfo``.</span>
+<span class="sd">        Implementors are encouraged to implement this method rather than</span>
+<span class="sd">        directly implementing ``submit`` since ``submit`` can be trivially</span>
+<span class="sd">        implemented by:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">         dryrun_info = self.submit_dryrun(app, cfg)</span>
+<span class="sd">         return schedule(dryrun_info)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Scheduler.submit_dryrun"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Scheduler.submit_dryrun">[docs]</a>    <span class="k">def</span> <span class="nf">submit_dryrun</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Application</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">RunConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Rather than submitting the request to run the app, returns the</span>
+<span class="sd">        request object that would have been submitted to the underlying</span>
+<span class="sd">        service. The type of the request object is scheduler dependent.</span>
+<span class="sd">        This method can be used to dry-run an application. Please refer</span>
+<span class="sd">        to the scheduler implementation&#39;s documentation regarding</span>
+<span class="sd">        the actual return type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">resolved_cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_opts</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+        <span class="n">dryrun_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submit_dryrun</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">resolved_cfg</span><span class="p">)</span>
+        <span class="n">dryrun_info</span><span class="o">.</span><span class="n">_app</span> <span class="o">=</span> <span class="n">app</span>
+        <span class="n">dryrun_info</span><span class="o">.</span><span class="n">_cfg</span> <span class="o">=</span> <span class="n">resolved_cfg</span>
+        <span class="k">return</span> <span class="n">dryrun_info</span></div>
+
+    <span class="k">def</span> <span class="nf">_submit_dryrun</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Application</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">RunConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Scheduler.run_opts"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Scheduler.run_opts">[docs]</a>    <span class="k">def</span> <span class="nf">run_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the run configuration options expected by the scheduler.</span>
+<span class="sd">        Basically a ``--help`` for the ``run`` API.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">runopts</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Scheduler.describe"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Scheduler.describe">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DescribeAppResponse</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Describes the specified application.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Application description or ``None`` if the app does not exist.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Scheduler.exists"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Scheduler.exists">[docs]</a>    <span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            ``True`` if the app exists (was submitted), ``False`` otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">desc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">app_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">desc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span></div>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_cancel_existing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Kills the application. This method will only be called on an</span>
+<span class="sd">        application that exists.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Scheduler.cancel"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Scheduler.cancel">[docs]</a>    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Cancels/kills the application. This method is idempotent within the same</span>
+<span class="sd">        thread and is safe to call on the same application multiple times.</span>
+<span class="sd">        However when called from multiple threads/processes on the same app</span>
+<span class="sd">        the exact semantics of this method depends on the idempotency guarantees</span>
+<span class="sd">        of the underlying scheduler API.</span>
+
+<span class="sd">        .. note:: This method does not block for the application to reach a</span>
+<span class="sd">                  cancelled state. To ensure that the application reaches a</span>
+<span class="sd">                  terminal state use the ``wait`` API.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">app_id</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cancel_existing</span><span class="p">(</span><span class="n">app_id</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># do nothing if the app does not exist</span>
+            <span class="k">return</span></div>
+
+<div class="viewcode-block" id="Scheduler.log_iter"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Scheduler.log_iter">[docs]</a>    <span class="k">def</span> <span class="nf">log_iter</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">role_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">regex</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">since</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">until</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns an iterator to the log lines of the ``k``th replica of the ``role``.</span>
+<span class="sd">        The iterator ends end all qualifying log lines have been read.</span>
+
+<span class="sd">        If the scheduler supports time-based cursors fetching log lines</span>
+<span class="sd">        for custom time ranges, then the ``since``, ``until`` fields are</span>
+<span class="sd">        honored, otherwise they are ignored. Not specifying ``since`` and ``until``</span>
+<span class="sd">        is equivalent to getting all available log lines. If the ``until`` is</span>
+<span class="sd">        empty, then the iterator behaves like ``tail -f``, following the log output</span>
+<span class="sd">        until the job reaches a terminal state.</span>
+
+<span class="sd">        The exact definition of what constitutes a log is scheduler specific. Some</span>
+<span class="sd">        schedulers may consider stderr or stdout as the log, others may read the logs</span>
+<span class="sd">        from a log file.</span>
+
+<span class="sd">        Behaviors and assumptions:</span>
+
+<span class="sd">        1. Produces an undefined-behavior if called on an app that does not exist</span>
+<span class="sd">           The caller should check that the app exists using ``exists(app_id)``</span>
+<span class="sd">           prior to calling this method.</span>
+
+<span class="sd">        2. Is not stateful, calling this method twice with same parameters</span>
+<span class="sd">           returns a new iterator. Prior iteration</span>
+<span class="sd">           progress is lost.</span>
+
+<span class="sd">        3. Does not always support log-tailing. Not all schedulers support live</span>
+<span class="sd">           log iteration (e.g. tailing logs while the app is running). Refer to</span>
+<span class="sd">           the specific scheduler&#39;s documentation for the iterator&#39;s behavior.</span>
+
+<span class="sd">        4. Does not guarantee log retention. It is possible that by the time this</span>
+<span class="sd">           method is called, the underlying scheduler may have purged the log records</span>
+<span class="sd">           for this application. If so this method raises an arbitrary exception.</span>
+
+<span class="sd">        5. Only raises a ``StopIteration`` exception when the accessible log lines</span>
+<span class="sd">           have been fully exhausted and the app has reached a final state. For instance,</span>
+<span class="sd">           if the app gets stuck and does not produce any log lines, then the iterator</span>
+<span class="sd">           blocks until the app eventually gets killed (either via timeout or manually)</span>
+<span class="sd">           at which point it raises a ``StopIteration``.</span>
+
+<span class="sd">        6. Need not be supported by all schedulers.</span>
+
+<span class="sd">        7. Some schedulers may support line cursors by supporting ``__getitem__``</span>
+<span class="sd">           (e.g. ``iter[50]`` seeks to the 50th log line).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            An ``Iterator`` over log lines of the specified role replica</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError - if the scheduler does not support log iteration</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s2"> does not support application log iteration&quot;</span>
+        <span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Application</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">:</span> <span class="n">SchedulerBackend</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validates whether application is consistent with the scheduler.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: if application is not compatible with scheduler</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">role</span><span class="o">.</span><span class="n">container</span><span class="o">.</span><span class="n">resources</span> <span class="o">==</span> <span class="n">NULL_RESOURCE</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;No resources for container: </span><span class="si">{</span><span class="n">role</span><span class="o">.</span><span class="n">container</span><span class="o">.</span><span class="n">image</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot; Did you forget to call container.require(resources)&quot;</span>
+                <span class="p">)</span></div>
+
+
+<span class="k">class</span> <span class="nc">MalformedAppHandleException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Raised when APIs are given a bad app handle.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">app_handle</span><span class="si">}</span><span class="s2"> is not of the form: &lt;scheduler_backend&gt;://&lt;session_name&gt;/&lt;app_id&gt;&quot;</span>
+        <span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">SessionMismatchException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Raised on session certain action APIs</span>
+<span class="sd">    when the session_name on an app handle does not match</span>
+<span class="sd">    the current session&#39;s name. Modify/update APIs raise</span>
+<span class="sd">    this exception as modifying/updataing an application</span>
+<span class="sd">    owned by a different session should not be allowed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;App handle: </span><span class="si">{</span><span class="n">app_handle</span><span class="si">}</span><span class="s2"> is not owned by this session: </span><span class="si">{</span><span class="n">session_name</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot; Please perform the action on the correct session&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot; or re-run the app on this session&quot;</span>
+        <span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">UnknownSchedulerException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scheduler_backend</span><span class="p">:</span> <span class="n">SchedulerBackend</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Scheduler backend: </span><span class="si">{</span><span class="n">scheduler_backend</span><span class="si">}</span><span class="s2"> does not exist.&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot; Use session.scheduler_backends() to see all supported schedulers&quot;</span>
+        <span class="p">)</span>
+
+
+<span class="c1"># encodes information about a running app in url format</span>
+<span class="c1"># {scheduler_backend}://{session_name}/{app_id}</span>
+<span class="n">AppHandle</span> <span class="o">=</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">UnknownAppException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Raised by ``Session`` APIs when either the application does not</span>
+<span class="sd">    exist or the application is not owned by the session.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="s2">&quot;AppHandle&quot;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Unknown app = </span><span class="si">{</span><span class="n">app_handle</span><span class="si">}</span><span class="s2">. Did you forget to call session.run()?&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot; Otherwise, the app may have already finished and purged by the scheduler&quot;</span>
+        <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">make_app_handle</span><span class="p">(</span>
+    <span class="n">scheduler_backend</span><span class="p">:</span> <span class="n">SchedulerBackend</span><span class="p">,</span> <span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">):</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">scheduler_backend</span><span class="si">}</span><span class="s2">://</span><span class="si">{</span><span class="n">session_name</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">app_id</span><span class="si">}</span><span class="s2">&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">parse_app_handle</span><span class="p">(</span><span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">SchedulerBackend</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    parses the app handle into ```(scheduler_backend, session_name, and app_id)```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># parse it manually b/c currently tsm does not</span>
+    <span class="c1"># define allowed characters nor length for session name and app_id</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+
+    <span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;(?P&lt;scheduler_backend&gt;.+)://(?P&lt;session_name&gt;.+)/(?P&lt;app_id&gt;.+)&quot;</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">MalformedAppHandleException</span><span class="p">(</span><span class="n">app_handle</span><span class="p">)</span>
+    <span class="n">gd</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">gd</span><span class="p">[</span><span class="s2">&quot;scheduler_backend&quot;</span><span class="p">],</span> <span class="n">gd</span><span class="p">[</span><span class="s2">&quot;session_name&quot;</span><span class="p">],</span> <span class="n">gd</span><span class="p">[</span><span class="s2">&quot;app_id&quot;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="Session"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Session">[docs]</a><span class="k">class</span> <span class="nc">Session</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Entrypoint and client-facing API for TSM. Has the methods for the user to</span>
+<span class="sd">    define and act upon ``Applications``. The ``Session`` is stateful and</span>
+<span class="sd">    represents a logical workspace of the user. It can be backed by a service</span>
+<span class="sd">    (e.g. TSM server) for persistence or can be standalone with no persistence</span>
+<span class="sd">    meaning that the ``Session`` lasts only during the duration of the hosting</span>
+<span class="sd">    process (see the ``attach()`` API for instructions on re-parenting apps</span>
+<span class="sd">    between sessions).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">name</span>
+
+<div class="viewcode-block" id="Session.name"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Session.name">[docs]</a>    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The name of this session.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span></div>
+
+<div class="viewcode-block" id="Session.run"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Session.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">app</span><span class="p">:</span> <span class="n">Application</span><span class="p">,</span>
+        <span class="n">scheduler</span><span class="p">:</span> <span class="n">SchedulerBackend</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+        <span class="n">cfg</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RunConfig</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppHandle</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Runs the given application in the specified mode.</span>
+
+<span class="sd">        .. note:: sub-classes of ``Session`` should implement ``schedule`` method</span>
+<span class="sd">                  rather than overriding this method directly.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            An application handle that is used to call other action APIs on the app.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AppNotReRunnableException: if the session/scheduler does not support re-running attached apps</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">dryrun_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dryrun</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule</span><span class="p">(</span><span class="n">dryrun_info</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Session.schedule"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Session.schedule">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dryrun_info</span><span class="p">:</span> <span class="n">AppDryRunInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppHandle</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Actually runs the application from the given dryrun info.</span>
+<span class="sd">        Useful when one needs to overwrite a parameter in the scheduler</span>
+<span class="sd">        request that is not configurable from one of the object APIs.</span>
+
+<span class="sd">        .. warning:: Use sparingly since abusing this method to overwrite</span>
+<span class="sd">                     many parameters in the raw scheduler request may</span>
+<span class="sd">                     lead to your usage of TSM going out of compliance</span>
+<span class="sd">                     in the long term. This method is intended to</span>
+<span class="sd">                     unblock the user from experimenting with certain</span>
+<span class="sd">                     scheduler-specific features in the short term without</span>
+<span class="sd">                     having to wait until TSM exposes scheduler features</span>
+<span class="sd">                     in its APIs.</span>
+
+<span class="sd">        .. note:: It is recommended that sub-classes of ``Session`` implement</span>
+<span class="sd">                  this method instead of directly implementing the ``run`` method.</span>
+
+<span class="sd">        Usage:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">         dryrun_info = session.dryrun(app, scheduler=&quot;default&quot;, cfg)</span>
+
+<span class="sd">         # overwrite parameter &quot;foo&quot; to &quot;bar&quot;</span>
+<span class="sd">         dryrun_info.request.foo = &quot;bar&quot;</span>
+
+<span class="sd">         app_handle = session.submit(dryrun_info)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Session.dryrun"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Session.dryrun">[docs]</a>    <span class="k">def</span> <span class="nf">dryrun</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">app</span><span class="p">:</span> <span class="n">Application</span><span class="p">,</span>
+        <span class="n">scheduler</span><span class="p">:</span> <span class="n">SchedulerBackend</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+        <span class="n">cfg</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RunConfig</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Dry runs an app on the given scheduler with the provided run configs.</span>
+<span class="sd">        Does not actually submit the app but rather returns what would have been</span>
+<span class="sd">        submitted. The returned ``AppDryRunInfo`` is pretty formatted and can</span>
+<span class="sd">        be printed or logged directly.</span>
+
+<span class="sd">        Usage:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">         dryrun_info = session.dryrun(app, scheduler=&quot;local&quot;, cfg)</span>
+<span class="sd">         print(dryrun_info)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># input validation</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;No roles for app: </span><span class="si">{</span><span class="n">app</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">. Did you forget to call app.of(roles..)?&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">role</span><span class="o">.</span><span class="n">entrypoint</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;No entrypoint for role: </span><span class="si">{</span><span class="n">role</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot; Did you forget to call role.runs(entrypoint, args, env)?&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">role</span><span class="o">.</span><span class="n">num_replicas</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Non-positive replicas for role: </span><span class="si">{</span><span class="n">role</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot; Did you forget to call role.replicas(positive_number)?&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">role</span><span class="o">.</span><span class="n">container</span> <span class="o">==</span> <span class="n">NULL_CONTAINER</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;No container for role: </span><span class="si">{</span><span class="n">role</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot; Did you forget to call role.on(container)&quot;</span>
+                <span class="p">)</span>
+        <span class="n">dryrun_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dryrun</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">,</span> <span class="n">cfg</span> <span class="ow">or</span> <span class="n">RunConfig</span><span class="p">())</span>
+        <span class="n">dryrun_info</span><span class="o">.</span><span class="n">_scheduler</span> <span class="o">=</span> <span class="n">scheduler</span>
+        <span class="k">return</span> <span class="n">dryrun_info</span></div>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_dryrun</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Application</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">:</span> <span class="n">SchedulerBackend</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">RunConfig</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The actual dryrun logic.</span>
+<span class="sd">        Implementors of ``Session`` should implement this method rather than ``dryrun``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Session.run_opts"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Session.run_opts">[docs]</a>    <span class="k">def</span> <span class="nf">run_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">runopts</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the ``runopts`` for the supported scheduler backends.</span>
+
+<span class="sd">        Usage:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">         local_runopts = session.run_opts()[&quot;local&quot;]</span>
+<span class="sd">         print(&quot;local scheduler run options: {local_runopts}&quot;)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A map of scheduler backend to its ``runopts``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Session.scheduler_backends"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Session.scheduler_backends">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">scheduler_backends</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">SchedulerBackend</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a list of all supported scheduler backends.</span>
+<span class="sd">        All session implementations must support a &quot;default&quot;</span>
+<span class="sd">        scheduler backend and document what the default</span>
+<span class="sd">        scheduler is.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Session.status"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Session.status">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AppStatus</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The status of the application, or ``None`` if the app does not exist anymore</span>
+<span class="sd">            (e.g. was stopped in the past and removed from the scheduler&#39;s backend).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Session.wait"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Session.wait">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">wait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AppStatus</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Block waits (indefinitely) for the application to complete.</span>
+<span class="sd">        Possible implementation:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">         while(True):</span>
+<span class="sd">             app_status = status(app)</span>
+<span class="sd">             if app_status.is_terminal():</span>
+<span class="sd">                 return</span>
+<span class="sd">             sleep(10)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The terminal status of the application, or ``None`` if the app does not exist anymore</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Session.list"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Session.list">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="n">AppHandle</span><span class="p">,</span> <span class="n">Application</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the applications that were run with this session mapped by the app handle.</span>
+<span class="sd">        The persistence of the session is implementation dependent.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Session.stop"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Session.stop">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Stops the application, effectively directing the scheduler to cancel</span>
+<span class="sd">        the job. Does nothing if the app does not exist.</span>
+
+<span class="sd">        .. note:: This method returns as soon as the cancel request has been</span>
+<span class="sd">                  submitted to the scheduler. The application will be in a</span>
+<span class="sd">                  ``RUNNING`` state until the scheduler actually terminates</span>
+<span class="sd">                  the job. If the scheduler successfully interrupts the job</span>
+<span class="sd">                  and terminates it the final state will be ``CANCELLED``</span>
+<span class="sd">                  otherwise it will be ``FAILED``.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SessionMismatchException: if the app handle does not belong to this session</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Session.describe"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Session.describe">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Application</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reconstructs the application (to the best extent) given the app handle.</span>
+<span class="sd">        Note that the reconstructed application may not be the complete app as</span>
+<span class="sd">        it was submitted via the run API. How much of the app can be reconstructed</span>
+<span class="sd">        is scheduler dependent.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Application or None if the app does not exist anymore or if the</span>
+<span class="sd">            scheduler does not support describing the app handle</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Session.log_lines"><a class="viewcode-back" href="../../../../tsm_driver.html#torchelastic.tsm.driver.api.Session.log_lines">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">log_lines</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">,</span>
+        <span class="n">role_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">regex</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">since</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">until</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns an iterator over the log lines of the specified job container.</span>
+
+<span class="sd">        .. note:: #. ``k`` is the node (host) id NOT the ``rank``.</span>
+<span class="sd">                  #. ``since`` and ``until`` need not always be honored (depends on scheduler).</span>
+
+<span class="sd">        .. warning:: The semantics and guarantees of the returned iterator is highly</span>
+<span class="sd">                     scheduler dependent. See ``torchelastic.tsm.driver.api.Scheduler.log_iter``</span>
+<span class="sd">                     for the high-level semantics of this log iterator. For this reason</span>
+<span class="sd">                     it is HIGHLY DISCOURAGED to use this method for generating output</span>
+<span class="sd">                     to pass to downstream functions/dependencies. This method</span>
+<span class="sd">                     DOES NOT guarantee that 100% of the log lines are returned.</span>
+<span class="sd">                     It is totally valid for this method to return no or partial log lines</span>
+<span class="sd">                     if the scheduler has already totally or partially purged log records</span>
+<span class="sd">                     for the application.</span>
+
+<span class="sd">        Usage:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">         app_handle = session.run(app, scheduler=&quot;local&quot;, cfg=RunConfig())</span>
+
+<span class="sd">         print(&quot;== trainer node 0 logs ==&quot;)</span>
+<span class="sd">         for line in session.log_lines(app_handle, &quot;trainer&quot;, k=0):</span>
+<span class="sd">            print(line)</span>
+
+<span class="sd">        Discouraged anti-pattern:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">         # DO NOT DO THIS!</span>
+<span class="sd">         # parses accuracy metric from log and reports it for this experiment run</span>
+<span class="sd">         accuracy = -1</span>
+<span class="sd">         for line in session.log_lines(app_handle, &quot;trainer&quot;, k=0):</span>
+<span class="sd">            if matches_regex(line, &quot;final model_accuracy:[0-9]*&quot;):</span>
+<span class="sd">                accuracy = parse_accuracy(line)</span>
+<span class="sd">                break</span>
+<span class="sd">         report(experiment_name, accuracy)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            app_handle: application handle</span>
+<span class="sd">            role_name: role within the app (e.g. trainer)</span>
+<span class="sd">            k: k-th replica of the role to fetch the logs for</span>
+<span class="sd">            regex: optional regex filter, returns all lines if left empty</span>
+<span class="sd">            since: datetime based start cursor. If left empty begins from the</span>
+<span class="sd">                    first log line (start of job).</span>
+<span class="sd">            until: datetime based end cursor. If left empty, follows the log output</span>
+<span class="sd">                    until the job completes and all log lines have been consumed.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             An iterator over the role k-th replica of the specified application.</span>
+
+<span class="sd">        Raise:</span>
+<span class="sd">            UnknownAppException: if the app does not exist in the scheduler</span>
+<span class="sd">            SessionMismatchException: if the app handle does not belong to this session</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+</pre></div>
+
+             </article>
+             
+            </div>
+            <footer>
+  
+
+  
+
+    <hr>
+
+  
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, PyTorch Elastic Contributors.
+
+    </p>
+  </div>
+    
+      <div>
+        Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+      </div>
+     
+
+</footer>
+
+          </div>
+        </div>
+
+        <div class="pytorch-content-right" id="pytorch-content-right">
+          <div class="pytorch-right-menu" id="pytorch-right-menu">
+            <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
+              
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  
+
+
+  
+
+     
+       <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+         <script src="../../../../_static/jquery.js"></script>
+         <script src="../../../../_static/underscore.js"></script>
+         <script src="../../../../_static/doctools.js"></script>
+         <script src="../../../../_static/language_data.js"></script>
+         <script src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js"></script>
+         <script src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js"></script>
+         <script src="../../../../_static/katex_autorenderer.js"></script>
+     
+
+  
+
+  <script type="text/javascript" src="../../../../_static/js/vendor/popper.min.js"></script>
+  <script type="text/javascript" src="../../../../_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
+  <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+  <!-- Begin Footer -->
+
+  <div class="container-fluid docs-tutorials-resources" id="docs-tutorials-resources">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 text-center">
+          <h2>Docs</h2>
+          <p>Access comprehensive developer documentation for PyTorch</p>
+          <a class="with-right-arrow" href="https://pytorch.org/docs/stable/index.html">View Docs</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Tutorials</h2>
+          <p>Get in-depth tutorials for beginners and advanced developers</p>
+          <a class="with-right-arrow" href="https://pytorch.org/tutorials">View Tutorials</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Resources</h2>
+          <p>Find development resources and get your questions answered</p>
+          <a class="with-right-arrow" href="https://pytorch.org/resources">View Resources</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-logo-wrapper">
+        <a href="https://pytorch.org/" class="footer-logo"></a>
+      </div>
+
+      <div class="footer-links-wrapper">
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/">PyTorch</a></li>
+            <li><a href="https://pytorch.org/get-started">Get Started</a></li>
+            <li><a href="https://pytorch.org/features">Features</a></li>
+            <li><a href="https://pytorch.org/ecosystem">Ecosystem</a></li>
+            <li><a href="https://pytorch.org/blog/">Blog</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/blob/master/CONTRIBUTING.md">Contributing</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/resources">Resources</a></li>
+            <li><a href="https://pytorch.org/tutorials">Tutorials</a></li>
+            <li><a href="https://pytorch.org/docs/stable/index.html">Docs</a></li>
+            <li><a href="https://discuss.pytorch.org" target="_blank">Discuss</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/issues" target="_blank">Github Issues</a></li>
+            <li><a href="https://pytorch.org/assets/brand-guidelines/PyTorch-Brand-Guidelines.pdf" target="_blank">Brand Guidelines</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col follow-us-col">
+          <ul>
+            <li class="list-title">Stay Connected</li>
+            <li>
+              <div id="mc_embed_signup">
+                <form
+                  action="https://twitter.us14.list-manage.com/subscribe/post?u=75419c71fe0a935e53dfa4a3f&id=91d0dccd39"
+                  method="post"
+                  id="mc-embedded-subscribe-form"
+                  name="mc-embedded-subscribe-form"
+                  class="email-subscribe-form validate"
+                  target="_blank"
+                  novalidate>
+                  <div id="mc_embed_signup_scroll" class="email-subscribe-form-fields-wrapper">
+                    <div class="mc-field-group">
+                      <label for="mce-EMAIL" style="display:none;">Email Address</label>
+                      <input type="email" value="" name="EMAIL" class="required email" id="mce-EMAIL" placeholder="Email Address">
+                    </div>
+
+                    <div id="mce-responses" class="clear">
+                      <div class="response" id="mce-error-response" style="display:none"></div>
+                      <div class="response" id="mce-success-response" style="display:none"></div>
+                    </div>    <!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
+
+                    <div style="position: absolute; left: -5000px;" aria-hidden="true"><input type="text" name="b_75419c71fe0a935e53dfa4a3f_91d0dccd39" tabindex="-1" value=""></div>
+
+                    <div class="clear">
+                      <input type="submit" value="" name="subscribe" id="mc-embedded-subscribe" class="button email-subscribe-button">
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+            </li>
+          </ul>
+
+          <div class="footer-social-icons">
+            <a href="https://www.facebook.com/pytorch" target="_blank" class="facebook"></a>
+            <a href="https://twitter.com/pytorch" target="_blank" class="twitter"></a>
+            <a href="https://www.youtube.com/pytorch" target="_blank" class="youtube"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <div class="cookie-banner-wrapper">
+  <div class="container">
+    <p class="gdpr-notice">To analyze traffic and optimize your experience, we serve cookies on this site. By clicking or navigating, you agree to allow our usage of cookies. As the current maintainers of this site, Facebook’s Cookies Policy applies. Learn more, including about available controls: <a href="https://www.facebook.com/policies/cookies/">Cookies Policy</a>.</p>
+    <img class="close-button" src="../../../../_static/images/pytorch-x.svg">
+  </div>
+</div>
+
+  <!-- End Footer -->
+
+  <!-- Begin Mobile Menu -->
+
+  <div class="mobile-main-menu">
+    <div class="container-fluid">
+      <div class="container">
+        <div class="mobile-main-menu-header-container">
+          <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+          <a class="main-menu-close-button" href="#" data-behavior="close-mobile-menu"></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-main-menu-links-container">
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/hub">PyTorch Hub</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li class="resources-mobile-menu-title">
+            Docs
+          </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/audio/stable/index.html">torchaudio</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/text/stable/index.html">torchtext</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/vision/stable/index.html">torchvision</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/elastic/">TorchElastic</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/serve/">TorchServe</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/xla">PyTorch on XLA Devices</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            Resources
+          </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/resources">Developer Resources</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/features">About</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/hub">Models (Beta)</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/#community-module">Community</a>
+            </li>
+
+            <li>
+              <a href="https://discuss.pytorch.org/">Forums</a>
+            </li>
+          </ul>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">Github</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- End Mobile Menu -->
+
+  <script type="text/javascript" src="../../../../_static/js/vendor/anchor.min.js"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function() {
+      mobileMenu.bind();
+      mobileTOC.bind();
+      pytorchAnchors.bind();
+      sideMenus.bind();
+      scrollToAnchor.bind();
+      highlightNavigation.bind();
+      mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Add class to links that have code blocks, since we cannot create links in code blocks
+      $("article.pytorch-article a span.pre").each(function(e) {
+        $(this).closest("a").addClass("has-code");
+      });
+    })
+  </script>
+</body>
+</html>

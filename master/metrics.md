@@ -1,5 +1,5 @@
 ---
 layout: docs_redirect
 title: PyTorch | Redirect
-redirect_url: "/elastic/0.2.1/metrics.html"
+redirect_url: "/elastic/0.2.2/metrics.html"
 ---

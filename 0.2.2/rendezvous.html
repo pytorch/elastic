@@ -1,0 +1,1203 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Rendezvous &mdash; PyTorch/Elastic master documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!-- <link rel="stylesheet" href="_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="_static/katex-math.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Expiration Timers" href="timer.html" />
+    <link rel="prev" title="Error Propagation" href="errors.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+  <!-- Preload the theme fonts -->
+
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+
+<!-- Preload the katex fonts -->
+
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Math-Italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size1-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size4-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size2-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size3-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Caligraphic-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.2/css/all.css" integrity="sha384-vSIIfh2YWi9wW0r9iZe7RJPrKwp6bG+s9QZMoITbCckVJqGCCRhc+ccxNcdpHuYu" crossorigin="anonymous">
+</head>
+
+<div class="container-fluid header-holder tutorials-header" id="header-holder">
+  <div class="container">
+    <div class="header-container">
+      <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-orange-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/audio/stable/index.html">
+                  <span class="dropdown-title">torchaudio</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/text/stable/index.html">
+                  <span class="dropdown-title">torchtext</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/vision/stable/index.html">
+                  <span class="dropdown-title">torchvision</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/elastic/">
+                  <span class="dropdown-title">TorchElastic</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
+                  <span class="dropdown-title">TorchServe</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/xla">
+                  <span class="dropdown-title">PyTorch on XLA Devices</span>
+                  <p></p>
+                </a>
+            </div>
+          </li>
+
+          <li>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
+                Resources
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class="dropdown-title">About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class="dropdown-title">Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class="dropdown-title">Developer Resources</span>
+                  <p>Find resources and get questions answered</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class="dropdown-title">Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub">
+                  <span class="dropdown-title">Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">Github</a>
+          </li>
+        </ul>
+      </div>
+
+      <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
+    </div>
+  </div>
+</div>
+
+<body class="pytorch-body">
+
+   
+
+    
+
+    <div class="table-of-contents-link-wrapper">
+      <span>Table of Contents</span>
+      <a href="#" class="toggle-table-of-contents" data-behavior="toggle-table-of-contents"></a>
+    </div>
+
+    <nav data-toggle="wy-nav-shift" class="pytorch-left-menu" id="pytorch-left-menu">
+      <div class="pytorch-side-scroll">
+        <div class="pytorch-menu pytorch-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          <div class="pytorch-left-menu-search">
+            
+
+            
+              
+              
+                <div class="version">
+                  v0.2.2
+                </div>
+              
+            
+
+            
+
+
+  
+
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search Docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+            
+          </div>
+
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="train_script.html">Train script</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="distributed.html">Elastic Launch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="agent.html">Elastic Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multiprocessing.html">Multiprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="errors.html">Error Propagation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Rendezvous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="timer.html">Expiration Timers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="events.html">Events</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Advanced</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="customization.html">Customization</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="kubernetes.html">TorchElastic Kubernetes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime.html">Cloud Provider Support (Deprecated)</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Experimental</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tsm_driver.html">Training Session Manager (TSM)</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <div class="pytorch-container">
+      <div class="pytorch-page-level-bar" id="pytorch-page-level-bar">
+        <div class="pytorch-breadcrumbs-wrapper">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="pytorch-breadcrumbs">
+    
+      <li>
+        <a href="index.html">
+          
+            Docs
+          
+        </a> &gt;
+      </li>
+
+        
+      <li>Rendezvous</li>
+    
+    
+      <li class="pytorch-breadcrumbs-aside">
+        
+            
+            <a href="_sources/rendezvous.rst.txt" rel="nofollow"><img src="_static/images/view-page-source-icon.svg"></a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+</div>
+        </div>
+
+        <div class="pytorch-shortcuts-wrapper" id="pytorch-shortcuts-wrapper">
+          Shortcuts
+        </div>
+      </div>
+
+      <section data-toggle="wy-nav-shift" id="pytorch-content-wrap" class="pytorch-content-wrap">
+        <div class="pytorch-content-left">
+
+        
+          
+          <div class="rst-content">
+          
+            <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
+             <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
+              
+  <div class="section" id="module-torchelastic.rendezvous">
+<span id="rendezvous"></span><span id="rendezvous-api"></span><h1>Rendezvous<a class="headerlink" href="#module-torchelastic.rendezvous" title="Permalink to this headline">¶</a></h1>
+<p>Rendezvous</p>
+<p>In the context of torchelastic we use the term <code class="docutils literal notranslate"><span class="pre">rendezvous</span></code> to refer to
+a particular functionality that combines a <strong>distributed
+synchronization</strong> primitive with <strong>peer discovery</strong>.</p>
+<p>It is used by torchelastic to gather participants of a training job
+(i.e. workers) such that they all agree on the same list of participants
+and everyone’s roles, as well as make a consistent collective decision
+on when training can begin/resume.</p>
+<p>Torchelastic Rendezvous provides the following critical functionalities:</p>
+<p><strong>Barrier</strong>:</p>
+<p>Workers performing rendezvous will all block until the rendezvous is
+considered complete - this happens when at least <code class="docutils literal notranslate"><span class="pre">min</span></code> total number of
+workers have joined the rendezvous barrier (for the same job). This also
+implies the barrier is not necessarily of fixed size.</p>
+<p>There’s an additional small waiting time after reaching <code class="docutils literal notranslate"><span class="pre">min</span></code> number
+of workers - this is used to ensure the rendezvous is not completed “too
+quickly” (which could potentially exclude additional workers attempting
+to join at approximately the same time).</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">max</span></code> number of workers is gathered at the barrier, the rendezvous
+is completed immediately.</p>
+<p>There’s also an overall timeout which causes the rendezvous to fail if
+<code class="docutils literal notranslate"><span class="pre">min</span></code> number of workers is never reached – this is meant to be a
+simple fail-safe to help release partially allocated job resources, in
+case there’s a problem with the resource manger, and is meant to be
+interpreted as non-retryable.</p>
+<p><strong>Exclusivity</strong>:</p>
+<p>A simple distributed barrier would not be sufficient, as we also need to
+ensure that only one group of workers exists at any given time (for a
+given job). In other words, new workers (i.e. joining late) should not
+be able to form a parallel independent group of workers for the same
+job.</p>
+<p>Torchelastic rendezvous ensures that if a group of workers has already
+completed a rendezvous (and hence might already be training), then
+additional “late” workers attempting to rendezvous will only announce
+themselves as waiting, and will have to wait until the (previously
+completed) existing rendezvous is destroyed first.</p>
+<p><strong>Consistency</strong>:</p>
+<p>When a rendezvous is completed, all its members will agree on the job
+membership and everyone’s role in it. This role is represented using an
+integer, called rank, that is between between 0 and world size.</p>
+<p>Note that ranks are <em>not stable</em>, in the sense that the same worker
+process can be assigned a different rank in the next (re-)rendezvous.</p>
+<p><strong>Fault-tolerance</strong>:</p>
+<p>Torchelastic rendezvous is designed to tolerate worker failures during
+the rendezvous process. Should a process crash (or lose network
+connectivity, etc), between joining the rendezvous and it being
+completed, then a re-rendezvous with remaining healthy workers will
+happen automatically.</p>
+<p>A worker can also fail <em>after</em> it has completed (or <em>has been
+observered</em> by other workers to have completed) the rendezvous - this
+scenario will be handled by the torchelastic <code class="docutils literal notranslate"><span class="pre">train_loop</span></code> instead
+(where it will also trigger a re-rendezvous).</p>
+<p><strong>Shared key-value store</strong>:</p>
+<p>When the rendezvous is completed, a shared key-value store is created
+and returned. This store implements a <code class="docutils literal notranslate"><span class="pre">torch.distributed.Store</span></code> API
+(see <a class="reference external" href="https://pytorch.org/docs/stable/distributed.html">distributed communication
+docs</a>).</p>
+<p>This store is only shared by the members of the completed rendezvous. It
+is intended to be used by torchelastic to exchange information necessary
+to initialize job control and data-planes.</p>
+<p><strong>Waiting workers and rendezvous closing</strong>:</p>
+<p>Torchelastic rendezvous handler object provides additional
+functionalities, which are technically not part of the rendezvous
+process:</p>
+<ol class="arabic simple">
+<li><p>Querying how many workers arrived late at the barrier, who
+can participate in <em>next</em> rendezvous.</p></li>
+<li><p>Setting the rendezvous <em>closed</em> to signal all workers not
+to participate in next rendezvous.</p></li>
+</ol>
+<p>Below is a state diagram describing how rendezvous works.</p>
+<img alt="_images/etcd_rdzv_diagram.png" src="_images/etcd_rdzv_diagram.png" />
+<div class="section" id="handler">
+<h2>Handler<a class="headerlink" href="#handler" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="torchelastic.rendezvous.RendezvousHandler">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.rendezvous.</code><code class="sig-name descname">RendezvousHandler</code><a class="reference internal" href="_modules/torchelastic/rendezvous/api.html#RendezvousHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.RendezvousHandler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main rendezvous interface.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>torchelastic users normally <strong>do not</strong> need to implement their
+own <code class="docutils literal notranslate"><span class="pre">RendezvousHandler</span></code>. An implementation based on
+<a class="reference external" href="https://etcd.io/">etcd</a> is already provided, and is recommended
+for most users, provided they can deploy it in their environment.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>torchelastic is currently considered experimental,
+so the APIs may change!</p>
+</div>
+<dl class="py method">
+<dt id="torchelastic.rendezvous.RendezvousHandler.get_backend">
+<em class="property">abstract </em><code class="sig-name descname">get_backend</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)">str</a><a class="reference internal" href="_modules/torchelastic/rendezvous/api.html#RendezvousHandler.get_backend"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.RendezvousHandler.get_backend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the string representation of the rendezvous handler.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.RendezvousHandler.get_run_id">
+<em class="property">abstract </em><code class="sig-name descname">get_run_id</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)">str</a><a class="reference internal" href="_modules/torchelastic/rendezvous/api.html#RendezvousHandler.get_run_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.RendezvousHandler.get_run_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the run_id of this rendezvous handler. The run_id is a user-defined
+id that uniquely identifies an instance of a distributed application.
+It typically maps to a job id and is used to allow workers to join the
+correct distributed application.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.RendezvousHandler.is_closed">
+<em class="property">abstract </em><code class="sig-name descname">is_closed</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)">bool</a><a class="reference internal" href="_modules/torchelastic/rendezvous/api.html#RendezvousHandler.is_closed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.RendezvousHandler.is_closed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks whether rendezvous for current job has been closed,
+which means all future attempts to re-rendezvous (within same job) will
+fail.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">is_closed</span></code> and <code class="docutils literal notranslate"><span class="pre">set_closed</span></code> have semantics of eventual
+propagation, and should not be used for synchronization.
+The intention here is that if at least one worker decides
+the job is finished, it will close the rendezvous, and
+other workers will soon observe this and stop
+training/rendezvous-ing as well.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.RendezvousHandler.next_rendezvous">
+<em class="property">abstract </em><code class="sig-name descname">next_rendezvous</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span><a class="reference external" href="https://pytorch.org/docs/stable/distributed.html#torch.distributed.Store" title="(in PyTorch vmaster (1.7.0a0+57bffc3 ))">torch.distributed.Store</a><span class="p">, </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)">int</a><span class="p">, </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)">int</a><span class="p">]</span><a class="reference internal" href="_modules/torchelastic/rendezvous/api.html#RendezvousHandler.next_rendezvous"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.RendezvousHandler.next_rendezvous" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main entry-point into the rendezvous barrier.
+Blocks until the rendezvous is complete (and the current
+process is included in the formed worker group), or a timeout occurs, or
+rendezvous was marked closed.</p>
+<p>Returns: a tuple of (<code class="docutils literal notranslate"><span class="pre">c10d</span> <span class="pre">Store</span></code>, <code class="docutils literal notranslate"><span class="pre">rank</span></code>, <code class="docutils literal notranslate"><span class="pre">world</span> <span class="pre">size</span></code>)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>RendezvousClosedException - if rendezvous for the current</strong> – job is closed.</p></li>
+<li><p><strong>RendezvousTimeoutException - on timeout</strong> – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.RendezvousHandler.num_nodes_waiting">
+<em class="property">abstract </em><code class="sig-name descname">num_nodes_waiting</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)">int</a><a class="reference internal" href="_modules/torchelastic/rendezvous/api.html#RendezvousHandler.num_nodes_waiting"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.RendezvousHandler.num_nodes_waiting" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns number of workers who <em>arrived late</em> at
+the rendezvous barrier, hence weren’t included in the current worker
+group.</p>
+<p>Callers should periodically call this method to check whether
+new members are waiting to join the job and if so admit them by
+calling <code class="docutils literal notranslate"><span class="pre">next_rendezvous()</span></code> (re-rendezvous).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.RendezvousHandler.set_closed">
+<em class="property">abstract </em><code class="sig-name descname">set_closed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/api.html#RendezvousHandler.set_closed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.RendezvousHandler.set_closed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to mark the rendezvous (for current job) as closed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.RendezvousHandler.shutdown">
+<code class="sig-name descname">shutdown</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)">bool</a><a class="reference internal" href="_modules/torchelastic/rendezvous/api.html#RendezvousHandler.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.RendezvousHandler.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes all resources that were open for rendezvous run.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">rdzv_handler</span> <span class="o">=</span> <span class="o">...</span>
+    <span class="k">try</span><span class="p">:</span>
+      <span class="n">rank</span><span class="p">,</span> <span class="n">world_size</span><span class="p">,</span> <span class="n">store</span> <span class="o">=</span> <span class="n">rdzv_handler</span><span class="o">.</span><span class="n">next_rendezvous</span><span class="p">()</span>
+    <span class="k">finally</span><span class="p">:</span>
+      <span class="n">rdzv_handler</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="exceptions">
+<h2>Exceptions<a class="headerlink" href="#exceptions" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="torchelastic.rendezvous.RendezvousClosedException">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.rendezvous.</code><code class="sig-name descname">RendezvousClosedException</code><a class="reference internal" href="_modules/torchelastic/rendezvous/api.html#RendezvousClosedException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.RendezvousClosedException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raised when a rendezvous is closed.</p>
+<p>This is used to signal completion to nodes that arrive late.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="torchelastic.rendezvous.RendezvousTimeoutException">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.rendezvous.</code><code class="sig-name descname">RendezvousTimeoutException</code><a class="reference internal" href="_modules/torchelastic/rendezvous/api.html#RendezvousTimeoutException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.RendezvousTimeoutException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raised to signal that a rendezvous did not succeed within the allocated
+time.</p>
+<p>This is a non-retryable type of failure.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="torchelastic.rendezvous.RendezvousNonRetryableError">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.rendezvous.</code><code class="sig-name descname">RendezvousNonRetryableError</code><a class="reference internal" href="_modules/torchelastic/rendezvous/api.html#RendezvousNonRetryableError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.RendezvousNonRetryableError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raised when a failure occured that should not be retried within the same
+worker process.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="implmentations">
+<h2>Implmentations<a class="headerlink" href="#implmentations" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="etcd-rendezvous">
+<h3>Etcd Rendezvous<a class="headerlink" href="#etcd-rendezvous" title="Permalink to this headline">¶</a></h3>
+<dl class="py class">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvousHandler">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.rendezvous.etcd_rendezvous.</code><code class="sig-name descname">EtcdRendezvousHandler</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rdzv_impl</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdRendezvousHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvousHandler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements a <a class="reference internal" href="#torchelastic.rendezvous.RendezvousHandler" title="torchelastic.rendezvous.RendezvousHandler"><code class="xref py py-class docutils literal notranslate"><span class="pre">torchelastic.rendezvous.RendezvousHandler</span></code></a>
+interface backed by
+<a class="reference internal" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous" title="torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous"><code class="xref py py-class docutils literal notranslate"><span class="pre">torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous</span></code></a>.</p>
+<p>Torchelastic uses a URL to configure the type of rendezvous to use and
+to pass implementation specific configurations to the rendezvous module.
+The basic etcd rendezvous configuration URL looks like the following</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>etcd://&lt;etcd_address&gt;:&lt;port&gt;/&lt;job_id&gt;?min_workers=&lt;min_workers&gt;&amp;max_workers=&lt;max_workers&gt; # noqa W605
+
+-- example --
+
+etcd://localhost:2379/1234?min_workers=1&amp;max_workers=3
+</pre></div>
+</div>
+<p>The URL above is interpreted as follows:</p>
+<ol class="arabic simple">
+<li><p>Use the rendezvous handler that is registered with the <code class="docutils literal notranslate"><span class="pre">etcd</span></code>
+scheme</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">etcd</span></code> endpoint to use is <code class="docutils literal notranslate"><span class="pre">localhost:2379</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">job_id</span> <span class="pre">==</span> <span class="pre">1234</span></code> is used as the prefix in etcd (this allows one to
+share a common etcd server for multiple jobs so long as the
+<code class="docutils literal notranslate"><span class="pre">job_ids</span></code> are guaranteed to be unique). Note that the job id can be
+any string (e.g. does not need to be a number) as long as it is
+unique.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">min_workers=1</span></code> and <code class="docutils literal notranslate"><span class="pre">max_workers=3</span></code> specifies a range for
+membership size - torchelastic starts running the job as long as the
+cluster size is greater than or equal to <code class="docutils literal notranslate"><span class="pre">min_workers</span></code> and admits
+up to <code class="docutils literal notranslate"><span class="pre">max_workers</span></code> into the cluster.</p></li>
+</ol>
+<p>Below are a full list of the parameters that can be passed to etcd
+rendezvous:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 63%" />
+<col style="width: 37%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>min_workers</p></td>
+<td><p>minimum number of
+workers for the
+rendezvous to be valid</p></td>
+</tr>
+<tr class="row-odd"><td><p>max_workers</p></td>
+<td><p>maximum number of
+workers to admit</p></td>
+</tr>
+<tr class="row-even"><td><p>timeout</p></td>
+<td><p>total timeout within
+which next_rendezvous is
+expected to succeed
+(default 600s)</p></td>
+</tr>
+<tr class="row-odd"><td><p>last_call_timeout</p></td>
+<td><p>additional wait amount
+(“last call”) after min
+number of workers has
+been reached (defaults
+to 30s)</p></td>
+</tr>
+<tr class="row-even"><td><p>etcd_prefix</p></td>
+<td><p>path prefix (from etcd
+root), inside which all
+etcd nodes will be
+created (defaults to
+<code class="docutils literal notranslate"><span class="pre">/torchelastic/p2p</span></code>)</p></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="py class">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.rendezvous.etcd_rendezvous.</code><code class="sig-name descname">EtcdRendezvous</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span></em>, <em class="sig-param"><span class="n">prefix</span></em>, <em class="sig-param"><span class="n">run_id</span></em>, <em class="sig-param"><span class="n">num_min_workers</span></em>, <em class="sig-param"><span class="n">num_max_workers</span></em>, <em class="sig-param"><span class="n">timeout</span></em>, <em class="sig-param"><span class="n">last_call_timeout</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdRendezvous"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous" title="Permalink to this definition">¶</a></dt>
+<dd><p>A rendezvous implementation that uses <a class="reference external" href="https://etcd.io/">etcd</a> as
+the backend store.</p>
+<dl class="py method">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.announce_self_waiting">
+<code class="sig-name descname">announce_self_waiting</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">expected_version</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdRendezvous.announce_self_waiting"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.announce_self_waiting" title="Permalink to this definition">¶</a></dt>
+<dd><p>Announce this worker is waiting (via num_workers_waiting counter) to join next
+rendezvous, but only if state and version match.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.confirm_membership">
+<code class="sig-name descname">confirm_membership</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">expected_version</span></em>, <em class="sig-param"><span class="n">this_rank</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdRendezvous.confirm_membership"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.confirm_membership" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper method for the confirm phase</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.confirm_phase">
+<code class="sig-name descname">confirm_phase</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">expected_version</span></em>, <em class="sig-param"><span class="n">this_rank</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdRendezvous.confirm_phase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.confirm_phase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Once the rendezvous state trainsitions from ‘joinable’ to ‘frozen’,
+we have every participant confirm their membership and setup per-member
+keep-alive TTL keys, and then wait for all other participants to confirm,
+which would then successfully conclude this rendezvous.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.handle_existing_rendezvous">
+<code class="sig-name descname">handle_existing_rendezvous</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">expected_version</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdRendezvous.handle_existing_rendezvous"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.handle_existing_rendezvous" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handle the case when there’s an existing (state ‘final) rendezvous already
+in place, and we have to announce ourselves waiting, and wait until
+the next rendezvous opportunity.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.handle_join_last_call">
+<code class="sig-name descname">handle_join_last_call</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">expected_version</span></em>, <em class="sig-param"><span class="n">deadline</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdRendezvous.handle_join_last_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.handle_join_last_call" title="Permalink to this definition">¶</a></dt>
+<dd><p>After we reach min number of workers, one particular worker takes on the
+responsibility of waiting an additional timeout before closing the join window.
+If the worker responsible for this fails, the rendezvous will be destroyed due
+to expiring TTL, and the other participants will re-rendezvous.</p>
+<p>Here we expect to see state &lt;joinable, expected_version&gt;
+Exit gracefully if either:</p>
+<ol class="arabic simple">
+<li><p>state becomes &lt;frozen, expected_version&gt;</p></li>
+<li><p>timeout happens (reaching deadline), in which case
+we try the tranisiton to &lt;frozen, expected_version&gt;</p></li>
+</ol>
+<p>Exit with exception otherwise.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.init_phase">
+<code class="sig-name descname">init_phase</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdRendezvous.init_phase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.init_phase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initially, the rendezvous state is expected to be one of:</p>
+<ol class="arabic simple">
+<li><p>empty (non-existent) - in this case we try to create a new one.</p></li>
+<li><p>joinable - we try to join it.</p></li>
+<li><p>final - we announce ourselves as waiting, and go into monitoring mode</p></li>
+</ol>
+<p>Any other state is considered transitional, and will be retried after
+a short delay.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">(rdzv_version,</span> <span class="pre">rank,</span> <span class="pre">world_size)</span></code></p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>RendezvousClosedException - current rendezvous was/is closed</strong> – </p></li>
+<li><p><strong>EtcdRendezvousRetryableFailure - observed some intermediate</strong> – state, which is best handled by retrying later</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.join_phase">
+<code class="sig-name descname">join_phase</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">expected_version</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdRendezvous.join_phase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.join_phase" title="Permalink to this definition">¶</a></dt>
+<dd><p>We observed a rendezvous state in ‘joinable’ state, and attempt to join this
+particular version, and then wait for all other peers to join.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.join_rendezvous">
+<code class="sig-name descname">join_rendezvous</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">expected_version</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdRendezvous.join_rendezvous"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.join_rendezvous" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper method for the join phase.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.rendezvous_barrier">
+<code class="sig-name descname">rendezvous_barrier</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdRendezvous.rendezvous_barrier"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.rendezvous_barrier" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main entry point for next rendezvous.
+This method is blocking until rendezvous succeeds or a timeout occurs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">(rdzv_version,</span> <span class="pre">rank,</span> <span class="pre">world_size)</span></code></p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>RendezvousTimeoutException - timeout waiting for rendezvous</strong> – </p></li>
+<li><p><strong>RendezvousNonRetryableError - other persistent errors that</strong> – render the rendezvous non-retryable</p></li>
+<li><p><strong>RendezvousClosedException - rendezvous is</strong><strong> or </strong><strong>was closed while</strong> – waiting</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.set_closed">
+<code class="sig-name descname">set_closed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdRendezvous.set_closed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.set_closed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mark rendezvous ‘closed’ for current run_id, which is used to signal other
+participants to not attempt to perform (re-)rendezvous. This is useful
+when one of the workers decides the job is complete.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.try_create_rendezvous">
+<code class="sig-name descname">try_create_rendezvous</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdRendezvous.try_create_rendezvous"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.try_create_rendezvous" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create new rendezvous state or raise an exception that indicates
+an unexpected state (e.g. already exists)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>RendezvousNonRetryableError - on unexpected state</strong> – </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.wait_for_final">
+<code class="sig-name descname">wait_for_final</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">expected_version</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdRendezvous.wait_for_final"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.wait_for_final" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper method for the confirm phase</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.wait_for_peers">
+<code class="sig-name descname">wait_for_peers</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">expected_version</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdRendezvous.wait_for_peers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.wait_for_peers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper method for the join phase.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.wait_for_rendezvous_to_free">
+<code class="sig-name descname">wait_for_rendezvous_to_free</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">expected_version</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdRendezvous.wait_for_rendezvous_to_free"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdRendezvous.wait_for_rendezvous_to_free" title="Permalink to this definition">¶</a></dt>
+<dd><p>When there’s an existing valid rendezvous in state ‘final’, we have to
+wait until the next opportunity to join.</p>
+<p>Such opportunity may come from:</p>
+<ol class="arabic simple">
+<li><p>rendezvous state changed by someone else, in which case we unblock and retry.</p></li>
+<li><p>rendezvous becomes invalid because at least one member failed to renew their
+leased keep_alive node. We detect this, and destroy the rendezvous.</p></li>
+</ol>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdStore">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.rendezvous.etcd_rendezvous.</code><code class="sig-name descname">EtcdStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">etcd_client</span></em>, <em class="sig-param"><span class="n">etcd_store_prefix</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.timedelta" title="(in Python v3.9)">datetime.timedelta</a><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdStore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdStore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements a c10 Store interface by piggybacking on the rendezvous etcd
+instance. This is the store object returned by <code class="docutils literal notranslate"><span class="pre">EtcdRendezvous</span></code></p>
+<dl class="py method">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdStore.add">
+<code class="sig-name descname">add</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">num</span><span class="p">:</span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)">int</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)">int</a><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdStore.add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdStore.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Atomically increment a value by an integer amount. The integer is
+represented as a string using base 10. If key is not present,
+a default value of <code class="docutils literal notranslate"><span class="pre">0</span></code> will be assumed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the new (incremented) value</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdStore.check">
+<code class="sig-name descname">check</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">keys</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)">bool</a><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdStore.check"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdStore.check" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if all of the keys are immediately present (without waiting).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdStore.get">
+<code class="sig-name descname">get</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.9)">bytes</a><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdStore.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdStore.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a value by key, possibly doing a blocking wait.</p>
+<p>If key is not immediately present, will do a blocking wait
+for at most <code class="docutils literal notranslate"><span class="pre">timeout</span></code> duration or until the key is published.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>value <code class="docutils literal notranslate"><span class="pre">(bytes)</span></code></p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>LookupError - If key still not published after timeout</strong> – </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdStore.set">
+<code class="sig-name descname">set</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdStore.set"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdStore.set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a key/value pair into <code class="docutils literal notranslate"><span class="pre">EtcdStore</span></code>.
+Both key and value may be either Python <code class="docutils literal notranslate"><span class="pre">str</span></code> or <code class="docutils literal notranslate"><span class="pre">bytes</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdStore.set_timeout">
+<code class="sig-name descname">set_timeout</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timeout</span><span class="p">:</span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.timedelta" title="(in Python v3.9)">datetime.timedelta</a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdStore.set_timeout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdStore.set_timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change the timeout used for all future operations.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="torchelastic.rendezvous.etcd_rendezvous.EtcdStore.wait">
+<code class="sig-name descname">wait</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">keys</span></em>, <em class="sig-param"><span class="n">override_timeout</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.timedelta" title="(in Python v3.9)">datetime.timedelta</a><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_rendezvous.html#EtcdStore.wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_rendezvous.EtcdStore.wait" title="Permalink to this definition">¶</a></dt>
+<dd><p>Waits until all of the keys are published, or until timeout.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>LookupError - if timeout occurs</strong> – </p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="etcd-server">
+<h3>Etcd Server<a class="headerlink" href="#etcd-server" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">EtcdServer</span></code> is a convenience class that makes it easy for you to
+start and stop an etcd server on a subprocess. This is useful for testing
+or single-node (multi-worker) deployments where manually setting up an
+etcd server on the side is cumbersome.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>For production and multi-node deployments please consider
+properly deploying a highly available etcd server as this is
+the single point of failure for your distributed jobs.</p>
+</div>
+<dl class="py class">
+<dt id="torchelastic.rendezvous.etcd_server.EtcdServer">
+<em class="property">class </em><code class="sig-prename descclassname">torchelastic.rendezvous.etcd_server.</code><code class="sig-name descname">EtcdServer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data_dir</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)">str</a><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchelastic/rendezvous/etcd_server.html#EtcdServer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchelastic.rendezvous.etcd_server.EtcdServer" title="Permalink to this definition">¶</a></dt>
+<dd><div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>tested on etcd server v3.4.3</p>
+</div>
+<p>Starts and stops a local standalone etcd server on a random free
+port. Useful for single node, multi-worker launches or testing,
+where a sidecar etcd server is more convenient than having to
+separately setup an etcd server.</p>
+<p>This class registers a termination handler to shutdown the etcd
+subprocess on exit. This termination handler is NOT a substitute for
+calling the <code class="docutils literal notranslate"><span class="pre">stop()</span></code> method.</p>
+<p>The following fallback mechanism is used to find the etcd binary:</p>
+<ol class="arabic simple">
+<li><p>Uses env var TORCHELASTIC_ETCD_BINARY_PATH</p></li>
+<li><p>Uses <code class="docutils literal notranslate"><span class="pre">&lt;this</span> <span class="pre">file</span> <span class="pre">root&gt;/bin/etcd</span></code> if one exists</p></li>
+<li><p>Uses <code class="docutils literal notranslate"><span class="pre">etcd</span></code> from <code class="docutils literal notranslate"><span class="pre">PATH</span></code></p></li>
+</ol>
+<p>Usage</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">server</span> <span class="o">=</span> <span class="n">EtcdServer</span><span class="p">(</span><span class="s2">&quot;/usr/bin/etcd&quot;</span><span class="p">,</span> <span class="mi">2379</span><span class="p">,</span> <span class="s2">&quot;/tmp/default.etcd&quot;</span><span class="p">)</span>
+<span class="n">server</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="n">client</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">get_client</span><span class="p">()</span>
+<span class="c1"># use client</span>
+<span class="n">server</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>etcd_binary_path</strong> – path of etcd server binary (see above for fallback path)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+             </article>
+             
+            </div>
+            <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="timer.html" class="btn btn-neutral float-right" title="Expiration Timers" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+      
+      
+        <a href="errors.html" class="btn btn-neutral" title="Error Propagation" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+      
+    </div>
+  
+
+  
+
+    <hr>
+
+  
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, PyTorch Elastic Contributors.
+
+    </p>
+  </div>
+    
+      <div>
+        Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+      </div>
+     
+
+</footer>
+
+          </div>
+        </div>
+
+        <div class="pytorch-content-right" id="pytorch-content-right">
+          <div class="pytorch-right-menu" id="pytorch-right-menu">
+            <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
+              <ul>
+<li><a class="reference internal" href="#">Rendezvous</a><ul>
+<li><a class="reference internal" href="#handler">Handler</a></li>
+<li><a class="reference internal" href="#exceptions">Exceptions</a></li>
+<li><a class="reference internal" href="#implmentations">Implmentations</a><ul>
+<li><a class="reference internal" href="#etcd-rendezvous">Etcd Rendezvous</a></li>
+<li><a class="reference internal" href="#etcd-server">Etcd Server</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  
+
+
+  
+
+     
+       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+         <script src="_static/jquery.js"></script>
+         <script src="_static/underscore.js"></script>
+         <script src="_static/doctools.js"></script>
+         <script src="_static/language_data.js"></script>
+         <script src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js"></script>
+         <script src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js"></script>
+         <script src="_static/katex_autorenderer.js"></script>
+     
+
+  
+
+  <script type="text/javascript" src="_static/js/vendor/popper.min.js"></script>
+  <script type="text/javascript" src="_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+  <!-- Begin Footer -->
+
+  <div class="container-fluid docs-tutorials-resources" id="docs-tutorials-resources">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 text-center">
+          <h2>Docs</h2>
+          <p>Access comprehensive developer documentation for PyTorch</p>
+          <a class="with-right-arrow" href="https://pytorch.org/docs/stable/index.html">View Docs</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Tutorials</h2>
+          <p>Get in-depth tutorials for beginners and advanced developers</p>
+          <a class="with-right-arrow" href="https://pytorch.org/tutorials">View Tutorials</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Resources</h2>
+          <p>Find development resources and get your questions answered</p>
+          <a class="with-right-arrow" href="https://pytorch.org/resources">View Resources</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-logo-wrapper">
+        <a href="https://pytorch.org/" class="footer-logo"></a>
+      </div>
+
+      <div class="footer-links-wrapper">
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/">PyTorch</a></li>
+            <li><a href="https://pytorch.org/get-started">Get Started</a></li>
+            <li><a href="https://pytorch.org/features">Features</a></li>
+            <li><a href="https://pytorch.org/ecosystem">Ecosystem</a></li>
+            <li><a href="https://pytorch.org/blog/">Blog</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/blob/master/CONTRIBUTING.md">Contributing</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/resources">Resources</a></li>
+            <li><a href="https://pytorch.org/tutorials">Tutorials</a></li>
+            <li><a href="https://pytorch.org/docs/stable/index.html">Docs</a></li>
+            <li><a href="https://discuss.pytorch.org" target="_blank">Discuss</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/issues" target="_blank">Github Issues</a></li>
+            <li><a href="https://pytorch.org/assets/brand-guidelines/PyTorch-Brand-Guidelines.pdf" target="_blank">Brand Guidelines</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col follow-us-col">
+          <ul>
+            <li class="list-title">Stay Connected</li>
+            <li>
+              <div id="mc_embed_signup">
+                <form
+                  action="https://twitter.us14.list-manage.com/subscribe/post?u=75419c71fe0a935e53dfa4a3f&id=91d0dccd39"
+                  method="post"
+                  id="mc-embedded-subscribe-form"
+                  name="mc-embedded-subscribe-form"
+                  class="email-subscribe-form validate"
+                  target="_blank"
+                  novalidate>
+                  <div id="mc_embed_signup_scroll" class="email-subscribe-form-fields-wrapper">
+                    <div class="mc-field-group">
+                      <label for="mce-EMAIL" style="display:none;">Email Address</label>
+                      <input type="email" value="" name="EMAIL" class="required email" id="mce-EMAIL" placeholder="Email Address">
+                    </div>
+
+                    <div id="mce-responses" class="clear">
+                      <div class="response" id="mce-error-response" style="display:none"></div>
+                      <div class="response" id="mce-success-response" style="display:none"></div>
+                    </div>    <!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
+
+                    <div style="position: absolute; left: -5000px;" aria-hidden="true"><input type="text" name="b_75419c71fe0a935e53dfa4a3f_91d0dccd39" tabindex="-1" value=""></div>
+
+                    <div class="clear">
+                      <input type="submit" value="" name="subscribe" id="mc-embedded-subscribe" class="button email-subscribe-button">
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+            </li>
+          </ul>
+
+          <div class="footer-social-icons">
+            <a href="https://www.facebook.com/pytorch" target="_blank" class="facebook"></a>
+            <a href="https://twitter.com/pytorch" target="_blank" class="twitter"></a>
+            <a href="https://www.youtube.com/pytorch" target="_blank" class="youtube"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <div class="cookie-banner-wrapper">
+  <div class="container">
+    <p class="gdpr-notice">To analyze traffic and optimize your experience, we serve cookies on this site. By clicking or navigating, you agree to allow our usage of cookies. As the current maintainers of this site, Facebook’s Cookies Policy applies. Learn more, including about available controls: <a href="https://www.facebook.com/policies/cookies/">Cookies Policy</a>.</p>
+    <img class="close-button" src="_static/images/pytorch-x.svg">
+  </div>
+</div>
+
+  <!-- End Footer -->
+
+  <!-- Begin Mobile Menu -->
+
+  <div class="mobile-main-menu">
+    <div class="container-fluid">
+      <div class="container">
+        <div class="mobile-main-menu-header-container">
+          <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+          <a class="main-menu-close-button" href="#" data-behavior="close-mobile-menu"></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-main-menu-links-container">
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/hub">PyTorch Hub</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li class="resources-mobile-menu-title">
+            Docs
+          </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/audio/stable/index.html">torchaudio</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/text/stable/index.html">torchtext</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/vision/stable/index.html">torchvision</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/elastic/">TorchElastic</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/serve/">TorchServe</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/xla">PyTorch on XLA Devices</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            Resources
+          </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/resources">Developer Resources</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/features">About</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/hub">Models (Beta)</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/#community-module">Community</a>
+            </li>
+
+            <li>
+              <a href="https://discuss.pytorch.org/">Forums</a>
+            </li>
+          </ul>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">Github</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- End Mobile Menu -->
+
+  <script type="text/javascript" src="_static/js/vendor/anchor.min.js"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function() {
+      mobileMenu.bind();
+      mobileTOC.bind();
+      pytorchAnchors.bind();
+      sideMenus.bind();
+      scrollToAnchor.bind();
+      highlightNavigation.bind();
+      mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Add class to links that have code blocks, since we cannot create links in code blocks
+      $("article.pytorch-article a span.pre").each(function(e) {
+        $(this).closest("a").addClass("has-code");
+      });
+    })
+  </script>
+</body>
+</html>

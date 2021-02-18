@@ -1,0 +1,1181 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>torchelastic.multiprocessing.api &mdash; PyTorch/Elastic master documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!-- <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/katex-math.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+  <!-- Preload the theme fonts -->
+
+<link rel="preload" href="../../../_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../../_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+
+<!-- Preload the katex fonts -->
+
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Math-Italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size1-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size4-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size2-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size3-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Caligraphic-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.2/css/all.css" integrity="sha384-vSIIfh2YWi9wW0r9iZe7RJPrKwp6bG+s9QZMoITbCckVJqGCCRhc+ccxNcdpHuYu" crossorigin="anonymous">
+</head>
+
+<div class="container-fluid header-holder tutorials-header" id="header-holder">
+  <div class="container">
+    <div class="header-container">
+      <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-orange-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/audio/stable/index.html">
+                  <span class="dropdown-title">torchaudio</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/text/stable/index.html">
+                  <span class="dropdown-title">torchtext</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/vision/stable/index.html">
+                  <span class="dropdown-title">torchvision</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/elastic/">
+                  <span class="dropdown-title">TorchElastic</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
+                  <span class="dropdown-title">TorchServe</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/xla">
+                  <span class="dropdown-title">PyTorch on XLA Devices</span>
+                  <p></p>
+                </a>
+            </div>
+          </li>
+
+          <li>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
+                Resources
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class="dropdown-title">About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class="dropdown-title">Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class="dropdown-title">Developer Resources</span>
+                  <p>Find resources and get questions answered</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class="dropdown-title">Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub">
+                  <span class="dropdown-title">Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">Github</a>
+          </li>
+        </ul>
+      </div>
+
+      <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
+    </div>
+  </div>
+</div>
+
+<body class="pytorch-body">
+
+   
+
+    
+
+    <div class="table-of-contents-link-wrapper">
+      <span>Table of Contents</span>
+      <a href="#" class="toggle-table-of-contents" data-behavior="toggle-table-of-contents"></a>
+    </div>
+
+    <nav data-toggle="wy-nav-shift" class="pytorch-left-menu" id="pytorch-left-menu">
+      <div class="pytorch-side-scroll">
+        <div class="pytorch-menu pytorch-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          <div class="pytorch-left-menu-search">
+            
+
+            
+              
+              
+                <div class="version">
+                  v0.2.2
+                </div>
+              
+            
+
+            
+
+
+  
+
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search Docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+            
+          </div>
+
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../train_script.html">Train script</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../distributed.html">Elastic Launch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../agent.html">Elastic Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../multiprocessing.html">Multiprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../errors.html">Error Propagation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rendezvous.html">Rendezvous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../timer.html">Expiration Timers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../events.html">Events</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Advanced</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../customization.html">Customization</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../kubernetes.html">TorchElastic Kubernetes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../runtime.html">Cloud Provider Support (Deprecated)</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Experimental</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tsm_driver.html">Training Session Manager (TSM)</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <div class="pytorch-container">
+      <div class="pytorch-page-level-bar" id="pytorch-page-level-bar">
+        <div class="pytorch-breadcrumbs-wrapper">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="pytorch-breadcrumbs">
+    
+      <li>
+        <a href="../../../index.html">
+          
+            Docs
+          
+        </a> &gt;
+      </li>
+
+        
+          <li><a href="../../index.html">Module code</a> &gt;</li>
+        
+          <li><a href="../multiprocessing.html">torchelastic.multiprocessing</a> &gt;</li>
+        
+      <li>torchelastic.multiprocessing.api</li>
+    
+    
+      <li class="pytorch-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+</div>
+        </div>
+
+        <div class="pytorch-shortcuts-wrapper" id="pytorch-shortcuts-wrapper">
+          Shortcuts
+        </div>
+      </div>
+
+      <section data-toggle="wy-nav-shift" id="pytorch-content-wrap" class="pytorch-content-wrap">
+        <div class="pytorch-content-left">
+
+        
+          
+          <div class="rst-content">
+          
+            <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
+             <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
+              
+  <h1>Source code for torchelastic.multiprocessing.api</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+
+<span class="c1"># Copyright (c) Facebook, Inc. and its affiliates.</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># This source code is licensed under the BSD-style license found in the</span>
+<span class="c1"># LICENSE file in the root directory of this source tree.</span>
+
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">signal</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">nullcontext</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">IntFlag</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">torch.multiprocessing</span> <span class="k">as</span> <span class="nn">mp</span>
+<span class="kn">from</span> <span class="nn">torchelastic.multiprocessing.errors</span> <span class="kn">import</span> <span class="n">ProcessFailure</span><span class="p">,</span> <span class="n">record</span>
+<span class="kn">from</span> <span class="nn">torchelastic.multiprocessing.redirects</span> <span class="kn">import</span> <span class="n">redirect_stderr</span><span class="p">,</span> <span class="n">redirect_stdout</span>
+<span class="kn">from</span> <span class="nn">torchelastic.multiprocessing.tail_log</span> <span class="kn">import</span> <span class="n">TailLog</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_validate_full_rank</span><span class="p">(</span><span class="n">d</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">nprocs</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">what</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="n">actual_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">expected_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">nprocs</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">actual_keys</span> <span class="o">!=</span> <span class="n">expected_keys</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">what</span><span class="si">}</span><span class="s2">, local rank mapping mismatch,&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot; expected: </span><span class="si">{</span><span class="n">expected_keys</span><span class="si">}</span><span class="s2">, actual: </span><span class="si">{</span><span class="n">actual_keys</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+
+<span class="n">_MAPPING_REGEX</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;^(\d:[0123],)*(\d:[0123])$&quot;</span>
+<span class="n">_VALUE_REGEX</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;^[0123]$&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">Std</span><span class="p">(</span><span class="n">IntFlag</span><span class="p">):</span>
+    <span class="n">NONE</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">OUT</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">ERR</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">ALL</span> <span class="o">=</span> <span class="n">OUT</span> <span class="o">|</span> <span class="n">ERR</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_str</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">vm</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="s2">&quot;Std&quot;</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;Std&quot;</span><span class="p">]]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Example:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">         from_str(&quot;0&quot;) -&gt; Std.NONE</span>
+<span class="sd">         from_str(&quot;1&quot;) -&gt; Std.OUT</span>
+<span class="sd">         from_str(&quot;0:3,1:0,2:1,3:2&quot;) -&gt; {0: Std.ALL, 1: Std.NONE, 2: Std.OUT, 3: Std.ERR}</span>
+
+<span class="sd">        Any other input raises an exception</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">to_std</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">Std</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="n">v</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">s</span>
+            <span class="c1"># return None -&gt; should NEVER reach here since we regex check input</span>
+
+        <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">_VALUE_REGEX</span><span class="p">,</span> <span class="n">vm</span><span class="p">):</span>  <span class="c1"># vm is a number (e.g. 0)</span>
+            <span class="k">return</span> <span class="n">to_std</span><span class="p">(</span><span class="n">vm</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">_MAPPING_REGEX</span><span class="p">,</span> <span class="n">vm</span><span class="p">):</span>  <span class="c1"># vm is a mapping (e.g. 0:1,1:2)</span>
+            <span class="n">d</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Std</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">vm</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">):</span>
+                <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+                <span class="n">d</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">to_std</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">d</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">vm</span><span class="si">}</span><span class="s2"> does not match: &lt;</span><span class="si">{</span><span class="n">_VALUE_REGEX</span><span class="si">}</span><span class="s2">&gt; or &lt;</span><span class="si">{</span><span class="n">_MAPPING_REGEX</span><span class="si">}</span><span class="s2">&gt;&quot;</span>
+            <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">to_map</span><span class="p">(</span>
+    <span class="n">val_or_map</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Std</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Std</span><span class="p">]],</span> <span class="n">local_world_size</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Std</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Certain APIs take redirect settings either as a single value (e.g. apply to all</span>
+<span class="sd">    local ranks) or as an explicit user-provided mapping. This method is a convenience</span>
+<span class="sd">    method that converts a value or mapping into a mapping.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">     to_map(Std.OUT, local_world_size=2) # returns: {0: Std.OUT, 1: Std.OUT}</span>
+<span class="sd">     to_map({1: Std.OUT}, local_world_size=2) # returns: {0: Std.NONE, 1: Std.OUT}</span>
+<span class="sd">     to_map({0: Std.OUT, 1: Std.OUT}, local_world_size=2) # returns: {0: Std.OUT, 1: Std.OUT}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val_or_map</span><span class="p">,</span> <span class="n">Std</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="n">val_or_map</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">local_world_size</span><span class="p">)}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">map</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">local_world_size</span><span class="p">):</span>
+            <span class="nb">map</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">val_or_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">Std</span><span class="o">.</span><span class="n">NONE</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">map</span>
+
+
+<div class="viewcode-block" id="RunProcsResult"><a class="viewcode-back" href="../../../multiprocessing.html#torchelastic.multiprocessing.api.RunProcsResult">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">RunProcsResult</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Results of a completed run of processes started with ``start_processes()``.</span>
+<span class="sd">    Returned by ``PContext``.</span>
+
+<span class="sd">    Note the following:</span>
+
+<span class="sd">    1. All fields are mapped by local rank</span>
+<span class="sd">    2. ``return_values`` - only populated for functions (not the binaries).</span>
+<span class="sd">    3. ``stdouts`` - path to stdout.log (empty string if no redirect)</span>
+<span class="sd">    4. ``stderrs`` - path to stderr.log (empty string if no redirect)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">return_values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">failures</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">ProcessFailure</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">stdouts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">stderrs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">is_failed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">failures</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="PContext"><a class="viewcode-back" href="../../../multiprocessing.html#torchelastic.multiprocessing.api.PContext">[docs]</a><span class="k">class</span> <span class="nc">PContext</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The base class that standardizes operations over a set of processes</span>
+<span class="sd">    that are launched via different mechanisms. The name ``PContext``</span>
+<span class="sd">    is intentional to disambiguate with ``torch.multiprocessing.ProcessContext``.</span>
+
+<span class="sd">    .. warning:: stdouts and stderrs should ALWAYS be a superset of</span>
+<span class="sd">                 tee_stdouts and tee_stderrs (respectively) this is b/c</span>
+<span class="sd">                 tee is implemented as a redirect + tail -f &lt;stdout/stderr.log&gt;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">entrypoint</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">args</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">],</span>
+        <span class="n">envs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span>
+        <span class="n">stdouts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">stderrs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">tee_stdouts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">tee_stderrs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">error_files</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="c1"># validate that all mappings have the same number of keys and</span>
+        <span class="c1"># all local ranks are accounted for</span>
+        <span class="n">nprocs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="n">_validate_full_rank</span><span class="p">(</span><span class="n">stdouts</span><span class="p">,</span> <span class="n">nprocs</span><span class="p">,</span> <span class="s2">&quot;stdouts&quot;</span><span class="p">)</span>
+        <span class="n">_validate_full_rank</span><span class="p">(</span><span class="n">stderrs</span><span class="p">,</span> <span class="n">nprocs</span><span class="p">,</span> <span class="s2">&quot;stderrs&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">entrypoint</span> <span class="o">=</span> <span class="n">entrypoint</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">envs</span> <span class="o">=</span> <span class="n">envs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stdouts</span> <span class="o">=</span> <span class="n">stdouts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stderrs</span> <span class="o">=</span> <span class="n">stderrs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">error_files</span> <span class="o">=</span> <span class="n">error_files</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nprocs</span> <span class="o">=</span> <span class="n">nprocs</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stdout_tail</span> <span class="o">=</span> <span class="n">TailLog</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">tee_stdouts</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stderr_tail</span> <span class="o">=</span> <span class="n">TailLog</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">tee_stderrs</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Start processes using parameters defined in the constructor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stdout_tail</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stderr_tail</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Start processes using strategy defined in a particular context.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_poll</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RunProcsResult</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Polls the run status of the processes running under this context.</span>
+<span class="sd">        This method follows an &quot;all-or-nothing&quot; policy and returns</span>
+<span class="sd">        a ``RunProcessResults`` object if either all processes complete</span>
+<span class="sd">        successfully or any process fails. Returns ``None`` if</span>
+<span class="sd">        all processes are still running.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">wait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">period</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RunProcsResult</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Waits for the specified ``timeout`` seconds, polling every ``period`` seconds</span>
+<span class="sd">        for the processes to be done. Returns ``None`` if the processes are still running</span>
+<span class="sd">        on timeout expiry. Negative timeout values are interpreted as &quot;wait-forever&quot;.</span>
+<span class="sd">        A timeout value of zero simply queries the status of the processes (e.g. equivalent</span>
+<span class="sd">        to a poll).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">timeout</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poll</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">timeout</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">timeout</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span>
+
+        <span class="n">expiry</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">timeout</span>
+        <span class="k">while</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">expiry</span><span class="p">:</span>
+            <span class="n">pr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_poll</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">pr</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">pr</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">period</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">pids</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns pids of processes mapped by their respective local_ranks</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Terminates all processes managed by this context and cleans up any</span>
+<span class="sd">        meta resources (e.g. redirect, error_file files).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_close</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stdout_tail</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_stdout_tail</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stderr_tail</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_stderr_tail</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span></div>
+
+
+<span class="k">def</span> <span class="nf">_wrap</span><span class="p">(</span>
+    <span class="n">local_rank</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">args</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">],</span>
+    <span class="n">envs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span>
+    <span class="n">stdout_redirects</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>  <span class="c1"># redirect file for stdout (to console if None)</span>
+    <span class="n">stderr_redirects</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>  <span class="c1"># redirect file for stderr (to console if None)</span>
+    <span class="n">ret_vals</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">mp</span><span class="o">.</span><span class="n">SimpleQueue</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="c1"># get the per-rank params up front so we fail fast if no mapping is found</span>
+    <span class="n">args_</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="n">local_rank</span><span class="p">]</span>
+    <span class="n">env_</span> <span class="o">=</span> <span class="n">envs</span><span class="p">[</span><span class="n">local_rank</span><span class="p">]</span>
+    <span class="n">ret_val_</span> <span class="o">=</span> <span class="n">ret_vals</span><span class="p">[</span><span class="n">local_rank</span><span class="p">]</span>
+
+    <span class="n">stdout_rd</span> <span class="o">=</span> <span class="n">stdout_redirects</span><span class="p">[</span><span class="n">local_rank</span><span class="p">]</span>
+    <span class="n">stderr_rd</span> <span class="o">=</span> <span class="n">stderr_redirects</span><span class="p">[</span><span class="n">local_rank</span><span class="p">]</span>
+
+    <span class="n">stdout_cm</span> <span class="o">=</span> <span class="n">redirect_stdout</span><span class="p">(</span><span class="n">stdout_rd</span><span class="p">)</span> <span class="k">if</span> <span class="n">stdout_rd</span> <span class="k">else</span> <span class="n">nullcontext</span><span class="p">()</span>
+    <span class="n">stderr_cm</span> <span class="o">=</span> <span class="n">redirect_stderr</span><span class="p">(</span><span class="n">stderr_rd</span><span class="p">)</span> <span class="k">if</span> <span class="n">stderr_rd</span> <span class="k">else</span> <span class="n">nullcontext</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">env_</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+
+    <span class="k">with</span> <span class="n">stdout_cm</span><span class="p">,</span> <span class="n">stderr_cm</span><span class="p">:</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">record</span><span class="p">(</span><span class="n">fn</span><span class="p">)(</span><span class="o">*</span><span class="n">args_</span><span class="p">)</span>
+    <span class="n">ret_val_</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="MultiprocessContext"><a class="viewcode-back" href="../../../multiprocessing.html#torchelastic.multiprocessing.api.MultiprocessContext">[docs]</a><span class="k">class</span> <span class="nc">MultiprocessContext</span><span class="p">(</span><span class="n">PContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ``PContext`` holding worker processes invoked as a function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">entrypoint</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+        <span class="n">args</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">],</span>
+        <span class="n">envs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span>
+        <span class="n">stdouts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">stderrs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">tee_stdouts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">tee_stderrs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">error_files</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">start_method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span>
+            <span class="n">entrypoint</span><span class="p">,</span>
+            <span class="n">args</span><span class="p">,</span>
+            <span class="n">envs</span><span class="p">,</span>
+            <span class="n">stdouts</span><span class="p">,</span>
+            <span class="n">stderrs</span><span class="p">,</span>
+            <span class="n">tee_stdouts</span><span class="p">,</span>
+            <span class="n">tee_stderrs</span><span class="p">,</span>
+            <span class="n">error_files</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_method</span> <span class="o">=</span> <span class="n">start_method</span>
+        <span class="c1"># each ret_val queue will always contain a single element.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ret_vals</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">local_rank</span><span class="p">:</span> <span class="n">mp</span><span class="o">.</span><span class="n">get_context</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start_method</span><span class="p">)</span><span class="o">.</span><span class="n">SimpleQueue</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">local_rank</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nprocs</span><span class="p">)</span>
+        <span class="p">}</span>
+
+        <span class="c1"># see comments in ``join()`` for what this is</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_return_values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># pyre-fixme[8]: The attribute is defined in _start method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pc</span><span class="p">:</span> <span class="n">mp</span><span class="o">.</span><span class="n">ProcessContext</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;The process context already initialized. Most likely the start method got called twice.&quot;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pc</span><span class="p">:</span> <span class="n">mp</span><span class="o">.</span><span class="n">ProcessContext</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">start_processes</span><span class="p">(</span>
+            <span class="n">fn</span><span class="o">=</span><span class="n">_wrap</span><span class="p">,</span>
+            <span class="n">args</span><span class="o">=</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">entrypoint</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">envs</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stdouts</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stderrs</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_ret_vals</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">nprocs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nprocs</span><span class="p">,</span>
+            <span class="n">join</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">daemon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">start_method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">start_method</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_poll</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RunProcsResult</span><span class="p">]:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># torch.mp.ProcessContext returns True if all the workers have</span>
+            <span class="c1"># successfully finished, False if some/all are still running</span>
+            <span class="c1"># and throws an Exception if some/all of them failed</span>
+            <span class="c1"># timeout &lt; 0 checks worker status and return immediately</span>
+            <span class="n">done</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pc</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="c1"># IMPORTANT: we use multiprocessing.Queue to carry worker return values</span>
+            <span class="c1"># back to the parent, the worker process will wait before terminating</span>
+            <span class="c1"># until all the buffered items are fed by the feeder thread to the underlying</span>
+            <span class="c1"># pipe. Hence to prevent deadlocks on large return values,</span>
+            <span class="c1"># we opportunistically try queue.get on each join call</span>
+            <span class="c1"># See: https://docs.python.org/2/library/multiprocessing.html#all-platforms</span>
+            <span class="k">for</span> <span class="n">local_rank</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nprocs</span><span class="p">):</span>
+                <span class="n">return_queue</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ret_vals</span><span class="p">[</span><span class="n">local_rank</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">return_queue</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
+                    <span class="c1"># save the return values temporarily into a member var</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_return_values</span><span class="p">[</span><span class="n">local_rank</span><span class="p">]</span> <span class="o">=</span> <span class="n">return_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">done</span><span class="p">:</span>
+                <span class="c1"># we should ALWAYS have ALL the return values when all the processes are done</span>
+                <span class="n">_validate_full_rank</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_return_values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nprocs</span><span class="p">,</span> <span class="s2">&quot;return_value queue&quot;</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="k">return</span> <span class="n">RunProcsResult</span><span class="p">(</span>
+                    <span class="n">return_values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_return_values</span><span class="p">,</span>
+                    <span class="n">stdouts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stdouts</span><span class="p">,</span>
+                    <span class="n">stderrs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stderrs</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">except</span> <span class="p">(</span><span class="n">mp</span><span class="o">.</span><span class="n">ProcessRaisedException</span><span class="p">,</span> <span class="n">mp</span><span class="o">.</span><span class="n">ProcessExitedException</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">failed_local_rank</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">error_index</span>
+            <span class="c1"># pyre-ignore entrypoint fn has a __qualname__.</span>
+            <span class="n">fn_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entrypoint</span><span class="o">.</span><span class="vm">__qualname__</span>
+            <span class="n">failed_proc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pc</span><span class="o">.</span><span class="n">processes</span><span class="p">[</span><span class="n">failed_local_rank</span><span class="p">]</span>
+            <span class="n">error_filepath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_files</span><span class="p">[</span><span class="n">failed_local_rank</span><span class="p">]</span>
+
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;failed (exitcode: </span><span class="si">{</span><span class="n">failed_proc</span><span class="o">.</span><span class="n">exitcode</span><span class="si">}</span><span class="s2">)&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot; local_rank: </span><span class="si">{</span><span class="n">failed_local_rank</span><span class="si">}</span><span class="s2"> (pid: </span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">pid</span><span class="si">}</span><span class="s2">)&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot; of fn: </span><span class="si">{</span><span class="n">fn_name</span><span class="si">}</span><span class="s2"> (start_method: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">start_method</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
+                <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">RunProcsResult</span><span class="p">(</span>
+                <span class="n">failures</span><span class="o">=</span><span class="p">{</span>
+                    <span class="n">failed_local_rank</span><span class="p">:</span> <span class="n">ProcessFailure</span><span class="p">(</span>
+                        <span class="n">local_rank</span><span class="o">=</span><span class="n">failed_local_rank</span><span class="p">,</span>
+                        <span class="n">pid</span><span class="o">=</span><span class="n">e</span><span class="o">.</span><span class="n">pid</span><span class="p">,</span>
+                        <span class="n">exitcode</span><span class="o">=</span><span class="n">failed_proc</span><span class="o">.</span><span class="n">exitcode</span><span class="p">,</span>
+                        <span class="n">error_file</span><span class="o">=</span><span class="n">error_filepath</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">},</span>
+                <span class="n">stdouts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stdouts</span><span class="p">,</span>
+                <span class="n">stderrs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stderrs</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">pids</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">local_rank</span><span class="p">:</span> <span class="n">pid</span> <span class="k">for</span> <span class="n">local_rank</span><span class="p">,</span> <span class="n">pid</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pc</span><span class="o">.</span><span class="n">pids</span><span class="p">())}</span>
+
+    <span class="k">def</span> <span class="nf">_close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pc</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">proc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pc</span><span class="o">.</span><span class="n">processes</span><span class="p">:</span>
+                <span class="n">proc</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+                <span class="n">proc</span><span class="o">.</span><span class="n">join</span><span class="p">()</span></div>
+
+
+<span class="k">class</span> <span class="nc">SubprocessHandler</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convenience wrapper around python&#39;s ``subprocess.Popen``. Keeps track of</span>
+<span class="sd">    meta-objects associated to the process (e.g. stdout and stderr redirect fds).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">entrypoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">args</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">,</span>
+        <span class="n">env</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">preexec_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+        <span class="n">stdout</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">stderr</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stdout</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">stdout</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">stderr</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">args_str</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">args</span><span class="p">]</span>
+
+        <span class="c1"># inherit parent environment vars</span>
+        <span class="n">env_vars</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">env_vars</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="p">:</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span>
+            <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">entrypoint</span><span class="p">,</span> <span class="o">*</span><span class="n">args_str</span><span class="p">),</span>
+            <span class="n">env</span><span class="o">=</span><span class="n">env_vars</span><span class="p">,</span>
+            <span class="n">preexec_fn</span><span class="o">=</span><span class="n">preexec_fn</span><span class="p">,</span>
+            <span class="n">stdout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_stdout</span><span class="p">,</span>
+            <span class="n">stderr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stdout</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_stdout</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="SubprocessContext"><a class="viewcode-back" href="../../../multiprocessing.html#torchelastic.multiprocessing.api.SubprocessContext">[docs]</a><span class="k">class</span> <span class="nc">SubprocessContext</span><span class="p">(</span><span class="n">PContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ``PContext`` holding worker processes invoked as a binary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">entrypoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">args</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">],</span>
+        <span class="n">envs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span>
+        <span class="n">stdouts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">stderrs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">tee_stdouts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">tee_stderrs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">error_files</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span>
+            <span class="n">entrypoint</span><span class="p">,</span>
+            <span class="n">args</span><span class="p">,</span>
+            <span class="n">envs</span><span class="p">,</span>
+            <span class="n">stdouts</span><span class="p">,</span>
+            <span class="n">stderrs</span><span class="p">,</span>
+            <span class="n">tee_stdouts</span><span class="p">,</span>
+            <span class="n">tee_stderrs</span><span class="p">,</span>
+            <span class="n">error_files</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># state vector; _vdone[local_rank] -&gt; is local_rank finished or not</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_running_local_ranks</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nprocs</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_failures</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">ProcessFailure</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># pyre-fixme[8]: The attribute is defined in _start method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subprocess_handlers</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">SubprocessHandler</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">subprocess_handlers</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;The subprocess handlers already initialized. Most likely the start method got called twice.&quot;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subprocess_handlers</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">SubprocessHandler</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">local_rank</span><span class="p">:</span> <span class="n">SubprocessHandler</span><span class="p">(</span>
+                <span class="n">entrypoint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">entrypoint</span><span class="p">,</span>
+                <span class="n">args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="n">local_rank</span><span class="p">],</span>
+                <span class="n">env</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">envs</span><span class="p">[</span><span class="n">local_rank</span><span class="p">],</span>
+                <span class="n">preexec_fn</span><span class="o">=</span><span class="n">mp</span><span class="o">.</span><span class="n">_prctl_pr_set_pdeathsig</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">),</span>
+                <span class="n">stdout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stdouts</span><span class="p">[</span><span class="n">local_rank</span><span class="p">],</span>
+                <span class="n">stderr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stderrs</span><span class="p">[</span><span class="n">local_rank</span><span class="p">],</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">local_rank</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nprocs</span><span class="p">)</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_poll</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RunProcsResult</span><span class="p">]:</span>
+        <span class="n">done_local_ranks</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">local_rank</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_running_local_ranks</span><span class="p">:</span>
+            <span class="n">handler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subprocess_handlers</span><span class="p">[</span><span class="n">local_rank</span><span class="p">]</span>
+            <span class="n">exitcode</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="n">proc</span><span class="o">.</span><span class="n">poll</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">exitcode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">done_local_ranks</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">local_rank</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">exitcode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># failed or signaled</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_failures</span><span class="p">[</span><span class="n">local_rank</span><span class="p">]</span> <span class="o">=</span> <span class="n">ProcessFailure</span><span class="p">(</span>
+                        <span class="n">local_rank</span><span class="o">=</span><span class="n">local_rank</span><span class="p">,</span>
+                        <span class="n">pid</span><span class="o">=</span><span class="n">handler</span><span class="o">.</span><span class="n">proc</span><span class="o">.</span><span class="n">pid</span><span class="p">,</span>
+                        <span class="n">exitcode</span><span class="o">=</span><span class="n">exitcode</span><span class="p">,</span>
+                        <span class="n">error_file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">error_files</span><span class="p">[</span><span class="n">local_rank</span><span class="p">],</span>
+                    <span class="p">)</span>
+                <span class="c1"># else: --&gt; succeeded; nothing to do</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_running_local_ranks</span><span class="o">.</span><span class="n">difference_update</span><span class="p">(</span><span class="n">done_local_ranks</span><span class="p">)</span>
+
+        <span class="c1"># if ALL procs are finished or ANY have failed</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_running_local_ranks</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_failures</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>  <span class="c1"># terminate all running procs</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">RunProcsResult</span><span class="p">(</span>
+                <span class="n">failures</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_failures</span><span class="p">,</span>
+                <span class="n">stdouts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stdouts</span><span class="p">,</span>
+                <span class="n">stderrs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stderrs</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">is_failed</span><span class="p">():</span>
+                <span class="n">first_failure</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">failures</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">f</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">timestamp</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;failed (exitcode: </span><span class="si">{</span><span class="n">first_failure</span><span class="o">.</span><span class="n">exitcode</span><span class="si">}</span><span class="s2">)&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot; local_rank: </span><span class="si">{</span><span class="n">first_failure</span><span class="o">.</span><span class="n">local_rank</span><span class="si">}</span><span class="s2"> (pid: </span><span class="si">{</span><span class="n">first_failure</span><span class="o">.</span><span class="n">pid</span><span class="si">}</span><span class="s2">)&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot; of binary: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">entrypoint</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Populate return with dummy values. This provides consistency with MultiprocessingHandler</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">return_values</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="n">local_rank</span><span class="p">:</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">local_rank</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nprocs</span><span class="p">)</span>
+                <span class="p">}</span>
+
+            <span class="k">return</span> <span class="n">result</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># there are no failures and procs still running</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">pids</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">local_rank</span><span class="p">:</span> <span class="n">sh</span><span class="o">.</span><span class="n">proc</span><span class="o">.</span><span class="n">pid</span>
+            <span class="k">for</span> <span class="n">local_rank</span><span class="p">,</span> <span class="n">sh</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subprocess_handlers</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">subprocess_handlers</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">handler</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subprocess_handlers</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">handler</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+</pre></div>
+
+             </article>
+             
+            </div>
+            <footer>
+  
+
+  
+
+    <hr>
+
+  
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, PyTorch Elastic Contributors.
+
+    </p>
+  </div>
+    
+      <div>
+        Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+      </div>
+     
+
+</footer>
+
+          </div>
+        </div>
+
+        <div class="pytorch-content-right" id="pytorch-content-right">
+          <div class="pytorch-right-menu" id="pytorch-right-menu">
+            <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
+              
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  
+
+
+  
+
+     
+       <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+         <script src="../../../_static/jquery.js"></script>
+         <script src="../../../_static/underscore.js"></script>
+         <script src="../../../_static/doctools.js"></script>
+         <script src="../../../_static/language_data.js"></script>
+         <script src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js"></script>
+         <script src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js"></script>
+         <script src="../../../_static/katex_autorenderer.js"></script>
+     
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/vendor/popper.min.js"></script>
+  <script type="text/javascript" src="../../../_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+  <!-- Begin Footer -->
+
+  <div class="container-fluid docs-tutorials-resources" id="docs-tutorials-resources">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 text-center">
+          <h2>Docs</h2>
+          <p>Access comprehensive developer documentation for PyTorch</p>
+          <a class="with-right-arrow" href="https://pytorch.org/docs/stable/index.html">View Docs</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Tutorials</h2>
+          <p>Get in-depth tutorials for beginners and advanced developers</p>
+          <a class="with-right-arrow" href="https://pytorch.org/tutorials">View Tutorials</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Resources</h2>
+          <p>Find development resources and get your questions answered</p>
+          <a class="with-right-arrow" href="https://pytorch.org/resources">View Resources</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-logo-wrapper">
+        <a href="https://pytorch.org/" class="footer-logo"></a>
+      </div>
+
+      <div class="footer-links-wrapper">
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/">PyTorch</a></li>
+            <li><a href="https://pytorch.org/get-started">Get Started</a></li>
+            <li><a href="https://pytorch.org/features">Features</a></li>
+            <li><a href="https://pytorch.org/ecosystem">Ecosystem</a></li>
+            <li><a href="https://pytorch.org/blog/">Blog</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/blob/master/CONTRIBUTING.md">Contributing</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/resources">Resources</a></li>
+            <li><a href="https://pytorch.org/tutorials">Tutorials</a></li>
+            <li><a href="https://pytorch.org/docs/stable/index.html">Docs</a></li>
+            <li><a href="https://discuss.pytorch.org" target="_blank">Discuss</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/issues" target="_blank">Github Issues</a></li>
+            <li><a href="https://pytorch.org/assets/brand-guidelines/PyTorch-Brand-Guidelines.pdf" target="_blank">Brand Guidelines</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col follow-us-col">
+          <ul>
+            <li class="list-title">Stay Connected</li>
+            <li>
+              <div id="mc_embed_signup">
+                <form
+                  action="https://twitter.us14.list-manage.com/subscribe/post?u=75419c71fe0a935e53dfa4a3f&id=91d0dccd39"
+                  method="post"
+                  id="mc-embedded-subscribe-form"
+                  name="mc-embedded-subscribe-form"
+                  class="email-subscribe-form validate"
+                  target="_blank"
+                  novalidate>
+                  <div id="mc_embed_signup_scroll" class="email-subscribe-form-fields-wrapper">
+                    <div class="mc-field-group">
+                      <label for="mce-EMAIL" style="display:none;">Email Address</label>
+                      <input type="email" value="" name="EMAIL" class="required email" id="mce-EMAIL" placeholder="Email Address">
+                    </div>
+
+                    <div id="mce-responses" class="clear">
+                      <div class="response" id="mce-error-response" style="display:none"></div>
+                      <div class="response" id="mce-success-response" style="display:none"></div>
+                    </div>    <!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
+
+                    <div style="position: absolute; left: -5000px;" aria-hidden="true"><input type="text" name="b_75419c71fe0a935e53dfa4a3f_91d0dccd39" tabindex="-1" value=""></div>
+
+                    <div class="clear">
+                      <input type="submit" value="" name="subscribe" id="mc-embedded-subscribe" class="button email-subscribe-button">
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+            </li>
+          </ul>
+
+          <div class="footer-social-icons">
+            <a href="https://www.facebook.com/pytorch" target="_blank" class="facebook"></a>
+            <a href="https://twitter.com/pytorch" target="_blank" class="twitter"></a>
+            <a href="https://www.youtube.com/pytorch" target="_blank" class="youtube"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <div class="cookie-banner-wrapper">
+  <div class="container">
+    <p class="gdpr-notice">To analyze traffic and optimize your experience, we serve cookies on this site. By clicking or navigating, you agree to allow our usage of cookies. As the current maintainers of this site, Facebook’s Cookies Policy applies. Learn more, including about available controls: <a href="https://www.facebook.com/policies/cookies/">Cookies Policy</a>.</p>
+    <img class="close-button" src="../../../_static/images/pytorch-x.svg">
+  </div>
+</div>
+
+  <!-- End Footer -->
+
+  <!-- Begin Mobile Menu -->
+
+  <div class="mobile-main-menu">
+    <div class="container-fluid">
+      <div class="container">
+        <div class="mobile-main-menu-header-container">
+          <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+          <a class="main-menu-close-button" href="#" data-behavior="close-mobile-menu"></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-main-menu-links-container">
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/hub">PyTorch Hub</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li class="resources-mobile-menu-title">
+            Docs
+          </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/audio/stable/index.html">torchaudio</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/text/stable/index.html">torchtext</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/vision/stable/index.html">torchvision</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/elastic/">TorchElastic</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/serve/">TorchServe</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/xla">PyTorch on XLA Devices</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            Resources
+          </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/resources">Developer Resources</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/features">About</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/hub">Models (Beta)</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/#community-module">Community</a>
+            </li>
+
+            <li>
+              <a href="https://discuss.pytorch.org/">Forums</a>
+            </li>
+          </ul>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">Github</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- End Mobile Menu -->
+
+  <script type="text/javascript" src="../../../_static/js/vendor/anchor.min.js"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function() {
+      mobileMenu.bind();
+      mobileTOC.bind();
+      pytorchAnchors.bind();
+      sideMenus.bind();
+      scrollToAnchor.bind();
+      highlightNavigation.bind();
+      mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Add class to links that have code blocks, since we cannot create links in code blocks
+      $("article.pytorch-article a span.pre").each(function(e) {
+        $(this).closest("a").addClass("has-code");
+      });
+    })
+  </script>
+</body>
+</html>

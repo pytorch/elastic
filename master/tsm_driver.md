@@ -1,5 +1,5 @@
 ---
 layout: docs_redirect
 title: PyTorch | Redirect
-redirect_url: "/elastic/0.2.1/tsm_driver.html"
+redirect_url: "/elastic/0.2.2/tsm_driver.html"
 ---
