@@ -27,29 +27,12 @@ from typing import (
     Union,
 )
 
-_APP_STATUS_FORMAT_TEMPLATE = """
-State: ${state} ; Num Restarts: ${num_restarts}
-Msg: ${msg}
-Replicas: ${replicas}
-"""
-
-
-_ROLE_REPLICA_FORMAT_TEMPLATE = """
-- Role: [${role}]:
-${replicas}
-"""
-
-_REPLICA_FORMAT_TEMPLATE = """
-- [${role}:${replica_id}]
-  Timestamp: ${timestamp}; Exit Code: ${exit_code}
-  State: ${state}
-  Error Message: ${error_msg}
-"""
-
 
 SchedulerBackend = str
 
-
+# ========================================
+# ==== Distributed Application API =======
+# ========================================
 @dataclass
 class Resource:
     """
@@ -388,13 +371,13 @@ class AppState(int, Enum):
     7. CANCELLED - app was cancelled before completing
     """
 
-    UNSUBMITTED = 2 ** 0
-    SUBMITTED = 2 ** 1
-    PENDING = 2 ** 2
-    RUNNING = 2 ** 3
-    SUCCEEDED = 2 ** 4
-    FAILED = 2 ** 5
-    CANCELLED = 2 ** 6
+    UNSUBMITTED = 0
+    SUBMITTED = 1
+    PENDING = 2
+    RUNNING = 3
+    SUCCEEDED = 4
+    FAILED = 5
+    CANCELLED = 6
 
     def __str__(self) -> str:
         return self.name
@@ -409,40 +392,41 @@ def is_terminal(state: AppState) -> bool:
 
 NONE: str = "<NONE>"
 
-
+# =======================
+# ==== Status API =======
+# =======================
 @dataclass
-class RoleReplicaStatus:
+class ReplicaStatus:
     """
     The status of the replica during the job execution.
 
     Args:
-        replica_id: The node rank, note: this is not a worker rank.
+        id: The node rank, note: this is not a worker rank.
         state: The current state of the node.
-        exit_code: `None`` if still running
         role: The role name
-        end_time: Timestamp value if the node finished execution, None otherwise
-        error_msg: Error message if any, None if job succeeded.
+        hostname: The hostname where the replica is running
+        structured_error_msg: Error message if any, None if job succeeded.
     """
 
-    replica_id: int
+    id: int
     state: AppState
     role: str
-    exit_code: Optional[int] = None
-    end_time: Optional[int] = None
-    error_msg: Optional[str] = None
+    hostname: str
+    structured_error_msg: str = NONE
 
-    def get_formatted_str(self) -> str:
-        """
-        Return human readable status representation.
-        """
-        return Template(_REPLICA_FORMAT_TEMPLATE).substitute(
-            timestamp=self.end_time,
-            replica_id=self.replica_id,
-            exit_code=self.exit_code,
-            state=self.state,
-            role=self.role,
-            error_msg=self.error_msg,
-        )
+
+@dataclass
+class RoleStatus:
+    """
+    The status of the role during the job execution.
+
+    Args:
+        role: Role name
+        replicas: List of replica statuses
+    """
+
+    role: str
+    replicas: List[ReplicaStatus]
 
 
 @dataclass
@@ -464,7 +448,7 @@ class AppStatus:
     msg: str = ""
     structured_error_msg: str = NONE
     ui_url: Optional[str] = None
-    replicas: Dict[str, List[RoleReplicaStatus]] = field(default_factory=dict)
+    roles: List[RoleStatus] = field(default_factory=list)
 
     def is_terminal(self) -> bool:
         return is_terminal(self.state)
@@ -478,40 +462,6 @@ class AppStatus:
             structured_error_msg_parsed = NONE
         app_status_dict["structured_error_msg"] = structured_error_msg_parsed
         return json.dumps(app_status_dict, indent=2)
-
-    def _get_role_replicas(
-        self, state_mask_filter: int = 0xFF
-    ) -> Dict[str, List[RoleReplicaStatus]]:
-        filterred_replicas = {}
-        for role, role_replicas in self.replicas.items():
-            filterred_replicas[role] = [
-                replica
-                for replica in role_replicas
-                if replica.state.value | state_mask_filter == state_mask_filter
-            ]
-        return filterred_replicas
-
-    def get_formatted_str(self, state_mask_filter: int = 0xFF) -> str:
-        """
-        Return a human readable representation of the AppStatus.
-        """
-        role_replicas = ""
-        filterred_replicas = self._get_role_replicas(state_mask_filter)
-        for role, filterred_role_replicas in filterred_replicas.items():
-            if len(filterred_role_replicas) == 0:
-                continue
-            replicas_str = "".join(
-                replica.get_formatted_str() for replica in filterred_role_replicas
-            )
-            role_replicas += Template(_ROLE_REPLICA_FORMAT_TEMPLATE).substitute(
-                role=role, replicas=replicas_str
-            )
-        return Template(_APP_STATUS_FORMAT_TEMPLATE).substitute(
-            state=self.state,
-            num_restarts=self.num_restarts,
-            msg=self.msg,
-            replicas=role_replicas,
-        )
 
 
 @dataclass
@@ -540,14 +490,16 @@ class DescribeAppResponse:
     structured_error_msg: str = NONE
     ui_url: Optional[str] = None
 
+    roles_statuses: List[RoleStatus] = field(default_factory=list)
     roles: List[Role] = field(default_factory=list)
-    replicas: Dict[str, List[RoleReplicaStatus]] = field(default_factory=dict)
 
 
 # valid ``RunConfig`` values; only support primitives (str, int, float, bool)
 ConfigValue = Union[str, int, float, bool, None]
 
-
+# =======================
+# ==== Run Config =======
+# =======================
 @dataclass(frozen=True)
 class RunConfig:
     """
@@ -603,6 +555,10 @@ class RunConfig:
     def __repr__(self):
         return self.cfgs.__repr__()
 
+
+# =======================
+# ==== Run Info =========
+# =======================
 
 T = TypeVar("T")
 

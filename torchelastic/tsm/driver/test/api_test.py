@@ -24,7 +24,6 @@ from torchelastic.tsm.driver.api import (
     Application,
     AppState,
     AppStatus,
-    RoleReplicaStatus,
     Container,
     DescribeAppResponse,
     ElasticRole,
@@ -75,25 +74,6 @@ class ApplicationStatusTest(unittest.TestCase):
         self.assertEqual(status.state, deser_status.state)
         self.assertEqual(status.msg, deser_status.msg)
         self.assertEqual(status.structured_error_msg, deser_status.structured_error_msg)
-
-    def test_get_formatted_string(self):
-        status = AppStatus(
-            AppState.FAILED,
-            replicas={
-                "worker1": [
-                    RoleReplicaStatus(
-                        "id1", AppState.FAILED, role="worker1", exit_code=3
-                    )
-                ]
-            },
-        )
-
-        formatted_str = status.get_formatted_str()
-        expected_str = (
-            "\nState: FAILED ; Num Restarts: 0\nMsg: \nReplicas: \n- Role: [worker1]:\n\n- [worker1:id1]\n  "
-            "Timestamp: None; Exit Code: 3\n  State: FAILED\n  Error Message: None\n\n\n"
-        )
-        self.assertEqual(expected_str, formatted_str)
 
 
 class ResourceTest(unittest.TestCase):

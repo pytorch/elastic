@@ -296,9 +296,9 @@ class StandaloneSession(LoggingSession):
         app_status = AppStatus(
             desc.state,
             desc.num_restarts,
-            desc.msg,
-            desc.structured_error_msg,
-            replicas=desc.replicas,
+            msg=desc.msg,
+            structured_error_msg=desc.structured_error_msg,
+            roles=desc.roles_statuses,
         )
         if app_status:
             app_status.ui_url = desc.ui_url

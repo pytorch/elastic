@@ -71,6 +71,8 @@ from torchelastic.tsm.driver.api import (  # noqa: F401 F403
     Application,
     AppState,
     AppStatus,
+    RoleStatus,
+    ReplicaStatus,
     Container,
     DescribeAppResponse,
     ElasticRole,
