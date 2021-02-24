@@ -44,10 +44,18 @@ Documentation
    kubernetes
    runtime
 
-Experimental
+Training Session Manager(TSM)
 ---------------
 .. toctree::
    :maxdepth: 1
-   :caption: Experimental
+   :caption: Training Session Manager(TSM)
 
    tsm_driver
+
+TSM API
+---------------
+.. toctree::
+   :maxdepth: 1
+   :caption: TSM API
+
+   tsm_api
