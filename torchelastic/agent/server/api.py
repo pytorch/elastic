@@ -19,12 +19,12 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-import torchelastic.rendezvous as rdzv
-import torchelastic.utils.store as store_util
-from torchelastic.events import record, Event, EventSource
+import torch.distributed.elastic.rendezvous as rdzv
+import torch.distributed.elastic.utils.store as store_util
+from torch.distributed.elastic.utils.logging import get_logger
+from torchelastic.events import Event, EventSource, record
 from torchelastic.metrics import prof, put_metric
 from torchelastic.multiprocessing import ProcessFailure, Std
-from torchelastic.utils.logging import get_logger
 
 
 _TERMINAL_STATE_SYNC_ID = "torchelastic/agent/terminal_state"

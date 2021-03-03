@@ -10,6 +10,7 @@
 import abc
 import ctypes
 import json
+import logging
 import os
 import pprint
 import re
@@ -25,26 +26,22 @@ from typing import IO, Dict, Iterable, List, Optional, Tuple
 from uuid import uuid4
 
 from torchelastic.tsm.driver.api import (
+    NONE,
     AppDryRunInfo,
-    Resource,
     Application,
     AppState,
-    NULL_RESOURCE,
     DescribeAppResponse,
     InvalidRunConfigException,
-    SchedulerBackend,
-    Role,
     RunConfig,
     Scheduler,
+    SchedulerBackend,
     is_terminal,
     macros,
     runopts,
-    NONE,
 )
-from torchelastic.utils.logging import get_logger
 
 
-log = get_logger()
+log = logging.getLogger(__name__)
 
 
 def make_unique(app_name: str) -> str:
