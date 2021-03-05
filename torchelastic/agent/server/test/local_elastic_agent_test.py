@@ -17,19 +17,19 @@ import uuid
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Tuple
 from unittest import mock
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
 
 import torch
 import torch.distributed as dist
+import torch.distributed.elastic.rendezvous.registry as rdzv_registry
 import torch.distributed.rpc as rpc
-import torchelastic.rendezvous.registry as rdzv_registry
+from torch.distributed.elastic.rendezvous import RendezvousParameters
+from torch.distributed.elastic.rendezvous.etcd_server import EtcdServer
 from torch.distributed.rpc.backend_registry import BackendType
 from torchelastic.agent.server.api import RunResult, WorkerSpec, WorkerState
 from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
 from torchelastic.multiprocessing import Std
 from torchelastic.multiprocessing.errors import ChildFailedError, record
-from torchelastic.rendezvous import RendezvousParameters
-from torchelastic.rendezvous.etcd_server import EtcdServer
 from torchelastic.test.test_utils import is_asan_or_tsan
 
 
@@ -648,7 +648,7 @@ class LocalElasticAgentTest(unittest.TestCase):
                 self.assertEqual(rank, output)
 
     @unittest.skipIf(is_asan_or_tsan(), "tests incompatible with tsan or asan")
-    @patch("torchelastic.utils.store.barrier")
+    @patch("torch.distributed.elastic.utils.store.barrier")
     def test_barrier_failed(self, barrier_mock):
         """
         Failure during the barrier should NOT fail the job.

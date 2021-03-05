@@ -16,10 +16,9 @@ from unittest import mock
 from unittest.mock import Mock, patch
 
 import torchelastic.distributed.launch as launch
-import torchelastic.rendezvous.etcd_rendezvous  # noqa: F401
+from torch.distributed.elastic.rendezvous.etcd_server import EtcdServer
 from torchelastic.agent.server.api import RunResult, WorkerState
 from torchelastic.multiprocessing.errors import ChildFailedError
-from torchelastic.rendezvous.etcd_server import EtcdServer
 from torchelastic.test.test_utils import is_tsan
 
 
@@ -386,7 +385,7 @@ class LaunchTest(unittest.TestCase):
         agent_mock_cls.return_value = agent_mock
         rdzv_handler_mock = Mock()
         with patch(
-            "torchelastic.rendezvous.registry.get_rendezvous_handler"
+            "torch.distributed.elastic.rendezvous.registry.get_rendezvous_handler"
         ) as param_mock:
             param_mock.return_value = rdzv_handler_mock
             launch.main(args)

@@ -224,17 +224,17 @@ import uuid
 from argparse import REMAINDER, ArgumentParser
 
 import torch
-import torchelastic.rendezvous.registry as rdzv_registry
-from torchelastic import metrics, events
+import torch.distributed.elastic.rendezvous.registry as rdzv_registry
+from torch.distributed.elastic.rendezvous import RendezvousParameters
+from torch.distributed.elastic.rendezvous.etcd_server import EtcdServer
+from torch.distributed.elastic.rendezvous.utils import _parse_rendezvous_config
+from torch.distributed.elastic.utils.logging import get_logger
+from torchelastic import events, metrics
 from torchelastic.agent.server.api import WorkerSpec, WorkerState
 from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
 from torchelastic.distributed.argparse_util import check_env, env
 from torchelastic.multiprocessing import Std
 from torchelastic.multiprocessing.errors import ChildFailedError, record
-from torchelastic.rendezvous import RendezvousParameters
-from torchelastic.rendezvous.etcd_server import EtcdServer
-from torchelastic.rendezvous.utils import _parse_rendezvous_config
-from torchelastic.utils.logging import get_logger
 
 
 log = get_logger()

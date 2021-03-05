@@ -12,7 +12,9 @@ import uuid
 from typing import Any, Dict
 from unittest.mock import call, patch
 
-import torchelastic.rendezvous.registry as rdzv_registry
+import torch.distributed.elastic.rendezvous.registry as rdzv_registry
+from torch.distributed.elastic.rendezvous import RendezvousHandler, RendezvousParameters
+from torch.distributed.elastic.rendezvous.etcd_server import EtcdServer
 from torchelastic.agent.server.api import (
     RunResult,
     SimpleElasticAgent,
@@ -23,8 +25,6 @@ from torchelastic.agent.server.api import (
     _RoleInstanceInfo,
 )
 from torchelastic.multiprocessing.errors import ProcessFailure
-from torchelastic.rendezvous import RendezvousHandler, RendezvousParameters
-from torchelastic.rendezvous.etcd_server import EtcdServer
 
 
 def do_nothing():
@@ -499,7 +499,7 @@ class SimpleElasticAgentTest(unittest.TestCase):
         )
         self.assertEqual(expected_role_ranks, [worker.role_rank for worker in workers])
 
-    @patch("torchelastic.utils.store.get_all")
+    @patch("torch.distributed.elastic.utils.store.get_all")
     def test_share_and_gather(self, store_mock):
         # when the state is unknown we exit immediately; no retries
         spec = self._get_worker_spec(max_restarts=100, monitor_interval=0.1)
