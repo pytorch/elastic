@@ -335,17 +335,35 @@ class ElasticRole(Role):
 @dataclass
 class Application:
     """
-    Represents a distributed application made up of multiple ``Roles``.
-    Contains the necessary information for the driver to submit this
-    app to the scheduler.
+    Represents a distributed application made up of multiple ``Roles``
+    and metadata. Contains the necessary information for the driver
+    to submit this app to the scheduler.
+
+    Args:
+        name: Name of application
+        roles: List of roles
+        metadata: Application specific configuration, in comparison
+            ``RunConfig`` is runtime specific configuration.
     """
 
     name: str
     roles: List[Role] = field(default_factory=list)
+    metadata: Dict[str, str] = field(default_factory=dict)
 
     def of(self, *roles: Role) -> "Application":
         self.roles += [*roles]
         return self
+
+    def add_metadata(self, key: str, value: str) -> "Application":
+        """
+        Adds metadata to the application.
+        .. note:: If the key already exists, this method overwrites the metadata value.
+        """
+        self.metadata[key] = value
+        return self
+
+    def get_metadata(self, key: str) -> Optional[str]:
+        return self.metadata.get(key)
 
 
 class AppState(int, Enum):

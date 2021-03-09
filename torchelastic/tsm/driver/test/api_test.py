@@ -327,6 +327,11 @@ class ApplicationTest(unittest.TestCase):
         app = Application(name="test_app")
         self.assertEqual(0, len(app.roles))
 
+    def test_getset_metadata(self):
+        app = Application(name="test_app").add_metadata("test_key", "test_value")
+        self.assertEqual("test_value", app.get_metadata("test_key"))
+        self.assertEqual(None, app.get_metadata("non_existent"))
+
 
 class SessionTest(unittest.TestCase):
     class MockSession(Session):
