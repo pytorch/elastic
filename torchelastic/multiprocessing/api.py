@@ -432,6 +432,9 @@ class SubprocessHandler:
         env_vars.update(env)
 
         self.proc: subprocess.Popen = subprocess.Popen(
+            # pyre-fixme[6]: Expected `Union[typing.Sequence[Union[_PathLike[bytes],
+            #  _PathLike[str], bytes, str]], bytes, str]` for 1st param but got
+            #  `Tuple[str, *Tuple[Any, ...]]`.
             args=(entrypoint, *args_str),
             env=env_vars,
             preexec_fn=preexec_fn,
