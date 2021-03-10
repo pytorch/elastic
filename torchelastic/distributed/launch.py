@@ -225,6 +225,8 @@ from argparse import REMAINDER, ArgumentParser
 
 import torch
 import torch.distributed.elastic.rendezvous.registry as rdzv_registry
+from torch.distributed.elastic.multiprocessing import Std
+from torch.distributed.elastic.multiprocessing.errors import ChildFailedError, record
 from torch.distributed.elastic.rendezvous import RendezvousParameters
 from torch.distributed.elastic.rendezvous.etcd_server import EtcdServer
 from torch.distributed.elastic.rendezvous.utils import _parse_rendezvous_config
@@ -233,8 +235,6 @@ from torchelastic import events, metrics
 from torchelastic.agent.server.api import WorkerSpec, WorkerState
 from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
 from torchelastic.distributed.argparse_util import check_env, env
-from torchelastic.multiprocessing import Std
-from torchelastic.multiprocessing.errors import ChildFailedError, record
 
 
 log = get_logger()

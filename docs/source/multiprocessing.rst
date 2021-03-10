@@ -3,17 +3,17 @@
 Multiprocessing
 ================
 
-.. automodule:: torchelastic.multiprocessing
+.. automodule:: torch.distributed.elastic.multiprocessing
 
 Starting Multiple Workers
 ---------------------------
 
-.. autofunction:: torchelastic.multiprocessing.start_processes
+.. autofunction:: torch.distributed.elastic.multiprocessing.start_processes
 
 Process Context
 ----------------
 
-.. currentmodule:: torchelastic.multiprocessing.api
+.. currentmodule:: torch.distributed.elastic.multiprocessing.api
 
 .. autoclass:: PContext
 
@@ -22,5 +22,3 @@ Process Context
 .. autoclass:: SubprocessContext
 
 .. autoclass:: RunProcsResult
-
-

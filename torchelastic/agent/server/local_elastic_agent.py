@@ -12,6 +12,7 @@ import shutil
 import tempfile
 from typing import Any, Dict, Optional, Tuple
 
+from torch.distributed.elastic.multiprocessing import start_processes
 from torchelastic.agent.server.api import (
     RunResult,
     SimpleElasticAgent,
@@ -20,7 +21,6 @@ from torchelastic.agent.server.api import (
     WorkerState,
 )
 from torchelastic.metrics.api import prof
-from torchelastic.multiprocessing import start_processes
 
 
 log = logging.getLogger(__name__)

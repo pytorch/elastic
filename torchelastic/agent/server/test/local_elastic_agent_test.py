@@ -23,13 +23,13 @@ import torch
 import torch.distributed as dist
 import torch.distributed.elastic.rendezvous.registry as rdzv_registry
 import torch.distributed.rpc as rpc
+from torch.distributed.elastic.multiprocessing import Std
+from torch.distributed.elastic.multiprocessing.errors import ChildFailedError, record
 from torch.distributed.elastic.rendezvous import RendezvousParameters
 from torch.distributed.elastic.rendezvous.etcd_server import EtcdServer
 from torch.distributed.rpc.backend_registry import BackendType
 from torchelastic.agent.server.api import RunResult, WorkerSpec, WorkerState
 from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
-from torchelastic.multiprocessing import Std
-from torchelastic.multiprocessing.errors import ChildFailedError, record
 from torchelastic.test.test_utils import is_asan_or_tsan
 
 
@@ -217,6 +217,8 @@ class LocalElasticAgentTest(unittest.TestCase):
             log_dir=self.log_dir(),
         )
 
+    # pyre-fixme[56]: Pyre was not able to infer the type of the decorator
+    #  `torch.distributed.elastic.multiprocessing.errors.record`.
     @record
     def run_agent(
         self,

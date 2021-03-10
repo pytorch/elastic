@@ -13,6 +13,7 @@ from typing import Any, Dict
 from unittest.mock import call, patch
 
 import torch.distributed.elastic.rendezvous.registry as rdzv_registry
+from torch.distributed.elastic.multiprocessing.errors import ProcessFailure
 from torch.distributed.elastic.rendezvous import RendezvousHandler, RendezvousParameters
 from torch.distributed.elastic.rendezvous.etcd_server import EtcdServer
 from torchelastic.agent.server.api import (
@@ -24,7 +25,6 @@ from torchelastic.agent.server.api import (
     _get_fq_hostname,
     _RoleInstanceInfo,
 )
-from torchelastic.multiprocessing.errors import ProcessFailure
 
 
 def do_nothing():

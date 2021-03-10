@@ -1,18 +1,17 @@
 Error Propagation
 ==================
 
-.. automodule:: torchelastic.multiprocessing.errors
+.. automodule:: torch.distributed.elastic.multiprocessing.errors
 
 Methods and Classes
 ---------------------
 
-.. currentmodule:: torchelastic.multiprocessing.errors
+.. currentmodule:: torch.distributed.elastic.multiprocessing.errors
 
-.. autofunction:: torchelastic.multiprocessing.errors.record
+.. autofunction:: torch.distributed.elastic.multiprocessing.errors.record
 
 .. autoclass:: ChildFailedError
 
 .. autoclass:: ErrorHandler
 
 .. autoclass:: ProcessFailure
-

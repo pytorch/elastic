@@ -16,9 +16,9 @@ from unittest import mock
 from unittest.mock import Mock, patch
 
 import torchelastic.distributed.launch as launch
+from torch.distributed.elastic.multiprocessing.errors import ChildFailedError
 from torch.distributed.elastic.rendezvous.etcd_server import EtcdServer
 from torchelastic.agent.server.api import RunResult, WorkerState
-from torchelastic.multiprocessing.errors import ChildFailedError
 from torchelastic.test.test_utils import is_tsan
 
 
