@@ -12,10 +12,8 @@ import shutil
 import tempfile
 import unittest
 from typing import Optional, Dict
-from unittest import mock
 from unittest.mock import MagicMock, patch
 
-from torchelastic.events import TsmEvent
 from torchelastic.tsm.driver.api import (
     Application,
     AppStatus,
@@ -25,18 +23,15 @@ from torchelastic.tsm.driver.api import (
     Resource,
     AppDryRunInfo,
     Role,
-    Session,
     AppHandle,
     RunConfig,
     SessionMismatchException,
     UnknownAppException,
     parse_app_handle,
 )
-from torchelastic.tsm.driver.local_scheduler import (
-    LocalDirectoryImageFetcher,
-    LocalScheduler,
-)
+from torchelastic.tsm.driver.local_scheduler import LocalScheduler
 from torchelastic.tsm.driver.standalone_session import StandaloneSession, LoggingSession
+from torchelastic.tsm.events import TsmEvent
 
 from .test_util import write_shell_script
 
@@ -87,14 +82,12 @@ class DummySession(LoggingSession):
         return iter(["test_log"])
 
 
-@patch("torchelastic.tsm.driver.standalone_session.record_tsm")
+@patch("torchelastic.tsm.driver.standalone_session.record")
 class LoggingSessionTest(unittest.TestCase):
     def assert_tsm_event(self, expected: TsmEvent, actual: TsmEvent):
         self.assertEqual(expected.session, actual.session)
         self.assertEqual(expected.app_id, actual.app_id)
         self.assertEqual(expected.api, actual.api)
-        self.assertEqual(expected.source_hostname, actual.source_hostname)
-        self.assertEqual(expected.unix_user, actual.unix_user)
 
     def test_status_success(self, record_tsm_mock):
         session = DummySession("test_session")
@@ -166,7 +159,7 @@ class LoggingSessionTest(unittest.TestCase):
         )
 
 
-@patch("torchelastic.tsm.driver.standalone_session.record_tsm")
+@patch("torchelastic.tsm.driver.standalone_session.record")
 class StandaloneSessionTest(unittest.TestCase):
     def setUp(self):
         self.test_dir = tempfile.mkdtemp("StandaloneSessionTest")

@@ -13,17 +13,17 @@ Example of usage:
 
 ::
 
-  from torchelastic import events
-  event = Event(name="test_event", source=EventSource.WORKER, metadata={...})
-  events.get_events_logger(destination="default").info(event)
+  from torchelastic.tsm import events
+  event = TsmEvent(..)
+  events.record(event)
 
 """
 
 import logging
 
-from torchelastic.events.handlers import get_logging_handler
+from torchelastic.tsm.events.handlers import get_logging_handler
 
-from .api import Event, EventSource, EventMetadataValue  # noqa F401
+from .api import TsmEvent  # noqa F401
 
 _events_logger = None
 
@@ -45,7 +45,7 @@ def _get_or_create_logger(destination: str = "null") -> logging.Logger:
     if _events_logger:
         return _events_logger
     logging_handler = get_logging_handler(destination)
-    _events_logger = logging.getLogger(f"torchelastic-events-{destination}")
+    _events_logger = logging.getLogger(f"tsm-events-{destination}")
     _events_logger.setLevel(logging.DEBUG)
     # Do not propagate message to the root logger
     _events_logger.propagate = False
@@ -53,5 +53,5 @@ def _get_or_create_logger(destination: str = "null") -> logging.Logger:
     return _events_logger
 
 
-def record(event: Event, destination: str = "console") -> None:
+def record(event: TsmEvent, destination: str = "console") -> None:
     _get_or_create_logger(destination).info(event.serialize())
