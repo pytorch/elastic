@@ -241,7 +241,7 @@ class LaunchTest(unittest.TestCase):
             {str(i) for i in range(world_size)}, set(os.listdir(self.test_dir))
         )
 
-    @mock.patch("torchelastic.events.record")
+    @mock.patch("torch.distributed.elastic.events.record")
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     def test_launch_elastic_worker_raise_exception(self, record_mock):
         """
@@ -272,7 +272,7 @@ class LaunchTest(unittest.TestCase):
 
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
     @mock.patch("torchelastic.agent.server.local_elastic_agent.LocalElasticAgent.run")
-    @mock.patch("torchelastic.events.record")
+    @mock.patch("torch.distributed.elastic.events.record")
     def test_launch_elastic_agent_raise_exception(self, record_mock, mock_agent_run):
         """
         Asserts that when the agent raises an exception
