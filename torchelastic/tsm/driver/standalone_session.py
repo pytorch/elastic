@@ -15,7 +15,6 @@ import traceback
 from datetime import datetime
 from typing import Dict, Iterable, List, Optional, Tuple
 
-from torchelastic.events import record_tsm, TsmEvent
 from torchelastic.tsm.driver.api import (
     AppDryRunInfo,
     AppHandle,
@@ -31,6 +30,7 @@ from torchelastic.tsm.driver.api import (
     parse_app_handle,
     runopts,
 )
+from torchelastic.tsm.events import record, TsmEvent
 
 
 class LoggingSession(Session):
@@ -55,11 +55,11 @@ class LoggingSession(Session):
             # TODO(avivanou): t81936552 each action corresponds to a method call
             # as a result instead of repeatedly log events in each method, we
             # can log them implicitly via footsteps lib
-            record_tsm(tsm_event)
+            record(tsm_event)
             return app_handle
         except Exception:
             tsm_event.raw_exception = traceback.format_exc()
-            record_tsm(tsm_event)
+            record(tsm_event)
             raise
 
     def status(self, app_handle: AppHandle) -> Optional[AppStatus]:
@@ -68,33 +68,33 @@ class LoggingSession(Session):
         tsm_event = self._generate_tsm_event("status", scheduler_backend, app_id)
         try:
             app_status = self._status(app_handle)
-            record_tsm(tsm_event)
+            record(tsm_event)
             return app_status
         except Exception:
             tsm_event.raw_exception = traceback.format_exc()
-            record_tsm(tsm_event)
+            record(tsm_event)
             raise
 
     def wait(self, app_handle: AppHandle) -> Optional[AppStatus]:
         scheduler_backend, _, app_id = parse_app_handle(app_handle)
         tsm_event = self._generate_tsm_event("wait", scheduler_backend, app_id)
         try:
-            record_tsm(tsm_event)
+            record(tsm_event)
             return self._wait(app_handle)
         except Exception:
             tsm_event.raw_exception = traceback.format_exc()
-            record_tsm(tsm_event)
+            record(tsm_event)
             raise
 
     def list(self) -> Dict[AppHandle, Application]:
         tsm_event = self._generate_tsm_event("list", "")
         try:
             res = self._list()
-            record_tsm(tsm_event)
+            record(tsm_event)
             return res
         except Exception:
             tsm_event.raw_exception = traceback.format_exc()
-            record_tsm(tsm_event)
+            record(tsm_event)
             raise
 
     def stop(self, app_handle: AppHandle) -> None:
@@ -106,10 +106,10 @@ class LoggingSession(Session):
         )
         try:
             self._stop(app_handle)
-            record_tsm(tsm_event)
+            record(tsm_event)
         except Exception:
             tsm_event.raw_exception = traceback.format_exc()
-            record_tsm(tsm_event)
+            record(tsm_event)
             raise
 
     def describe(self, app_handle: AppHandle) -> Optional[Application]:
@@ -122,11 +122,11 @@ class LoggingSession(Session):
         )
         try:
             res = self._describe(app_handle)
-            record_tsm(tsm_event)
+            record(tsm_event)
             return res
         except Exception:
             tsm_event.raw_exception = traceback.format_exc()
-            record_tsm(tsm_event)
+            record(tsm_event)
             raise
 
     def log_lines(
@@ -146,11 +146,11 @@ class LoggingSession(Session):
         )
         try:
             log_iter = self._log_lines(app_handle, role_name, k, regex, since, until)
-            record_tsm(tsm_event)
+            record(tsm_event)
             return log_iter
         except Exception:
             tsm_event.raw_exception = traceback.format_exc()
-            record_tsm(tsm_event)
+            record(tsm_event)
             raise
 
     @abc.abstractmethod
@@ -200,8 +200,6 @@ class LoggingSession(Session):
             session=self.name(),
             scheduler=scheduler,
             api=api,
-            unix_user=getpass.getuser(),
-            source_hostname=socket.getfqdn(socket.gethostname()),
             app_id=app_id,
             runcfg=runcfg,
         )

@@ -9,7 +9,7 @@
 import json
 from dataclasses import asdict, dataclass, field
 from enum import Enum
-from typing import Dict, Optional, Union
+from typing import Dict, Union
 
 
 EventMetadataValue = Union[str, int, float, bool, None]
@@ -53,46 +53,6 @@ class Event:
             data_dict = json.loads(data)
         data_dict["source"] = EventSource[data_dict["source"]]
         return Event(**data_dict)
-
-    def serialize(self) -> str:
-        return json.dumps(asdict(self))
-
-
-@dataclass
-class TsmEvent:
-    """
-    The class represents the event produced by tsm api calls.
-
-    Arguments:
-        session: Session id that was used to execute request.
-        scheduler: Scheduler that is used to execute request
-        api: Api name
-        unix_user: Unix user that executes request
-        source_hostname: Hostname of server that executes request
-        app_id: Unique id that is set by the underlying scheduler
-        runcfg: Run config that was used to schedule app.
-    """
-
-    session: str
-    scheduler: str
-    api: str
-    unix_user: str
-    source_hostname: str
-    app_id: Optional[str] = None
-    runcfg: Optional[str] = None
-    raw_exception: Optional[str] = None
-
-    def __str__(self):
-        return self.serialize()
-
-    @staticmethod
-    def deserialize(data: Union[str, "TsmEvent"]) -> "TsmEvent":
-        if isinstance(data, TsmEvent):
-            return data
-        if isinstance(data, str):
-            data_dict = json.loads(data)
-
-        return TsmEvent(**data_dict)
 
     def serialize(self) -> str:
         return json.dumps(asdict(self))
