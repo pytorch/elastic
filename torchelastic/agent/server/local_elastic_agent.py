@@ -12,6 +12,7 @@ import shutil
 import tempfile
 from typing import Any, Dict, Optional, Tuple
 
+from torch.distributed.elastic.metrics.api import prof
 from torch.distributed.elastic.multiprocessing import start_processes
 from torchelastic.agent.server.api import (
     RunResult,
@@ -20,7 +21,6 @@ from torchelastic.agent.server.api import (
     WorkerSpec,
     WorkerState,
 )
-from torchelastic.metrics.api import prof
 
 
 log = logging.getLogger(__name__)
@@ -115,10 +115,14 @@ class LocalElasticAgent(SimpleElasticAgent):
         log.info(f"log directory set to: {dir}")
         return dir
 
+    # pyre-fixme[56]: Pyre was not able to infer the type of the decorator
+    #  `torch.distributed.elastic.metrics.prof`.
     @prof
     def _stop_workers(self, worker_group: WorkerGroup) -> None:
         self._shutdown()
 
+    # pyre-fixme[56]: Pyre was not able to infer the type of the decorator
+    #  `torch.distributed.elastic.metrics.prof`.
     @prof
     def _start_workers(self, worker_group: WorkerGroup) -> Dict[int, Any]:
         spec = worker_group.spec
@@ -174,6 +178,8 @@ class LocalElasticAgent(SimpleElasticAgent):
         if self._pcontext:
             self._pcontext.close()
 
+    # pyre-fixme[56]: Pyre was not able to infer the type of the decorator
+    #  `torch.distributed.elastic.metrics.prof`.
     @prof
     def _monitor_workers(self, worker_group: WorkerGroup) -> RunResult:
         role = worker_group.spec.role
