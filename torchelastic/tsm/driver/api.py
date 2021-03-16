@@ -265,6 +265,17 @@ class Role:
         self.max_retries = max_retries
         return self
 
+    def pre_proc(
+        self, scheduler: SchedulerBackend, dryrun_info: "AppDryRunInfo"
+    ) -> "AppDryRunInfo":
+        """
+        Modifies the scheduler request based on the role specific configuration.
+        The method is invoked for each role during scheduler ``submit_dryrun``.
+        If there are multiple roles, the method is invoked for each role in
+        order that is defined by the ``Application.roles`` list.
+        """
+        return dryrun_info
+
 
 class ElasticRole(Role):
     """
@@ -752,7 +763,8 @@ class Scheduler(abc.ABC):
     ``@abc.abstractmethod``.
     """
 
-    def __init__(self, session_name: str):
+    def __init__(self, backend: SchedulerBackend, session_name: str):
+        self.backend = backend
         self.session_name = session_name
 
     def submit(self, app: Application, cfg: RunConfig) -> str:
@@ -793,6 +805,8 @@ class Scheduler(abc.ABC):
         """
         resolved_cfg = self.run_opts().resolve(cfg)
         dryrun_info = self._submit_dryrun(app, resolved_cfg)
+        for role in app.roles:
+            dryrun_info = role.pre_proc(self.backend, dryrun_info)
         dryrun_info._app = app
         dryrun_info._cfg = resolved_cfg
         return dryrun_info

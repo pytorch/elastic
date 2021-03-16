@@ -325,7 +325,7 @@ class LocalScheduler(Scheduler):
     """
 
     def __init__(self, session_name: str, cache_size: int = 100):
-        super().__init__(session_name)
+        super().__init__("local", session_name)
 
         # TODO T72035686 replace dict with a proper LRUCache data structure
         self._apps: Dict[AppId, _LocalApplication] = {}

@@ -545,7 +545,7 @@ class RunConfigTest(unittest.TestCase):
 class SchedulerTest(unittest.TestCase):
     class MockScheduler(Scheduler):
         def __init__(self, session_name):
-            super().__init__(session_name)
+            super().__init__("mock", session_name)
 
         def schedule(self, dryrun_info: AppDryRunInfo) -> str:
             return dryrun_info._app.name
@@ -604,3 +604,14 @@ class SchedulerTest(unittest.TestCase):
             bad_type_cfg = RunConfig()
             bad_type_cfg.set("foo", 100)
             scheduler_mock.submit_dryrun(app_mock, empty_cfg)
+
+    def test_role_preproc_called(self):
+        scheduler_mock = SchedulerTest.MockScheduler("test_session")
+        app_mock = MagicMock()
+        app_mock.roles = [MagicMock()]
+
+        cfg = RunConfig()
+        cfg.set("foo", "bar")
+        scheduler_mock.submit_dryrun(app_mock, cfg)
+        role_mock = app_mock.roles[0]
+        role_mock.pre_proc.assert_called_once()
