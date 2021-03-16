@@ -78,6 +78,7 @@ class DummySession(LoggingSession):
         regex: Optional[str] = None,
         since: Optional[datetime.datetime] = None,
         until: Optional[datetime.datetime] = None,
+        should_tail: bool = False,
     ):
         return iter(["test_log"])
 
@@ -365,7 +366,7 @@ class StandaloneSessionTest(unittest.TestCase):
 
         self.assertEqual(["hello", "world"], lines)
         scheduler_mock.log_iter.assert_called_once_with(
-            app_id, role_name, replica_id, regex, since, until
+            app_id, role_name, replica_id, regex, since, until, False
         )
 
     def test_no_default_scheduler(self, _):

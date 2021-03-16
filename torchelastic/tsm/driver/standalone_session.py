@@ -137,6 +137,7 @@ class LoggingSession(Session):
         regex: Optional[str] = None,
         since: Optional[datetime] = None,
         until: Optional[datetime] = None,
+        should_tail: bool = False,
     ) -> Iterable:
         scheduler_backend, _, app_id = parse_app_handle(app_handle)
         tsm_event = self._generate_tsm_event(
@@ -145,7 +146,9 @@ class LoggingSession(Session):
             app_id,
         )
         try:
-            log_iter = self._log_lines(app_handle, role_name, k, regex, since, until)
+            log_iter = self._log_lines(
+                app_handle, role_name, k, regex, since, until, should_tail
+            )
             record(tsm_event)
             return log_iter
         except Exception:
@@ -186,6 +189,7 @@ class LoggingSession(Session):
         regex: Optional[str] = None,
         since: Optional[datetime] = None,
         until: Optional[datetime] = None,
+        should_tail: bool = False,
     ) -> Iterable:
         raise NotImplementedError()
 
@@ -356,6 +360,7 @@ class StandaloneSession(LoggingSession):
         regex: Optional[str] = None,
         since: Optional[datetime] = None,
         until: Optional[datetime] = None,
+        should_tail: bool = False,
     ) -> Iterable:
         if not self.status(app_handle):
             raise UnknownAppException(app_handle)
@@ -363,5 +368,7 @@ class StandaloneSession(LoggingSession):
             app_handle, check_session=False
         )
 
-        log_iter = scheduler.log_iter(app_id, role_name, k, regex, since, until)
+        log_iter = scheduler.log_iter(
+            app_id, role_name, k, regex, since, until, should_tail
+        )
         return log_iter

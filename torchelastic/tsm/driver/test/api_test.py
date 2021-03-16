@@ -369,6 +369,7 @@ class SessionTest(unittest.TestCase):
             regex: Optional[str] = None,
             since: Optional[datetime] = None,
             until: Optional[datetime] = None,
+            should_tail: bool = False,
         ) -> Iterable:
             return iter([])
 
@@ -566,6 +567,7 @@ class SchedulerTest(unittest.TestCase):
             regex: Optional[str] = None,
             since: Optional[datetime] = None,
             until: Optional[datetime] = None,
+            should_tail: bool = False,
         ) -> Iterable:
             return iter([])
 

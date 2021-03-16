@@ -593,6 +593,7 @@ class LocalScheduler(Scheduler):
         regex: Optional[str] = None,
         since: Optional[datetime] = None,
         until: Optional[datetime] = None,
+        should_tail: bool = False,
     ) -> Iterable:
         if since or until:
             warnings.warn(

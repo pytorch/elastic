@@ -859,6 +859,7 @@ class Scheduler(abc.ABC):
         regex: Optional[str] = None,
         since: Optional[datetime] = None,
         until: Optional[datetime] = None,
+        should_tail: bool = False,
     ) -> Iterable:
         """
         Returns an iterator to the log lines of the ``k``th replica of the ``role``.
@@ -889,15 +890,21 @@ class Scheduler(abc.ABC):
            log iteration (e.g. tailing logs while the app is running). Refer to
            the specific scheduler's documentation for the iterator's behavior.
 
+        3.1 If the scheduler supports log-tailing, it should be controlled
+            by``should_tail`` parameter.
+
         4. Does not guarantee log retention. It is possible that by the time this
            method is called, the underlying scheduler may have purged the log records
            for this application. If so this method raises an arbitrary exception.
 
-        5. Only raises a ``StopIteration`` exception when the accessible log lines
-           have been fully exhausted and the app has reached a final state. For instance,
-           if the app gets stuck and does not produce any log lines, then the iterator
-           blocks until the app eventually gets killed (either via timeout or manually)
-           at which point it raises a ``StopIteration``.
+        5. If ``should_tail`` is True, the method only raises a ``StopIteration`` exception
+           when the accessible log lines have been fully exhausted and the app has reached
+           a final state. For instance, if the app gets stuck and does not produce any log lines,
+           then the iterator blocks until the app eventually gets killed (either via
+           timeout or manually) at which point it raises a ``StopIteration``.
+
+           If ``should_tail`` is False, the method raises ``StopIteration``
+           when there are no more logs.
 
         6. Need not be supported by all schedulers.
 
@@ -1241,6 +1248,7 @@ class Session(abc.ABC):
         regex: Optional[str] = None,
         since: Optional[datetime] = None,
         until: Optional[datetime] = None,
+        should_tail: bool = False,
     ) -> Iterable:
         """
         Returns an iterator over the log lines of the specified job container.
