@@ -413,6 +413,11 @@ NONE: str = "<NONE>"
 # =======================
 # ==== Status API =======
 # =======================
+
+# replica and app share the same states, simply alias it for now
+ReplicaState = AppState
+
+
 @dataclass
 class ReplicaStatus:
     """
@@ -427,7 +432,7 @@ class ReplicaStatus:
     """
 
     id: int
-    state: AppState
+    state: ReplicaState
     role: str
     hostname: str
     structured_error_msg: str = NONE
