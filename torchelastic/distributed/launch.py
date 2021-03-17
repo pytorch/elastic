@@ -222,18 +222,15 @@ import os
 import sys
 import uuid
 from argparse import REMAINDER, ArgumentParser
+from typing import List, Tuple
 
 import torch
-import torch.distributed.elastic.rendezvous.registry as rdzv_registry
-from torch.distributed.elastic import events, metrics
 from torch.distributed.elastic.multiprocessing import Std
-from torch.distributed.elastic.multiprocessing.errors import ChildFailedError, record
-from torch.distributed.elastic.rendezvous import RendezvousParameters
+from torch.distributed.elastic.multiprocessing.errors import record
 from torch.distributed.elastic.rendezvous.etcd_server import EtcdServer
 from torch.distributed.elastic.rendezvous.utils import _parse_rendezvous_config
 from torch.distributed.elastic.utils.logging import get_logger
-from torchelastic.agent.server.api import WorkerSpec, WorkerState
-from torchelastic.agent.server.local_elastic_agent import LocalElasticAgent
+from torchelastic.distributed.api import LaunchConfig, elastic_launch
 from torchelastic.distributed.argparse_util import check_env, env
 
 
@@ -436,41 +433,11 @@ def determine_local_world_size(nproc_per_node: str):
         return num_proc
 
 
-def _construct_event(args) -> events.Event:
-    metadata = {
-        "rdzv_backend": args.rdzv_backend,
-        "run_id": args.run_id,
-        "role": args.role,
-    }
-    return events.Event(
-        name="torchelastic.main", source=events.EventSource.AGENT, metadata=metadata
-    )
-
-
-@record
-def main(args=None):
+def config_from_args(args) -> Tuple[LaunchConfig, List[str]]:
     # If ``args`` not passed, defaults to ``sys.argv[:1]``
-    args = parse_args(args)
     min_nodes, max_nodes = parse_min_max_nnodes(args.nnodes)
     assert 0 < min_nodes <= max_nodes
     assert args.max_restarts >= 0
-
-    elastic_agent = None
-
-    if args.standalone:
-        etcd_server = EtcdServer()
-        etcd_server.start()
-        args.rdzv_backend = "etcd"
-        args.rdzv_endpoint = etcd_server.get_endpoint()
-        args.rdzv_id = str(uuid.uuid4())
-        log.info(
-            f"\n**************************************\n"
-            f"Rendezvous info:\n"
-            f"--rdzv_backend={args.rdzv_backend} "
-            f"--rdzv_endpoint={args.rdzv_endpoint} "
-            f"--rdzv_id={args.rdzv_id}\n"
-            f"**************************************\n"
-        )
 
     nproc_per_node = determine_local_world_size(args.nproc_per_node)
     if "OMP_NUM_THREADS" not in os.environ and nproc_per_node > 1:
@@ -485,6 +452,22 @@ def main(args=None):
         )
         # This env variable will be passed down to the subprocesses
         os.environ["OMP_NUM_THREADS"] = str(omp_num_threads)
+
+    config = LaunchConfig(
+        min_nodes=min_nodes,
+        max_nodes=max_nodes,
+        nproc_per_node=nproc_per_node,
+        run_id=args.rdzv_id,
+        role=args.role,
+        rdzv_endpoint=args.rdzv_endpoint,
+        rdzv_backend=args.rdzv_backend,
+        rdzv_configs=_parse_rendezvous_config(args.rdzv_conf),
+        max_restarts=args.max_restarts,
+        monitor_interval=args.monitor_interval,
+        start_method=args.start_method,
+        redirects=Std.from_str(args.redirects),
+        tee=Std.from_str(args.tee),
+    )
 
     with_python = not args.no_python
     cmd = []
@@ -502,53 +485,36 @@ def main(args=None):
     cmd.append(args.training_script)
     cmd.extend(args.training_script_args)
 
-    rdzv_parameters = RendezvousParameters(
-        backend=args.rdzv_backend,
-        endpoint=args.rdzv_endpoint,
-        run_id=args.rdzv_id,
-        min_nodes=min_nodes,
-        max_nodes=max_nodes,
-        **_parse_rendezvous_config(args.rdzv_conf),
-    )
+    return config, cmd
 
-    rdzv_handler = rdzv_registry.get_rendezvous_handler(rdzv_parameters)
+
+@record
+def main(args=None):
+    args = parse_args(args)
+
+    if args.standalone:
+        etcd_server = EtcdServer()
+        etcd_server.start()
+        args.rdzv_backend = "etcd"
+        args.rdzv_endpoint = etcd_server.get_endpoint()
+        args.rdzv_id = str(uuid.uuid4())
+        log.info(
+            f"\n**************************************\n"
+            f"Rendezvous info:\n"
+            f"--rdzv_backend={args.rdzv_backend} "
+            f"--rdzv_endpoint={args.rdzv_endpoint} "
+            f"--rdzv_id={args.rdzv_id}\n"
+            f"**************************************\n"
+        )
+
+    config, cmd = config_from_args(args)
+
     try:
-        spec = WorkerSpec(
-            role=args.role,
-            local_world_size=nproc_per_node,
+        elastic_launch(
+            config=config,
             entrypoint=cmd[0],
-            args=(*cmd[1:],),
-            rdzv_handler=rdzv_handler,
-            max_restarts=args.max_restarts,
-            monitor_interval=args.monitor_interval,
-            redirects=Std.from_str(args.redirects),
-            tee=Std.from_str(args.tee),
-        )
-        metrics.initialize_metrics()
-        elastic_agent = LocalElasticAgent(
-            spec=spec, start_method=args.start_method, log_dir=args.log_dir
-        )
-        run_result = elastic_agent.run(spec.role)
-        events.record(elastic_agent.get_agent_status_event(WorkerState.SUCCEEDED))
-        if run_result.is_failed():
-            # ChildFailedError is treated specially by @record
-            # if the error files for the failed children exist
-            # @record will copy the first error (root cause)
-            # to the error file of the launcher process
-            raise ChildFailedError(
-                name=args.training_script,
-                failures=run_result.failures,
-            )
-    except ChildFailedError:
-        raise
-    except Exception:
-        if elastic_agent:
-            events.record(elastic_agent.get_agent_status_event(WorkerState.FAILED))
-        else:
-            events.record(_construct_event(args))
-        raise
+        )(*cmd[1:])
     finally:
-        rdzv_handler.shutdown()
         if args.standalone:
             etcd_server.stop()
 
