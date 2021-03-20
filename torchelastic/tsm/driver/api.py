@@ -528,8 +528,12 @@ class DescribeAppResponse:
     roles: List[Role] = field(default_factory=list)
 
 
-# valid ``RunConfig`` values; only support primitives (str, int, float, bool)
-ConfigValue = Union[str, int, float, bool, None]
+# valid ``RunConfig`` values; only support primitives (str, int, float, bool, List[str])
+# TODO(wilsonhong): python 3.9+ supports list[T] in typing, which can be used directly
+# in isinstance(). Should replace with that.
+# see: https://docs.python.org/3/library/stdtypes.html#generic-alias-type
+ConfigValue = Union[str, int, float, bool, List[str], None]
+
 
 # =======================
 # ==== Run Config =======
@@ -627,6 +631,19 @@ class AppDryRunInfo(Generic[T]):
         return self._fmt(self.request)
 
 
+def get_type_name(tp) -> str:
+    """
+    Gets the type's name as a string. If ``tp` is a primitive class like int, str, etc, then
+    uses its attribute ``__name__``. Otherwise, use ``str(tp)``.
+
+    Note: we use this mothod to print out generic typing like List[str].
+    """
+    if hasattr(tp, "__name__"):
+        return tp.__name__
+    else:
+        return str(tp)
+
+
 class runopts:
     """
     Holds the accepted scheduler run configuration
@@ -660,6 +677,20 @@ class runopts:
     def __init__(self):
         self._opts: Dict[str, Tuple[ConfigValue, Type[ConfigValue], bool, str]] = {}
 
+    @staticmethod
+    def is_type(obj: ConfigValue, tp: Type[ConfigValue]) -> bool:
+        """
+        Returns True if ``obj`` is type of ``tp``. Similar to isinstance() but supports
+        tp = List[str], thus can be used to validate ConfigValue.
+        """
+        try:
+            return isinstance(obj, tp)
+        except TypeError:
+            if isinstance(obj, list):
+                return all(isinstance(e, str) for e in obj)
+            else:
+                return False
+
     def add(
         self,
         cfg_key: str,
@@ -678,7 +709,7 @@ class runopts:
                 f"Required option: {cfg_key} must not specify default value. Given: {default}"
             )
         if default is not None:
-            if not isinstance(default, type_):
+            if not runopts.is_type(default, type_):
                 raise TypeError(
                     f"Option: {cfg_key}, must be of type: {type_}."
                     f" Given: {default} ({type(default).__name__})"
@@ -710,9 +741,9 @@ class runopts:
                 )
 
             # check type (None matches all types)
-            if val is not None and not isinstance(val, type_):
+            if val is not None and not runopts.is_type(val, type_):
                 raise InvalidRunConfigException(
-                    f"Run option: {cfg_key}, must be of type: {type_.__name__},"
+                    f"Run option: {cfg_key}, must be of type: {get_type_name(type_)},"
                     f" but was: {val} ({type(val).__name__})",
                     config,
                     self,
@@ -728,7 +759,7 @@ class runopts:
         pretty_opts = {}
         for cfg_key, (default, type_, required, help) in self._opts.items():
             key = f"*{cfg_key}" if required else cfg_key
-            opt = {"type": type_.__name__}
+            opt = {"type": get_type_name(type_)}
             if required:
                 opt["required"] = True
             else:
