@@ -15,9 +15,9 @@ import uuid
 from unittest import mock
 from unittest.mock import Mock, patch
 
+from torch.distributed.elastic.agent.server.api import RunResult, WorkerState
 from torch.distributed.elastic.multiprocessing.errors import ChildFailedError
 from torch.distributed.elastic.rendezvous.etcd_server import EtcdServer
-from torchelastic.agent.server.api import RunResult, WorkerState
 from torchelastic.distributed.api import (
     LaunchConfig,
     elastic_launch,
@@ -163,7 +163,9 @@ class ElasticLaunchTest(unittest.TestCase):
         record_mock.assert_called_once()
 
     @mock.patch("torch.distributed.elastic.events.record")
-    @mock.patch("torchelastic.agent.server.local_elastic_agent.LocalElasticAgent.run")
+    @mock.patch(
+        "torch.distributed.elastic.agent.server.local_elastic_agent.LocalElasticAgent.run"
+    )
     def test_launch_elastic_agent_raise_exception(self, record_mock, mock_agent_run):
         """
         Asserts that when the agent raises an exception
