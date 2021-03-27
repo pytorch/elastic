@@ -182,11 +182,11 @@ def launch_agent(
     )
 
     rdzv_parameters = RendezvousParameters(
-        backend=config.rdzv_backend,
+        backend_name=config.rdzv_backend,
         endpoint=config.rdzv_endpoint,
         run_id=config.run_id,
-        min_nodes=config.min_nodes,
-        max_nodes=config.max_nodes,
+        min_num_nodes=config.min_nodes,
+        max_num_nodes=config.max_nodes,
         **config.rdzv_configs,
     )
 
