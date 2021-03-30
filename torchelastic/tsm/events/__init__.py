@@ -23,7 +23,7 @@ import logging
 
 from torchelastic.tsm.events.handlers import get_logging_handler
 
-from .api import TsmEvent  # noqa F401
+from .api import SourceType, TsmEvent  # noqa F401
 
 _events_logger = None
 

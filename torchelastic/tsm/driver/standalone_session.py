@@ -30,7 +30,7 @@ from torchelastic.tsm.driver.api import (
     parse_app_handle,
     runopts,
 )
-from torchelastic.tsm.events import record, TsmEvent
+from torchelastic.tsm.events import record, SourceType, TsmEvent
 
 
 class LoggingSession(Session):
@@ -47,6 +47,7 @@ class LoggingSession(Session):
             "schedule",
             scheduler_backend,
             runcfg=runcfg,
+            source=SourceType.EXTERNAL,
         )
         try:
             app_handle = self._schedule(dryrun_info)
@@ -62,10 +63,19 @@ class LoggingSession(Session):
             record(tsm_event)
             raise
 
-    def status(self, app_handle: AppHandle) -> Optional[AppStatus]:
+    def status(
+        self, app_handle: AppHandle, external: bool = True
+    ) -> Optional[AppStatus]:
+        # TODO(wilsonhong): ``external`` is a short term soluation. For long term we should
+        # fill this value automatically instead of exposing this to user.
         # allow status checks of apps from other sessions
         scheduler_backend, _, app_id = parse_app_handle(app_handle)
-        tsm_event = self._generate_tsm_event("status", scheduler_backend, app_id)
+        tsm_event = self._generate_tsm_event(
+            "status",
+            scheduler_backend,
+            app_id,
+            source=SourceType.EXTERNAL if external else SourceType.INTERNAL,
+        )
         try:
             app_status = self._status(app_handle)
             record(tsm_event)
@@ -77,7 +87,9 @@ class LoggingSession(Session):
 
     def wait(self, app_handle: AppHandle) -> Optional[AppStatus]:
         scheduler_backend, _, app_id = parse_app_handle(app_handle)
-        tsm_event = self._generate_tsm_event("wait", scheduler_backend, app_id)
+        tsm_event = self._generate_tsm_event(
+            "wait", scheduler_backend, app_id, source=SourceType.EXTERNAL
+        )
         try:
             record(tsm_event)
             return self._wait(app_handle)
@@ -87,7 +99,7 @@ class LoggingSession(Session):
             raise
 
     def list(self) -> Dict[AppHandle, Application]:
-        tsm_event = self._generate_tsm_event("list", "")
+        tsm_event = self._generate_tsm_event("list", "", source=SourceType.EXTERNAL)
         try:
             res = self._list()
             record(tsm_event)
@@ -103,6 +115,7 @@ class LoggingSession(Session):
             "stop",
             scheduler_backend,
             app_id,
+            source=SourceType.EXTERNAL,
         )
         try:
             self._stop(app_handle)
@@ -119,6 +132,7 @@ class LoggingSession(Session):
             "describe",
             scheduler_backend,
             app_id,
+            source=SourceType.EXTERNAL,
         )
         try:
             res = self._describe(app_handle)
@@ -144,6 +158,7 @@ class LoggingSession(Session):
             "log_lines",
             scheduler_backend,
             app_id,
+            source=SourceType.EXTERNAL,
         )
         try:
             log_iter = self._log_lines(
@@ -199,6 +214,7 @@ class LoggingSession(Session):
         scheduler: str,
         app_id: Optional[str] = None,
         runcfg: Optional[str] = None,
+        source: SourceType = SourceType.UNKNOWN,
     ) -> TsmEvent:
         return TsmEvent(
             session=self.name(),
@@ -206,6 +222,7 @@ class LoggingSession(Session):
             api=api,
             app_id=app_id,
             runcfg=runcfg,
+            source=source,
         )
 
 
@@ -311,7 +328,7 @@ class StandaloneSession(LoggingSession):
             app_handle, check_session=False
         )
         while True:
-            app_status = self.status(app_handle)
+            app_status = self.status(app_handle, external=False)
 
             if not app_status:
                 return None

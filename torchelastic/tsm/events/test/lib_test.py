@@ -9,7 +9,7 @@ import logging
 import unittest
 from unittest.mock import patch
 
-from torchelastic.tsm.events import _get_or_create_logger, TsmEvent
+from torchelastic.tsm.events import _get_or_create_logger, SourceType, TsmEvent
 
 
 class TsmEventLibTest(unittest.TestCase):
@@ -19,6 +19,7 @@ class TsmEventLibTest(unittest.TestCase):
         self.assertEqual(actual_event.api, expected_event.api)
         self.assertEqual(actual_event.app_id, expected_event.app_id)
         self.assertEqual(actual_event.runcfg, expected_event.runcfg)
+        self.assertEqual(actual_event.source, expected_event.source)
 
     @patch("torchelastic.tsm.events.get_logging_handler")
     def test_get_or_create_logger(self, logging_handler_mock):
@@ -35,10 +36,14 @@ class TsmEventLibTest(unittest.TestCase):
         self.assertEqual("test_session", event.session)
         self.assertEqual("test_scheduler", event.scheduler)
         self.assertEqual("test_api", event.api)
+        self.assertEqual(SourceType.UNKNOWN, event.source)
 
     def test_event_deser(self):
         event = TsmEvent(
-            session="test_session", scheduler="test_scheduler", api="test_api"
+            session="test_session",
+            scheduler="test_scheduler",
+            api="test_api",
+            source=SourceType.EXTERNAL,
         )
         json_event = event.serialize()
         deser_event = TsmEvent.deserialize(json_event)
