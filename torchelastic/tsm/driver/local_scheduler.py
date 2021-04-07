@@ -82,6 +82,9 @@ class LocalDirectoryImageFetcher(ImageFetcher):
     2. ``fetch(Image(name="/tmp/dir/that/does/not_exist"))`` raises ``ValueError``
     """
 
+    def __init__(self, cfg: RunConfig):
+        pass
+
     def fetch(self, image: str) -> str:
         """
         Raises:
@@ -325,7 +328,7 @@ class LocalScheduler(Scheduler):
     """
 
     def __init__(self, session_name: str, cache_size: int = 100):
-        super().__init__(session_name)
+        super().__init__("local", session_name)
 
         # TODO T72035686 replace dict with a proper LRUCache data structure
         self._apps: Dict[AppId, _LocalApplication] = {}
@@ -349,12 +352,12 @@ class LocalScheduler(Scheduler):
         # Skip validation step for local application
         pass
 
-    def _img_fetchers(self) -> Dict[str, ImageFetcher]:
-        return {"dir": LocalDirectoryImageFetcher()}
+    def _img_fetchers(self, cfg: RunConfig) -> Dict[str, ImageFetcher]:
+        return {"dir": LocalDirectoryImageFetcher(cfg)}
 
     def _get_img_fetcher(self, cfg: RunConfig) -> ImageFetcher:
         img_fetcher_type = cfg.get("image_fetcher")
-        fetchers = self._img_fetchers()
+        fetchers = self._img_fetchers(cfg)
         # pyre-ignore [6]: type check already done by runopt.resolve
         img_fetcher = fetchers.get(img_fetcher_type, None)
         if not img_fetcher:
@@ -593,6 +596,7 @@ class LocalScheduler(Scheduler):
         regex: Optional[str] = None,
         since: Optional[datetime] = None,
         until: Optional[datetime] = None,
+        should_tail: bool = False,
     ) -> Iterable:
         if since or until:
             warnings.warn(

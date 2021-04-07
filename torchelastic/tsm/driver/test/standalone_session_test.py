@@ -31,7 +31,7 @@ from torchelastic.tsm.driver.api import (
 )
 from torchelastic.tsm.driver.local_scheduler import LocalScheduler
 from torchelastic.tsm.driver.standalone_session import StandaloneSession, LoggingSession
-from torchelastic.tsm.events import TsmEvent
+from torchelastic.tsm.events import SourceType, TsmEvent
 
 from .test_util import write_shell_script
 
@@ -78,6 +78,7 @@ class DummySession(LoggingSession):
         regex: Optional[str] = None,
         since: Optional[datetime.datetime] = None,
         until: Optional[datetime.datetime] = None,
+        should_tail: bool = False,
     ):
         return iter(["test_log"])
 
@@ -88,13 +89,16 @@ class LoggingSessionTest(unittest.TestCase):
         self.assertEqual(expected.session, actual.session)
         self.assertEqual(expected.app_id, actual.app_id)
         self.assertEqual(expected.api, actual.api)
+        self.assertEqual(expected.source, actual.source)
 
     def test_status_success(self, record_tsm_mock):
         session = DummySession("test_session")
         session.status("default://test_session/test_app")
         actual_tsm_event = record_tsm_mock.call_args[0][0]  # first arg
         self.assert_tsm_event(
-            session._generate_tsm_event("status", "default", "test_app"),
+            session._generate_tsm_event(
+                "status", "default", "test_app", source=SourceType.EXTERNAL
+            ),
             actual_tsm_event,
         )
 
@@ -153,7 +157,11 @@ class LoggingSessionTest(unittest.TestCase):
         _, _, app_id = parse_app_handle(app_handle)
         self.assert_tsm_event(
             session._generate_tsm_event(
-                "schedule", "default", app_id, runcfg=json.dumps(cfg.cfgs)
+                "schedule",
+                "default",
+                app_id,
+                runcfg=json.dumps(cfg.cfgs),
+                source=SourceType.EXTERNAL,
             ),
             actual_tsm_event,
         )
@@ -365,7 +373,7 @@ class StandaloneSessionTest(unittest.TestCase):
 
         self.assertEqual(["hello", "world"], lines)
         scheduler_mock.log_iter.assert_called_once_with(
-            app_id, role_name, replica_id, regex, since, until
+            app_id, role_name, replica_id, regex, since, until, False
         )
 
     def test_no_default_scheduler(self, _):

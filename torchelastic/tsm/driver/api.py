@@ -265,6 +265,17 @@ class Role:
         self.max_retries = max_retries
         return self
 
+    def pre_proc(
+        self, scheduler: SchedulerBackend, dryrun_info: "AppDryRunInfo"
+    ) -> "AppDryRunInfo":
+        """
+        Modifies the scheduler request based on the role specific configuration.
+        The method is invoked for each role during scheduler ``submit_dryrun``.
+        If there are multiple roles, the method is invoked for each role in
+        order that is defined by the ``Application.roles`` list.
+        """
+        return dryrun_info
+
 
 class ElasticRole(Role):
     """
@@ -413,6 +424,11 @@ NONE: str = "<NONE>"
 # =======================
 # ==== Status API =======
 # =======================
+
+# replica and app share the same states, simply alias it for now
+ReplicaState = AppState
+
+
 @dataclass
 class ReplicaStatus:
     """
@@ -427,7 +443,7 @@ class ReplicaStatus:
     """
 
     id: int
-    state: AppState
+    state: ReplicaState
     role: str
     hostname: str
     structured_error_msg: str = NONE
@@ -512,8 +528,12 @@ class DescribeAppResponse:
     roles: List[Role] = field(default_factory=list)
 
 
-# valid ``RunConfig`` values; only support primitives (str, int, float, bool)
-ConfigValue = Union[str, int, float, bool, None]
+# valid ``RunConfig`` values; only support primitives (str, int, float, bool, List[str])
+# TODO(wilsonhong): python 3.9+ supports list[T] in typing, which can be used directly
+# in isinstance(). Should replace with that.
+# see: https://docs.python.org/3/library/stdtypes.html#generic-alias-type
+ConfigValue = Union[str, int, float, bool, List[str], None]
+
 
 # =======================
 # ==== Run Config =======
@@ -611,6 +631,19 @@ class AppDryRunInfo(Generic[T]):
         return self._fmt(self.request)
 
 
+def get_type_name(tp) -> str:
+    """
+    Gets the type's name as a string. If ``tp` is a primitive class like int, str, etc, then
+    uses its attribute ``__name__``. Otherwise, use ``str(tp)``.
+
+    Note: we use this mothod to print out generic typing like List[str].
+    """
+    if hasattr(tp, "__name__"):
+        return tp.__name__
+    else:
+        return str(tp)
+
+
 class runopts:
     """
     Holds the accepted scheduler run configuration
@@ -644,6 +677,20 @@ class runopts:
     def __init__(self):
         self._opts: Dict[str, Tuple[ConfigValue, Type[ConfigValue], bool, str]] = {}
 
+    @staticmethod
+    def is_type(obj: ConfigValue, tp: Type[ConfigValue]) -> bool:
+        """
+        Returns True if ``obj`` is type of ``tp``. Similar to isinstance() but supports
+        tp = List[str], thus can be used to validate ConfigValue.
+        """
+        try:
+            return isinstance(obj, tp)
+        except TypeError:
+            if isinstance(obj, list):
+                return all(isinstance(e, str) for e in obj)
+            else:
+                return False
+
     def add(
         self,
         cfg_key: str,
@@ -662,7 +709,7 @@ class runopts:
                 f"Required option: {cfg_key} must not specify default value. Given: {default}"
             )
         if default is not None:
-            if not isinstance(default, type_):
+            if not runopts.is_type(default, type_):
                 raise TypeError(
                     f"Option: {cfg_key}, must be of type: {type_}."
                     f" Given: {default} ({type(default).__name__})"
@@ -694,9 +741,9 @@ class runopts:
                 )
 
             # check type (None matches all types)
-            if val is not None and not isinstance(val, type_):
+            if val is not None and not runopts.is_type(val, type_):
                 raise InvalidRunConfigException(
-                    f"Run option: {cfg_key}, must be of type: {type_.__name__},"
+                    f"Run option: {cfg_key}, must be of type: {get_type_name(type_)},"
                     f" but was: {val} ({type(val).__name__})",
                     config,
                     self,
@@ -712,7 +759,7 @@ class runopts:
         pretty_opts = {}
         for cfg_key, (default, type_, required, help) in self._opts.items():
             key = f"*{cfg_key}" if required else cfg_key
-            opt = {"type": type_.__name__}
+            opt = {"type": get_type_name(type_)}
             if required:
                 opt["required"] = True
             else:
@@ -747,7 +794,8 @@ class Scheduler(abc.ABC):
     ``@abc.abstractmethod``.
     """
 
-    def __init__(self, session_name: str):
+    def __init__(self, backend: SchedulerBackend, session_name: str):
+        self.backend = backend
         self.session_name = session_name
 
     def submit(self, app: Application, cfg: RunConfig) -> str:
@@ -788,6 +836,8 @@ class Scheduler(abc.ABC):
         """
         resolved_cfg = self.run_opts().resolve(cfg)
         dryrun_info = self._submit_dryrun(app, resolved_cfg)
+        for role in app.roles:
+            dryrun_info = role.pre_proc(self.backend, dryrun_info)
         dryrun_info._app = app
         dryrun_info._cfg = resolved_cfg
         return dryrun_info
@@ -854,6 +904,7 @@ class Scheduler(abc.ABC):
         regex: Optional[str] = None,
         since: Optional[datetime] = None,
         until: Optional[datetime] = None,
+        should_tail: bool = False,
     ) -> Iterable:
         """
         Returns an iterator to the log lines of the ``k``th replica of the ``role``.
@@ -884,15 +935,21 @@ class Scheduler(abc.ABC):
            log iteration (e.g. tailing logs while the app is running). Refer to
            the specific scheduler's documentation for the iterator's behavior.
 
+        3.1 If the scheduler supports log-tailing, it should be controlled
+            by``should_tail`` parameter.
+
         4. Does not guarantee log retention. It is possible that by the time this
            method is called, the underlying scheduler may have purged the log records
            for this application. If so this method raises an arbitrary exception.
 
-        5. Only raises a ``StopIteration`` exception when the accessible log lines
-           have been fully exhausted and the app has reached a final state. For instance,
-           if the app gets stuck and does not produce any log lines, then the iterator
-           blocks until the app eventually gets killed (either via timeout or manually)
-           at which point it raises a ``StopIteration``.
+        5. If ``should_tail`` is True, the method only raises a ``StopIteration`` exception
+           when the accessible log lines have been fully exhausted and the app has reached
+           a final state. For instance, if the app gets stuck and does not produce any log lines,
+           then the iterator blocks until the app eventually gets killed (either via
+           timeout or manually) at which point it raises a ``StopIteration``.
+
+           If ``should_tail`` is False, the method raises ``StopIteration``
+           when there are no more logs.
 
         6. Need not be supported by all schedulers.
 
@@ -1236,6 +1293,7 @@ class Session(abc.ABC):
         regex: Optional[str] = None,
         since: Optional[datetime] = None,
         until: Optional[datetime] = None,
+        should_tail: bool = False,
     ) -> Iterable:
         """
         Returns an iterator over the log lines of the specified job container.

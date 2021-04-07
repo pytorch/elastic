@@ -20,6 +20,7 @@ from unittest.mock import patch
 from torchelastic.tsm.driver.api import (
     Application,
     AppState,
+    RunConfig,
     Container,
     DescribeAppResponse,
     Role,
@@ -52,17 +53,20 @@ class LocalDirImageFetcherTest(unittest.TestCase):
         shutil.rmtree(self.test_dir)
 
     def test_fetch_abs_path(self):
-        fetcher = LocalDirectoryImageFetcher()
+        cfg = RunConfig()
+        fetcher = LocalDirectoryImageFetcher(cfg)
         self.assertEqual(self.test_dir, fetcher.fetch(self.test_dir))
 
     def test_fetch_relative_path_should_throw(self):
-        fetcher = LocalDirectoryImageFetcher()
+        cfg = RunConfig()
+        fetcher = LocalDirectoryImageFetcher(cfg)
         with self.assertRaises(ValueError):
             fetcher.fetch(self.test_dir_name)
 
     def test_fetch_does_not_exist_should_throw(self):
         non_existent_dir = join(self.test_dir, "non_existent_dir")
-        fetcher = LocalDirectoryImageFetcher()
+        cfg = RunConfig()
+        fetcher = LocalDirectoryImageFetcher(cfg)
         with self.assertRaises(ValueError):
             fetcher.fetch(non_existent_dir)
 

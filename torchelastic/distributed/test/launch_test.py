@@ -16,9 +16,9 @@ from unittest import mock
 from unittest.mock import Mock, patch
 
 import torchelastic.distributed.launch as launch
+from torch.distributed.elastic.agent.server.api import RunResult, WorkerState
 from torch.distributed.elastic.multiprocessing.errors import ChildFailedError
 from torch.distributed.elastic.rendezvous.etcd_server import EtcdServer
-from torchelastic.agent.server.api import RunResult, WorkerState
 from torchelastic.test.test_utils import is_tsan
 
 
@@ -271,7 +271,9 @@ class LaunchTest(unittest.TestCase):
         record_mock.assert_called_once()
 
     @unittest.skipIf(is_tsan(), "test incompatible with tsan")
-    @mock.patch("torchelastic.agent.server.local_elastic_agent.LocalElasticAgent.run")
+    @mock.patch(
+        "torch.distributed.elastic.agent.server.local_elastic_agent.LocalElasticAgent.run"
+    )
     @mock.patch("torch.distributed.elastic.events.record")
     def test_launch_elastic_agent_raise_exception(self, record_mock, mock_agent_run):
         """
@@ -368,7 +370,7 @@ class LaunchTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             launch.parse_min_max_nnodes("2:20:30")
 
-    @patch("torchelastic.distributed.launch.LocalElasticAgent")
+    @patch("torchelastic.distributed.api.LocalElasticAgent")
     def test_launch_shutdown(self, agent_mock_cls):
         nnodes = 1
         nproc_per_node = 4

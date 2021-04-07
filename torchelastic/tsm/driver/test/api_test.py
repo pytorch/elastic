@@ -5,12 +5,13 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
+import collections
 import dataclasses
 import json
 import os
 import unittest
 from datetime import datetime
-from typing import Dict, Iterable, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
 from unittest.mock import MagicMock
 
 from torchelastic.tsm.driver.api import (
@@ -36,6 +37,7 @@ from torchelastic.tsm.driver.api import (
     Scheduler,
     SchedulerBackend,
     Session,
+    get_type_name,
     macros,
     make_app_handle,
     parse_app_handle,
@@ -369,6 +371,7 @@ class SessionTest(unittest.TestCase):
             regex: Optional[str] = None,
             since: Optional[datetime] = None,
             until: Optional[datetime] = None,
+            should_tail: bool = False,
         ) -> Iterable:
             return iter([])
 
@@ -540,11 +543,24 @@ class RunConfigTest(unittest.TestCase):
         self.assertIsNone(resolved.get("cluster_id"))
         self.assertEqual("baz", resolved.get("some_other_opt"))
 
+    def test_runopts_is_type(self):
+        # primitive types
+        self.assertTrue(runopts.is_type(3, int))
+        self.assertFalse(runopts.is_type("foo", int))
+        self.assertTrue(runopts.is_type(("foo", "bar"), tuple))
+        # List[str]
+        self.assertFalse(runopts.is_type(None, List[str]))
+        self.assertFalse(runopts.is_type({1: 2}, List[str]))
+        self.assertTrue(runopts.is_type([], List[str]))
+        self.assertTrue(runopts.is_type(["a", "b"], List[str]))
+        self.assertFalse(runopts.is_type([1, 2], List[str]))
+        self.assertFalse(runopts.is_type([1, "b"], List[str]))
+
 
 class SchedulerTest(unittest.TestCase):
     class MockScheduler(Scheduler):
         def __init__(self, session_name):
-            super().__init__(session_name)
+            super().__init__("mock", session_name)
 
         def schedule(self, dryrun_info: AppDryRunInfo) -> str:
             return dryrun_info._app.name
@@ -566,6 +582,7 @@ class SchedulerTest(unittest.TestCase):
             regex: Optional[str] = None,
             since: Optional[datetime] = None,
             until: Optional[datetime] = None,
+            should_tail: bool = False,
         ) -> Iterable:
             return iter([])
 
@@ -602,3 +619,28 @@ class SchedulerTest(unittest.TestCase):
             bad_type_cfg = RunConfig()
             bad_type_cfg.set("foo", 100)
             scheduler_mock.submit_dryrun(app_mock, empty_cfg)
+
+    def test_role_preproc_called(self):
+        scheduler_mock = SchedulerTest.MockScheduler("test_session")
+        app_mock = MagicMock()
+        app_mock.roles = [MagicMock()]
+
+        cfg = RunConfig()
+        cfg.set("foo", "bar")
+        scheduler_mock.submit_dryrun(app_mock, cfg)
+        role_mock = app_mock.roles[0]
+        role_mock.pre_proc.assert_called_once()
+
+
+class GetTypeNameTest(unittest.TestCase):
+    def test_get_type_name(self):
+        self.assertEqual("int", get_type_name(int))
+        self.assertEqual("list", get_type_name(list))
+        self.assertEqual("Callable", get_type_name(collections.abc.Callable))
+        self.assertEqual("typing.Any", get_type_name(Any))
+        self.assertEqual("typing.Union[str, int]", get_type_name(Union[str, int]))
+        self.assertEqual("typing.List[int]", get_type_name(List[int]))
+        self.assertEqual("typing.Dict[str, int]", get_type_name(Dict[str, int]))
+        self.assertEqual(
+            "typing.List[typing.List[int]]", get_type_name(List[List[int]])
+        )
