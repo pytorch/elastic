@@ -230,7 +230,7 @@ from torch.distributed.elastic.multiprocessing.errors import record
 from torch.distributed.elastic.rendezvous.etcd_server import EtcdServer
 from torch.distributed.elastic.rendezvous.utils import _parse_rendezvous_config
 from torch.distributed.elastic.utils.logging import get_logger
-from torchelastic.distributed.api import LaunchConfig, elastic_launch
+from torchelastic.distributed import LaunchConfig, elastic_launch
 from torchelastic.distributed.argparse_util import check_env, env
 
 
