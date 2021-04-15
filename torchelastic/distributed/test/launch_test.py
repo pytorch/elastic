@@ -12,6 +12,7 @@ import subprocess
 import tempfile
 import unittest
 import uuid
+from contextlib import closing
 from unittest import mock
 from unittest.mock import Mock, patch
 
@@ -19,6 +20,7 @@ import torchelastic.distributed.launch as launch
 from torch.distributed.elastic.agent.server.api import RunResult, WorkerState
 from torch.distributed.elastic.multiprocessing.errors import ChildFailedError
 from torch.distributed.elastic.rendezvous.etcd_server import EtcdServer
+from torch.distributed.elastic.utils import get_socket_with_port
 from torchelastic.test.test_utils import is_tsan
 
 
@@ -106,12 +108,38 @@ class LaunchTest(unittest.TestCase):
             {str(i) for i in range(world_size)}, set(os.listdir(self.test_dir))
         )
 
+    def test_launch_user_script_python_caffe2_bc(self):
+        nnodes = 1
+        nproc_per_node = 4
+        world_size = nnodes * nproc_per_node
+        sock = get_socket_with_port()
+        with closing(sock):
+            master_port = sock.getsockname()[1]
+        args = [
+            f"--nnodes={nnodes}",
+            f"--nproc_per_node={nproc_per_node}",
+            "--monitor_interval=1",
+            "--start_method=fork",
+            "--master_addr=localhost",
+            f"--master_port={master_port}",
+            "--node_rank=0",
+            path("bin/test_script.py"),
+            "--local_rank=${local_rank}",
+            f"--touch_file_dir={self.test_dir}",
+        ]
+        launch.main(args)
+
+        # make sure all the workers ran
+        # each worker touches a file with its global rank as the name
+        self.assertSetEqual(
+            {str(i) for i in range(world_size)}, set(os.listdir(self.test_dir))
+        )
+
     def test_launch_user_script_bash(self):
         run_id = str(uuid.uuid4().int)
         nnodes = 1
         nproc_per_node = 4
         world_size = nnodes * nproc_per_node
-
         args = [
             f"--nnodes={nnodes}",
             f"--nproc_per_node={nproc_per_node}",

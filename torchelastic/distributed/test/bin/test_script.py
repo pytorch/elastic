@@ -21,6 +21,13 @@ def parse_args():
         help="forces the script to throw a RuntimeError",
     )
 
+    parser.add_argument(
+        "--local_rank",
+        type=int,
+        default=-1,
+        help="The rank of the node for multi-node distributed " "training",
+    )
+
     # file is used for assertions
     parser.add_argument(
         "--touch_file_dir",
@@ -55,6 +62,15 @@ def main():
     for env_var in env_vars:
         value = os.environ[env_var]
         print(f"{env_var} = {value}")
+
+    if args.local_rank != -1:
+        expected_rank = int(os.environ["LOCAL_RANK"])
+        actual_rank = args.local_rank
+        if expected_rank != actual_rank:
+            raise RuntimeError(
+                "Parameters passed: --local_rank that has different value "
+                f"from env var: expected: {expected_rank}, got: {actual_rank}"
+            )
 
     if args.fail:
         raise RuntimeError("raising exception since --fail flag was set")

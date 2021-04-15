@@ -229,6 +229,7 @@ from torch.distributed.elastic.multiprocessing import Std
 from torch.distributed.elastic.multiprocessing.errors import record
 from torch.distributed.elastic.rendezvous.etcd_server import EtcdServer
 from torch.distributed.elastic.rendezvous.utils import _parse_rendezvous_config
+from torch.distributed.elastic.utils import macros
 from torch.distributed.elastic.utils.logging import get_logger
 from torchelastic.distributed import LaunchConfig, elastic_launch
 from torchelastic.distributed.argparse_util import check_env, env
@@ -266,7 +267,7 @@ def parse_args(args):
         "--rdzv_backend",
         action=env,
         type=str,
-        default="etcd",
+        default="static",
         help="rendezvous backend",
     )
     parser.add_argument(
@@ -276,7 +277,13 @@ def parse_args(args):
         default="",
         help="rendezvous backend server host:port",
     )
-    parser.add_argument("--rdzv_id", action=env, type=str, help="user defined group id")
+    parser.add_argument(
+        "--rdzv_id",
+        action=env,
+        default="<NONE>",
+        type=str,
+        help="user defined group id",
+    )
     parser.add_argument(
         "--rdzv_conf",
         action=env,
@@ -373,6 +380,47 @@ def parse_args(args):
         help="tee std streams into a log file and also to console (see --redirects for format)",
     )
 
+    # backwards compatible params with caffe2.distributed.launch
+
+    parser.add_argument(
+        "--node_rank",
+        type=int,
+        action=env,
+        default=0,
+        help="The rank of the node for multi-node distributed " "training",
+    )
+
+    parser.add_argument(
+        "--master_addr",
+        default="127.0.0.1",
+        type=str,
+        action=env,
+        help="Master node (rank 0)'s address, should be either "
+        "the IP address or the hostname of node 0, for "
+        "single node multi-proc training, the "
+        "--master_addr can simply be 127.0.0.1"
+        "IPV6 should have the following pattern: `[0:0:0:0:0:0:0:1]`",
+    )
+    parser.add_argument(
+        "--master_port",
+        default=29500,
+        type=int,
+        action=env,
+        help="Master node (rank 0)'s free port that needs to "
+        "be used for communication during distributed "
+        "training",
+    )
+
+    parser.add_argument(
+        "--use_env",
+        default=True,
+        action="store_true",
+        help="Use environment variable to pass "
+        "'local rank'. For legacy reasons, the default value is True. "
+        "If set to True, the script will not pass "
+        "--local_rank as argument, and will instead set LOCAL_RANK.",
+    )
+
     # positional
     parser.add_argument(
         "training_script",
@@ -433,6 +481,13 @@ def determine_local_world_size(nproc_per_node: str):
         return num_proc
 
 
+def get_rdzv_endpoint(args):
+    if args.rdzv_backend == "static":
+        return f"{args.master_addr}:{args.master_port}"
+    else:
+        return args.rdzv_endpoint
+
+
 def config_from_args(args) -> Tuple[LaunchConfig, List[str]]:
     # If ``args`` not passed, defaults to ``sys.argv[:1]``
     min_nodes, max_nodes = parse_min_max_nnodes(args.nnodes)
@@ -453,15 +508,22 @@ def config_from_args(args) -> Tuple[LaunchConfig, List[str]]:
         # This env variable will be passed down to the subprocesses
         os.environ["OMP_NUM_THREADS"] = str(omp_num_threads)
 
+    rdzv_configs = _parse_rendezvous_config(args.rdzv_conf)
+
+    if args.rdzv_backend == "static":
+        rdzv_configs["rank"] = args.node_rank
+
+    rdzv_endpoint = get_rdzv_endpoint(args)
+
     config = LaunchConfig(
         min_nodes=min_nodes,
         max_nodes=max_nodes,
         nproc_per_node=nproc_per_node,
         run_id=args.rdzv_id,
         role=args.role,
-        rdzv_endpoint=args.rdzv_endpoint,
+        rdzv_endpoint=rdzv_endpoint,
         rdzv_backend=args.rdzv_backend,
-        rdzv_configs=_parse_rendezvous_config(args.rdzv_conf),
+        rdzv_configs=rdzv_configs,
         max_restarts=args.max_restarts,
         monitor_interval=args.monitor_interval,
         start_method=args.start_method,
@@ -476,13 +538,19 @@ def config_from_args(args) -> Tuple[LaunchConfig, List[str]]:
         if args.module:
             cmd.append("-m")
     else:
+        if not args.use_env:
+            raise ValueError(
+                "When using the '--no_python' flag,"
+                " you must also set the '--use_env' flag."
+            )
         if args.module:
             raise ValueError(
                 "Don't use both the '--no_python' flag"
                 " and the '--module' flag at the same time."
             )
-
     cmd.append(args.training_script)
+    if not args.use_env:
+        cmd.append(f"--local_rank={macros.local_rank}")
     cmd.extend(args.training_script_args)
 
     return config, cmd
