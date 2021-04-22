@@ -24,7 +24,7 @@ class AwsSessionProvider:
     https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html
     """
 
-    def get_session(self, region=None):
+    def get_session(self, region=None) -> boto3.Session:
         access_key = self._get_access_key()
         secret_key = self._get_secret_key()
         session_token = self._get_session_token()
