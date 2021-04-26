@@ -10,7 +10,7 @@ SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = torchelastic
 SOURCEDIR     = source
 BUILDDIR      = build
-VERSION       := $(shell python -c "import torchelastic; print(torchelastic.__version__)")
+VERSION       := "0.2.3.dev0"
 
 # Put it first so that "make" without argument is like "make help".
 help:

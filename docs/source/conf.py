@@ -22,8 +22,6 @@ import pytorch_sphinx_theme
 # import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
-import torch
-import torchelastic
 from docutils import nodes
 from sphinx import addnodes
 from sphinx.util.docfields import TypedField
@@ -88,7 +86,7 @@ author = "PyTorch Elastic Contributors"
 #
 # The short X.Y version.
 # TODO: change to [:2] at v1.0
-version = f"v{torchelastic.__version__}"
+version = "v0.2.3.dev0"
 # The full version, including alpha/beta/rc tags.
 # TODO: verify this works as expected
 release = "master"
