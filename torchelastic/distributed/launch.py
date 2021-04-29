@@ -6,7 +6,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-from torch.distributed.elastic_launch import parse_args, run
+from torch.distributed.run import parse_args, run
 
 
 def main(args=None):
