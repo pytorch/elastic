@@ -3,49 +3,14 @@
 TorchElastic
 ==================
 
-Makes distributed PyTorch fault-tolerant and elastic.
-
-Get Started
----------------
-.. toctree::
-   :maxdepth: 1
-   :caption: Usage
-
-   quickstart
-   train_script
-   examples
-
-Documentation
----------------
-
-.. toctree::
-   :maxdepth: 1
-   :caption: API
-
-   distributed
-   agent
-   multiprocessing
-   errors
-   rendezvous
-   timer
-   metrics
-   events
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Advanced
-
-   customization
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Plugins
-
-   kubernetes
-   runtime
-
+.. important:: TorchElastic has been upstreamed to PyTorch (``torch.distributed.elastic``) and will be
+               included as part of the next PyTorch release (``torch-1.9``). In the meanwhile please use
+               `pytorch-nightly <https://pytorch.org/get-started/locally/#start-locally>`_ or
+               `torchelastic-0.2.2 <https://pypi.org/project/torchelastic/>`_. For documentation please refer to our
+               `v0.2.2 docs <https://pytorch.org/elastic/0.2.2>`_ for now.
+   
 Training Session Manager(TSM)
----------------
+------------------------------
 .. toctree::
    :maxdepth: 1
    :caption: Training Session Manager(TSM)
