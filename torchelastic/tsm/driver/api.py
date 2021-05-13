@@ -92,17 +92,6 @@ class Container:
     A ``Resource`` can be bound to a specific scheduler backend or ``SchedulerBackend.ALL`` (default)
     to specify that the same ``Resource`` is to be used for all schedulers.
 
-    An optional ``base_image`` can be specified if the scheduler supports a
-    concept of base images. For schedulers that run Docker containers the
-    base image is not useful since the application image itself can be
-    built from a base image (using the ``FROM base/image:latest`` construct in
-    the Dockerfile). However the base image is useful for schedulers that
-    work with simple image artifacts (e.g. ``*.tar.gz``) that do not have a built-in
-    concept of base images. For these schedulers, specifying a base image that
-    includes dependencies while the main image is the actual application code
-    makes it possible to make changes to the application code without incurring
-    the cost of re-building the uber artifact.
-
     Usage:
 
     ::
@@ -117,13 +106,9 @@ class Container:
                        .require(Resource(cpu=1, gpu=1, memMB=500), "custom_scheduler")
                        .ports(tcp_store=8080, tensorboard=8081)
 
-    # for schedulers that support base_images
-    my_container = Container(image="my/trainer:1", base_image="common/ml-tools:latest")
-                      .require(...)
     """
 
     image: str
-    base_image: Optional[str] = None
     resources: Resource = NULL_RESOURCE
     port_map: Dict[str, int] = field(default_factory=dict)
 
@@ -145,9 +130,6 @@ class Container:
 # sentinel value used to represent missing string attributes, such as image or entrypoint
 MISSING: str = "<MISSING>"
 
-# sentinel value used to represent "unset" optional string attributes
-NONE: str = "<NONE>"
-
 # sentinel value used as the "zero" element in the container group
 NULL_CONTAINER: Container = Container(image=MISSING)
 
@@ -159,11 +141,9 @@ class macros:
 
     Available macros:
 
-    1. ``img_root`` - root directory of the pulled conatiner.image
-    2. ``base_img_root`` - root directory of the pulled container.base_image
-                           (resolves to "<NONE>" if no base_image set)
-    3. ``app_id`` - application id as assigned by the scheduler
-    4. ``replica_id`` - unique id for each instance of a replica of a Role,
+    1. ``img_root`` - root directory of the pulled image on the container
+    2. ``app_id`` - application id as assigned by the scheduler
+    3. ``replica_id`` - unique id for each instance of a replica of a Role,
                         for instance a role with 3 replicas could have the 0, 1, 2
                         as replica ids. Note that when the container fails and is
                         replaced, the new container will have the same ``replica_id``
@@ -183,25 +163,15 @@ class macros:
     """
 
     img_root = "${img_root}"
-    base_img_root = "${base_img_root}"
     app_id = "${app_id}"
     replica_id = "${replica_id}"
 
     @staticmethod
-    def substitute(
-        args: List[str],
-        img_root: str,
-        app_id: str,
-        replica_id: str,
-        base_img_root: str = NONE,
-    ):
+    def substitute(args: List[str], img_root: str, app_id: str, replica_id: str):
         args_sub = []
         for arg in args:
             sub = Template(arg).safe_substitute(
-                img_root=img_root,
-                app_id=app_id,
-                replica_id=replica_id,
-                base_img_root=base_img_root,
+                img_root=img_root, app_id=app_id, replica_id=replica_id
             )
             args_sub.append(sub)
         return args_sub
@@ -448,6 +418,8 @@ _TERMINAL_STATES = [AppState.SUCCEEDED, AppState.FAILED, AppState.CANCELLED]
 def is_terminal(state: AppState) -> bool:
     return state in _TERMINAL_STATES
 
+
+NONE: str = "<NONE>"
 
 # =======================
 # ==== Status API =======
