@@ -86,6 +86,7 @@ from torchelastic.tsm.driver.api import (  # noqa: F401 F403
     Session,
     is_terminal,
     macros,
+    make_app_handle,
     parse_app_handle,
     runopts,
 )
