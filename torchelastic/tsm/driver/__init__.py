@@ -103,6 +103,11 @@ try:
 except ModuleNotFoundError:
     pass
 
+try:
+    from torchx.specs.api_extended import *  # noqa: F401 F403
+except ModuleNotFoundError:
+    pass
+
 
 def _gen_session_name():
     return f"tsm_{get_owner()}"
