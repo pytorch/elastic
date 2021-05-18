@@ -65,7 +65,9 @@ In the example above, we have done a few things:
 import getpass
 from typing import Optional
 
-from torchelastic.tsm.driver.api import (  # noqa: F401 F403
+from torchelastic.tsm.driver.schedulers import get_schedulers
+from torchelastic.tsm.driver.standalone_session import StandaloneSession
+from torchx.specs.api import (  # noqa: F401 F403
     AppDryRunInfo,
     AppHandle,
     Application,
@@ -90,8 +92,6 @@ from torchelastic.tsm.driver.api import (  # noqa: F401 F403
     parse_app_handle,
     runopts,
 )
-from torchelastic.tsm.driver.schedulers import get_schedulers
-from torchelastic.tsm.driver.standalone_session import StandaloneSession
 
 
 def get_owner() -> str:

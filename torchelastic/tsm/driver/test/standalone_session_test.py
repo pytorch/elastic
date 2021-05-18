@@ -14,7 +14,11 @@ import unittest
 from typing import Optional, Dict
 from unittest.mock import MagicMock, patch
 
-from torchelastic.tsm.driver.api import (
+from torchelastic.tsm.driver.standalone_session import StandaloneSession, LoggingSession
+from torchelastic.tsm.events import SourceType, TsmEvent
+from torchx.schedulers.local_scheduler import LocalScheduler
+from torchx.schedulers.test.test_util import write_shell_script
+from torchx.specs.api import (
     Application,
     AppStatus,
     AppState,
@@ -29,10 +33,6 @@ from torchelastic.tsm.driver.api import (
     UnknownAppException,
     parse_app_handle,
 )
-from torchelastic.tsm.driver.standalone_session import StandaloneSession, LoggingSession
-from torchelastic.tsm.events import SourceType, TsmEvent
-from torchx.schedulers.local_scheduler import LocalScheduler
-from torchx.schedulers.test.test_util import write_shell_script
 
 
 class resource:

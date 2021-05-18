@@ -7,15 +7,14 @@
 # LICENSE file in the root directory of this source tree.
 
 import abc
-import getpass
 import json
-import socket
 import time
 import traceback
 from datetime import datetime
 from typing import Dict, Iterable, List, Optional, Tuple
 
-from torchelastic.tsm.driver.api import (
+from torchelastic.tsm.events import record, SourceType, TsmEvent
+from torchx.specs.api import (
     AppDryRunInfo,
     AppHandle,
     Application,
@@ -30,7 +29,6 @@ from torchelastic.tsm.driver.api import (
     parse_app_handle,
     runopts,
 )
-from torchelastic.tsm.events import record, SourceType, TsmEvent
 
 
 class LoggingSession(Session):
@@ -42,7 +40,9 @@ class LoggingSession(Session):
 
     def schedule(self, dryrun_info: AppDryRunInfo) -> AppHandle:
         scheduler_backend = dryrun_info._scheduler
-        runcfg = json.dumps(dryrun_info._cfg.cfgs) if dryrun_info._cfg else None
+        assert scheduler_backend is not None
+        cfg = dryrun_info._cfg
+        runcfg = json.dumps(cfg.cfgs) if cfg else None
         tsm_event = self._generate_tsm_event(
             "schedule",
             scheduler_backend,
@@ -274,10 +274,13 @@ class StandaloneSession(LoggingSession):
 
     def _schedule(self, dryrun_info: AppDryRunInfo) -> AppHandle:
         scheduler_backend = dryrun_info._scheduler
+        assert scheduler_backend is not None
         sched = self._scheduler(scheduler_backend)
         app_id = sched.schedule(dryrun_info)
         app_handle = make_app_handle(scheduler_backend, self._name, app_id)
-        self._apps[app_handle] = dryrun_info._app
+        app = dryrun_info._app
+        assert app is not None
+        self._apps[app_handle] = app
         return app_handle
 
     def _dryrun(
