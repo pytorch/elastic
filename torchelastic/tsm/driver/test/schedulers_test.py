@@ -8,8 +8,8 @@
 
 import unittest
 
-from torchelastic.tsm.driver.local_scheduler import LocalScheduler
 from torchelastic.tsm.driver.schedulers import get_schedulers
+from torchx.schedulers.local_scheduler import LocalScheduler
 
 
 class SchedulersTest(unittest.TestCase):

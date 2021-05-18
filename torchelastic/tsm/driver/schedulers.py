@@ -7,7 +7,7 @@
 # LICENSE file in the root directory of this source tree.
 from typing import Dict
 
-import torchelastic.tsm.driver.local_scheduler as local_scheduler
+import torchx.schedulers.local_scheduler as local_scheduler
 from torchelastic.tsm.driver.api import Scheduler, SchedulerBackend
 
 

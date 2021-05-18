@@ -29,11 +29,10 @@ from torchelastic.tsm.driver.api import (
     UnknownAppException,
     parse_app_handle,
 )
-from torchelastic.tsm.driver.local_scheduler import LocalScheduler
 from torchelastic.tsm.driver.standalone_session import StandaloneSession, LoggingSession
 from torchelastic.tsm.events import SourceType, TsmEvent
-
-from .test_util import write_shell_script
+from torchx.schedulers.local_scheduler import LocalScheduler
+from torchx.schedulers.test.test_util import write_shell_script
 
 
 class resource:
