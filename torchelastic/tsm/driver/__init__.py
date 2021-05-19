@@ -66,7 +66,7 @@ import getpass
 from typing import Optional
 
 from torchelastic.tsm.driver.schedulers import get_schedulers
-from torchelastic.tsm.driver.standalone_session import StandaloneSession
+from torchx.runner import StandaloneRunner as StandaloneSession
 from torchx.specs.api import (  # noqa: F401 F403
     AppDryRunInfo,
     AppHandle,
