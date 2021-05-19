@@ -65,8 +65,8 @@ In the example above, we have done a few things:
 import getpass
 from typing import Optional
 
-from torchelastic.tsm.driver.schedulers import get_schedulers
 from torchx.runner import StandaloneRunner as StandaloneSession
+from torchx.schedulers.registry import get_schedulers
 from torchx.specs.api import (  # noqa: F401 F403
     AppDryRunInfo,
     AppHandle,
