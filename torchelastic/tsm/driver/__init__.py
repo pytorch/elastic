@@ -65,7 +65,9 @@ In the example above, we have done a few things:
 import getpass
 from typing import Optional
 
-from torchx.runner import StandaloneRunner as StandaloneSession
+# BC for clients
+from torchx.runner import Runner as StandaloneSession
+from torchx.runner import Runner as Session  # noqa: F401 F403
 from torchx.schedulers.registry import get_schedulers
 from torchx.specs.api import (  # noqa: F401 F403
     AppDryRunInfo,
@@ -85,7 +87,6 @@ from torchx.specs.api import (  # noqa: F401 F403
     RunConfig,
     Scheduler,
     SchedulerBackend,
-    Session,
     is_terminal,
     macros,
     make_app_handle,

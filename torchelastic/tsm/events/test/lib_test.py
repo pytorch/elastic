@@ -5,11 +5,17 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.abs
+import json
 import logging
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
-from torchelastic.tsm.events import _get_or_create_logger, SourceType, TsmEvent
+from torchelastic.tsm.events import (
+    _get_or_create_logger,
+    SourceType,
+    TsmEvent,
+    log_event,
+)
 
 
 class TsmEventLibTest(unittest.TestCase):
@@ -48,3 +54,36 @@ class TsmEventLibTest(unittest.TestCase):
         json_event = event.serialize()
         deser_event = TsmEvent.deserialize(json_event)
         self.assert_event(event, deser_event)
+
+
+@patch("torchelastic.tsm.events.record")
+class LogEventTest(unittest.TestCase):
+    def assert_tsm_event(self, expected: TsmEvent, actual: TsmEvent) -> None:
+        self.assertEqual(expected.session, actual.session)
+        self.assertEqual(expected.app_id, actual.app_id)
+        self.assertEqual(expected.api, actual.api)
+        self.assertEqual(expected.source, actual.source)
+
+    def test_create_context(self, _) -> None:
+        cfg = json.dumps({"test_key": "test_value"})
+        context = log_event("test_call", "local", "test_app_id", cfg)
+        expected_tsm_event = TsmEvent(
+            "test_app_id", "local", "test_call", "test_app_id", cfg
+        )
+        self.assert_tsm_event(expected_tsm_event, context._tsm_event)
+
+    def test_record_event(self, record_mock: MagicMock) -> None:
+        cfg = json.dumps({"test_key": "test_value"})
+        expected_tsm_event = TsmEvent(
+            "test_app_id", "local", "test_call", "test_app_id", cfg
+        )
+        with log_event("test_call", "local", "test_app_id", cfg) as ctx:
+            pass
+        self.assert_tsm_event(expected_tsm_event, ctx._tsm_event)
+
+    def test_record_event_with_exception(self, record_mock: MagicMock) -> None:
+        cfg = json.dumps({"test_key": "test_value"})
+        with self.assertRaises(RuntimeError):
+            with log_event("test_call", "local", "test_app_id", cfg) as ctx:
+                raise RuntimeError("test error")
+        self.assertTrue("test error" in ctx._tsm_event.raw_exception)

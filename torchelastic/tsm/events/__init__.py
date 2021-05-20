@@ -20,6 +20,9 @@ Example of usage:
 """
 
 import logging
+import traceback
+from types import TracebackType
+from typing import Optional, Type
 
 from torchelastic.tsm.events.handlers import get_logging_handler
 
@@ -55,3 +58,60 @@ def _get_or_create_logger(destination: str = "null") -> logging.Logger:
 
 def record(event: TsmEvent, destination: str = "console") -> None:
     _get_or_create_logger(destination).info(event.serialize())
+
+
+class log_event:
+    """
+    Context for logging tsm events. Creates TSMEvent and records it in
+    the default destination at the end of the context execution. If exception occurs
+    the event will be recorded as well with the error message.
+
+    Example of usage:
+
+    ::
+
+    with log_event("api_name", ..):
+        ...
+
+    """
+
+    def __init__(
+        self,
+        api: str,
+        scheduler: Optional[str] = None,
+        app_id: Optional[str] = None,
+        runcfg: Optional[str] = None,
+    ) -> None:
+        self._tsm_event: TsmEvent = self._generate_tsm_event(
+            api, scheduler or "", app_id, runcfg
+        )
+
+    def __enter__(self) -> "log_event":
+        return self
+
+    def __exit__(
+        self,
+        exec_type: Optional[Type[BaseException]],
+        exec_value: Optional[BaseException],
+        traceback_type: Optional[TracebackType],
+    ) -> Optional[bool]:
+        if traceback_type:
+            self._tsm_event.raw_exception = traceback.format_exc()
+        record(self._tsm_event)
+
+    def _generate_tsm_event(
+        self,
+        api: str,
+        scheduler: str,
+        app_id: Optional[str] = None,
+        runcfg: Optional[str] = None,
+        source: SourceType = SourceType.UNKNOWN,
+    ) -> TsmEvent:
+        return TsmEvent(
+            session=app_id or "",
+            scheduler=scheduler,
+            api=api,
+            app_id=app_id,
+            runcfg=runcfg,
+            source=source,
+        )
