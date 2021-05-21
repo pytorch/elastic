@@ -68,15 +68,18 @@ from typing import Optional
 # BC for clients
 from torchx.runner import Runner as StandaloneSession
 from torchx.runner import Runner as Session  # noqa: F401 F403
+from torchx.schedulers.api import (  # noqa: F401 F403
+    DescribeAppResponse,
+    Scheduler,
+)
 from torchx.schedulers.registry import get_schedulers
 from torchx.specs.api import (  # noqa: F401 F403
-    AppDryRunInfo,
     AppHandle,
     Application,
     AppState,
+    AppDryRunInfo,
     AppStatus,
     Container,
-    DescribeAppResponse,
     ElasticRole,
     ReplicaState,
     ReplicaStatus,
@@ -85,7 +88,6 @@ from torchx.specs.api import (  # noqa: F401 F403
     Role,
     RoleStatus,
     RunConfig,
-    Scheduler,
     SchedulerBackend,
     is_terminal,
     macros,
