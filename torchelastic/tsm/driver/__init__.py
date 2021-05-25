@@ -66,18 +66,14 @@ import getpass
 from typing import Optional
 
 # BC for clients
-from torchx.runner import Runner as StandaloneSession
 from torchx.runner import Runner as Session  # noqa: F401 F403
-from torchx.schedulers.api import (  # noqa: F401 F403
-    DescribeAppResponse,
-    Scheduler,
-)
-from torchx.schedulers.registry import get_schedulers
+from torchx.schedulers import get_schedulers
+from torchx.schedulers.api import DescribeAppResponse, Scheduler  # noqa: F401 F403
 from torchx.specs.api import (  # noqa: F401 F403
+    AppDryRunInfo,
     AppHandle,
     Application,
     AppState,
-    AppDryRunInfo,
     AppStatus,
     Container,
     ElasticRole,
@@ -95,6 +91,10 @@ from torchx.specs.api import (  # noqa: F401 F403
     parse_app_handle,
     runopts,
 )
+
+
+# alias for BC
+StandaloneSession = Session
 
 
 def get_owner() -> str:
