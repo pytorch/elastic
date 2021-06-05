@@ -72,7 +72,7 @@ from torchx.schedulers.api import DescribeAppResponse, Scheduler  # noqa: F401 F
 from torchx.specs.api import (  # noqa: F401 F403
     AppDryRunInfo,
     AppHandle,
-    Application,
+    AppDef as Application,
     AppState,
     AppStatus,
     Container,
