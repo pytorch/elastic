@@ -19,8 +19,6 @@ to one or more such ``Roles``.
  import torchelastic.tsm.driver as tsm
 
  username = getpass.getuser()
- train_project_dir = tsm.Container(image=f"/home/{username}/pytorch_trainer")
- reader_project_dir = tsm.Container(image=f"/home/{username}/pytorch_reader")
 
  trainer = tsm.ElasticRole(name="trainer", nprocs_per_node=2, nnodes="4:4")
               .runs("train_main.py", "--epochs", "50", MY_ENV_VAR="foobar")
@@ -75,7 +73,6 @@ from torchx.specs.api import (  # noqa: F401 F403
     AppDef as Application,
     AppState,
     AppStatus,
-    Container,
     ElasticRole,
     ReplicaState,
     ReplicaStatus,
