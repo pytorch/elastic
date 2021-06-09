@@ -13,7 +13,6 @@ Containers and Resource
 Roles and Applications
 ======================
 .. autoclass:: Role
-.. autoclass:: ElasticRole
 .. autoclass:: macros
 .. autoclass:: RetryPolicy
 .. autoclass:: Application

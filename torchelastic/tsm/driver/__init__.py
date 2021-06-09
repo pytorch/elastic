@@ -20,7 +20,7 @@ to one or more such ``Roles``.
 
  username = getpass.getuser()
 
- trainer = tsm.ElasticRole(name="trainer", nprocs_per_node=2, nnodes="4:4")
+ trainer = tsm.Role(name="trainer", nprocs_per_node=2, nnodes="4:4")
               .runs("train_main.py", "--epochs", "50", MY_ENV_VAR="foobar")
               .on(train_project_dir)
               .replicas(4)
@@ -73,7 +73,6 @@ from torchx.specs.api import (  # noqa: F401 F403
     AppDef as Application,
     AppState,
     AppStatus,
-    ElasticRole,
     ReplicaState,
     ReplicaStatus,
     Resource,
