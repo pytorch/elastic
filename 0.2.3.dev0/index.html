@@ -27,12 +27,13 @@
 
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!-- <link rel="stylesheet" href="_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="_static/katex-math.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Overview" href="tsm_driver.html" />
   <!-- Google Analytics -->
   
   <!-- End Google Analytics -->
@@ -217,19 +218,11 @@
               
             
             
-              <p class="caption"><span class="caption-text">Training Session Manager(TSM)</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="tsm_driver.html">Overview</a></li>
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">TorchElastic</a></li>
 </ul>
-<p class="caption"><span class="caption-text">TSM API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="tsm_api.html">Session</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tsm_api.html#containers-and-resource">Containers and Resource</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tsm_api.html#roles-and-applications">Roles and Applications</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tsm_api.html#status-api">Status API</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tsm_api.html#scheduler">Scheduler</a></li>
-</ul>
-
+</div>
             
           
         </div>
@@ -309,33 +302,8 @@
 <h1>TorchElastic<a class="headerlink" href="#torchelastic" title="Permalink to this headline">¶</a></h1>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
-<p>TorchElastic has been upstreamed to PyTorch (<code class="docutils literal notranslate"><span class="pre">torch.distributed.elastic</span></code>) and will be
-included as part of the next PyTorch release (<code class="docutils literal notranslate"><span class="pre">torch-1.9</span></code>). In the meanwhile please use
-<a class="reference external" href="https://pytorch.org/get-started/locally/#start-locally">pytorch-nightly</a> or
-<a class="reference external" href="https://pypi.org/project/torchelastic/">torchelastic-0.2.2</a>. For documentation please refer to our
-<a class="reference external" href="https://pytorch.org/elastic/0.2.2">v0.2.2 docs</a> for now.</p>
-</div>
-<div class="section" id="training-session-manager-tsm">
-<h2>Training Session Manager(TSM)<a class="headerlink" href="#training-session-manager-tsm" title="Permalink to this headline">¶</a></h2>
-<div class="toctree-wrapper compound">
-<p class="caption"><span class="caption-text">Training Session Manager(TSM)</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="tsm_driver.html">Overview</a></li>
-</ul>
-</div>
-</div>
-<div class="section" id="tsm-api">
-<h2>TSM API<a class="headerlink" href="#tsm-api" title="Permalink to this headline">¶</a></h2>
-<div class="toctree-wrapper compound">
-<p class="caption"><span class="caption-text">TSM API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="tsm_api.html">Session</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tsm_api.html#containers-and-resource">Containers and Resource</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tsm_api.html#roles-and-applications">Roles and Applications</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tsm_api.html#status-api">Status API</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tsm_api.html#scheduler">Scheduler</a></li>
-</ul>
-</div>
+<p>TorchElastic has been upstreamed to <a class="reference external" href="https://pytorch.org/docs/stable/distributed.elastic.html">PyTorch 1.9</a>.
+TSM has been upstreamed to <a class="reference external" href="https://pytorch.org/torchx">TorchX</a>.</p>
 </div>
 </div>
 
@@ -344,13 +312,6 @@ included as part of the next PyTorch release (<code class="docutils literal notr
              
             </div>
             <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="tsm_driver.html" class="btn btn-neutral float-right" title="Overview" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
-      
-      
-    </div>
   
 
   
@@ -380,11 +341,7 @@ included as part of the next PyTorch release (<code class="docutils literal notr
           <div class="pytorch-right-menu" id="pytorch-right-menu">
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
-<li><a class="reference internal" href="#">TorchElastic</a><ul>
-<li><a class="reference internal" href="#training-session-manager-tsm">Training Session Manager(TSM)</a></li>
-<li><a class="reference internal" href="#tsm-api">TSM API</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#">TorchElastic</a></li>
 </ul>
 
             </div>
@@ -400,11 +357,12 @@ included as part of the next PyTorch release (<code class="docutils literal notr
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
          <script src="_static/jquery.js"></script>
          <script src="_static/underscore.js"></script>
          <script src="_static/doctools.js"></script>
-         <script src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js"></script>
-         <script src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/contrib/auto-render.min.js"></script>
+         <script src="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.js"></script>
+         <script src="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/contrib/auto-render.min.js"></script>
          <script src="_static/katex_autorenderer.js"></script>
      
 
