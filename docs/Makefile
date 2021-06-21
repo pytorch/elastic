@@ -16,16 +16,13 @@ VERSION       := "0.2.3.dev0"
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-redirects:
-	python source/scripts/create_redirect_md.py --source_dir "$(SOURCEDIR)" --build_dir "$(BUILDDIR)/redirects"
-
 clean:
 	@echo "Deleting build directory"
 	rm -rf "$(BUILDDIR)"
 
-.PHONY: help Makefile redirects clean
+.PHONY: help Makefile clean
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
-%: Makefile redirects
+%: Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)/$(VERSION)" $(SPHINXOPTS) $(O)
