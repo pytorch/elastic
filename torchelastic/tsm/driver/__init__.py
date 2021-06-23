@@ -35,7 +35,7 @@ to one or more such ``Roles``.
              .on(reader_project_dir)
              .replicas(1)
 
- app = tsm.Application(name="my_train_job").of(trainer, ps, reader)
+ app = tsm.Application(name="my_train_job", roles=[trainer, ps, reader])
 
  session = tsm.session(name="my_session")
  app_id = session.run(app, scheduler="local")
