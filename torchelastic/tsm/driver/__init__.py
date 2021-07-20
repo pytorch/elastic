@@ -61,10 +61,12 @@ In the example above, we have done a few things:
 
 """
 import getpass
+import warnings
 from typing import Optional
 
 # BC for clients
 from torchx.runner import Runner as Session  # noqa: F401 F403
+from torchx.runner.events import log_event
 from torchx.schedulers import get_schedulers
 from torchx.schedulers.api import DescribeAppResponse, Scheduler  # noqa: F401 F403
 from torchx.specs.api import (  # noqa: F401 F403
@@ -113,6 +115,10 @@ def _gen_session_name():
 
 
 def session(name: Optional[str] = None, backend: str = "standalone", **scheduler_args):
+    warnings.warn(
+        "torchelastic.tsm.driver.session is deprecated -- use torchx.runner instead https://pytorch.org/torchx/latest/runner.html",
+        DeprecationWarning,
+    )
     if backend != "standalone":
         raise ValueError(
             f"Unsupported session backend: {backend}. Supported values: standalone"
@@ -122,4 +128,6 @@ def session(name: Optional[str] = None, backend: str = "standalone", **scheduler
         name = _gen_session_name()
 
     scheduler_args["session_name"] = name
-    return StandaloneSession(name=name, schedulers=get_schedulers(**scheduler_args))
+
+    with log_event("torchelastic.tsm.driver.session", backend, name):
+        return StandaloneSession(name=name, schedulers=get_schedulers(**scheduler_args))
