@@ -70,9 +70,9 @@ from torchx.runner.events import log_event
 from torchx.schedulers import get_schedulers
 from torchx.schedulers.api import DescribeAppResponse, Scheduler  # noqa: F401 F403
 from torchx.specs.api import (  # noqa: F401 F403
+    AppDef as Application,
     AppDryRunInfo,
     AppHandle,
-    AppDef as Application,
     AppState,
     AppStatus,
     ReplicaState,
@@ -81,7 +81,6 @@ from torchx.specs.api import (  # noqa: F401 F403
     RetryPolicy,
     Role,
     RoleStatus,
-    RunConfig,
     SchedulerBackend,
     is_terminal,
     macros,
