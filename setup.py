@@ -45,7 +45,6 @@ if __name__ == "__main__":
         install_requires=reqs.strip().split("\n"),
         include_package_data=True,
         packages=find_packages(exclude=("*.test", "aws*", "*.fb")),
-        test_suite="torchelastic.tsm.test.suites.unittests",
         # PyPI package information.
         classifiers=[
             "Development Status :: 4 - Beta",
