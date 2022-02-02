@@ -10,7 +10,7 @@ import sys
 import time
 
 
-def wait_for(msg, timeout=300, interval=1, print_spinner=True):
+def wait_for(msg, timeout: float = 300, interval: int = 1, print_spinner: bool = True):
     """
     for _ in wait_for("asg to provision", timeout_sec, interval_sec):
         if check_condition():.
