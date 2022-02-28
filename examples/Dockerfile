@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=pytorch/pytorch:1.8.0-cuda11.1-cudnn8-runtime
+ARG BASE_IMAGE=pytorch/pytorch:1.10.0-cuda11.3-cudnn8-runtime
 FROM $BASE_IMAGE
 
 # install utilities and dependencies
@@ -6,7 +6,6 @@ RUN pip install awscli --upgrade
 RUN pip install classy-vision
 
 RUN pip uninstall -y torch
-# TODO remove and make the BASE_IMAGE pytorch:1.9.0-cuda11.1-cudnn8-runtime when torch-1.9 releases
 RUN pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu111/torch_nightly.html
 
 WORKDIR /workspace
