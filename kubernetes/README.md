@@ -1,5 +1,13 @@
 ## TorchElastic Controller for Kubernetes
 
+> **IMPORTANT**
+> This CRD is no longer being actively maintained. We encourage you to look at
+> [TorchX](https://pytorch.org/torchx/latest/) to launch PyTorch jobs on Kubernetes.
+> The two relevant sections are:
+>
+> 1. TorchX-Kubernetes setup: https://pytorch.org/torchx/latest/schedulers/kubernetes.html
+> 2. TorchX dist.ddp builtin (uses torchelastic under the hood): https://pytorch.org/torchx/latest/components/distributed.html
+
 ## Overview
 
 TorchElastic Controller for Kubernetes manages a Kubernetes custom resource `ElasticJob` and makes it easy to
