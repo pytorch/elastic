@@ -372,6 +372,8 @@ def load_checkpoint(
         print(f"=> checkpoint broadcast size is: {blob_len}")
 
         if rank != max_rank:
+            # pyre-fixme[6]: For 1st param expected `Union[List[int], Size,
+            #  typing.Tuple[int, ...]]` but got `Union[bool, float, int]`.
             blob = torch.zeros(blob_len.item(), dtype=torch.uint8)
         else:
             blob = torch.as_tensor(raw_blob, dtype=torch.uint8)
