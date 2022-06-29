@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:1.5-cuda10.1-cudnn7-runtime
+FROM pytorch/pytorch:1.8.0-cuda11.1-cudnn8-runtime
 
 # install torchelastic
 WORKDIR /opt/torchelastic
